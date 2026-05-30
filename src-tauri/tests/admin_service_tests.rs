@@ -114,8 +114,10 @@ fn admin_services_roundtrip_happy_path() {
     .expect("ranked");
     assert_eq!(ranked.len(), 1);
 
-    let mut new_weights = ScoringWeights::default();
-    new_weights.version = "v-next".to_string();
+    let new_weights = ScoringWeights {
+        version: "v-next".to_string(),
+        ..ScoringWeights::default()
+    };
     admin::update_scoring_weights(
         "alice:admin",
         weights.to_str().expect("weights"),
