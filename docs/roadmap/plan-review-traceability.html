@@ -1,0 +1,29 @@
+# Plan Review Traceability Summary
+
+Review source: User-provided architecture constraints for strict write/read separation.
+Plan scope: `docs/roadmap/feature-backlog.html`, `docs/roadmap/test-plan.html`, `docs/roadmap/beads.html`.
+Context coverage: full.
+
+| ID | Severity | Epistemic | Summary | Cross-Ref | Category | Governance Gate | Actionability | Disposition |
+|---|---|---|---|---|---|---|---|---|
+| R1-F01 | CRITICAL | [VERIFIED] | Ingestion storage engine must be BadgerDB, not generic/other KV | Correction | must-fix | none | 0.95 | Applied (`F-008A`, `TK-014`) |
+| R1-F02 | HIGH | [VERIFIED] | Workload boundaries must be non-bypassable | Gap | must-fix | Security/Data Integrity Veto | 0.92 | Applied (`F-008B`, `TK-037`) |
+| R1-F03 | HIGH | [VERIFIED] | Raw ingestion short-term retention and prune/roll-up must be explicit | Gap | must-fix | none | 0.90 | Applied (`F-008D`, `TK-034`) |
+| R1-F04 | HIGH | [VERIFIED] | Analytics reads must use snapshot/replica to ensure zero contention | Gap | must-fix | none | 0.88 | Applied (`F-008C`, `TK-035`) |
+| R1-F05 | MEDIUM | [CONSENSUS] | Ingestion needs localized key strategy to avoid global lock pressure | Gap | bundle | none | 0.77 | Applied as implementation bundle (`TK-033`, `T-018`) |
+
+Total findings: 5 | Must-fix: 4 | Bundle: 1 | Defer: 0 | Info: 0
+
+Final Recommendation: Auto-applied
+
+Dissent Ledger: none
+
+## Action Items
+
+| Priority | Owner | Action | Source finding |
+|---|---|---|---|
+| P0 | implementer | Execute `F-008A` migration to Badger sidecar ingest path | R1-F01 |
+| P1 | implementer | Add non-bypassable API boundary guards (`TK-037`) | R1-F02 |
+| P1 | implementer | Implement TTL prune + roll-up jobs (`TK-034`) | R1-F03 |
+| P1 | implementer | Add read-only snapshot/replica query mode (`TK-035`) | R1-F04 |
+| P2 | implementer | Add shard-prefix contention controls + throughput tests (`TK-033`, `T-018`) | R1-F05 |

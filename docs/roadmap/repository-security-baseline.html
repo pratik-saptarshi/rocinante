@@ -1,0 +1,22 @@
+# Repository Security Baseline
+
+## Main Branch Standards
+
+- Default branch: `main`.
+- Protected branch policy (configure on remote):
+  - Require pull request before merge.
+  - Require status checks (`CI`, `Security`) to pass.
+  - Require linear history.
+  - Block force pushes and branch deletion.
+
+## Privacy Controls
+
+- Never commit secrets or credentials.
+- `.env*`, keys, certs, and runtime databases are ignored by default.
+- Secret scanning enabled in CI.
+
+## Verification Controls
+
+- Mandatory CI checks: format, clippy, tests.
+- Scheduled security scans with CodeQL.
+- Dependency updates via Dependabot.

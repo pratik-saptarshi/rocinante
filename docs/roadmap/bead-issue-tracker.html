@@ -1,0 +1,19 @@
+# Bead Issue Tracker (TDD Execution)
+
+## Active Sprint: Storage Boundary and Retention
+
+| Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
+|---|---|---|---|---|---|---|
+| BI-001 | B-04 | `F-008A` BadgerDB conformance profile gates | Red->Green complete | In Progress | implementer | Added `StorageProfile` with strict Badger+DuckDB validation; full runtime migration pending sidecar adapter wiring. |
+| BI-002 | B-05 | `F-008D` raw retention TTL prune semantics | Red->Green complete | In Progress | implementer | Added `RetentionPolicy` TTL expiry logic; next: integrate prune job into ingestion lifecycle. |
+| BI-003 | B-09 | `F-008B` non-bypassable API boundary guards | In Progress | In Progress | implementer | Add command-layer guard tests to reject cross-layer misuse. |
+| BI-004 | B-05 | `F-008C` snapshot/replica read isolation | In Progress | In Progress | implementer | Introduce read snapshot strategy and contention tests. |
+| BI-005 | B-04 | `F-008A` Badger sidecar adapter | Red->Green complete | Completed | implementer | Runtime and admin ingestion now enforce strict Badger sidecar config; full transport integration remains a follow-up implementation slice. |
+
+## TDD Ledger
+
+- Cycle `TDD-C1`:
+  - Wrote failing tests in `tests/storage_policy_tests.rs` for profile validation and TTL expiration.
+  - Verified red failure (missing symbols / unresolved imports).
+  - Implemented minimal production code (`IngestionEngine`, `StorageProfile`, `RetentionPolicy`) in `src/storage.rs`.
+  - Verified green for `storage_policy_tests`.

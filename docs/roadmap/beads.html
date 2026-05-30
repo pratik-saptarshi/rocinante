@@ -1,0 +1,116 @@
+# Beads Roadmap (Stories and Tasks)
+
+## Bead B-00: Mandatory Sanitization Pre-Processor
+
+### Story S-001
+As a security administrator, I need all telemetry to be scrubbed before storage/display so secrets and PII never surface.
+
+### Tasks
+- `TK-001` Expand sanitizer rules for token, password, email, and phone patterns.
+- `TK-002` Enforce sanitizer execution before all analytic beads.
+- `TK-003` Enforce secondary scrubbing at DB write/read boundaries.
+- `TK-004` Add regression tests for redaction edge cases.
+
+## Bead B-01: Repository Discovery and Scan Orchestration
+
+### Story S-002
+As a platform operator, I need recursive on-prem repository scanning for continuous telemetry collection.
+
+### Tasks
+- `TK-005` Discover repositories by `.git` markers.
+- `TK-006` Execute pipeline over discovered repositories.
+- `TK-007` Track release context and changed-file set.
+
+## Bead B-02: Complexity and Code Quality Analytics
+
+### Story S-003
+As an engineering lead, I need complexity and quality trend signals per release.
+
+### Tasks
+- `TK-008` Compute token-based complexity score.
+- `TK-009` Scope complexity to changed files where possible.
+- `TK-010` Produce code-quality lint proxy metrics.
+
+## Bead B-03: Velocity and PR Policy Analytics
+
+### Story S-004
+As a reviewer, I need contribution velocity and policy compliance indicators.
+
+### Tasks
+- `TK-011` Compute commit velocity windows.
+- `TK-012` Compute LOC churn metrics.
+- `TK-013` Measure PR approval fidelity indicators.
+
+## Bead B-04: Write-Optimized Ingestion Layer
+
+### Story S-005
+As a CI/CD system, I need low-latency ingestion during high commit throughput.
+
+### Tasks
+- `TK-014` Persist incoming commit telemetry to `BadgerDB` KV (via on-prem sidecar API boundary).
+- `TK-015` Support parallel ingestion safely.
+- `TK-016` Add ingestion durability checks and recovery path.
+- `TK-033` Implement sharded key-prefix strategy to localize write contention.
+- `TK-034` Enforce raw event TTL and prune/roll-up jobs for short-term retention.
+
+## Bead B-05: Async Promotion and Columnar Analytics
+
+### Story S-006
+As an admin dashboard, I need fast historical queries without blocking ingestion.
+
+### Tasks
+- `TK-017` Promote KV events to `duckdb` history asynchronously.
+- `TK-018` Maintain aggregated query paths by name and release.
+- `TK-019` Track promotion counts and lag telemetry.
+- `TK-035` Execute analytics queries against read-only snapshots or decoupled replicas.
+- `TK-036` Add release-partitioned compression and long-term retention policies.
+
+## Bead B-06: Scoring and Ranking Engine
+
+### Story S-007
+As management, I need deterministic scoring and PR ranking with transparent weights.
+
+### Tasks
+- `TK-020` Isolate scoring algorithms in dedicated module.
+- `TK-021` Persist deterministic weights in versioned config.
+- `TK-022` Audit-log weight changes.
+- `TK-023` Rank PRs with weighted risk/velocity/compliance model.
+
+## Bead B-07: Baseline Normalization
+
+### Story S-008
+As an engineer on a legacy codebase, I need scoring that reflects improvement over baseline debt.
+
+### Tasks
+- `TK-024` Seed initial per-repo complexity baseline.
+- `TK-025` Score complexity by delta (`ΔC`) from baseline.
+- `TK-026` Add baseline reset/reseed admin workflows.
+
+## Bead B-08: RBAC and Admin Operations
+
+### Story S-009
+As a security team, I need privileged-only control over sensitive metrics and policy settings.
+
+### Tasks
+- `TK-027` Enforce admin role for query, scoring, and lifecycle operations.
+- `TK-028` Add deny-by-default behavior.
+- `TK-029` Add test coverage for authorization failures.
+
+## Bead B-09: Tauri Integration Surface
+
+### Story S-010
+As an admin UI developer, I need command endpoints for ingestion, promotion, search, and scoring.
+
+### Tasks
+- `TK-030` Wire Tauri commands for all admin services.
+- `TK-031` Define stable command payload contracts.
+- `TK-032` Add end-to-end command invocation tests.
+- `TK-037` Enforce storage boundary guards in API contracts:
+  - Write operations route exclusively to Badger endpoints.
+  - Analytical operations route exclusively to DuckDB endpoints.
+
+## Current Execution View
+
+- Completed beads: `B-00` to `B-09` core foundations.
+- In-progress beads: `B-04` BadgerDB conformance, `B-05` snapshot reads + retention compression, `B-09` storage boundary guards, `B-07` reseed UX, `B-06` signature enforcement.
+- Next beads: provider adapters, AST metric bead, retention/partition bead.

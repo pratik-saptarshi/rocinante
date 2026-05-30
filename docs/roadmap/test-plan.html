@@ -1,0 +1,73 @@
+# Test Plan (TDD Roadmap)
+
+## Testing Strategy
+
+- Enforce red-green-refactor cycle per feature ID.
+- Every backlog item must map to at least one automated test target.
+- Block feature completion unless tests for functional behavior and security controls pass.
+
+## Existing Test Coverage
+
+- `T-001` Auth/RBAC enforcement:
+  - `tests/auth_tests.rs`
+- `T-002` Bead pipeline execution and plugin coverage:
+  - `tests/engine_tests.rs`
+- `T-003` Sanitizer behavior and redaction correctness:
+  - `tests/sanitizer_tests.rs`
+- `T-004` Telemetry write/query behavior:
+  - `tests/telemetry_tests.rs`
+- `T-005` Dual-layer storage lifecycle promotion + aggregate reads:
+  - `tests/storage_duallayer_tests.rs`
+- `T-006` Scoring audit + admin-only weight updates:
+  - `tests/scoring_audit_tests.rs`
+- `T-007` Baseline delta scoring normalization:
+  - `tests/baseline_delta_tests.rs`
+
+## Feature-to-Test Matrix
+
+- `F-001/F-005/F-006` -> `T-002`
+- `F-002` -> `T-003`
+- `F-007/F-013` -> `T-001`, `T-006`
+- `F-008/F-010` -> `T-005`
+- `F-011/F-012` -> `T-007`, `T-006`
+- `F-014` -> add integration tests `T-008` (pending)
+- `F-008A/F-008B/F-008C/F-008D` -> `T-015`, `T-016`, `T-017`, `T-018`
+
+## In-Progress Test Work
+
+- `T-008` Tauri command integration tests:
+  - Validate command input/output contracts for all admin commands.
+  - Validate command-level RBAC denial/allow flows.
+- `T-009` Async ingestion load tests:
+  - Saturate bounded ring buffer and verify no ingestion deadlocks.
+  - Measure promotion lag under sustained commit bursts.
+
+## Planned New Tests
+
+- `T-010` Signed scoring config verification tests (`F-018`).
+- `T-011` AD/LDAP provider behavior tests with mocked directory responses (`F-023`).
+- `T-012` AST plugin determinism tests across supported languages (`F-020`).
+- `T-013` Historical retention/partition correctness tests (`F-021`).
+- `T-014` End-to-end dashboard query performance regression tests (`F-016`, `F-026`).
+- `T-015` Storage boundary conformance tests:
+  - Reject analytics queries against ingestion API.
+  - Reject ingestion writes against analytics API.
+  - Validate Badger-only ingest path and DuckDB-only analytic path.
+- `T-016` Retention lifecycle tests:
+  - Verify raw ingestion TTL prune/roll-up execution windows.
+  - Verify long-term compressed release marts remain queryable.
+- `T-017` Snapshot isolation tests for analytics:
+  - Ensure read queries run against immutable snapshot while promotion proceeds.
+  - Ensure no query lock contention during ingestion bursts.
+- `T-018` Ingestion concurrency tests:
+  - Validate sharded key strategy and localized write contention behavior.
+  - Validate sustained append throughput under parallel producers.
+
+## Definition of Done (Testing)
+
+- Unit tests pass locally via:
+  - `cargo test --manifest-path src-tauri/Cargo.toml`
+- New feature includes at least:
+  - One positive-path test.
+  - One failure/authorization or boundary test.
+- Security-sensitive features include explicit RBAC + sanitization assertions.

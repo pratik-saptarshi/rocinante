@@ -1,0 +1,46 @@
+# Architecture
+
+## Current State
+
+- Application stack: Rust + Tauri (on-prem only).
+- Analysis model: bead/plugin pipeline with mandatory sanitizer pre-processor.
+- Storage model:
+  - Write-path currently implemented with embedded KV (`sled`) as transitional ingestion layer.
+  - Read-path implemented with embedded columnar analytics (`DuckDB`) for aggregations, scoring, and ranking.
+- Security controls:
+  - RBAC admin-only access for sensitive operations.
+  - Sanitization at pre-processing and telemetry persistence/query boundaries.
+  - Storage boundary primitives enforce route semantics (ingestion vs analytics).
+- Runtime controls:
+  - Strict ingestion backend validation is wired at startup and admin ingestion path.
+  - Backend-aware ingestion transport supports:
+    - `inproc://` development/test sidecar simulation.
+    - `unix://` sidecar socket transport.
+
+## Destination Final State
+
+- Strict dual-layer architecture (no workload mixing):
+  - Ingestion layer:
+    - BadgerDB sidecar as the only allowed write-heavy backend in strict mode.
+    - High-concurrency append ingestion with sharded key strategies.
+    - Short-term retention with TTL prune and roll-up.
+  - Analytics layer:
+    - DuckDB for read-heavy historical analytics only.
+    - Snapshot/replica-style read model for zero-contention query behavior.
+    - Long-term compressed retention by release partitions.
+- Promotion lifecycle:
+  - Asynchronous event promotion from ingestion tier to analytical marts.
+  - Deterministic, idempotent promotion checkpoints and auditability.
+- Scoring and ranking:
+  - Versioned, audited scoring weights.
+  - Baseline-normalized committer scoring (delta complexity) across legacy and greenfield repos.
+  - PR ranking based on risk, velocity, and policy compliance.
+- Governance and quality gates:
+  - Non-bypassable storage boundary guards across runtime/admin APIs.
+  - Coverage and validation gates enforced in CI/CD with >=80% core architecture line coverage.
+
+## Gap to Close
+
+- Replace transitional `sled` persistence usage in ingestion internals with full Badger sidecar transport for production strict mode.
+- Add sidecar health checks, retry/backoff strategy, and observability metrics for queue depth and promotion lag.
+- Complete snapshot materialization/rotation mechanics for analytics read isolation.

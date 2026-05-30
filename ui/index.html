@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rocinante Repo Analyzer</title>
+  <style>
+    :root { --bg: #f4f7f5; --panel: #ffffff; --ink: #162026; --accent: #005f73; }
+    body { margin: 0; font-family: "IBM Plex Sans", sans-serif; background: linear-gradient(120deg, #e8f1f2, #f4f7f5); color: var(--ink); }
+    .wrap { max-width: 960px; margin: 2rem auto; padding: 1rem; }
+    .panel { background: var(--panel); border-radius: 14px; padding: 1rem 1.25rem; box-shadow: 0 10px 30px rgba(0,0,0,.08); margin-bottom: 1rem; }
+    input, button { padding: .6rem .75rem; border-radius: 8px; border: 1px solid #c9d6db; margin: .2rem; }
+    button { border: none; background: var(--accent); color: #fff; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; border-bottom: 1px solid #edf2f4; padding: .45rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <h2>Scan Repositories</h2>
+      <input id="root" placeholder="/repos/root" size="45" />
+      <input id="release" placeholder="v1.0.0" />
+      <button id="scan">Run Scan</button>
+      <div id="scanOut"></div>
+    </div>
+    <div class="panel">
+      <h2>Admin Query</h2>
+      <input id="token" placeholder="alice:admin" size="30" />
+      <input id="name" placeholder="Repo or contributor" />
+      <input id="rfilter" placeholder="Tag/Version" />
+      <button id="query">Query</button>
+      <table>
+        <thead><tr><th>Plugin</th><th>Metric</th><th>Value</th><th>Details</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+<script>
+const invoke = window.__TAURI__?.core?.invoke;
+document.getElementById('scan').onclick = async () => {
+  try {
+    const count = await invoke('run_scan', { payload: {
+      root: document.getElementById('root').value,
+      release: document.getElementById('release').value
+    }});
+    document.getElementById('scanOut').textContent = `Scanned ${count} repositories`;
+  } catch (e) {
+    document.getElementById('scanOut').textContent = String(e);
+  }
+};
+
+document.getElementById('query').onclick = async () => {
+  const rows = document.getElementById('rows');
+  rows.innerHTML = '';
+  try {
+    const data = await invoke('query_metrics', {
+      token: document.getElementById('token').value,
+      name: document.getElementById('name').value || null,
+      release: document.getElementById('rfilter').value || null
+    });
+    data.forEach(m => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${m.plugin}</td><td>${m.key}</td><td>${m.value}</td><td>${m.details}</td>`;
+      rows.appendChild(tr);
+    });
+  } catch (e) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="4">${String(e)}</td>`;
+    rows.appendChild(tr);
+  }
+};
+</script>
+</body>
+</html>
