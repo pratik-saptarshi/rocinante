@@ -19,3 +19,9 @@ Rust + Tauri on-prem repository analysis application with a bead-based plugin en
 ```bash
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
+
+## Repository setup
+
+For secure GitHub repository bootstrap and branch protections, see:
+
+- `docs/github-setup.md`
