@@ -3,13 +3,13 @@ use crate::engine::Pipeline;
 use crate::errors::AnalyzerError;
 use crate::git::discover_repositories;
 use crate::scoring::{load_or_init_weights, update_weights_with_audit};
+use crate::storage::IngestionBackendConfig;
 use crate::storage::{DualLayerStore, LifecycleStats};
 use crate::telemetry::TelemetryStore;
 use crate::types::{
     AdminQuery, AnalysisMetric, CommitIngestionEvent, CommitterScore, PrCandidate, PrRanking,
     ScoringWeights, TelemetryPoint,
 };
-use crate::storage::IngestionBackendConfig;
 
 pub fn run_scan(root: &str, release: &str, db_path: &str) -> Result<usize, AnalyzerError> {
     let repos = discover_repositories(root);

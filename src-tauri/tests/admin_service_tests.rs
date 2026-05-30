@@ -1,6 +1,8 @@
 use repo_analyzer_core::admin;
 use repo_analyzer_core::storage::{IngestionBackendConfig, IngestionBackendKind};
-use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, PrCandidate, ScoringWeights, TelemetryPoint};
+use repo_analyzer_core::types::{
+    AdminQuery, CommitIngestionEvent, PrCandidate, ScoringWeights, TelemetryPoint,
+};
 use tempfile::tempdir;
 
 fn sample_event(id: &str) -> CommitIngestionEvent {
@@ -10,10 +12,30 @@ fn sample_event(id: &str) -> CommitIngestionEvent {
         release: "v1.0.0".to_string(),
         committer: "alice".to_string(),
         telemetry: vec![
-            TelemetryPoint { plugin: "complexity".to_string(), metric_key: "estimated_cyclomatic_complexity".to_string(), metric_value: 9.0, details: "ok".to_string() },
-            TelemetryPoint { plugin: "coverage".to_string(), metric_key: "coverage_delta".to_string(), metric_value: 3.0, details: "ok".to_string() },
-            TelemetryPoint { plugin: "churn".to_string(), metric_key: "churn_efficiency".to_string(), metric_value: 0.7, details: "ok".to_string() },
-            TelemetryPoint { plugin: "ci".to_string(), metric_key: "pipeline_success".to_string(), metric_value: 1.0, details: "ok".to_string() },
+            TelemetryPoint {
+                plugin: "complexity".to_string(),
+                metric_key: "estimated_cyclomatic_complexity".to_string(),
+                metric_value: 9.0,
+                details: "ok".to_string(),
+            },
+            TelemetryPoint {
+                plugin: "coverage".to_string(),
+                metric_key: "coverage_delta".to_string(),
+                metric_value: 3.0,
+                details: "ok".to_string(),
+            },
+            TelemetryPoint {
+                plugin: "churn".to_string(),
+                metric_key: "churn_efficiency".to_string(),
+                metric_value: 0.7,
+                details: "ok".to_string(),
+            },
+            TelemetryPoint {
+                plugin: "ci".to_string(),
+                metric_key: "pipeline_success".to_string(),
+                metric_value: 1.0,
+                details: "ok".to_string(),
+            },
         ],
     }
 }
@@ -52,7 +74,10 @@ fn admin_services_roundtrip_happy_path() {
         "alice:admin",
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
-        AdminQuery { name: Some("repo-a".to_string()), release: Some("v1".to_string()) },
+        AdminQuery {
+            name: Some("repo-a".to_string()),
+            release: Some("v1".to_string()),
+        },
     )
     .expect("aggregates");
     assert!(!aggregates.is_empty());
@@ -61,7 +86,10 @@ fn admin_services_roundtrip_happy_path() {
         "alice:admin",
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
-        AdminQuery { name: Some("repo-a".to_string()), release: None },
+        AdminQuery {
+            name: Some("repo-a".to_string()),
+            release: None,
+        },
         weights.to_str().expect("weights"),
     )
     .expect("scores");

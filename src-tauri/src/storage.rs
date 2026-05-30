@@ -172,10 +172,16 @@ pub struct AsyncIngestionEngine {
 }
 
 impl AsyncIngestionEngine {
-    pub fn start(kv_path: &str, columnar_path: &str, buffer_size: usize) -> Result<Self, AnalyzerError> {
+    pub fn start(
+        kv_path: &str,
+        columnar_path: &str,
+        buffer_size: usize,
+    ) -> Result<Self, AnalyzerError> {
         let store = DualLayerStore::open(kv_path, columnar_path)?;
-        let (tx, rx): (SyncSender<CommitIngestionEvent>, Receiver<CommitIngestionEvent>) =
-            sync_channel(buffer_size.max(1));
+        let (tx, rx): (
+            SyncSender<CommitIngestionEvent>,
+            Receiver<CommitIngestionEvent>,
+        ) = sync_channel(buffer_size.max(1));
 
         thread::spawn(move || {
             while let Ok(evt) = rx.recv() {
@@ -206,7 +212,8 @@ impl DualLayerStore {
     }
 
     fn init_columnar(&self) -> Result<(), AnalyzerError> {
-        let conn = Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let conn =
+            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         conn.execute_batch(
             "
             CREATE TABLE IF NOT EXISTS telemetry_history (
@@ -254,8 +261,12 @@ impl DualLayerStore {
 
         let key = format!("evt:{ts}:{}", clean.commit_id);
         let bytes = serde_json::to_vec(&clean).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        self.kv.insert(key.as_bytes(), bytes).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        self.kv.flush().map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        self.kv
+            .insert(key.as_bytes(), bytes)
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        self.kv
+            .flush()
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
         Ok(())
     }
 
@@ -278,8 +289,8 @@ impl DualLayerStore {
                         let mut stream = UnixStream::connect(socket_path).map_err(|e| {
                             AnalyzerError::Io(format!("badger sidecar transport failed: {e}"))
                         })?;
-                        let payload =
-                            serde_json::to_vec(event).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                        let payload = serde_json::to_vec(event)
+                            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
                         stream.write_all(&payload).map_err(|e| {
                             AnalyzerError::Io(format!("badger sidecar transport failed: {e}"))
                         })?;
@@ -288,7 +299,8 @@ impl DualLayerStore {
                     #[cfg(not(unix))]
                     {
                         Err(AnalyzerError::Io(
-                            "badger sidecar transport failed: unix transport unavailable".to_string(),
+                            "badger sidecar transport failed: unix transport unavailable"
+                                .to_string(),
                         ))
                     }
                 } else {
@@ -301,7 +313,8 @@ impl DualLayerStore {
     }
 
     pub fn promote_to_columnar(&self) -> Result<LifecycleStats, AnalyzerError> {
-        let conn = Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let conn =
+            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let mut promoted = 0usize;
 
         for row in self.kv.scan_prefix("evt:") {
@@ -357,18 +370,26 @@ impl DualLayerStore {
                 .map_err(|e| AnalyzerError::Db(e.to_string()))?;
             }
 
-            self.kv.remove(k).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            self.kv
+                .remove(k)
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
             promoted += 1;
         }
 
-        self.kv.flush().map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        self.kv
+            .flush()
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
         Ok(LifecycleStats {
             promoted_events: promoted,
         })
     }
 
-    pub fn aggregate_by_query(&self, query: &AdminQuery) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
-        let conn = Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+    pub fn aggregate_by_query(
+        &self,
+        query: &AdminQuery,
+    ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        let conn =
+            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());
         let release = scrub_text(&query.release.clone().unwrap_or_default());
 
@@ -383,7 +404,9 @@ impl DualLayerStore {
             )
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
-        let mut rows = stmt.query(params![name, release]).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let mut rows = stmt
+            .query(params![name, release])
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let mut out = Vec::new();
         while let Some(row) = rows.next().map_err(|e| AnalyzerError::Db(e.to_string()))? {
             out.push(TelemetryPoint {
@@ -401,7 +424,8 @@ impl DualLayerStore {
         query: &AdminQuery,
         weights: &ScoringWeights,
     ) -> Result<Vec<CommitterScore>, AnalyzerError> {
-        let conn = Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let conn =
+            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());
         let release = scrub_text(&query.release.clone().unwrap_or_default());
 
@@ -422,8 +446,12 @@ impl DualLayerStore {
             ORDER BY h.committer
         ";
 
-        let mut stmt = conn.prepare(sql).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let mut rows = stmt.query(params![name, release]).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let mut stmt = conn
+            .prepare(sql)
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let mut rows = stmt
+            .query(params![name, release])
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
         let mut out = Vec::new();
         while let Some(row) = rows.next().map_err(|e| AnalyzerError::Db(e.to_string()))? {
@@ -436,7 +464,8 @@ impl DualLayerStore {
 
             // Deterministic baseline normalization: delta complexity vs initial state.
             let delta_c = complexity.unwrap_or(0.0) - baseline.unwrap_or(0.0);
-            let cplx_component = (1.0 / (1.0 + delta_c.max(0.0))) * (weights.complexity_weight * 100.0);
+            let cplx_component =
+                (1.0 / (1.0 + delta_c.max(0.0))) * (weights.complexity_weight * 100.0);
             let cov_component = coverage_delta
                 .map(|v| (v.max(-20.0) + 20.0) / 40.0 * (weights.coverage_weight * 100.0))
                 .unwrap_or(weights.coverage_weight * 50.0);
