@@ -88,6 +88,16 @@ fn governance_rejects_tampered_scoring_weights() {
 }
 
 #[test]
+fn governance_scoring_signature_uses_sha256_hex_digest() {
+    use repo_analyzer_core::scoring::sign_weights;
+
+    let signed = sign_weights(&ScoringWeights::default()).unwrap();
+
+    assert_eq!(signed.signature.len(), 64);
+    assert!(signed.signature.chars().all(|ch| ch.is_ascii_hexdigit()));
+}
+
+#[test]
 fn team_policy_resolves_explicit_scoring_profile() {
     use repo_analyzer_core::policy::PolicyProfiles;
 

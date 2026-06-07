@@ -9,7 +9,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/build.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_build_rs",
-      "community": 13,
+      "community": 14,
       "norm_label": "build.rs"
     },
     {
@@ -18,7 +18,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/build.rs",
       "source_location": "L1",
       "id": "build_main",
-      "community": 13,
+      "community": 14,
       "norm_label": "main()"
     },
     {
@@ -27,7 +27,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/telemetry_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_telemetry_tests_rs",
-      "community": 5,
+      "community": 4,
       "norm_label": "telemetry_tests.rs"
     },
     {
@@ -36,7 +36,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/telemetry_tests.rs",
       "source_location": "L6",
       "id": "telemetry_tests_inserts_and_queries_by_release",
-      "community": 5,
+      "community": 4,
       "norm_label": "inserts_and_queries_by_release()"
     },
     {
@@ -45,7 +45,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/baseline_delta_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_baseline_delta_tests_rs",
-      "community": 0,
+      "community": 1,
       "norm_label": "baseline_delta_tests.rs"
     },
     {
@@ -54,7 +54,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/baseline_delta_tests.rs",
       "source_location": "L7",
       "id": "baseline_delta_tests_committer_score_uses_baseline_complexity_delta",
-      "community": 0,
+      "community": 1,
       "norm_label": "committer_score_uses_baseline_complexity_delta()"
     },
     {
@@ -63,7 +63,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/scoring_audit_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_scoring_audit_tests_rs",
-      "community": 4,
+      "community": 0,
       "norm_label": "scoring_audit_tests.rs"
     },
     {
@@ -72,7 +72,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/scoring_audit_tests.rs",
       "source_location": "L7",
       "id": "scoring_audit_tests_weight_updates_are_audited_and_admin_only",
-      "community": 4,
+      "community": 0,
       "norm_label": "weight_updates_are_audited_and_admin_only()"
     },
     {
@@ -81,7 +81,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/ingestion_transport_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_ingestion_transport_tests_rs",
-      "community": 0,
+      "community": 1,
       "norm_label": "ingestion_transport_tests.rs"
     },
     {
@@ -90,7 +90,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/ingestion_transport_tests.rs",
       "source_location": "L7",
       "id": "ingestion_transport_tests_sample_event",
-      "community": 0,
+      "community": 1,
       "norm_label": "sample_event()"
     },
     {
@@ -99,7 +99,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/ingestion_transport_tests.rs",
       "source_location": "L23",
       "id": "ingestion_transport_tests_badger_sidecar_dev_inproc_transport_ingests_event",
-      "community": 0,
+      "community": 1,
       "norm_label": "badger_sidecar_dev_inproc_transport_ingests_event()"
     },
     {
@@ -108,7 +108,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/ingestion_transport_tests.rs",
       "source_location": "L48",
       "id": "ingestion_transport_tests_badger_sidecar_unix_transport_errors_if_socket_unavailable",
-      "community": 0,
+      "community": 1,
       "norm_label": "badger_sidecar_unix_transport_errors_if_socket_unavailable()"
     },
     {
@@ -117,7 +117,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/ingestion_transport_tests.rs",
       "source_location": "L71",
       "id": "ingestion_transport_tests_badger_sidecar_rejects_unsupported_endpoint_scheme",
-      "community": 0,
+      "community": 1,
       "norm_label": "badger_sidecar_rejects_unsupported_endpoint_scheme()"
     },
     {
@@ -126,7 +126,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/admin_service_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_admin_service_tests_rs",
-      "community": 0,
+      "community": 1,
       "norm_label": "admin_service_tests.rs"
     },
     {
@@ -135,7 +135,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/admin_service_tests.rs",
       "source_location": "L6",
       "id": "admin_service_tests_sample_event",
-      "community": 0,
+      "community": 1,
       "norm_label": "sample_event()"
     },
     {
@@ -144,7 +144,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/admin_service_tests.rs",
       "source_location": "L22",
       "id": "admin_service_tests_admin_services_roundtrip_happy_path",
-      "community": 0,
+      "community": 1,
       "norm_label": "admin_services_roundtrip_happy_path()"
     },
     {
@@ -153,7 +153,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/admin_service_tests.rs",
       "source_location": "L101",
       "id": "admin_service_tests_admin_services_reject_non_admin",
-      "community": 0,
+      "community": 1,
       "norm_label": "admin_services_reject_non_admin()"
     },
     {
@@ -162,7 +162,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/admin_ingestion_guard_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_admin_ingestion_guard_tests_rs",
-      "community": 10,
+      "community": 11,
       "norm_label": "admin_ingestion_guard_tests.rs"
     },
     {
@@ -171,7 +171,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/admin_ingestion_guard_tests.rs",
       "source_location": "L6",
       "id": "admin_ingestion_guard_tests_sample_event",
-      "community": 10,
+      "community": 11,
       "norm_label": "sample_event()"
     },
     {
@@ -180,7 +180,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/admin_ingestion_guard_tests.rs",
       "source_location": "L22",
       "id": "admin_ingestion_guard_tests_blocks_ingestion_when_strict_mode_not_badger",
-      "community": 10,
+      "community": 11,
       "norm_label": "blocks_ingestion_when_strict_mode_not_badger()"
     },
     {
@@ -189,7 +189,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/admin_ingestion_guard_tests.rs",
       "source_location": "L48",
       "id": "admin_ingestion_guard_tests_allows_ingestion_when_dev_mode_badger_sidecar_uses_inproc_simulation",
-      "community": 10,
+      "community": 11,
       "norm_label": "allows_ingestion_when_dev_mode_badger_sidecar_uses_inproc_simulation()"
     },
     {
@@ -198,7 +198,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/auth_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_auth_tests_rs",
-      "community": 0,
+      "community": 1,
       "norm_label": "auth_tests.rs"
     },
     {
@@ -207,7 +207,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/auth_tests.rs",
       "source_location": "L4",
       "id": "auth_tests_admin_role_is_accepted",
-      "community": 0,
+      "community": 1,
       "norm_label": "admin_role_is_accepted()"
     },
     {
@@ -216,7 +216,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/auth_tests.rs",
       "source_location": "L10",
       "id": "auth_tests_non_admin_is_rejected",
-      "community": 0,
+      "community": 1,
       "norm_label": "non_admin_is_rejected()"
     },
     {
@@ -225,7 +225,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
-      "community": 1,
+      "community": 2,
       "norm_label": "roadmap_completion_tests.rs"
     },
     {
@@ -234,7 +234,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
       "source_location": "L3",
       "id": "roadmap_completion_tests_event",
-      "community": 1,
+      "community": 2,
       "norm_label": "event()"
     },
     {
@@ -252,7 +252,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
       "source_location": "L28",
       "id": "roadmap_completion_tests_ci_sidecar_request_serializes_commit_event_with_shard_key",
-      "community": 1,
+      "community": 2,
       "norm_label": "ci_sidecar_request_serializes_commit_event_with_shard_key()"
     },
     {
@@ -261,7 +261,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
       "source_location": "L38",
       "id": "roadmap_completion_tests_producer_burst_distributes_events_across_sharded_prefixes",
-      "community": 1,
+      "community": 2,
       "norm_label": "producer_burst_distributes_events_across_sharded_prefixes()"
     },
     {
@@ -270,7 +270,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
       "source_location": "L51",
       "id": "roadmap_completion_tests_compliance_prune_removes_expired_raw_events_only",
-      "community": 1,
+      "community": 2,
       "norm_label": "compliance_prune_removes_expired_raw_events_only()"
     },
     {
@@ -279,7 +279,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
       "source_location": "L61",
       "id": "roadmap_completion_tests_dashboard_query_uses_materialized_immutable_snapshot",
-      "community": 1,
+      "community": 2,
       "norm_label": "dashboard_query_uses_materialized_immutable_snapshot()"
     },
     {
@@ -288,41 +288,50 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
       "source_location": "L78",
       "id": "roadmap_completion_tests_governance_rejects_tampered_scoring_weights",
-      "community": 6,
+      "community": 5,
       "norm_label": "governance_rejects_tampered_scoring_weights()"
+    },
+    {
+      "label": "governance_scoring_signature_uses_sha256_hex_digest()",
+      "file_type": "code",
+      "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
+      "source_location": "L91",
+      "id": "roadmap_completion_tests_governance_scoring_signature_uses_sha256_hex_digest",
+      "community": 5,
+      "norm_label": "governance_scoring_signature_uses_sha256_hex_digest()"
     },
     {
       "label": "team_policy_resolves_explicit_scoring_profile()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L91",
+      "source_location": "L101",
       "id": "roadmap_completion_tests_team_policy_resolves_explicit_scoring_profile",
-      "community": 1,
+      "community": 2,
       "norm_label": "team_policy_resolves_explicit_scoring_profile()"
     },
     {
       "label": "ast_cache_reuses_unchanged_file_fingerprint()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L105",
+      "source_location": "L115",
       "id": "roadmap_completion_tests_ast_cache_reuses_unchanged_file_fingerprint",
-      "community": 1,
+      "community": 2,
       "norm_label": "ast_cache_reuses_unchanged_file_fingerprint()"
     },
     {
       "label": "ast_bead_emits_deterministic_language_metric()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L118",
+      "source_location": "L128",
       "id": "roadmap_completion_tests_ast_bead_emits_deterministic_language_metric",
-      "community": 4,
+      "community": 0,
       "norm_label": "ast_bead_emits_deterministic_language_metric()"
     },
     {
       "label": "operator_sees_queue_depth_and_promotion_lag()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L135",
+      "source_location": "L145",
       "id": "roadmap_completion_tests_operator_sees_queue_depth_and_promotion_lag",
       "community": 9,
       "norm_label": "operator_sees_queue_depth_and_promotion_lag()"
@@ -331,36 +340,36 @@
       "label": "enterprise_git_provider_accepts_only_onprem_schemes()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L147",
+      "source_location": "L157",
       "id": "roadmap_completion_tests_enterprise_git_provider_accepts_only_onprem_schemes",
-      "community": 1,
+      "community": 2,
       "norm_label": "enterprise_git_provider_accepts_only_onprem_schemes()"
     },
     {
       "label": "ldap_group_cache_maps_admin_role_deterministically()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L157",
+      "source_location": "L167",
       "id": "roadmap_completion_tests_ldap_group_cache_maps_admin_role_deterministically",
-      "community": 1,
+      "community": 2,
       "norm_label": "ldap_group_cache_maps_admin_role_deterministically()"
     },
     {
       "label": "migration_bulk_import_deduplicates_commit_ids()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L169",
+      "source_location": "L179",
       "id": "roadmap_completion_tests_migration_bulk_import_deduplicates_commit_ids",
-      "community": 1,
+      "community": 2,
       "norm_label": "migration_bulk_import_deduplicates_commit_ids()"
     },
     {
       "label": "admin_ui_exposes_all_maturity_commands()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L179",
+      "source_location": "L189",
       "id": "roadmap_completion_tests_admin_ui_exposes_all_maturity_commands",
-      "community": 1,
+      "community": 2,
       "norm_label": "admin_ui_exposes_all_maturity_commands()"
     },
     {
@@ -441,7 +450,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/analytics_snapshot_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_analytics_snapshot_tests_rs",
-      "community": 2,
+      "community": 0,
       "norm_label": "analytics_snapshot_tests.rs"
     },
     {
@@ -450,7 +459,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/analytics_snapshot_tests.rs",
       "source_location": "L4",
       "id": "analytics_snapshot_tests_snapshot_mode_is_read_only",
-      "community": 2,
+      "community": 0,
       "norm_label": "snapshot_mode_is_read_only()"
     },
     {
@@ -459,7 +468,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/analytics_snapshot_tests.rs",
       "source_location": "L12",
       "id": "analytics_snapshot_tests_mutable_mode_is_rejected_for_analytics_queries",
-      "community": 2,
+      "community": 0,
       "norm_label": "mutable_mode_is_rejected_for_analytics_queries()"
     },
     {
@@ -468,7 +477,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/analytics_snapshot_tests.rs",
       "source_location": "L23",
       "id": "analytics_snapshot_tests_snapshot_descriptor_is_immutable_and_versioned",
-      "community": 2,
+      "community": 0,
       "norm_label": "snapshot_descriptor_is_immutable_and_versioned()"
     },
     {
@@ -477,7 +486,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/engine_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_engine_tests_rs",
-      "community": 4,
+      "community": 0,
       "norm_label": "engine_tests.rs"
     },
     {
@@ -486,7 +495,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/engine_tests.rs",
       "source_location": "L7",
       "id": "engine_tests_pipeline_runs_all_beads",
-      "community": 4,
+      "community": 0,
       "norm_label": "pipeline_runs_all_beads()"
     },
     {
@@ -495,7 +504,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/onprem_and_errors_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_onprem_and_errors_tests_rs",
-      "community": 8,
+      "community": 7,
       "norm_label": "onprem_and_errors_tests.rs"
     },
     {
@@ -504,7 +513,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/onprem_and_errors_tests.rs",
       "source_location": "L5",
       "id": "onprem_and_errors_tests_local_git_provider_builds_internal_url",
-      "community": 8,
+      "community": 7,
       "norm_label": "local_git_provider_builds_internal_url()"
     },
     {
@@ -513,7 +522,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/onprem_and_errors_tests.rs",
       "source_location": "L12",
       "id": "onprem_and_errors_tests_active_directory_provider_returns_group_membership",
-      "community": 8,
+      "community": 7,
       "norm_label": "active_directory_provider_returns_group_membership()"
     },
     {
@@ -522,7 +531,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/onprem_and_errors_tests.rs",
       "source_location": "L18",
       "id": "onprem_and_errors_tests_io_and_db_errors_map_to_analyzer_error",
-      "community": 8,
+      "community": 7,
       "norm_label": "io_and_db_errors_map_to_analyzer_error()"
     },
     {
@@ -531,7 +540,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/git_module_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_git_module_tests_rs",
-      "community": 2,
+      "community": 0,
       "norm_label": "git_module_tests.rs"
     },
     {
@@ -540,7 +549,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/git_module_tests.rs",
       "source_location": "L7",
       "id": "git_module_tests_discovers_nested_git_repositories",
-      "community": 2,
+      "community": 0,
       "norm_label": "discovers_nested_git_repositories()"
     },
     {
@@ -549,7 +558,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/git_module_tests.rs",
       "source_location": "L18",
       "id": "git_module_tests_git_stdout_returns_error_for_non_repo",
-      "community": 2,
+      "community": 0,
       "norm_label": "git_stdout_returns_error_for_non_repo()"
     },
     {
@@ -558,7 +567,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/git_module_tests.rs",
       "source_location": "L25",
       "id": "git_module_tests_changed_files_since_tag_returns_empty_on_empty_release",
-      "community": 2,
+      "community": 0,
       "norm_label": "changed_files_since_tag_returns_empty_on_empty_release()"
     },
     {
@@ -567,7 +576,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/sanitizer_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_sanitizer_tests_rs",
-      "community": 5,
+      "community": 4,
       "norm_label": "sanitizer_tests.rs"
     },
     {
@@ -576,7 +585,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/sanitizer_tests.rs",
       "source_location": "L4",
       "id": "sanitizer_tests_scrubs_pii_and_secret_values",
-      "community": 5,
+      "community": 4,
       "norm_label": "scrubs_pii_and_secret_values()"
     },
     {
@@ -585,7 +594,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/storage_boundary_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_storage_boundary_tests_rs",
-      "community": 3,
+      "community": 10,
       "norm_label": "storage_boundary_tests.rs"
     },
     {
@@ -594,7 +603,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/storage_boundary_tests.rs",
       "source_location": "L4",
       "id": "storage_boundary_tests_rejects_ingestion_write_on_analytics_route",
-      "community": 3,
+      "community": 10,
       "norm_label": "rejects_ingestion_write_on_analytics_route()"
     },
     {
@@ -603,7 +612,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/storage_boundary_tests.rs",
       "source_location": "L12",
       "id": "storage_boundary_tests_rejects_analytics_query_on_ingestion_route",
-      "community": 3,
+      "community": 10,
       "norm_label": "rejects_analytics_query_on_ingestion_route()"
     },
     {
@@ -612,7 +621,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/storage_boundary_tests.rs",
       "source_location": "L20",
       "id": "storage_boundary_tests_allows_correct_route_operation_pairs",
-      "community": 3,
+      "community": 10,
       "norm_label": "allows_correct_route_operation_pairs()"
     },
     {
@@ -621,7 +630,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/scoring_helpers_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_scoring_helpers_tests_rs",
-      "community": 6,
+      "community": 5,
       "norm_label": "scoring_helpers_tests.rs"
     },
     {
@@ -630,7 +639,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/scoring_helpers_tests.rs",
       "source_location": "L5",
       "id": "scoring_helpers_tests_normalize_scores_orders_and_scales",
-      "community": 6,
+      "community": 5,
       "norm_label": "normalize_scores_orders_and_scales()"
     },
     {
@@ -639,7 +648,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/scoring_helpers_tests.rs",
       "source_location": "L16",
       "id": "scoring_helpers_tests_top_prs_returns_highest_first",
-      "community": 6,
+      "community": 5,
       "norm_label": "top_prs_returns_highest_first()"
     },
     {
@@ -648,7 +657,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/storage_duallayer_tests.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_storage_duallayer_tests_rs",
-      "community": 0,
+      "community": 1,
       "norm_label": "storage_duallayer_tests.rs"
     },
     {
@@ -657,7 +666,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/storage_duallayer_tests.rs",
       "source_location": "L6",
       "id": "storage_duallayer_tests_promotes_events_and_reads_aggregates",
-      "community": 0,
+      "community": 1,
       "norm_label": "promotes_events_and_reads_aggregates()"
     },
     {
@@ -711,7 +720,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/telemetry.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_telemetry_rs",
-      "community": 5,
+      "community": 4,
       "norm_label": "telemetry.rs"
     },
     {
@@ -720,7 +729,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/telemetry.rs",
       "source_location": "L6",
       "id": "telemetry_telemetrystore",
-      "community": 5,
+      "community": 4,
       "norm_label": "telemetrystore"
     },
     {
@@ -729,7 +738,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/telemetry.rs",
       "source_location": "L11",
       "id": "telemetry_telemetrystore_open",
-      "community": 5,
+      "community": 4,
       "norm_label": ".open()"
     },
     {
@@ -738,7 +747,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/telemetry.rs",
       "source_location": "L29",
       "id": "telemetry_telemetrystore_insert_record",
-      "community": 5,
+      "community": 4,
       "norm_label": ".insert_record()"
     },
     {
@@ -747,7 +756,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/telemetry.rs",
       "source_location": "L50",
       "id": "telemetry_telemetrystore_query",
-      "community": 5,
+      "community": 4,
       "norm_label": ".query()"
     },
     {
@@ -756,7 +765,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/policy.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_policy_rs",
-      "community": 1,
+      "community": 2,
       "norm_label": "policy.rs"
     },
     {
@@ -765,7 +774,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/policy.rs",
       "source_location": "L6",
       "id": "policy_policyprofiles",
-      "community": 1,
+      "community": 2,
       "norm_label": "policyprofiles"
     },
     {
@@ -774,7 +783,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/policy.rs",
       "source_location": "L11",
       "id": "policy_policyprofiles_insert",
-      "community": 1,
+      "community": 2,
       "norm_label": ".insert()"
     },
     {
@@ -783,7 +792,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/policy.rs",
       "source_location": "L15",
       "id": "policy_policyprofiles_resolve",
-      "community": 1,
+      "community": 2,
       "norm_label": ".resolve()"
     },
     {
@@ -792,7 +801,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_types_rs",
-      "community": 7,
+      "community": 6,
       "norm_label": "types.rs"
     },
     {
@@ -801,7 +810,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L4",
       "id": "types_repotarget",
-      "community": 7,
+      "community": 6,
       "norm_label": "repotarget"
     },
     {
@@ -810,7 +819,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L10",
       "id": "types_analysisinput",
-      "community": 7,
+      "community": 6,
       "norm_label": "analysisinput"
     },
     {
@@ -819,7 +828,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L16",
       "id": "types_analysismetric",
-      "community": 7,
+      "community": 6,
       "norm_label": "analysismetric"
     },
     {
@@ -828,7 +837,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L24",
       "id": "types_analysisrecord",
-      "community": 7,
+      "community": 6,
       "norm_label": "analysisrecord"
     },
     {
@@ -837,7 +846,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L31",
       "id": "types_adminquery",
-      "community": 7,
+      "community": 6,
       "norm_label": "adminquery"
     },
     {
@@ -846,7 +855,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L37",
       "id": "types_principal",
-      "community": 7,
+      "community": 6,
       "norm_label": "principal"
     },
     {
@@ -855,7 +864,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L43",
       "id": "types_telemetrypoint",
-      "community": 7,
+      "community": 6,
       "norm_label": "telemetrypoint"
     },
     {
@@ -864,7 +873,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L51",
       "id": "types_commitingestionevent",
-      "community": 7,
+      "community": 6,
       "norm_label": "commitingestionevent"
     },
     {
@@ -873,7 +882,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L60",
       "id": "types_committerscore",
-      "community": 7,
+      "community": 6,
       "norm_label": "committerscore"
     },
     {
@@ -882,7 +891,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L70",
       "id": "types_prcandidate",
-      "community": 7,
+      "community": 6,
       "norm_label": "prcandidate"
     },
     {
@@ -891,7 +900,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L81",
       "id": "types_prranking",
-      "community": 7,
+      "community": 6,
       "norm_label": "prranking"
     },
     {
@@ -900,7 +909,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L90",
       "id": "types_scoringweights",
-      "community": 7,
+      "community": 6,
       "norm_label": "scoringweights"
     },
     {
@@ -909,7 +918,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/types.rs",
       "source_location": "L102",
       "id": "types_scoringweights_default",
-      "community": 7,
+      "community": 6,
       "norm_label": ".default()"
     },
     {
@@ -918,7 +927,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/ast_cache.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_ast_cache_rs",
-      "community": 1,
+      "community": 2,
       "norm_label": "ast_cache.rs"
     },
     {
@@ -927,7 +936,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/ast_cache.rs",
       "source_location": "L6",
       "id": "ast_cache_astcache",
-      "community": 1,
+      "community": 2,
       "norm_label": "astcache"
     },
     {
@@ -936,7 +945,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/ast_cache.rs",
       "source_location": "L12",
       "id": "ast_cache_astcache_fingerprint",
-      "community": 1,
+      "community": 2,
       "norm_label": ".fingerprint()"
     },
     {
@@ -945,7 +954,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/ast_cache.rs",
       "source_location": "L21",
       "id": "ast_cache_astcache_hits",
-      "community": 1,
+      "community": 2,
       "norm_label": ".hits()"
     },
     {
@@ -954,7 +963,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/ast_cache.rs",
       "source_location": "L26",
       "id": "ast_cache_hash_value",
-      "community": 1,
+      "community": 2,
       "norm_label": "hash_value()"
     },
     {
@@ -963,115 +972,115 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
-      "community": 6,
+      "community": 5,
       "norm_label": "scoring.rs"
     },
     {
       "label": "SignedScoringWeights",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L14",
+      "source_location": "L13",
       "id": "scoring_signedscoringweights",
-      "community": 6,
+      "community": 5,
       "norm_label": "signedscoringweights"
     },
     {
       "label": "ScoringAuditEntry",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L20",
+      "source_location": "L19",
       "id": "scoring_scoringauditentry",
-      "community": 6,
+      "community": 5,
       "norm_label": "scoringauditentry"
     },
     {
       "label": "sign_weights()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L27",
+      "source_location": "L26",
       "id": "scoring_sign_weights",
-      "community": 6,
+      "community": 5,
       "norm_label": "sign_weights()"
     },
     {
       "label": "verify_signed_weights()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L34",
+      "source_location": "L33",
       "id": "scoring_verify_signed_weights",
-      "community": 6,
+      "community": 5,
       "norm_label": "verify_signed_weights()"
     },
     {
       "label": "scoring_signature()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L45",
+      "source_location": "L44",
       "id": "scoring_scoring_signature",
-      "community": 6,
+      "community": 5,
       "norm_label": "scoring_signature()"
     },
     {
       "label": "load_or_init_weights()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L52",
+      "source_location": "L50",
       "id": "scoring_load_or_init_weights",
-      "community": 6,
+      "community": 5,
       "norm_label": "load_or_init_weights()"
     },
     {
       "label": "persist_weights()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L64",
+      "source_location": "L62",
       "id": "scoring_persist_weights",
-      "community": 6,
+      "community": 5,
       "norm_label": "persist_weights()"
     },
     {
       "label": "append_audit_log()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L70",
+      "source_location": "L68",
       "id": "scoring_append_audit_log",
-      "community": 6,
+      "community": 5,
       "norm_label": "append_audit_log()"
     },
     {
       "label": "update_weights_with_audit()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L78",
+      "source_location": "L76",
       "id": "scoring_update_weights_with_audit",
-      "community": 6,
+      "community": 5,
       "norm_label": "update_weights_with_audit()"
     },
     {
       "label": "normalize_scores()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L97",
+      "source_location": "L95",
       "id": "scoring_normalize_scores",
-      "community": 6,
+      "community": 5,
       "norm_label": "normalize_scores()"
     },
     {
       "label": "top_prs()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L113",
+      "source_location": "L111",
       "id": "scoring_top_prs",
-      "community": 6,
+      "community": 5,
       "norm_label": "top_prs()"
     },
     {
       "label": "now_ts()",
       "file_type": "code",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L118",
+      "source_location": "L116",
       "id": "scoring_now_ts",
-      "community": 6,
+      "community": 5,
       "norm_label": "now_ts()"
     },
     {
@@ -1080,7 +1089,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/lib.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_lib_rs",
-      "community": 15,
+      "community": 16,
       "norm_label": "lib.rs"
     },
     {
@@ -1089,7 +1098,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/auth.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_auth_rs",
-      "community": 0,
+      "community": 1,
       "norm_label": "auth.rs"
     },
     {
@@ -1098,7 +1107,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/auth.rs",
       "source_location": "L4",
       "id": "auth_decode_principal",
-      "community": 0,
+      "community": 1,
       "norm_label": "decode_principal()"
     },
     {
@@ -1107,7 +1116,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/auth.rs",
       "source_location": "L21",
       "id": "auth_require_admin",
-      "community": 0,
+      "community": 1,
       "norm_label": "require_admin()"
     },
     {
@@ -1116,7 +1125,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/import.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_import_rs",
-      "community": 1,
+      "community": 2,
       "norm_label": "import.rs"
     },
     {
@@ -1125,7 +1134,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/import.rs",
       "source_location": "L5",
       "id": "import_bulkimportplan",
-      "community": 1,
+      "community": 2,
       "norm_label": "bulkimportplan"
     },
     {
@@ -1134,7 +1143,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/import.rs",
       "source_location": "L11",
       "id": "import_bulkimportplan_from_events",
-      "community": 1,
+      "community": 2,
       "norm_label": ".from_events()"
     },
     {
@@ -1143,7 +1152,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/badger_sidecar.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_badger_sidecar_rs",
-      "community": 1,
+      "community": 2,
       "norm_label": "badger_sidecar.rs"
     },
     {
@@ -1152,7 +1161,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/badger_sidecar.rs",
       "source_location": "L6",
       "id": "badger_sidecar_badgersidecarrequest",
-      "community": 1,
+      "community": 2,
       "norm_label": "badgersidecarrequest"
     },
     {
@@ -1161,7 +1170,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/badger_sidecar.rs",
       "source_location": "L12",
       "id": "badger_sidecar_badgersidecarrequest_from_event",
-      "community": 1,
+      "community": 2,
       "norm_label": ".from_event()"
     },
     {
@@ -1170,7 +1179,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/badger_sidecar.rs",
       "source_location": "L27",
       "id": "badger_sidecar_stable_shard",
-      "community": 1,
+      "community": 2,
       "norm_label": "stable_shard()"
     },
     {
@@ -1179,7 +1188,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/git.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_git_rs",
-      "community": 2,
+      "community": 0,
       "norm_label": "git.rs"
     },
     {
@@ -1188,7 +1197,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/git.rs",
       "source_location": "L7",
       "id": "git_discover_repositories",
-      "community": 2,
+      "community": 0,
       "norm_label": "discover_repositories()"
     },
     {
@@ -1197,7 +1206,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/git.rs",
       "source_location": "L26",
       "id": "git_git_stdout",
-      "community": 2,
+      "community": 0,
       "norm_label": "git_stdout()"
     },
     {
@@ -1206,7 +1215,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/git.rs",
       "source_location": "L42",
       "id": "git_changed_files_since_tag",
-      "community": 2,
+      "community": 0,
       "norm_label": "changed_files_since_tag()"
     },
     {
@@ -1215,7 +1224,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/snapshots.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_snapshots_rs",
-      "community": 1,
+      "community": 2,
       "norm_label": "snapshots.rs"
     },
     {
@@ -1224,7 +1233,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/snapshots.rs",
       "source_location": "L5",
       "id": "snapshots_analyticssnapshotmanager",
-      "community": 1,
+      "community": 2,
       "norm_label": "analyticssnapshotmanager"
     },
     {
@@ -1233,7 +1242,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/snapshots.rs",
       "source_location": "L10",
       "id": "snapshots_analyticssnapshotmanager_new",
-      "community": 1,
+      "community": 2,
       "norm_label": ".new()"
     },
     {
@@ -1242,7 +1251,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/snapshots.rs",
       "source_location": "L16",
       "id": "snapshots_analyticssnapshotmanager_materialize",
-      "community": 1,
+      "community": 2,
       "norm_label": ".materialize()"
     },
     {
@@ -1251,7 +1260,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/errors.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_errors_rs",
-      "community": 12,
+      "community": 13,
       "norm_label": "errors.rs"
     },
     {
@@ -1260,7 +1269,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/errors.rs",
       "source_location": "L4",
       "id": "errors_analyzererror",
-      "community": 12,
+      "community": 13,
       "norm_label": "analyzererror"
     },
     {
@@ -1269,7 +1278,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/errors.rs",
       "source_location": "L18",
       "id": "errors_analyzererror_from",
-      "community": 12,
+      "community": 13,
       "norm_label": ".from()"
     },
     {
@@ -1278,7 +1287,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_main_rs",
-      "community": 4,
+      "community": 8,
       "norm_label": "main.rs"
     },
     {
@@ -1287,7 +1296,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L10",
       "id": "main_appstate",
-      "community": 4,
+      "community": 8,
       "norm_label": "appstate"
     },
     {
@@ -1296,7 +1305,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L20",
       "id": "main_scanpayload",
-      "community": 4,
+      "community": 8,
       "norm_label": "scanpayload"
     },
     {
@@ -1305,7 +1314,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L26",
       "id": "main_run_scan",
-      "community": 4,
+      "community": 0,
       "norm_label": "run_scan()"
     },
     {
@@ -1314,7 +1323,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L32",
       "id": "main_query_metrics",
-      "community": 4,
+      "community": 8,
       "norm_label": "query_metrics()"
     },
     {
@@ -1323,7 +1332,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L43",
       "id": "main_ingest_event",
-      "community": 4,
+      "community": 8,
       "norm_label": "ingest_event()"
     },
     {
@@ -1332,7 +1341,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L59",
       "id": "main_promote_lifecycle",
-      "community": 4,
+      "community": 8,
       "norm_label": "promote_lifecycle()"
     },
     {
@@ -1341,7 +1350,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L68",
       "id": "main_query_aggregates",
-      "community": 4,
+      "community": 8,
       "norm_label": "query_aggregates()"
     },
     {
@@ -1350,7 +1359,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L81",
       "id": "main_committer_scores",
-      "community": 4,
+      "community": 8,
       "norm_label": "committer_scores()"
     },
     {
@@ -1359,7 +1368,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L95",
       "id": "main_rank_prs",
-      "community": 4,
+      "community": 8,
       "norm_label": "rank_prs()"
     },
     {
@@ -1368,7 +1377,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L107",
       "id": "main_update_scoring_weights",
-      "community": 4,
+      "community": 8,
       "norm_label": "update_scoring_weights()"
     },
     {
@@ -1377,7 +1386,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/main.rs",
       "source_location": "L118",
       "id": "main_main",
-      "community": 4,
+      "community": 0,
       "norm_label": "main()"
     },
     {
@@ -1413,7 +1422,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L29",
       "id": "storage_storageroute",
-      "community": 3,
+      "community": 10,
       "norm_label": "storageroute"
     },
     {
@@ -1440,7 +1449,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L47",
       "id": "storage_analyticssnapshot",
-      "community": 2,
+      "community": 3,
       "norm_label": "analyticssnapshot"
     },
     {
@@ -1449,7 +1458,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L54",
       "id": "storage_analyticssnapshot_new",
-      "community": 0,
+      "community": 1,
       "norm_label": ".new()"
     },
     {
@@ -1458,7 +1467,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L62",
       "id": "storage_analyticssnapshot_enforce_mode",
-      "community": 2,
+      "community": 3,
       "norm_label": ".enforce_mode()"
     },
     {
@@ -1467,7 +1476,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L73",
       "id": "storage_storageroute_enforce",
-      "community": 3,
+      "community": 10,
       "norm_label": ".enforce()"
     },
     {
@@ -1548,7 +1557,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L165",
       "id": "storage_duallayerstore",
-      "community": 0,
+      "community": 1,
       "norm_label": "duallayerstore"
     },
     {
@@ -1575,7 +1584,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L180",
       "id": "storage_asyncingestionengine_start",
-      "community": 0,
+      "community": 1,
       "norm_label": ".start()"
     },
     {
@@ -1593,7 +1602,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L203",
       "id": "storage_duallayerstore_open",
-      "community": 0,
+      "community": 1,
       "norm_label": ".open()"
     },
     {
@@ -1602,7 +1611,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L213",
       "id": "storage_duallayerstore_init_columnar",
-      "community": 0,
+      "community": 1,
       "norm_label": ".init_columnar()"
     },
     {
@@ -1611,7 +1620,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L248",
       "id": "storage_duallayerstore_ingest_commit_event",
-      "community": 0,
+      "community": 1,
       "norm_label": ".ingest_commit_event()"
     },
     {
@@ -1620,7 +1629,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L267",
       "id": "storage_duallayerstore_ingest_commit_event_with_backend",
-      "community": 0,
+      "community": 1,
       "norm_label": ".ingest_commit_event_with_backend()"
     },
     {
@@ -1629,7 +1638,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L308",
       "id": "storage_duallayerstore_promote_to_columnar",
-      "community": 0,
+      "community": 1,
       "norm_label": ".promote_to_columnar()"
     },
     {
@@ -1638,7 +1647,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L375",
       "id": "storage_duallayerstore_aggregate_by_query",
-      "community": 0,
+      "community": 1,
       "norm_label": ".aggregate_by_query()"
     },
     {
@@ -1647,7 +1656,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L404",
       "id": "storage_duallayerstore_compute_committer_scores",
-      "community": 0,
+      "community": 1,
       "norm_label": ".compute_committer_scores()"
     },
     {
@@ -1656,7 +1665,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L470",
       "id": "storage_duallayerstore_rank_open_prs",
-      "community": 0,
+      "community": 1,
       "norm_label": ".rank_open_prs()"
     },
     {
@@ -1665,7 +1674,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L500",
       "id": "storage_now_ts",
-      "community": 0,
+      "community": 1,
       "norm_label": "now_ts()"
     },
     {
@@ -1674,7 +1683,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/retention.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_retention_rs",
-      "community": 11,
+      "community": 12,
       "norm_label": "retention.rs"
     },
     {
@@ -1683,7 +1692,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/retention.rs",
       "source_location": "L2",
       "id": "retention_rawretentiondecision",
-      "community": 11,
+      "community": 12,
       "norm_label": "rawretentiondecision"
     },
     {
@@ -1692,7 +1701,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/retention.rs",
       "source_location": "L7",
       "id": "retention_rawretentiondecision_new",
-      "community": 11,
+      "community": 12,
       "norm_label": ".new()"
     },
     {
@@ -1701,7 +1710,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/retention.rs",
       "source_location": "L11",
       "id": "retention_rawretentiondecision_should_prune",
-      "community": 11,
+      "community": 12,
       "norm_label": ".should_prune()"
     },
     {
@@ -1710,7 +1719,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_onprem_rs",
-      "community": 8,
+      "community": 7,
       "norm_label": "onprem.rs"
     },
     {
@@ -1719,7 +1728,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L4",
       "id": "onprem_internalgitprovider",
-      "community": 8,
+      "community": 7,
       "norm_label": "internalgitprovider"
     },
     {
@@ -1728,7 +1737,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L8",
       "id": "onprem_directoryprovider",
-      "community": 8,
+      "community": 7,
       "norm_label": "directoryprovider"
     },
     {
@@ -1737,7 +1746,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L12",
       "id": "onprem_localgitprovider",
-      "community": 8,
+      "community": 7,
       "norm_label": "localgitprovider"
     },
     {
@@ -1746,7 +1755,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L14",
       "id": "onprem_localgitprovider_repo_url",
-      "community": 8,
+      "community": 7,
       "norm_label": ".repo_url()"
     },
     {
@@ -1755,7 +1764,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L19",
       "id": "onprem_activedirectoryprovider",
-      "community": 8,
+      "community": 7,
       "norm_label": "activedirectoryprovider"
     },
     {
@@ -1764,7 +1773,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L21",
       "id": "onprem_activedirectoryprovider_is_in_group",
-      "community": 8,
+      "community": 7,
       "norm_label": ".is_in_group()"
     },
     {
@@ -1773,7 +1782,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L27",
       "id": "onprem_gitproviderkind",
-      "community": 8,
+      "community": 7,
       "norm_label": "gitproviderkind"
     },
     {
@@ -1782,7 +1791,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L34",
       "id": "onprem_providerendpoint",
-      "community": 8,
+      "community": 7,
       "norm_label": "providerendpoint"
     },
     {
@@ -1791,7 +1800,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L40",
       "id": "onprem_providerendpoint_new",
-      "community": 2,
+      "community": 0,
       "norm_label": ".new()"
     },
     {
@@ -1800,7 +1809,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L59",
       "id": "onprem_directorygroupcache",
-      "community": 1,
+      "community": 2,
       "norm_label": "directorygroupcache"
     },
     {
@@ -1809,7 +1818,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L64",
       "id": "onprem_directorygroupcache_insert",
-      "community": 1,
+      "community": 2,
       "norm_label": ".insert()"
     },
     {
@@ -1818,7 +1827,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/onprem.rs",
       "source_location": "L68",
       "id": "onprem_directorygroupcache_roles_for",
-      "community": 1,
+      "community": 2,
       "norm_label": ".roles_for()"
     },
     {
@@ -1827,7 +1836,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_admin_rs",
-      "community": 0,
+      "community": 1,
       "norm_label": "admin.rs"
     },
     {
@@ -1836,7 +1845,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L14",
       "id": "admin_run_scan",
-      "community": 4,
+      "community": 0,
       "norm_label": "run_scan()"
     },
     {
@@ -1845,7 +1854,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L27",
       "id": "admin_query_metrics",
-      "community": 0,
+      "community": 1,
       "norm_label": "query_metrics()"
     },
     {
@@ -1854,7 +1863,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L39",
       "id": "admin_ingest_event",
-      "community": 0,
+      "community": 1,
       "norm_label": "ingest_event()"
     },
     {
@@ -1863,7 +1872,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L53",
       "id": "admin_promote_lifecycle",
-      "community": 0,
+      "community": 1,
       "norm_label": "promote_lifecycle()"
     },
     {
@@ -1872,7 +1881,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L64",
       "id": "admin_query_aggregates",
-      "community": 0,
+      "community": 1,
       "norm_label": "query_aggregates()"
     },
     {
@@ -1881,7 +1890,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L76",
       "id": "admin_committer_scores",
-      "community": 0,
+      "community": 1,
       "norm_label": "committer_scores()"
     },
     {
@@ -1890,7 +1899,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L90",
       "id": "admin_rank_prs",
-      "community": 0,
+      "community": 1,
       "norm_label": "rank_prs()"
     },
     {
@@ -1899,7 +1908,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L104",
       "id": "admin_update_scoring_weights",
-      "community": 0,
+      "community": 1,
       "norm_label": "update_scoring_weights()"
     },
     {
@@ -1908,7 +1917,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/engine.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_engine_rs",
-      "community": 4,
+      "community": 0,
       "norm_label": "engine.rs"
     },
     {
@@ -1917,7 +1926,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/engine.rs",
       "source_location": "L12",
       "id": "engine_pipeline",
-      "community": 4,
+      "community": 0,
       "norm_label": "pipeline"
     },
     {
@@ -1926,7 +1935,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/engine.rs",
       "source_location": "L18",
       "id": "engine_pipeline_default",
-      "community": 4,
+      "community": 0,
       "norm_label": ".default()"
     },
     {
@@ -1935,7 +1944,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/engine.rs",
       "source_location": "L30",
       "id": "engine_pipeline_register",
-      "community": 4,
+      "community": 0,
       "norm_label": ".register()"
     },
     {
@@ -1944,7 +1953,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/engine.rs",
       "source_location": "L34",
       "id": "engine_pipeline_analyze_repo",
-      "community": 4,
+      "community": 0,
       "norm_label": ".analyze_repo()"
     },
     {
@@ -1953,7 +1962,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/complexity.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_plugins_complexity_rs",
-      "community": 2,
+      "community": 0,
       "norm_label": "complexity.rs"
     },
     {
@@ -1962,7 +1971,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/complexity.rs",
       "source_location": "L7",
       "id": "complexity_complexityplugin",
-      "community": 2,
+      "community": 0,
       "norm_label": "complexityplugin"
     },
     {
@@ -1971,7 +1980,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/complexity.rs",
       "source_location": "L10",
       "id": "complexity_complexityplugin_name",
-      "community": 2,
+      "community": 0,
       "norm_label": ".name()"
     },
     {
@@ -1980,7 +1989,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/complexity.rs",
       "source_location": "L14",
       "id": "complexity_complexityplugin_run",
-      "community": 2,
+      "community": 0,
       "norm_label": ".run()"
     },
     {
@@ -1989,7 +1998,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_plugins_sanitizer_rs",
-      "community": 5,
+      "community": 4,
       "norm_label": "sanitizer.rs"
     },
     {
@@ -1998,7 +2007,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L7",
       "id": "sanitizer_redact_with_patterns",
-      "community": 5,
+      "community": 4,
       "norm_label": "redact_with_patterns()"
     },
     {
@@ -2007,7 +2016,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L32",
       "id": "sanitizer_redact_key_value",
-      "community": 5,
+      "community": 4,
       "norm_label": "redact_key_value()"
     },
     {
@@ -2016,7 +2025,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L92",
       "id": "sanitizer_redact_emails",
-      "community": 5,
+      "community": 4,
       "norm_label": "redact_emails()"
     },
     {
@@ -2025,7 +2034,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L105",
       "id": "sanitizer_redact_phone_like",
-      "community": 5,
+      "community": 4,
       "norm_label": "redact_phone_like()"
     },
     {
@@ -2034,7 +2043,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L119",
       "id": "sanitizer_scrub_text",
-      "community": 5,
+      "community": 4,
       "norm_label": "scrub_text()"
     },
     {
@@ -2043,7 +2052,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L123",
       "id": "sanitizer_scrub_metric",
-      "community": 5,
+      "community": 4,
       "norm_label": "scrub_metric()"
     },
     {
@@ -2052,7 +2061,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L129",
       "id": "sanitizer_scrub_record_strings",
-      "community": 5,
+      "community": 4,
       "norm_label": "scrub_record_strings()"
     },
     {
@@ -2061,7 +2070,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L133",
       "id": "sanitizer_mandatorysanitizerplugin",
-      "community": 5,
+      "community": 4,
       "norm_label": "mandatorysanitizerplugin"
     },
     {
@@ -2070,7 +2079,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L136",
       "id": "sanitizer_mandatorysanitizerplugin_name",
-      "community": 5,
+      "community": 4,
       "norm_label": ".name()"
     },
     {
@@ -2079,7 +2088,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L140",
       "id": "sanitizer_mandatorysanitizerplugin_run",
-      "community": 5,
+      "community": 4,
       "norm_label": ".run()"
     },
     {
@@ -2088,7 +2097,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L162",
       "id": "sanitizer_redacts_token_and_email",
-      "community": 5,
+      "community": 4,
       "norm_label": "redacts_token_and_email()"
     },
     {
@@ -2097,7 +2106,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/velocity.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_plugins_velocity_rs",
-      "community": 2,
+      "community": 0,
       "norm_label": "velocity.rs"
     },
     {
@@ -2106,7 +2115,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/velocity.rs",
       "source_location": "L6",
       "id": "velocity_contributionvelocityplugin",
-      "community": 2,
+      "community": 0,
       "norm_label": "contributionvelocityplugin"
     },
     {
@@ -2115,7 +2124,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/velocity.rs",
       "source_location": "L9",
       "id": "velocity_contributionvelocityplugin_name",
-      "community": 2,
+      "community": 0,
       "norm_label": ".name()"
     },
     {
@@ -2124,7 +2133,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/velocity.rs",
       "source_location": "L13",
       "id": "velocity_contributionvelocityplugin_run",
-      "community": 2,
+      "community": 0,
       "norm_label": ".run()"
     },
     {
@@ -2133,7 +2142,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/mod.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_plugins_mod_rs",
-      "community": 14,
+      "community": 15,
       "norm_label": "mod.rs"
     },
     {
@@ -2142,7 +2151,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/mod.rs",
       "source_location": "L11",
       "id": "mod_beadplugin",
-      "community": 14,
+      "community": 15,
       "norm_label": "beadplugin"
     },
     {
@@ -2151,7 +2160,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/pr_approval.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_plugins_pr_approval_rs",
-      "community": 2,
+      "community": 0,
       "norm_label": "pr_approval.rs"
     },
     {
@@ -2160,7 +2169,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/pr_approval.rs",
       "source_location": "L6",
       "id": "pr_approval_prapprovalplugin",
-      "community": 2,
+      "community": 0,
       "norm_label": "prapprovalplugin"
     },
     {
@@ -2169,7 +2178,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/pr_approval.rs",
       "source_location": "L9",
       "id": "pr_approval_prapprovalplugin_name",
-      "community": 2,
+      "community": 0,
       "norm_label": ".name()"
     },
     {
@@ -2178,7 +2187,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/pr_approval.rs",
       "source_location": "L13",
       "id": "pr_approval_prapprovalplugin_run",
-      "community": 2,
+      "community": 0,
       "norm_label": ".run()"
     },
     {
@@ -2187,7 +2196,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/code_quality.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_plugins_code_quality_rs",
-      "community": 2,
+      "community": 0,
       "norm_label": "code_quality.rs"
     },
     {
@@ -2196,7 +2205,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/code_quality.rs",
       "source_location": "L6",
       "id": "code_quality_codequalityplugin",
-      "community": 2,
+      "community": 0,
       "norm_label": "codequalityplugin"
     },
     {
@@ -2205,7 +2214,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/code_quality.rs",
       "source_location": "L9",
       "id": "code_quality_codequalityplugin_name",
-      "community": 2,
+      "community": 0,
       "norm_label": ".name()"
     },
     {
@@ -2214,7 +2223,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/code_quality.rs",
       "source_location": "L13",
       "id": "code_quality_codequalityplugin_run",
-      "community": 2,
+      "community": 0,
       "norm_label": ".run()"
     },
     {
@@ -2223,7 +2232,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/ast_metrics.rs",
       "source_location": "L1",
       "id": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_plugins_ast_metrics_rs",
-      "community": 4,
+      "community": 0,
       "norm_label": "ast_metrics.rs"
     },
     {
@@ -2232,7 +2241,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/ast_metrics.rs",
       "source_location": "L5",
       "id": "ast_metrics_astmetricsplugin",
-      "community": 4,
+      "community": 0,
       "norm_label": "astmetricsplugin"
     },
     {
@@ -2241,7 +2250,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/ast_metrics.rs",
       "source_location": "L8",
       "id": "ast_metrics_astmetricsplugin_name",
-      "community": 4,
+      "community": 0,
       "norm_label": ".name()"
     },
     {
@@ -2250,7 +2259,7 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/ast_metrics.rs",
       "source_location": "L12",
       "id": "ast_metrics_astmetricsplugin_run",
-      "community": 4,
+      "community": 0,
       "norm_label": ".run()"
     }
   ],
@@ -2958,6 +2967,18 @@
       "source_location": "L91",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
+      "_tgt": "roadmap_completion_tests_governance_scoring_signature_uses_sha256_hex_digest",
+      "source": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
+      "target": "roadmap_completion_tests_governance_scoring_signature_uses_sha256_hex_digest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
+      "source_location": "L101",
+      "weight": 1.0,
+      "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
       "_tgt": "roadmap_completion_tests_team_policy_resolves_explicit_scoring_profile",
       "source": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
       "target": "roadmap_completion_tests_team_policy_resolves_explicit_scoring_profile",
@@ -2967,7 +2988,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L105",
+      "source_location": "L115",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
       "_tgt": "roadmap_completion_tests_ast_cache_reuses_unchanged_file_fingerprint",
@@ -2979,7 +3000,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L118",
+      "source_location": "L128",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
       "_tgt": "roadmap_completion_tests_ast_bead_emits_deterministic_language_metric",
@@ -2991,7 +3012,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L135",
+      "source_location": "L145",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
       "_tgt": "roadmap_completion_tests_operator_sees_queue_depth_and_promotion_lag",
@@ -3003,7 +3024,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L147",
+      "source_location": "L157",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
       "_tgt": "roadmap_completion_tests_enterprise_git_provider_accepts_only_onprem_schemes",
@@ -3015,7 +3036,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L157",
+      "source_location": "L167",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
       "_tgt": "roadmap_completion_tests_ldap_group_cache_maps_admin_role_deterministically",
@@ -3027,7 +3048,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L169",
+      "source_location": "L179",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
       "_tgt": "roadmap_completion_tests_migration_bulk_import_deduplicates_commit_ids",
@@ -3039,7 +3060,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
-      "source_location": "L179",
+      "source_location": "L189",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_tests_roadmap_completion_tests_rs",
       "_tgt": "roadmap_completion_tests_admin_ui_exposes_all_maturity_commands",
@@ -3178,6 +3199,30 @@
       "_tgt": "scoring_verify_signed_weights",
       "source": "roadmap_completion_tests_governance_rejects_tampered_scoring_weights",
       "target": "scoring_verify_signed_weights"
+    },
+    {
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
+      "source_location": "L94",
+      "weight": 1.0,
+      "_src": "roadmap_completion_tests_governance_scoring_signature_uses_sha256_hex_digest",
+      "_tgt": "scoring_sign_weights",
+      "source": "roadmap_completion_tests_governance_scoring_signature_uses_sha256_hex_digest",
+      "target": "scoring_sign_weights"
+    },
+    {
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/tests/roadmap_completion_tests.rs",
+      "source_location": "L94",
+      "weight": 1.0,
+      "_src": "roadmap_completion_tests_governance_scoring_signature_uses_sha256_hex_digest",
+      "_tgt": "engine_pipeline_default",
+      "source": "roadmap_completion_tests_governance_scoring_signature_uses_sha256_hex_digest",
+      "target": "engine_pipeline_default"
     },
     {
       "relation": "calls",
@@ -4038,8 +4083,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L21",
       "weight": 1.0,
-      "_src": "admin_run_scan",
-      "_tgt": "telemetry_telemetrystore_insert_record",
+      "_src": "telemetry_telemetrystore_insert_record",
+      "_tgt": "admin_run_scan",
       "source": "telemetry_telemetrystore_insert_record",
       "target": "admin_run_scan"
     },
@@ -4086,8 +4131,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L391",
       "weight": 1.0,
-      "_src": "storage_duallayerstore_aggregate_by_query",
-      "_tgt": "telemetry_telemetrystore_query",
+      "_src": "telemetry_telemetrystore_query",
+      "_tgt": "storage_duallayerstore_aggregate_by_query",
       "source": "telemetry_telemetrystore_query",
       "target": "storage_duallayerstore_aggregate_by_query"
     },
@@ -4098,8 +4143,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/storage.rs",
       "source_location": "L431",
       "weight": 1.0,
-      "_src": "storage_duallayerstore_compute_committer_scores",
-      "_tgt": "telemetry_telemetrystore_query",
+      "_src": "telemetry_telemetrystore_query",
+      "_tgt": "storage_duallayerstore_compute_committer_scores",
       "source": "telemetry_telemetrystore_query",
       "target": "storage_duallayerstore_compute_committer_scores"
     },
@@ -4110,8 +4155,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L36",
       "weight": 1.0,
-      "_src": "admin_query_metrics",
-      "_tgt": "telemetry_telemetrystore_query",
+      "_src": "telemetry_telemetrystore_query",
+      "_tgt": "admin_query_metrics",
       "source": "telemetry_telemetrystore_query",
       "target": "admin_query_metrics"
     },
@@ -4407,7 +4452,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L14",
+      "source_location": "L13",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_signedscoringweights",
@@ -4419,7 +4464,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L20",
+      "source_location": "L19",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_scoringauditentry",
@@ -4431,7 +4476,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L27",
+      "source_location": "L26",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_sign_weights",
@@ -4443,7 +4488,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L34",
+      "source_location": "L33",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_verify_signed_weights",
@@ -4455,7 +4500,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L45",
+      "source_location": "L44",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_scoring_signature",
@@ -4467,7 +4512,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L52",
+      "source_location": "L50",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_load_or_init_weights",
@@ -4479,7 +4524,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L64",
+      "source_location": "L62",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_persist_weights",
@@ -4491,7 +4536,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L70",
+      "source_location": "L68",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_append_audit_log",
@@ -4503,7 +4548,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L78",
+      "source_location": "L76",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_update_weights_with_audit",
@@ -4515,7 +4560,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L97",
+      "source_location": "L95",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_normalize_scores",
@@ -4527,7 +4572,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L113",
+      "source_location": "L111",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_top_prs",
@@ -4539,7 +4584,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L118",
+      "source_location": "L116",
       "weight": 1.0,
       "_src": "users_neo_projects_git_scm_rocinante_worktrees_roadmap_completion_src_tauri_src_scoring_rs",
       "_tgt": "scoring_now_ts",
@@ -4551,7 +4596,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L30",
+      "source_location": "L29",
       "weight": 1.0,
       "_src": "scoring_sign_weights",
       "_tgt": "scoring_scoring_signature",
@@ -4563,7 +4608,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L35",
+      "source_location": "L34",
       "weight": 1.0,
       "_src": "scoring_verify_signed_weights",
       "_tgt": "scoring_scoring_signature",
@@ -4587,7 +4632,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L55",
+      "source_location": "L53",
       "weight": 1.0,
       "_src": "scoring_load_or_init_weights",
       "_tgt": "scoring_persist_weights",
@@ -4599,7 +4644,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L84",
+      "source_location": "L82",
       "weight": 1.0,
       "_src": "scoring_update_weights_with_audit",
       "_tgt": "scoring_load_or_init_weights",
@@ -4638,8 +4683,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L86",
       "weight": 1.0,
-      "_src": "admin_committer_scores",
-      "_tgt": "scoring_load_or_init_weights",
+      "_src": "scoring_load_or_init_weights",
+      "_tgt": "admin_committer_scores",
       "source": "scoring_load_or_init_weights",
       "target": "admin_committer_scores"
     },
@@ -4650,8 +4695,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L100",
       "weight": 1.0,
-      "_src": "admin_rank_prs",
-      "_tgt": "scoring_load_or_init_weights",
+      "_src": "scoring_load_or_init_weights",
+      "_tgt": "admin_rank_prs",
       "source": "scoring_load_or_init_weights",
       "target": "admin_rank_prs"
     },
@@ -4659,7 +4704,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L85",
+      "source_location": "L83",
       "weight": 1.0,
       "_src": "scoring_update_weights_with_audit",
       "_tgt": "scoring_persist_weights",
@@ -4671,7 +4716,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L86",
+      "source_location": "L84",
       "weight": 1.0,
       "_src": "scoring_update_weights_with_audit",
       "_tgt": "scoring_append_audit_log",
@@ -4707,7 +4752,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/scoring.rs",
-      "source_location": "L89",
+      "source_location": "L87",
       "weight": 1.0,
       "_src": "scoring_update_weights_with_audit",
       "_tgt": "scoring_now_ts",
@@ -4722,8 +4767,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L112",
       "weight": 1.0,
-      "_src": "admin_update_scoring_weights",
-      "_tgt": "scoring_update_weights_with_audit",
+      "_src": "scoring_update_weights_with_audit",
+      "_tgt": "admin_update_scoring_weights",
       "source": "scoring_update_weights_with_audit",
       "target": "admin_update_scoring_weights"
     },
@@ -4758,8 +4803,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L32",
       "weight": 1.0,
-      "_src": "admin_query_metrics",
-      "_tgt": "auth_decode_principal",
+      "_src": "auth_decode_principal",
+      "_tgt": "admin_query_metrics",
       "source": "auth_decode_principal",
       "target": "admin_query_metrics"
     },
@@ -4770,8 +4815,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L46",
       "weight": 1.0,
-      "_src": "admin_ingest_event",
-      "_tgt": "auth_decode_principal",
+      "_src": "auth_decode_principal",
+      "_tgt": "admin_ingest_event",
       "source": "auth_decode_principal",
       "target": "admin_ingest_event"
     },
@@ -4782,8 +4827,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L58",
       "weight": 1.0,
-      "_src": "admin_promote_lifecycle",
-      "_tgt": "auth_decode_principal",
+      "_src": "auth_decode_principal",
+      "_tgt": "admin_promote_lifecycle",
       "source": "auth_decode_principal",
       "target": "admin_promote_lifecycle"
     },
@@ -4794,8 +4839,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L70",
       "weight": 1.0,
-      "_src": "admin_query_aggregates",
-      "_tgt": "auth_decode_principal",
+      "_src": "auth_decode_principal",
+      "_tgt": "admin_query_aggregates",
       "source": "auth_decode_principal",
       "target": "admin_query_aggregates"
     },
@@ -4806,8 +4851,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L83",
       "weight": 1.0,
-      "_src": "admin_committer_scores",
-      "_tgt": "auth_decode_principal",
+      "_src": "auth_decode_principal",
+      "_tgt": "admin_committer_scores",
       "source": "auth_decode_principal",
       "target": "admin_committer_scores"
     },
@@ -4818,8 +4863,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L97",
       "weight": 1.0,
-      "_src": "admin_rank_prs",
-      "_tgt": "auth_decode_principal",
+      "_src": "auth_decode_principal",
+      "_tgt": "admin_rank_prs",
       "source": "auth_decode_principal",
       "target": "admin_rank_prs"
     },
@@ -4830,8 +4875,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L110",
       "weight": 1.0,
-      "_src": "admin_update_scoring_weights",
-      "_tgt": "auth_decode_principal",
+      "_src": "auth_decode_principal",
+      "_tgt": "admin_update_scoring_weights",
       "source": "auth_decode_principal",
       "target": "admin_update_scoring_weights"
     },
@@ -4842,8 +4887,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L33",
       "weight": 1.0,
-      "_src": "admin_query_metrics",
-      "_tgt": "auth_require_admin",
+      "_src": "auth_require_admin",
+      "_tgt": "admin_query_metrics",
       "source": "auth_require_admin",
       "target": "admin_query_metrics"
     },
@@ -4854,8 +4899,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L47",
       "weight": 1.0,
-      "_src": "admin_ingest_event",
-      "_tgt": "auth_require_admin",
+      "_src": "auth_require_admin",
+      "_tgt": "admin_ingest_event",
       "source": "auth_require_admin",
       "target": "admin_ingest_event"
     },
@@ -4866,8 +4911,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L59",
       "weight": 1.0,
-      "_src": "admin_promote_lifecycle",
-      "_tgt": "auth_require_admin",
+      "_src": "auth_require_admin",
+      "_tgt": "admin_promote_lifecycle",
       "source": "auth_require_admin",
       "target": "admin_promote_lifecycle"
     },
@@ -4878,8 +4923,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L71",
       "weight": 1.0,
-      "_src": "admin_query_aggregates",
-      "_tgt": "auth_require_admin",
+      "_src": "auth_require_admin",
+      "_tgt": "admin_query_aggregates",
       "source": "auth_require_admin",
       "target": "admin_query_aggregates"
     },
@@ -4890,8 +4935,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L84",
       "weight": 1.0,
-      "_src": "admin_committer_scores",
-      "_tgt": "auth_require_admin",
+      "_src": "auth_require_admin",
+      "_tgt": "admin_committer_scores",
       "source": "auth_require_admin",
       "target": "admin_committer_scores"
     },
@@ -4902,8 +4947,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L98",
       "weight": 1.0,
-      "_src": "admin_rank_prs",
-      "_tgt": "auth_require_admin",
+      "_src": "auth_require_admin",
+      "_tgt": "admin_rank_prs",
       "source": "auth_require_admin",
       "target": "admin_rank_prs"
     },
@@ -4914,8 +4959,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L111",
       "weight": 1.0,
-      "_src": "admin_update_scoring_weights",
-      "_tgt": "auth_require_admin",
+      "_src": "auth_require_admin",
+      "_tgt": "admin_update_scoring_weights",
       "source": "auth_require_admin",
       "target": "admin_update_scoring_weights"
     },
@@ -5070,8 +5115,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L15",
       "weight": 1.0,
-      "_src": "admin_run_scan",
-      "_tgt": "git_discover_repositories",
+      "_src": "git_discover_repositories",
+      "_tgt": "admin_run_scan",
       "source": "git_discover_repositories",
       "target": "admin_run_scan"
     },
@@ -5106,8 +5151,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/velocity.rs",
       "source_location": "L14",
       "weight": 1.0,
-      "_src": "velocity_contributionvelocityplugin_run",
-      "_tgt": "git_git_stdout",
+      "_src": "git_git_stdout",
+      "_tgt": "velocity_contributionvelocityplugin_run",
       "source": "git_git_stdout",
       "target": "velocity_contributionvelocityplugin_run"
     },
@@ -5118,8 +5163,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/pr_approval.rs",
       "source_location": "L14",
       "weight": 1.0,
-      "_src": "pr_approval_prapprovalplugin_run",
-      "_tgt": "git_git_stdout",
+      "_src": "git_git_stdout",
+      "_tgt": "pr_approval_prapprovalplugin_run",
       "source": "git_git_stdout",
       "target": "pr_approval_prapprovalplugin_run"
     },
@@ -5142,8 +5187,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/engine.rs",
       "source_location": "L39",
       "weight": 1.0,
-      "_src": "engine_pipeline_analyze_repo",
-      "_tgt": "git_changed_files_since_tag",
+      "_src": "git_changed_files_since_tag",
+      "_tgt": "engine_pipeline_analyze_repo",
       "source": "git_changed_files_since_tag",
       "target": "engine_pipeline_analyze_repo"
     },
@@ -5814,8 +5859,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L48",
       "weight": 1.0,
-      "_src": "admin_ingest_event",
-      "_tgt": "storage_ingestionbackendconfig_validate",
+      "_src": "storage_ingestionbackendconfig_validate",
+      "_tgt": "admin_ingest_event",
       "source": "storage_ingestionbackendconfig_validate",
       "target": "admin_ingest_event"
     },
@@ -6030,8 +6075,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L17",
       "weight": 1.0,
-      "_src": "admin_run_scan",
-      "_tgt": "storage_duallayerstore_open",
+      "_src": "storage_duallayerstore_open",
+      "_tgt": "admin_run_scan",
       "source": "storage_duallayerstore_open",
       "target": "admin_run_scan"
     },
@@ -6042,8 +6087,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L35",
       "weight": 1.0,
-      "_src": "admin_query_metrics",
-      "_tgt": "storage_duallayerstore_open",
+      "_src": "storage_duallayerstore_open",
+      "_tgt": "admin_query_metrics",
       "source": "storage_duallayerstore_open",
       "target": "admin_query_metrics"
     },
@@ -6054,8 +6099,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L49",
       "weight": 1.0,
-      "_src": "admin_ingest_event",
-      "_tgt": "storage_duallayerstore_open",
+      "_src": "storage_duallayerstore_open",
+      "_tgt": "admin_ingest_event",
       "source": "storage_duallayerstore_open",
       "target": "admin_ingest_event"
     },
@@ -6066,8 +6111,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L60",
       "weight": 1.0,
-      "_src": "admin_promote_lifecycle",
-      "_tgt": "storage_duallayerstore_open",
+      "_src": "storage_duallayerstore_open",
+      "_tgt": "admin_promote_lifecycle",
       "source": "storage_duallayerstore_open",
       "target": "admin_promote_lifecycle"
     },
@@ -6078,8 +6123,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L72",
       "weight": 1.0,
-      "_src": "admin_query_aggregates",
-      "_tgt": "storage_duallayerstore_open",
+      "_src": "storage_duallayerstore_open",
+      "_tgt": "admin_query_aggregates",
       "source": "storage_duallayerstore_open",
       "target": "admin_query_aggregates"
     },
@@ -6090,8 +6135,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L85",
       "weight": 1.0,
-      "_src": "admin_committer_scores",
-      "_tgt": "storage_duallayerstore_open",
+      "_src": "storage_duallayerstore_open",
+      "_tgt": "admin_committer_scores",
       "source": "storage_duallayerstore_open",
       "target": "admin_committer_scores"
     },
@@ -6102,8 +6147,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L99",
       "weight": 1.0,
-      "_src": "admin_rank_prs",
-      "_tgt": "storage_duallayerstore_open",
+      "_src": "storage_duallayerstore_open",
+      "_tgt": "admin_rank_prs",
       "source": "storage_duallayerstore_open",
       "target": "admin_rank_prs"
     },
@@ -6162,8 +6207,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L50",
       "weight": 1.0,
-      "_src": "admin_ingest_event",
-      "_tgt": "storage_duallayerstore_ingest_commit_event_with_backend",
+      "_src": "storage_duallayerstore_ingest_commit_event_with_backend",
+      "_tgt": "admin_ingest_event",
       "source": "storage_duallayerstore_ingest_commit_event_with_backend",
       "target": "admin_ingest_event"
     },
@@ -6186,8 +6231,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L61",
       "weight": 1.0,
-      "_src": "admin_promote_lifecycle",
-      "_tgt": "storage_duallayerstore_promote_to_columnar",
+      "_src": "storage_duallayerstore_promote_to_columnar",
+      "_tgt": "admin_promote_lifecycle",
       "source": "storage_duallayerstore_promote_to_columnar",
       "target": "admin_promote_lifecycle"
     },
@@ -6210,8 +6255,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L73",
       "weight": 1.0,
-      "_src": "admin_query_aggregates",
-      "_tgt": "storage_duallayerstore_aggregate_by_query",
+      "_src": "storage_duallayerstore_aggregate_by_query",
+      "_tgt": "admin_query_aggregates",
       "source": "storage_duallayerstore_aggregate_by_query",
       "target": "admin_query_aggregates"
     },
@@ -6234,8 +6279,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L87",
       "weight": 1.0,
-      "_src": "admin_committer_scores",
-      "_tgt": "storage_duallayerstore_compute_committer_scores",
+      "_src": "storage_duallayerstore_compute_committer_scores",
+      "_tgt": "admin_committer_scores",
       "source": "storage_duallayerstore_compute_committer_scores",
       "target": "admin_committer_scores"
     },
@@ -6246,8 +6291,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/admin.rs",
       "source_location": "L101",
       "weight": 1.0,
-      "_src": "admin_rank_prs",
-      "_tgt": "storage_duallayerstore_rank_open_prs",
+      "_src": "storage_duallayerstore_rank_open_prs",
+      "_tgt": "admin_rank_prs",
       "source": "storage_duallayerstore_rank_open_prs",
       "target": "admin_rank_prs"
     },
@@ -6414,8 +6459,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/engine.rs",
       "source_location": "L20",
       "weight": 1.0,
-      "_src": "engine_pipeline_default",
-      "_tgt": "onprem_providerendpoint_new",
+      "_src": "onprem_providerendpoint_new",
+      "_tgt": "engine_pipeline_default",
       "source": "onprem_providerendpoint_new",
       "target": "engine_pipeline_default"
     },
@@ -6426,8 +6471,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/engine.rs",
       "source_location": "L31",
       "weight": 1.0,
-      "_src": "engine_pipeline_register",
-      "_tgt": "onprem_providerendpoint_new",
+      "_src": "onprem_providerendpoint_new",
+      "_tgt": "engine_pipeline_register",
       "source": "onprem_providerendpoint_new",
       "target": "engine_pipeline_register"
     },
@@ -6438,8 +6483,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/engine.rs",
       "source_location": "L44",
       "weight": 1.0,
-      "_src": "engine_pipeline_analyze_repo",
-      "_tgt": "onprem_providerendpoint_new",
+      "_src": "onprem_providerendpoint_new",
+      "_tgt": "engine_pipeline_analyze_repo",
       "source": "onprem_providerendpoint_new",
       "target": "engine_pipeline_analyze_repo"
     },
@@ -6450,8 +6495,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/complexity.rs",
       "source_location": "L20",
       "weight": 1.0,
-      "_src": "complexity_complexityplugin_run",
-      "_tgt": "onprem_providerendpoint_new",
+      "_src": "onprem_providerendpoint_new",
+      "_tgt": "complexity_complexityplugin_run",
       "source": "onprem_providerendpoint_new",
       "target": "complexity_complexityplugin_run"
     },
@@ -6462,8 +6507,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/sanitizer.rs",
       "source_location": "L35",
       "weight": 1.0,
-      "_src": "sanitizer_redact_key_value",
-      "_tgt": "onprem_providerendpoint_new",
+      "_src": "onprem_providerendpoint_new",
+      "_tgt": "sanitizer_redact_key_value",
       "source": "onprem_providerendpoint_new",
       "target": "sanitizer_redact_key_value"
     },
@@ -6474,8 +6519,8 @@
       "source_file": "/Users/neo/projects/Git-SCM/rocinante/.worktrees/roadmap-completion/src-tauri/src/plugins/code_quality.rs",
       "source_location": "L15",
       "weight": 1.0,
-      "_src": "code_quality_codequalityplugin_run",
-      "_tgt": "onprem_providerendpoint_new",
+      "_src": "onprem_providerendpoint_new",
+      "_tgt": "code_quality_codequalityplugin_run",
       "source": "onprem_providerendpoint_new",
       "target": "code_quality_codequalityplugin_run"
     },
