@@ -1,6 +1,9 @@
 use repo_analyzer_core::admin;
+use repo_analyzer_core::auth::issue_test_token;
 use repo_analyzer_core::storage::{IngestionBackendConfig, IngestionBackendKind};
-use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, PrCandidate, ScoringWeights, TelemetryPoint};
+use repo_analyzer_core::types::{
+    AdminQuery, CommitIngestionEvent, PrCandidate, ScoringWeights, TelemetryPoint,
+};
 use tempfile::tempdir;
 
 fn sample_event(id: &str) -> CommitIngestionEvent {
@@ -10,10 +13,30 @@ fn sample_event(id: &str) -> CommitIngestionEvent {
         release: "v1.0.0".to_string(),
         committer: "alice".to_string(),
         telemetry: vec![
-            TelemetryPoint { plugin: "complexity".to_string(), metric_key: "estimated_cyclomatic_complexity".to_string(), metric_value: 9.0, details: "ok".to_string() },
-            TelemetryPoint { plugin: "coverage".to_string(), metric_key: "coverage_delta".to_string(), metric_value: 3.0, details: "ok".to_string() },
-            TelemetryPoint { plugin: "churn".to_string(), metric_key: "churn_efficiency".to_string(), metric_value: 0.7, details: "ok".to_string() },
-            TelemetryPoint { plugin: "ci".to_string(), metric_key: "pipeline_success".to_string(), metric_value: 1.0, details: "ok".to_string() },
+            TelemetryPoint {
+                plugin: "complexity".to_string(),
+                metric_key: "estimated_cyclomatic_complexity".to_string(),
+                metric_value: 9.0,
+                details: "ok".to_string(),
+            },
+            TelemetryPoint {
+                plugin: "coverage".to_string(),
+                metric_key: "coverage_delta".to_string(),
+                metric_value: 3.0,
+                details: "ok".to_string(),
+            },
+            TelemetryPoint {
+                plugin: "churn".to_string(),
+                metric_key: "churn_efficiency".to_string(),
+                metric_value: 0.7,
+                details: "ok".to_string(),
+            },
+            TelemetryPoint {
+                plugin: "ci".to_string(),
+                metric_key: "pipeline_success".to_string(),
+                metric_value: 1.0,
+                details: "ok".to_string(),
+            },
         ],
     }
 }
@@ -32,7 +55,7 @@ fn admin_services_roundtrip_happy_path() {
     };
 
     admin::ingest_event(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
         sample_event("c1"),
@@ -41,7 +64,7 @@ fn admin_services_roundtrip_happy_path() {
     .expect("ingest");
 
     let promoted = admin::promote_lifecycle(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
     )
@@ -49,19 +72,25 @@ fn admin_services_roundtrip_happy_path() {
     assert_eq!(promoted.promoted_events, 1);
 
     let aggregates = admin::query_aggregates(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
-        AdminQuery { name: Some("repo-a".to_string()), release: Some("v1".to_string()) },
+        AdminQuery {
+            name: Some("repo-a".to_string()),
+            release: Some("v1".to_string()),
+        },
     )
     .expect("aggregates");
     assert!(!aggregates.is_empty());
 
     let scores = admin::committer_scores(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
-        AdminQuery { name: Some("repo-a".to_string()), release: None },
+        AdminQuery {
+            name: Some("repo-a".to_string()),
+            release: None,
+        },
         weights.to_str().expect("weights"),
     )
     .expect("scores");
@@ -77,7 +106,7 @@ fn admin_services_roundtrip_happy_path() {
         approval_fidelity: 0.6,
     }];
     let ranked = admin::rank_prs(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
         prs,
@@ -86,10 +115,12 @@ fn admin_services_roundtrip_happy_path() {
     .expect("ranked");
     assert_eq!(ranked.len(), 1);
 
-    let mut new_weights = ScoringWeights::default();
-    new_weights.version = "v-next".to_string();
+    let new_weights = ScoringWeights {
+        version: "v-next".to_string(),
+        ..ScoringWeights::default()
+    };
     admin::update_scoring_weights(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         weights.to_str().expect("weights"),
         audit.to_str().expect("audit"),
         new_weights,
@@ -109,7 +140,7 @@ fn admin_services_reject_non_admin() {
     };
 
     let err = admin::ingest_event(
-        "bob:reader",
+        &issue_test_token("bob", &["reader"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
         sample_event("c2"),

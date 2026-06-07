@@ -46,7 +46,11 @@ fn ingest_event(
     event: CommitIngestionEvent,
 ) -> Result<(), String> {
     let kv = state.kv_path.lock().map_err(|e| e.to_string())?.clone();
-    let col = state.columnar_path.lock().map_err(|e| e.to_string())?.clone();
+    let col = state
+        .columnar_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
     let backend = state
         .ingestion_backend
         .lock()
@@ -58,7 +62,11 @@ fn ingest_event(
 #[tauri::command]
 fn promote_lifecycle(state: tauri::State<AppState>, token: String) -> Result<usize, String> {
     let kv = state.kv_path.lock().map_err(|e| e.to_string())?.clone();
-    let col = state.columnar_path.lock().map_err(|e| e.to_string())?.clone();
+    let col = state
+        .columnar_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
     admin::promote_lifecycle(&token, &kv, &col)
         .map(|stats| stats.promoted_events)
         .map_err(|e| e.to_string())
@@ -72,7 +80,11 @@ fn query_aggregates(
     release: Option<String>,
 ) -> Result<Vec<TelemetryPoint>, String> {
     let kv = state.kv_path.lock().map_err(|e| e.to_string())?.clone();
-    let col = state.columnar_path.lock().map_err(|e| e.to_string())?.clone();
+    let col = state
+        .columnar_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
     admin::query_aggregates(&token, &kv, &col, AdminQuery { name, release })
         .map_err(|e| e.to_string())
 }
@@ -85,8 +97,16 @@ fn committer_scores(
     release: Option<String>,
 ) -> Result<Vec<CommitterScore>, String> {
     let kv = state.kv_path.lock().map_err(|e| e.to_string())?.clone();
-    let col = state.columnar_path.lock().map_err(|e| e.to_string())?.clone();
-    let weights = state.weights_path.lock().map_err(|e| e.to_string())?.clone();
+    let col = state
+        .columnar_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
+    let weights = state
+        .weights_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
     admin::committer_scores(&token, &kv, &col, AdminQuery { name, release }, &weights)
         .map_err(|e| e.to_string())
 }
@@ -98,8 +118,16 @@ fn rank_prs(
     prs: Vec<PrCandidate>,
 ) -> Result<Vec<PrRanking>, String> {
     let kv = state.kv_path.lock().map_err(|e| e.to_string())?.clone();
-    let col = state.columnar_path.lock().map_err(|e| e.to_string())?.clone();
-    let weights = state.weights_path.lock().map_err(|e| e.to_string())?.clone();
+    let col = state
+        .columnar_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
+    let weights = state
+        .weights_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
     admin::rank_prs(&token, &kv, &col, prs, &weights).map_err(|e| e.to_string())
 }
 
@@ -109,7 +137,11 @@ fn update_scoring_weights(
     token: String,
     weights: ScoringWeights,
 ) -> Result<(), String> {
-    let weights_path = state.weights_path.lock().map_err(|e| e.to_string())?.clone();
+    let weights_path = state
+        .weights_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
     let audit_path = state.audit_path.lock().map_err(|e| e.to_string())?.clone();
     admin::update_scoring_weights(&token, &weights_path, &audit_path, weights)
         .map_err(|e| e.to_string())

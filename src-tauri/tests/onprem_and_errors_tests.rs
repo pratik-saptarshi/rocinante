@@ -1,5 +1,7 @@
 use repo_analyzer_core::errors::AnalyzerError;
-use repo_analyzer_core::onprem::{ActiveDirectoryProvider, DirectoryProvider, InternalGitProvider, LocalGitProvider};
+use repo_analyzer_core::onprem::{
+    ActiveDirectoryProvider, DirectoryProvider, InternalGitProvider, LocalGitProvider,
+};
 
 #[test]
 fn local_git_provider_builds_internal_url() {
