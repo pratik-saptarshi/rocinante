@@ -1,4 +1,5 @@
 use repo_analyzer_core::admin;
+use repo_analyzer_core::auth::issue_test_token;
 use repo_analyzer_core::storage::{IngestionBackendConfig, IngestionBackendKind};
 use repo_analyzer_core::types::{
     AdminQuery, CommitIngestionEvent, PrCandidate, ScoringWeights, TelemetryPoint,
@@ -54,7 +55,7 @@ fn admin_services_roundtrip_happy_path() {
     };
 
     admin::ingest_event(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
         sample_event("c1"),
@@ -63,7 +64,7 @@ fn admin_services_roundtrip_happy_path() {
     .expect("ingest");
 
     let promoted = admin::promote_lifecycle(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
     )
@@ -71,7 +72,7 @@ fn admin_services_roundtrip_happy_path() {
     assert_eq!(promoted.promoted_events, 1);
 
     let aggregates = admin::query_aggregates(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
         AdminQuery {
@@ -83,7 +84,7 @@ fn admin_services_roundtrip_happy_path() {
     assert!(!aggregates.is_empty());
 
     let scores = admin::committer_scores(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
         AdminQuery {
@@ -105,7 +106,7 @@ fn admin_services_roundtrip_happy_path() {
         approval_fidelity: 0.6,
     }];
     let ranked = admin::rank_prs(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
         prs,
@@ -119,7 +120,7 @@ fn admin_services_roundtrip_happy_path() {
         ..ScoringWeights::default()
     };
     admin::update_scoring_weights(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         weights.to_str().expect("weights"),
         audit.to_str().expect("audit"),
         new_weights,
@@ -139,7 +140,7 @@ fn admin_services_reject_non_admin() {
     };
 
     let err = admin::ingest_event(
-        "bob:reader",
+        &issue_test_token("bob", &["reader"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
         sample_event("c2"),
