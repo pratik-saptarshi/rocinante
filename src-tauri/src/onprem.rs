@@ -38,7 +38,10 @@ pub struct ProviderEndpoint {
 
 impl ProviderEndpoint {
     pub fn new(kind: GitProviderKind, url: &str) -> Result<Self, AnalyzerError> {
-        if url.contains("api.github.com") || url.contains("gitlab.com") || url.contains("bitbucket.org") {
+        if url.contains("api.github.com")
+            || url.contains("gitlab.com")
+            || url.contains("bitbucket.org")
+        {
             return Err(AnalyzerError::PermissionDenied(
                 "provider endpoint must be on-prem".to_string(),
             ));

@@ -1,6 +1,6 @@
 use repo_analyzer_core::admin;
-use repo_analyzer_core::types::{CommitIngestionEvent, TelemetryPoint};
 use repo_analyzer_core::storage::{IngestionBackendConfig, IngestionBackendKind};
+use repo_analyzer_core::types::{CommitIngestionEvent, TelemetryPoint};
 use tempfile::tempdir;
 
 fn sample_event() -> CommitIngestionEvent {

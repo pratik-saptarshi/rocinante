@@ -1,11 +1,11 @@
 use crate::errors::AnalyzerError;
+use crate::git::changed_files_since_tag;
 use crate::plugins::code_quality::CodeQualityPlugin;
 use crate::plugins::complexity::ComplexityPlugin;
 use crate::plugins::pr_approval::PrApprovalPlugin;
 use crate::plugins::sanitizer::{scrub_metric, MandatorySanitizerPlugin};
 use crate::plugins::velocity::ContributionVelocityPlugin;
 use crate::plugins::BeadPlugin;
-use crate::git::changed_files_since_tag;
 use crate::types::{AnalysisInput, AnalysisRecord, RepoTarget};
 use std::sync::Arc;
 
@@ -14,8 +14,8 @@ pub struct Pipeline {
     beads: Vec<Arc<dyn BeadPlugin>>,
 }
 
-impl Pipeline {
-    pub fn default() -> Self {
+impl Default for Pipeline {
+    fn default() -> Self {
         let mut p = Self {
             mandatory_pre: Arc::new(MandatorySanitizerPlugin),
             beads: Vec::new(),
@@ -26,7 +26,9 @@ impl Pipeline {
         p.register(PrApprovalPlugin);
         p
     }
+}
 
+impl Pipeline {
     pub fn register<P: BeadPlugin + 'static>(&mut self, plugin: P) {
         self.beads.push(Arc::new(plugin));
     }
@@ -54,7 +56,11 @@ impl Pipeline {
                 handles.push(scope.spawn(move || bead.run(&local_input)));
             }
             for handle in handles {
-                metrics.extend(handle.join().map_err(|_| AnalyzerError::Io("bead thread panic".to_string()))??);
+                metrics.extend(
+                    handle
+                        .join()
+                        .map_err(|_| AnalyzerError::Io("bead thread panic".to_string()))??,
+                );
             }
             Ok(())
         })?;

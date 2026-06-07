@@ -1,4 +1,4 @@
-use repo_analyzer_core::types::{CommitIngestionEvent, ScoringWeights};
+use repo_analyzer_core::types::{CommitIngestionEvent, ScoringWeights, TelemetryPoint};
 
 fn event(id: &str) -> CommitIngestionEvent {
     CommitIngestionEvent {
@@ -7,6 +7,21 @@ fn event(id: &str) -> CommitIngestionEvent {
         release: "v1".to_string(),
         committer: "dev".to_string(),
         telemetry: vec![],
+    }
+}
+
+fn telemetry_event(id: &str) -> CommitIngestionEvent {
+    CommitIngestionEvent {
+        commit_id: id.to_string(),
+        repo_name: "repo".to_string(),
+        release: "v1".to_string(),
+        committer: "dev".to_string(),
+        telemetry: vec![TelemetryPoint {
+            plugin: "complexity".to_string(),
+            metric_key: "estimated_cyclomatic_complexity".to_string(),
+            metric_value: 7.0,
+            details: "ok".to_string(),
+        }],
     }
 }
 
@@ -20,8 +35,12 @@ fn ci_strict_badger_rejects_inproc_fallback_endpoint() {
         endpoint: Some("inproc://dev-sidecar".to_string()),
     };
 
-    let err = backend.validate().expect_err("strict production mode must reject inproc fallback");
-    assert!(err.to_string().contains("inproc fallback is not allowed in strict mode"));
+    let err = backend
+        .validate()
+        .expect_err("strict production mode must reject inproc fallback");
+    assert!(err
+        .to_string()
+        .contains("inproc fallback is not allowed in strict mode"));
 }
 
 #[test]
@@ -44,7 +63,10 @@ fn producer_burst_distributes_events_across_sharded_prefixes() {
         .map(|key| key.split(':').take(4).collect::<Vec<_>>().join(":"))
         .collect();
 
-    assert!(prefixes.len() > 1, "burst writes must not share one global prefix");
+    assert!(
+        prefixes.len() > 1,
+        "burst writes must not share one global prefix"
+    );
 }
 
 #[test]
@@ -75,6 +97,101 @@ fn dashboard_query_uses_materialized_immutable_snapshot() {
 }
 
 #[test]
+fn sidecar_unix_transport_sends_real_commit_payload() {
+    use repo_analyzer_core::storage::{
+        DualLayerStore, IngestionBackendConfig, IngestionBackendKind,
+    };
+    use std::io::Read;
+    use std::os::unix::net::UnixListener;
+    use std::sync::mpsc::channel;
+    use std::thread;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let socket = tmp.path().join("badger.sock");
+    let listener = UnixListener::bind(&socket).unwrap();
+    let (tx, rx) = channel();
+
+    thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut payload = Vec::new();
+        stream.read_to_end(&mut payload).unwrap();
+        tx.send(payload).unwrap();
+    });
+
+    let store = DualLayerStore::open(
+        tmp.path().join("kv").to_str().unwrap(),
+        tmp.path().join("analytics.duckdb").to_str().unwrap(),
+    )
+    .unwrap();
+    let backend = IngestionBackendConfig {
+        kind: IngestionBackendKind::BadgerSidecar,
+        strict_badger_required: true,
+        endpoint: Some(format!("unix://{}", socket.display())),
+    };
+
+    store
+        .ingest_commit_event_with_backend(&telemetry_event("unix-1"), &backend)
+        .unwrap();
+    let payload = rx.recv().unwrap();
+    let decoded: CommitIngestionEvent = serde_json::from_slice(&payload).unwrap();
+
+    assert_eq!(decoded.commit_id, "unix-1");
+}
+
+#[test]
+fn retention_job_prunes_raw_events_after_promotion_without_losing_history() {
+    use repo_analyzer_core::storage::DualLayerStore;
+    use repo_analyzer_core::types::AdminQuery;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let store = DualLayerStore::open(
+        tmp.path().join("kv").to_str().unwrap(),
+        tmp.path().join("analytics.duckdb").to_str().unwrap(),
+    )
+    .unwrap();
+
+    store
+        .ingest_commit_event(&telemetry_event("retention-1"))
+        .unwrap();
+    assert_eq!(store.promote_to_columnar().unwrap().promoted_events, 1);
+    let stats = store.prune_raw_events_older_than(0).unwrap();
+    let rows = store
+        .aggregate_by_query(&AdminQuery {
+            name: Some("repo".to_string()),
+            release: Some("v1".to_string()),
+        })
+        .unwrap();
+
+    assert_eq!(stats.pruned_events, 0);
+    assert_eq!(rows.len(), 1);
+}
+
+#[test]
+fn snapshot_job_materializes_promoted_duckdb_history_copy() {
+    use repo_analyzer_core::snapshots::AnalyticsSnapshotManager;
+    use repo_analyzer_core::storage::DualLayerStore;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let duckdb = tmp.path().join("analytics.duckdb");
+    let store = DualLayerStore::open(
+        tmp.path().join("kv").to_str().unwrap(),
+        duckdb.to_str().unwrap(),
+    )
+    .unwrap();
+    store
+        .ingest_commit_event(&telemetry_event("snapshot-1"))
+        .unwrap();
+    store.promote_to_columnar().unwrap();
+
+    let snapshot = AnalyticsSnapshotManager::new(tmp.path())
+        .materialize(duckdb.to_str().unwrap(), 77)
+        .unwrap();
+
+    assert!(snapshot.immutable);
+    assert!(std::fs::metadata(snapshot.path).unwrap().len() > 0);
+}
+
+#[test]
 fn governance_rejects_tampered_scoring_weights() {
     use repo_analyzer_core::scoring::{sign_weights, verify_signed_weights};
 
@@ -102,8 +219,10 @@ fn team_policy_resolves_explicit_scoring_profile() {
     use repo_analyzer_core::policy::PolicyProfiles;
 
     let mut profiles = PolicyProfiles::default();
-    let mut weights = ScoringWeights::default();
-    weights.version = "security-team-v1".to_string();
+    let weights = ScoringWeights {
+        version: "security-team-v1".to_string(),
+        ..ScoringWeights::default()
+    };
     profiles.insert("security".to_string(), weights);
 
     let resolved = profiles.resolve("security").unwrap();
@@ -132,7 +251,10 @@ fn ast_bead_emits_deterministic_language_metric() {
 
     let plugin = AstMetricsPlugin;
     let input = AnalysisInput {
-        repo: RepoTarget { name: "repo".to_string(), path: ".".to_string() },
+        repo: RepoTarget {
+            name: "repo".to_string(),
+            path: ".".to_string(),
+        },
         changed_files: vec!["src-tauri/src/lib.rs".to_string()],
     };
 
@@ -157,10 +279,22 @@ fn operator_sees_queue_depth_and_promotion_lag() {
 fn enterprise_git_provider_accepts_only_onprem_schemes() {
     use repo_analyzer_core::onprem::{GitProviderKind, ProviderEndpoint};
 
-    assert!(ProviderEndpoint::new(GitProviderKind::GitHubEnterprise, "https://ghe.local/api").is_ok());
-    assert!(ProviderEndpoint::new(GitProviderKind::GitLabSelfManaged, "https://gitlab.local/api").is_ok());
-    assert!(ProviderEndpoint::new(GitProviderKind::BitbucketServer, "https://bitbucket.local/rest").is_ok());
-    assert!(ProviderEndpoint::new(GitProviderKind::GitHubEnterprise, "https://api.github.com").is_err());
+    assert!(
+        ProviderEndpoint::new(GitProviderKind::GitHubEnterprise, "https://ghe.local/api").is_ok()
+    );
+    assert!(ProviderEndpoint::new(
+        GitProviderKind::GitLabSelfManaged,
+        "https://gitlab.local/api"
+    )
+    .is_ok());
+    assert!(ProviderEndpoint::new(
+        GitProviderKind::BitbucketServer,
+        "https://bitbucket.local/rest"
+    )
+    .is_ok());
+    assert!(
+        ProviderEndpoint::new(GitProviderKind::GitHubEnterprise, "https://api.github.com").is_err()
+    );
 }
 
 #[test]

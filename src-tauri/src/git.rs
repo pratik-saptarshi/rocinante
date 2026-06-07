@@ -39,7 +39,10 @@ pub fn git_stdout(repo_path: &str, args: &[&str]) -> Result<String, AnalyzerErro
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
-pub fn changed_files_since_tag(repo_path: &str, release: &str) -> Result<Vec<String>, AnalyzerError> {
+pub fn changed_files_since_tag(
+    repo_path: &str,
+    release: &str,
+) -> Result<Vec<String>, AnalyzerError> {
     if release.is_empty() {
         return Ok(Vec::new());
     }

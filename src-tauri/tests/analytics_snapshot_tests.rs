@@ -3,9 +3,7 @@ use repo_analyzer_core::storage::{AnalyticsQueryMode, AnalyticsSnapshot};
 #[test]
 fn snapshot_mode_is_read_only() {
     let snapshot = AnalyticsSnapshot::new("analytics.duckdb", 42);
-    assert!(snapshot
-        .enforce_mode(AnalyticsQueryMode::ReadOnly)
-        .is_ok());
+    assert!(snapshot.enforce_mode(AnalyticsQueryMode::ReadOnly).is_ok());
 }
 
 #[test]

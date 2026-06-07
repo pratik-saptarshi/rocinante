@@ -1,6 +1,4 @@
-use repo_analyzer_core::storage::{
-    DualLayerStore, IngestionBackendConfig, IngestionBackendKind,
-};
+use repo_analyzer_core::storage::{DualLayerStore, IngestionBackendConfig, IngestionBackendKind};
 use repo_analyzer_core::types::{CommitIngestionEvent, TelemetryPoint};
 use tempfile::tempdir;
 
@@ -24,11 +22,8 @@ fn badger_sidecar_dev_inproc_transport_ingests_event() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
-    let store = DualLayerStore::open(
-        kv.to_str().expect("kv"),
-        col.to_str().expect("col"),
-    )
-    .expect("open");
+    let store =
+        DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col")).expect("open");
 
     let backend = IngestionBackendConfig {
         kind: IngestionBackendKind::BadgerSidecar,
@@ -49,11 +44,8 @@ fn badger_sidecar_unix_transport_errors_if_socket_unavailable() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
-    let store = DualLayerStore::open(
-        kv.to_str().expect("kv"),
-        col.to_str().expect("col"),
-    )
-    .expect("open");
+    let store =
+        DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col")).expect("open");
 
     let backend = IngestionBackendConfig {
         kind: IngestionBackendKind::BadgerSidecar,
@@ -72,11 +64,8 @@ fn badger_sidecar_rejects_unsupported_endpoint_scheme() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
-    let store = DualLayerStore::open(
-        kv.to_str().expect("kv"),
-        col.to_str().expect("col"),
-    )
-    .expect("open");
+    let store =
+        DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col")).expect("open");
 
     let backend = IngestionBackendConfig {
         kind: IngestionBackendKind::BadgerSidecar,
