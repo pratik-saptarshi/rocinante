@@ -1,0 +1,279 @@
+# Single-Source Execution Ticket Artifact
+
+## Source of Truth (canonical grounding)
+- `docs/roadmap/feature-backlog.html`
+- `docs/roadmap/beads.html`
+- `docs/roadmap/bead-issue-tracker.html`
+- `docs/roadmap/test-plan.html`
+- `docs/roadmap/plan-review-traceability.html`
+
+This artifact is the authoritative execution index for implementation, TDD/BDD,
+tracking, and gating. All ticket states and AC are grounded in the five files
+above and must be kept in sync by updating those sources first.
+
+## Remediation execution checkpoint (2026-06-07)
+
+### TDD/BDD agent stream commits
+
+- Stream B (Trust + Sanitization): `aa8cc39`
+- Stream A (Storage): `bd189b8`
+- Stream C (Sanitizer): `0c1a868`
+
+### Current status mapping
+
+- `F-030` (signed principal hardening): In Progress (implemented, pending final gate).
+- `F-028` (async ingestion decoupling): In Progress (implemented, pending final gate).
+- `F-029` (UTF-safe sanitization): In Progress (implemented, pending final gate).
+- `FE-009` and `F-031` command contract tracks remain In Progress; requires UI commit-plane sweep.
+
+## Roadmap Completion Snapshot (as of 2026-06-07)
+
+- Completed features: `F-001` … `F-014` (14)
+- In progress features: `F-008A`, `F-008B`, `F-008C`, `F-008D`, `F-028`,
+  `F-029`, `F-030`, `F-031`, `F-015`, `F-016`, `F-017` (11)
+- New backlog: `F-018` … `F-027`, `F-032`, `F-033` (12)
+- Completion ratio: `14 / 37 = 37.8%`
+
+## Global Acceptance Criteria (Capability-level, BDD)
+
+1. **Given** strict mode is enabled and non-conforming storage config is used, **when**
+   any ingest command executes, **then** startup or first ingest fails without
+   partial writes.
+2. **Given** an admin command is invoked with malformed/unsigned/expired/wrong
+   audience principal, **when** the command attempts authorization, **then**
+   command is denied and returns explicit unauthorized reason.
+3. **Given** Unicode-heavy sanitizer input, **when** redaction runs, **then**
+   redaction is deterministic, UTF-8-safe, and non-panicking.
+4. **Given** nested payload envelope with partial limits, **when** the UI applies it,
+   **then** normalized defaults are deterministic and snapshot metrics stay stable.
+5. **Given** bounded async enqueue under burst load, **when** queue depth rises, **then**
+   inline promotion remains deferred to worker cycles and lag stays within SLO.
+
+## Execution Tickets (single source)
+
+### Capability C1: Storage Integrity and Throughput
+
+- Epic `E-STORE-01` — Strict dual-layer storage architecture
+- Governing finding: `R1-F01`, `R1-F02`, `R1-F03`, `R1-F04`, `R1-F05`,
+  `R2-F01`
+- Epic AC:
+  - Given strict/dual-mode config and concurrent producers, when ingest/query commands
+    run, then storage workload never crosses engine boundaries and analytics continue
+    under sustained writes.
+
+#### Feature `F-008A` — Storage engine conformance migration
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-001`, `BI-005`
+- Bead context: `B-04`
+- Current status: In Progress
+- TDD AC:
+  - `StorageProfile::validate` and `IngestionBackendConfig::validate` reject non-Badger
+    ingestion settings.
+  - `tests/storage_policy_tests.rs` verifies red-to-green on valid/invalid profile.
+- Tasks:
+  1. `TK-014` Persist to BadgerDB via sidecar boundary.
+  2. `TK-015` Preserve parallel ingestion safety.
+  3. `TK-016` Add durability/recovery checks.
+  4. `TK-033` Shard key prefixes.
+  5. `TK-034` Enforce raw event TTL and prune/roll-up.
+- Function AC:
+  - `StorageProfile::validate` fails closed when non-Badger ingest profile used.
+  - `RetentionPolicy::is_raw_event_expired` returns stable expiry in retention tests.
+
+#### Feature `F-008B` — Strict storage boundary enforcement
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-003`
+- Bead context: `B-09`
+- Current status: In Progress
+- TDD AC:
+  - `tests/storage_duallayer_tests.rs` rejects analytics command against ingest route and
+    vice versa.
+- Tasks:
+  1. `TK-037` Enforce Badger-only writes and DuckDB-only analytics.
+  2. Add boundary guard coverage in command layer.
+- Function AC:
+  - `StorageRoute::enforce` emits explicit boundary fault on mismatch.
+  - `require_admin` only authorizes storage-layer compatible commands.
+
+#### Feature `F-008C` — Snapshot/replica read model
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-004`
+- Bead context: `B-05`
+- Current status: In Progress
+- TDD AC:
+  - Snapshot query tests show reads succeed while promotion runs.
+- Tasks:
+  1. `TK-035` Read via immutable snapshot/replica strategy.
+  2. Add contention tests under burst writes.
+- Function AC:
+  - `AnalyticsSnapshot::enforce_mode` blocks mutable reads under snapshot mode.
+  - `query_aggregates` returns stable views under concurrent promotion.
+
+#### Feature `F-008D` — Retention compliance automation
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-002`
+- Bead context: `B-05`
+- Current status: In Progress
+- TDD AC:
+  - `tests/storage_policy_tests.rs` validates TTL and roll-up execution windows.
+- Tasks:
+  1. `TK-016` Add ingestion durability checks.
+  2. `TK-034` Add short-term TTL + prune + roll-up schedule checks.
+- Function AC:
+  - `RetentionPolicy::is_raw_event_expired` deterministically classifies records.
+  - `promote_to_columnar_with_retention` leaves long-term marts queryable.
+
+#### Feature `F-028` — Async ingestion decoupling completion
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-006`
+- Bead context: `B-05`
+- Current status: In Progress
+- Governing finding: `R2-F01`
+- TDD AC:
+  - `AsyncIngestionEngine::enqueue` never invokes promotion inline.
+  - Worker lag metrics are captured and asserted under burst scenarios.
+- Tasks:
+  1. `TK-017` Keep promotions worker-only.
+  2. Add queue-lag and throughput assertions.
+  3. Add queue-depth telemetry.
+- Function AC:
+  - `AsyncIngestionEngine::start` enforces bounded enqueue and worker scheduling.
+
+### Capability C2: Security and Trust
+
+- Epic `E-SEC-01` — Signed token principal & command trust boundary
+- Governing finding: `R2-F02`
+- Epic AC:
+  - Given malformed/expired/unsigned principal claims, when any admin command executes,
+    then command aborts with explicit denial and no storage side-effects.
+
+#### Feature `F-030` — Signed principal hardening
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-007`
+- Bead context: `B-10`
+- Current status: In Progress
+- Tasks:
+  1. `TK-038` Replace plain decode with signed claim parsing.
+  2. `TK-039` Validate expiry, issuer, audience.
+  3. `TK-040` Add explicit deny-by-default behavior.
+  4. `TK-041` Regression tests for claims and escalation attempts.
+- Function AC:
+  - `decode_principal` verifies signature + claims.
+  - `require_admin` returns `DENY` for expired/wrong-audience/unsigned inputs.
+  - `main.rs` command handlers do not open backends on auth failure.
+
+#### Feature `F-007` — Existing RBAC baseline continuity
+- Source: `docs/roadmap/feature-backlog.html`
+- Governing reference: `B-08`, `R1-F02`
+- AC:
+  - Admin-only operations remain denied without valid claim/role.
+- Functions:
+  - `require_admin` returns explicit unauthorized and logs reason.
+
+### Capability C3: Sanitization Correctness
+
+- Epic `E-SAN-01` — Unicode-safe deterministic redaction
+- Governing finding: `R2-F03`
+- Epic AC:
+  - Given payload with multibyte characters and punctuation boundaries, when redaction runs,
+    then no sensitive token leaks and no panic occurs.
+
+#### Feature `F-029` — UTF-safe sanitization hardening
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-008`
+- Bead context: `B-11`
+- Current status: In Progress
+- Tasks:
+  1. `TK-042` Replace byte-index parsing with UTF-8 scanners.
+  2. `TK-043` Add boundary-aware inline key-value redaction.
+  3. `TK-044` Add punctuation/emoji regression corpus.
+- Function AC:
+  - `scrub_text` and `redact_key_value` preserve UTF-8 and redact expected secret spans.
+  - `scrub_record_strings` handles malformed/tricky separators safely.
+
+### Capability C4: UX Architecture and Contract Safety
+
+- Epic `E-FE-01` — UI decomposition and contract isolation
+- Governing finding: `R2-F04`
+- Epic AC:
+  - Given malformed payloads or command failures, when UI refreshes, then rendering
+    remains stable with explicit fallback/error contracts.
+
+#### Feature `F-031` — Frontend structural decomposition
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-FE-016`
+- Bead context: `FE-008`
+- Current status: In Progress
+- Tasks:
+  1. `TK-FE-028` Split orchestration and rendering concerns.
+  2. `TK-FE-029` Define explicit command/payload contracts.
+  3. `TK-FE-030` Add role-switch and snapshot decomposition tests.
+- Function AC:
+  - `readPayload` and `readLimits` fail-safe on malformed input.
+  - App shell only orchestrates composed components; no business logic leakage.
+
+#### Feature `FE-009` — Command schema and backend contract convergence
+- Source: `docs/roadmap/beads.html`
+- Ticket: `BI-FE-017`
+- Bead context: `FE-009`
+- Current status: In Progress
+- Governing finding: `R2-F05`
+- Tasks:
+  1. `TK-FE-031` Define canonical argument schemas.
+  2. `TK-FE-032` Add nested envelope/fallback contract tests.
+  3. `TK-FE-033` Add transport/auth failure contract tests.
+- Function AC:
+  - `invokeAdminCommand` argument shape must map 1:1 to backend signatures.
+  - `main.rs` command parse/dispatch emits deterministic error envelopes.
+
+### Frontend Delivery Strand (already active)
+
+- Feature `F-015` — Admin UI integration for command set (`FE-007`-like lane)
+- Ticket: `BI-FE-015`
+- Status: In Progress
+- AC: End-user command controls exist for ingest/promote/query with explicit browser/Tauri fallback.
+
+- Feature `F-016` — Rich dashboard visualizations
+- Ticket: `BI-FE-015` (continued operational context)
+- Status: In Progress
+- AC: trend/risk views are deterministic under valid and fallback payloads.
+
+- Feature `F-017` — Expanded sanitizer rules
+- Ticket: `BI-008`
+- Status: In Progress
+- AC: additional policy packs apply without regressions in existing redaction engine tests.
+
+## TDD/BDD Mapping by Capability
+
+- `F-008A/B/C/D` ↔ `T-015`, `T-016`, `T-017`, `T-018`
+- `F-028` ↔ `T-019`
+- `F-029` ↔ `T-003`, `T-022`
+- `F-030` ↔ `T-020`
+- `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
+- `FE-009` command failures and parity ↔ `T-021`, `T-023`
+- Security-sensitive features additionally require `T-001` and `T-020` authorization checks.
+
+## Parallel Agent Dispatch (three independent streams)
+
+1. **Stream A — Storage Hardening**
+   - Tickets: `BI-001`, `BI-002`, `BI-003`, `BI-004`, `BI-006`
+   - Dependency: complete before any storage-contract closure is marked done.
+   - Exit gate: `R1-F01..F04` risk evidence + `T-015..T-019`.
+
+2. **Stream B — Trust/Identity + Sanitization**
+   - Tickets: `BI-007`, `BI-008`
+   - Dependency: `R2-F02` and `R2-F03` green in traceability.
+   - Exit gate: `T-020`, `T-022`, auth no-side-effect verification.
+
+3. **Stream C — Frontend Contract Safety**
+   - Tickets: `BI-FE-016`, `BI-FE-017`
+   - Dependency: UI component split and command schema map.
+   - Exit gate: `T-FE-007`, `T-FE-008`, `T-FE-011`, `T-023`.
+
+## Cross-file Drift Guard
+
+- Any edit to this artifact must include corresponding source-of-truth updates in:
+  - roadmaps (`feature-backlog`, `beads`) for scope/status.
+  - issue tracker (`bead-issue-tracker`) for ticket state and ledger.
+  - test-plan for test IDs and DoD adjustments.
+  - traceability doc for new findings, capabilities, and AC changes.
