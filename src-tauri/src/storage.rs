@@ -151,6 +151,11 @@ impl IngestionBackendConfig {
                     "Badger sidecar endpoint is required".to_string(),
                 ));
             }
+            if self.strict_badger_required && endpoint.starts_with("inproc://") {
+                return Err(AnalyzerError::Db(
+                    "inproc fallback is not allowed in strict mode".to_string(),
+                ));
+            }
         }
         Ok(())
     }

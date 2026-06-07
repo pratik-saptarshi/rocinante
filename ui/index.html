@@ -35,6 +35,20 @@
         <tbody id="rows"></tbody>
       </table>
     </div>
+    <div class="panel">
+      <h2>Maturity Admin Commands</h2>
+      <button id="ingestEvent">Ingest Event</button>
+      <button id="promoteLifecycle">Promote Lifecycle</button>
+      <button id="queryAggregates">Query Aggregates</button>
+      <button id="committerScores">Committer Scores</button>
+      <button id="rankPrs">Rank PRs</button>
+      <button id="updateScoringWeights">Update Scoring Weights</button>
+      <button id="baselineReseed">Baseline Reseed</button>
+      <table>
+        <thead><tr><th>PR</th><th>Risk</th><th>Velocity</th><th>Approval</th><th>Rationale</th></tr></thead>
+        <tbody id="rankRows"></tbody>
+      </table>
+    </div>
   </div>
 <script>
 const invoke = window.__TAURI__?.core?.invoke;

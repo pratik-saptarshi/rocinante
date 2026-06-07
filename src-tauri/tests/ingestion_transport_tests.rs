@@ -20,7 +20,7 @@ fn sample_event(id: &str) -> CommitIngestionEvent {
 }
 
 #[test]
-fn badger_sidecar_inproc_transport_ingests_event() {
+fn badger_sidecar_dev_inproc_transport_ingests_event() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
@@ -32,7 +32,7 @@ fn badger_sidecar_inproc_transport_ingests_event() {
 
     let backend = IngestionBackendConfig {
         kind: IngestionBackendKind::BadgerSidecar,
-        strict_badger_required: true,
+        strict_badger_required: false,
         endpoint: Some("inproc://badger".to_string()),
     };
 

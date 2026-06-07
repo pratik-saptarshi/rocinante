@@ -27,7 +27,7 @@ fn admin_services_roundtrip_happy_path() {
     let audit = dir.path().join("audit.jsonl");
     let backend = IngestionBackendConfig {
         kind: IngestionBackendKind::BadgerSidecar,
-        strict_badger_required: true,
+        strict_badger_required: false,
         endpoint: Some("inproc://badger".to_string()),
     };
 
@@ -104,7 +104,7 @@ fn admin_services_reject_non_admin() {
     let col = dir.path().join("analytics.duckdb");
     let backend = IngestionBackendConfig {
         kind: IngestionBackendKind::BadgerSidecar,
-        strict_badger_required: true,
+        strict_badger_required: false,
         endpoint: Some("inproc://badger".to_string()),
     };
 

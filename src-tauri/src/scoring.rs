@@ -1,7 +1,9 @@
 use crate::errors::AnalyzerError;
 use crate::types::{CommitterScore, PrRanking, ScoringWeights};
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::DefaultHasher;
 use std::fs::{self, OpenOptions};
+use std::hash::{Hash, Hasher};
 use std::io::Write;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -9,11 +11,42 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub const ALGO_VERSION: &str = "score-script-1.0.0";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignedScoringWeights {
+    pub weights: ScoringWeights,
+    pub signature: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScoringAuditEntry {
     pub ts: i64,
     pub actor: String,
     pub old_version: String,
     pub new_version: String,
+}
+
+pub fn sign_weights(weights: &ScoringWeights) -> Result<SignedScoringWeights, AnalyzerError> {
+    Ok(SignedScoringWeights {
+        weights: weights.clone(),
+        signature: scoring_signature(weights)?,
+    })
+}
+
+pub fn verify_signed_weights(signed: &SignedScoringWeights) -> Result<(), AnalyzerError> {
+    let expected = scoring_signature(&signed.weights)?;
+    if signed.signature == expected {
+        Ok(())
+    } else {
+        Err(AnalyzerError::Db(
+            "signature verification failed".to_string(),
+        ))
+    }
+}
+
+fn scoring_signature(weights: &ScoringWeights) -> Result<String, AnalyzerError> {
+    let raw = serde_json::to_string(weights).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+    let mut hasher = DefaultHasher::new();
+    raw.hash(&mut hasher);
+    Ok(format!("{:016x}", hasher.finish()))
 }
 
 pub fn load_or_init_weights(path: &str) -> Result<ScoringWeights, AnalyzerError> {
