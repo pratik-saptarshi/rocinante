@@ -7,12 +7,43 @@ use crate::types::{
 use duckdb::{params, Connection};
 use serde::{Deserialize, Serialize};
 use sled::Db;
-use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
+use std::sync::mpsc::{sync_channel, RecvTimeoutError, Receiver, SyncSender};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 #[cfg(unix)]
 use std::{io::Write, os::unix::net::UnixStream};
+
+type QueuedIngestionEvent = (CommitIngestionEvent, Instant);
+
+fn update_max_u64(metric: &AtomicU64, value: u64) {
+    let mut observed = metric.load(Ordering::Acquire);
+    while value > observed {
+        match metric.compare_exchange(observed, value, Ordering::AcqRel, Ordering::Acquire) {
+            Ok(_) => break,
+            Err(current) => observed = current,
+        }
+    }
+}
+
+fn update_max_usize(metric: &AtomicUsize, value: usize) {
+    let mut observed = metric.load(Ordering::Acquire);
+    while value > observed {
+        match metric.compare_exchange(observed, value, Ordering::AcqRel, Ordering::Acquire) {
+            Ok(_) => break,
+            Err(current) => observed = current,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct AsyncIngestionMetrics {
+    pub queue_depth: usize,
+    pub max_queue_depth: usize,
+    pub promotion_count: usize,
+    pub max_queue_lag_ms: u64,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum IngestionEngine {
@@ -165,10 +196,15 @@ pub struct DualLayerStore {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LifecycleStats {
     pub promoted_events: usize,
+    pub pruned_events: usize,
 }
 
 pub struct AsyncIngestionEngine {
-    tx: SyncSender<CommitIngestionEvent>,
+    tx: SyncSender<QueuedIngestionEvent>,
+    queue_depth: Arc<AtomicUsize>,
+    max_queue_depth: Arc<AtomicUsize>,
+    promotion_count: Arc<AtomicUsize>,
+    max_queue_lag_ms: Arc<AtomicU64>,
 }
 
 impl AsyncIngestionEngine {
@@ -177,26 +213,110 @@ impl AsyncIngestionEngine {
         columnar_path: &str,
         buffer_size: usize,
     ) -> Result<Self, AnalyzerError> {
+        Self::start_with_interval(kv_path, columnar_path, buffer_size, 25)
+    }
+
+    pub fn start_with_interval(
+        kv_path: &str,
+        columnar_path: &str,
+        buffer_size: usize,
+        promotion_interval_ms: u64,
+    ) -> Result<Self, AnalyzerError> {
         let store = DualLayerStore::open(kv_path, columnar_path)?;
         let (tx, rx): (
-            SyncSender<CommitIngestionEvent>,
-            Receiver<CommitIngestionEvent>,
+            SyncSender<QueuedIngestionEvent>,
+            Receiver<QueuedIngestionEvent>,
         ) = sync_channel(buffer_size.max(1));
+        let queue_depth = Arc::new(AtomicUsize::new(0));
+        let max_queue_depth = Arc::new(AtomicUsize::new(0));
+        let promotion_count = Arc::new(AtomicUsize::new(0));
+        let max_queue_lag_ms = Arc::new(AtomicU64::new(0));
+        let queue_depth_bg = Arc::clone(&queue_depth);
+        let max_queue_depth_bg = Arc::clone(&max_queue_depth);
+        let promotion_count_bg = Arc::clone(&promotion_count);
+        let max_queue_lag_bg = Arc::clone(&max_queue_lag_ms);
+        let promotion_interval = Duration::from_millis(promotion_interval_ms.max(1));
+        let mut last_promotion = Instant::now();
 
         thread::spawn(move || {
-            while let Ok(evt) = rx.recv() {
-                let _ = store.ingest_commit_event(&evt);
-                let _ = store.promote_to_columnar();
+            loop {
+                match rx.recv_timeout(promotion_interval) {
+                    Ok((evt, queued_at)) => {
+                        queue_depth_bg.fetch_sub(1, Ordering::AcqRel);
+                        let _ = store.ingest_commit_event(&evt);
+                        update_max_u64(
+                            &max_queue_lag_bg,
+                            queued_at
+                                .elapsed()
+                                .as_millis()
+                                .min(u64::MAX as u128) as u64,
+                        );
+
+                        if last_promotion.elapsed() >= promotion_interval {
+                            let _ = store.promote_to_columnar();
+                            promotion_count_bg.fetch_add(1, Ordering::AcqRel);
+                            last_promotion = Instant::now();
+                        }
+                    }
+                    Err(RecvTimeoutError::Timeout) => {
+                        if last_promotion.elapsed() >= promotion_interval {
+                            let _ = store.promote_to_columnar();
+                            promotion_count_bg.fetch_add(1, Ordering::AcqRel);
+                            last_promotion = Instant::now();
+                        }
+                    }
+                    Err(RecvTimeoutError::Disconnected) => break,
+                }
             }
         });
 
-        Ok(Self { tx })
+        Ok(Self {
+            tx,
+            queue_depth,
+            max_queue_depth,
+            promotion_count,
+            max_queue_lag_ms,
+        })
     }
 
     pub fn enqueue(&self, evt: CommitIngestionEvent) -> Result<(), AnalyzerError> {
+        self.queue_depth.fetch_add(1, Ordering::AcqRel);
+        let queued_depth = self.queue_depth.load(Ordering::Acquire);
+        update_max_usize(&self.max_queue_depth, queued_depth);
+
         self.tx
-            .send(evt)
-            .map_err(|e| AnalyzerError::Io(format!("buffer enqueue failed: {e}")))
+            .try_send((evt, Instant::now()))
+            .map_err(|e| {
+                self.queue_depth.fetch_sub(1, Ordering::AcqRel);
+                AnalyzerError::Io(format!("buffer enqueue failed: {e}"))
+            })?;
+
+        Ok(())
+    }
+
+    pub fn metrics(&self) -> AsyncIngestionMetrics {
+        AsyncIngestionMetrics {
+            queue_depth: self.queue_depth.load(Ordering::Acquire),
+            max_queue_depth: self.max_queue_depth.load(Ordering::Acquire),
+            promotion_count: self.promotion_count.load(Ordering::Acquire),
+            max_queue_lag_ms: self.max_queue_lag_ms.load(Ordering::Acquire),
+        }
+    }
+
+    pub fn queue_depth(&self) -> usize {
+        self.queue_depth.load(Ordering::Acquire)
+    }
+
+    pub fn promotion_count(&self) -> usize {
+        self.promotion_count.load(Ordering::Acquire)
+    }
+
+    pub fn max_queue_depth(&self) -> usize {
+        self.max_queue_depth.load(Ordering::Acquire)
+    }
+
+    pub fn max_queue_lag_ms(&self) -> u64 {
+        self.max_queue_lag_ms.load(Ordering::Acquire)
     }
 }
 
@@ -209,6 +329,19 @@ impl DualLayerStore {
         };
         this.init_columnar()?;
         Ok(this)
+    }
+
+    fn event_prefix(timestamp: i64, commit_id: &str) -> String {
+        let shard = shard_suffix(commit_id);
+        format!("evt:{timestamp}:{shard}:{commit_id}")
+    }
+
+    fn parse_event_timestamp(key: &str) -> Option<i64> {
+        let mut parts = key.split(':');
+        if parts.next()? != "evt" {
+            return None;
+        }
+        parts.next()?.parse::<i64>().ok()
     }
 
     fn init_columnar(&self) -> Result<(), AnalyzerError> {
@@ -259,7 +392,7 @@ impl DualLayerStore {
             p.details = scrub_text(&p.details);
         }
 
-        let key = format!("evt:{ts}:{}", clean.commit_id);
+        let key = Self::event_prefix(ts, &clean.commit_id);
         let bytes = serde_json::to_vec(&clean).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         self.kv
             .insert(key.as_bytes(), bytes)
@@ -312,6 +445,48 @@ impl DualLayerStore {
         }
     }
 
+    pub fn prune_raw_events(
+        &self,
+        policy: &RetentionPolicy,
+        now_ts: i64,
+    ) -> Result<usize, AnalyzerError> {
+        let mut pruned = 0usize;
+
+        for row in self.kv.scan_prefix("evt:") {
+            let (k, _) = row.map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let key = String::from_utf8_lossy(&k).to_string();
+
+            if let Some(event_ts) = Self::parse_event_timestamp(&key) {
+                if policy.is_raw_event_expired(event_ts, now_ts) {
+                    self.kv
+                        .remove(&k)
+                        .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                    pruned += 1;
+                }
+            }
+        }
+
+        self.kv
+            .flush()
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        Ok(pruned)
+    }
+
+    pub fn prune_raw_events_now(&self, policy: &RetentionPolicy) -> Result<usize, AnalyzerError> {
+        self.prune_raw_events(policy, now_ts())
+    }
+
+    pub fn promote_to_columnar_with_retention(
+        &self,
+        policy: &RetentionPolicy,
+        now_ts: i64,
+    ) -> Result<LifecycleStats, AnalyzerError> {
+        let pruned = self.prune_raw_events(policy, now_ts)?;
+        let mut stats = self.promote_to_columnar()?;
+        stats.pruned_events = pruned;
+        Ok(stats)
+    }
+
     pub fn promote_to_columnar(&self) -> Result<LifecycleStats, AnalyzerError> {
         let conn =
             Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
@@ -320,12 +495,7 @@ impl DualLayerStore {
         for row in self.kv.scan_prefix("evt:") {
             let (k, v) = row.map_err(|e| AnalyzerError::Db(e.to_string()))?;
             let key = String::from_utf8_lossy(&k).to_string();
-            let ts = key
-                .split(':')
-                .nth(1)
-                .and_then(|s| s.parse::<i64>().ok())
-                .unwrap_or(now_ts());
-
+            let ts = Self::parse_event_timestamp(&key).unwrap_or_else(now_ts);
             let event: CommitIngestionEvent =
                 serde_json::from_slice(&v).map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
@@ -381,6 +551,7 @@ impl DualLayerStore {
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
         Ok(LifecycleStats {
             promoted_events: promoted,
+            pruned_events: 0,
         })
     }
 
@@ -388,11 +559,21 @@ impl DualLayerStore {
         &self,
         query: &AdminQuery,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        let snapshot = AnalyticsSnapshot::new(&self.columnar_path, 0);
+        self.aggregate_by_query_with_snapshot(query, &snapshot, AnalyticsQueryMode::ReadOnly)
+    }
+
+    pub fn aggregate_by_query_with_snapshot(
+        &self,
+        query: &AdminQuery,
+        snapshot: &AnalyticsSnapshot,
+        mode: AnalyticsQueryMode,
+    ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        snapshot.enforce_mode(mode)?;
         let conn =
-            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            Connection::open(&snapshot.path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());
         let release = scrub_text(&query.release.clone().unwrap_or_default());
-
         let mut stmt = conn
             .prepare(
                 "SELECT plugin, metric_key, AVG(metric_value) AS avg_value, MIN(details) AS details
@@ -418,7 +599,6 @@ impl DualLayerStore {
         }
         Ok(out)
     }
-
     pub fn compute_committer_scores(
         &self,
         query: &AdminQuery,
@@ -519,6 +699,14 @@ impl DualLayerStore {
         out.sort_by(|a, b| b.rank_score.total_cmp(&a.rank_score));
         Ok(out)
     }
+}
+
+fn shard_suffix(commit_id: &str) -> String {
+    let mut checksum: u16 = 0;
+    for byte in commit_id.as_bytes() {
+        checksum = checksum.wrapping_add(*byte as u16);
+    }
+    format!("{:02x}", checksum % 16)
 }
 
 fn now_ts() -> i64 {
