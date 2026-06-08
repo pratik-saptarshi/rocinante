@@ -149,3 +149,76 @@ fn admin_services_reject_non_admin() {
     .expect_err("permission denied");
     assert!(err.to_string().contains("permission denied"));
 }
+
+#[test]
+fn admin_services_analytics_commands_require_analytics_route() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let weights = dir.path().join("weights.json");
+    let backend = IngestionBackendConfig {
+        kind: IngestionBackendKind::BadgerSidecar,
+        strict_badger_required: true,
+        endpoint: Some("inproc://badger".to_string()),
+    };
+    let token = issue_test_token("alice", &["admin"], 3600);
+
+    admin::ingest_event(
+        &token,
+        kv.to_str().expect("kv"),
+        col.to_str().expect("col"),
+        sample_event("c3"),
+        &backend,
+    )
+    .expect("ingest");
+
+    admin::promote_lifecycle(
+        &token,
+        kv.to_str().expect("kv"),
+        col.to_str().expect("col"),
+    )
+    .expect("promote");
+
+    let aggregates = admin::query_aggregates(
+        &token,
+        kv.to_str().expect("kv"),
+        col.to_str().expect("col"),
+        AdminQuery {
+            name: Some("repo-a".to_string()),
+            release: None,
+        },
+    )
+    .expect("query aggregates");
+    assert!(!aggregates.is_empty());
+
+    let scores = admin::committer_scores(
+        &token,
+        kv.to_str().expect("kv"),
+        col.to_str().expect("col"),
+        AdminQuery {
+            name: Some("repo-a".to_string()),
+            release: None,
+        },
+        weights.to_str().expect("weights"),
+    )
+    .expect("committer scores");
+    assert!(!scores.is_empty());
+
+    let ranked = admin::rank_prs(
+        &token,
+        kv.to_str().expect("kv"),
+        col.to_str().expect("col"),
+        vec![PrCandidate {
+            pr_id: "pr-1".to_string(),
+            repo_name: "repo-a".to_string(),
+            author: "alice".to_string(),
+            release: "v1.0.0".to_string(),
+            file_risk: 0.8,
+            author_velocity: 0.5,
+            approval_fidelity: 0.6,
+        }],
+        weights.to_str().expect("weights"),
+    )
+    .expect("rank prs");
+    assert_eq!(ranked.len(), 1);
+}
