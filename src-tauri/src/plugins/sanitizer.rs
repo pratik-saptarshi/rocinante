@@ -68,7 +68,13 @@ fn redact_key_value(text: &str, key: &str) -> String {
                     out.push_str(REDACTED);
                     while j < text.len() {
                         let ch = text.as_bytes()[j] as char;
-                        if ch == '\n' || ch == '\r' || ch == ';' || ch == ',' || ch == ' ' || ch == '\t' {
+                        if ch == '\n'
+                            || ch == '\r'
+                            || ch == ';'
+                            || ch == ','
+                            || ch == ' '
+                            || ch == '\t'
+                        {
                             break;
                         }
                         j += 1;

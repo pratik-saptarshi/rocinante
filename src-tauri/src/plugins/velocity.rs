@@ -19,8 +19,11 @@ impl BeadPlugin for ContributionVelocityPlugin {
         .parse::<f64>()
         .unwrap_or(0.0);
 
-        let stat = git_stdout(&input.repo.path, &["log", "--since=30.days", "--numstat", "--pretty="])
-            .unwrap_or_default();
+        let stat = git_stdout(
+            &input.repo.path,
+            &["log", "--since=30.days", "--numstat", "--pretty="],
+        )
+        .unwrap_or_default();
         let churn: f64 = stat
             .lines()
             .filter_map(|line| {
