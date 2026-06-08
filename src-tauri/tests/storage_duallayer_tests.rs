@@ -213,3 +213,29 @@ fn async_ingestion_engine_queues_events_before_promotion() {
     }
     assert_eq!(queue_depth, 0);
 }
+
+#[test]
+fn async_ingestion_engine_start_delegates_to_interval() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+
+    let engine = AsyncIngestionEngine::start(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+        16,
+    )
+    .expect("start");
+
+    engine
+        .enqueue(CommitIngestionEvent {
+            commit_id: "start-delegate".to_string(),
+            repo_name: "repo-a".to_string(),
+            release: "v1.0.0".to_string(),
+            committer: "alice".to_string(),
+            telemetry: vec![],
+        })
+        .expect("enqueue");
+
+    assert!(engine.queue_depth() <= 1);
+}

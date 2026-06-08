@@ -213,11 +213,8 @@ impl AsyncIngestionEngine {
         columnar_path: &str,
         buffer_size: usize,
     ) -> Result<Self, AnalyzerError> {
-        let store = DualLayerStore::open(kv_path, columnar_path)?;
-        let (tx, rx): (
-            SyncSender<CommitIngestionEvent>,
-            Receiver<CommitIngestionEvent>,
-        ) = sync_channel(buffer_size.max(1));
+        Self::start_with_interval(kv_path, columnar_path, buffer_size, 1000)
+    }
 
     pub fn start_with_interval(
         kv_path: &str,

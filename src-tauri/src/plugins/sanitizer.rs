@@ -99,7 +99,7 @@ fn redact_key_value(text: &str, key: &str) -> String {
             if j < text.len() {
                 let sep = text.as_bytes()[j] as char;
                 if sep == '=' || sep == ':' {
-                    out.push_str(&text[start..=j]);
+                    out.push_str(&text[key_start..=j]);
                     j += 1;
                     while j < text.len() {
                         let ch = text.as_bytes()[j] as char;
@@ -125,7 +125,7 @@ fn redact_key_value(text: &str, key: &str) -> String {
                         }
                         j += 1;
                     }
-                    i = j;
+                    cursor = j;
                     continue;
                 }
                 let next = text.as_bytes()[j];
@@ -256,5 +256,13 @@ mod tests {
         assert!(scrubbed.contains("x-api-key=[REDACTED]"));
         assert!(scrubbed.contains("secret=[REDACTED]"));
         assert!(!scrubbed.contains("top-secret"));
+    }
+
+    #[test]
+    fn handles_double_delimiters() {
+        let raw = "x-api-key: =abc owner=bob";
+        let scrubbed = scrub_text(raw);
+        assert!(scrubbed.contains("x-api-key: =[REDACTED]"));
+        assert!(!scrubbed.contains("abc"));
     }
 }
