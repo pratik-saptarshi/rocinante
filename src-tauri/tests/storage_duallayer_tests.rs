@@ -1,6 +1,6 @@
 use repo_analyzer_core::storage::{
-    AnalyticsQueryMode, AnalyticsSnapshot, AsyncIngestionEngine, DualLayerStore, IngestionBackendConfig,
-    IngestionBackendKind, RetentionPolicy, StorageRoute,
+    AnalyticsQueryMode, AnalyticsSnapshot, AsyncIngestionEngine, DualLayerStore,
+    IngestionBackendConfig, IngestionBackendKind, RetentionPolicy, StorageRoute,
 };
 use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, TelemetryPoint};
 use serde_json;
@@ -84,8 +84,11 @@ fn rejects_ingest_route_for_ingestion_command_layer() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
-    let store = DualLayerStore::open(kv.to_str().expect("kv path"), col.to_str().expect("col path"))
-        .expect("open");
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
 
     let backend = IngestionBackendConfig {
         kind: IngestionBackendKind::BadgerSidecar,
@@ -110,8 +113,11 @@ fn rejects_analytics_route_for_query_command_layer() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
-    let store = DualLayerStore::open(kv.to_str().expect("kv path"), col.to_str().expect("col path"))
-        .expect("open");
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
 
     let err = store
         .aggregate_by_query_on_route(
@@ -331,8 +337,11 @@ fn async_ingestion_engine_applies_retention_before_promotion() {
     }
     assert!(promoted);
 
-    let store = DualLayerStore::open(kv.to_str().expect("kv path"), col.to_str().expect("col path"))
-        .expect("open");
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
     let legacy_hits = store
         .aggregate_by_query(&AdminQuery {
             name: Some("repo-a".to_string()),
@@ -355,22 +364,23 @@ fn query_aggregates_stable_while_promotion_runs_via_immutable_snapshot() {
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
 
-    let store = DualLayerStore::open(kv.to_str().expect("kv path"), col.to_str().expect("col path"))
-        .expect("open");
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
     store
         .ingest_commit_event(&sample_event_with_release("anchor", "baseline"))
         .expect("seed baseline");
-    store
-        .promote_to_columnar()
-        .expect("bootstrap promotion");
+    store.promote_to_columnar().expect("bootstrap promotion");
 
     let snapshot_path = dir.path().join("analytics.snapshot.readonly.duckdb");
-    fs::copy(col.to_str().expect("col path"), snapshot_path.to_str().expect("snapshot path"))
-        .expect("snapshot copy");
-    let snapshot = AnalyticsSnapshot::new(
+    fs::copy(
+        col.to_str().expect("col path"),
         snapshot_path.to_str().expect("snapshot path"),
-        42,
-    );
+    )
+    .expect("snapshot copy");
+    let snapshot = AnalyticsSnapshot::new(snapshot_path.to_str().expect("snapshot path"), 42);
     let engine = AsyncIngestionEngine::start_with_interval(
         kv.to_str().expect("kv path"),
         col.to_str().expect("col path"),
@@ -381,7 +391,10 @@ fn query_aggregates_stable_while_promotion_runs_via_immutable_snapshot() {
 
     for idx in 0..120 {
         engine
-            .enqueue(sample_event_with_release(&format!("stream-{idx}"), "promotion"))
+            .enqueue(sample_event_with_release(
+                &format!("stream-{idx}"),
+                "promotion",
+            ))
             .expect("enqueue");
     }
 

@@ -3,8 +3,8 @@ use crate::engine::Pipeline;
 use crate::errors::AnalyzerError;
 use crate::git::discover_repositories;
 use crate::scoring::{load_or_init_weights, update_weights_with_audit};
-use crate::storage::{IngestionBackendConfig, StorageOperation, StorageRoute};
 use crate::storage::{DualLayerStore, LifecycleStats};
+use crate::storage::{IngestionBackendConfig, StorageOperation, StorageRoute};
 use crate::telemetry::TelemetryStore;
 use crate::types::{
     AdminQuery, AnalysisMetric, CommitIngestionEvent, CommitterScore, PrCandidate, PrRanking,
