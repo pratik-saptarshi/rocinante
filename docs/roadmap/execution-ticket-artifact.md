@@ -88,6 +88,8 @@ above and must be kept in sync by updating those sources first.
 - TDD AC:
   - `tests/storage_duallayer_tests.rs` rejects analytics command against ingest route and
     vice versa.
+  - `tests/admin_service_tests.rs` exercises analytics command endpoints (`query_aggregates`,
+    `committer_scores`, `rank_prs`) to ensure analytics-route usage remains enforced.
 - Tasks:
   1. `TK-037` Enforce Badger-only writes and DuckDB-only analytics.
   2. Add boundary guard coverage in command layer.
