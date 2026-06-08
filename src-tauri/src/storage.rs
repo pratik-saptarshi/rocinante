@@ -6,6 +6,8 @@ use crate::types::{
 };
 use duckdb::{params, Connection};
 use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
 use sled::Db;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, RecvTimeoutError, SyncSender};
@@ -191,6 +193,7 @@ impl IngestionBackendConfig {
 pub struct DualLayerStore {
     kv: Arc<Db>,
     columnar_path: String,
+    latest_snapshot_id: Arc<AtomicU64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -350,8 +353,10 @@ impl DualLayerStore {
         let this = Self {
             kv: Arc::new(kv),
             columnar_path: columnar_path.to_string(),
+            latest_snapshot_id: Arc::new(AtomicU64::new(0)),
         };
         this.init_columnar()?;
+        let _ = this.refresh_analytics_snapshot(0)?;
         Ok(this)
     }
 
@@ -410,6 +415,50 @@ impl DualLayerStore {
         )
         .map_err(|e| AnalyzerError::Db(e.to_string()))?;
         Ok(())
+    }
+
+    fn snapshot_path(&self, snapshot_id: u64) -> String {
+        format!("{:}.snapshot-{:}.duckdb", self.columnar_path, snapshot_id)
+    }
+
+    fn next_snapshot_id() -> u64 {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_nanos() as u64)
+            .unwrap_or(0)
+    }
+
+    fn refresh_analytics_snapshot(&self, snapshot_id: u64) -> Result<String, AnalyzerError> {
+        let snapshot_path = if snapshot_id == 0 {
+            self.columnar_path.clone()
+        } else {
+            self.snapshot_path(snapshot_id)
+        };
+
+        if Path::new(&snapshot_path).exists() && snapshot_id != 0 {
+            return Ok(snapshot_path);
+        }
+
+        if snapshot_id == 0 {
+            return Ok(snapshot_path);
+        }
+
+        let tmp_path = format!("{}.tmp", snapshot_path);
+        let _ = fs::remove_file(&tmp_path);
+        fs::copy(&self.columnar_path, &tmp_path)
+            .map_err(|e| AnalyzerError::Io(format!("analytics snapshot copy failed: {e}")))?;
+        fs::rename(&tmp_path, &snapshot_path)
+            .map_err(|e| AnalyzerError::Io(format!("analytics snapshot publish failed: {e}")))?;
+        Ok(snapshot_path)
+    }
+
+    fn read_snapshot_for_query(&self) -> AnalyticsSnapshot {
+        let snapshot_id = self.latest_snapshot_id.load(Ordering::Acquire);
+        if snapshot_id == 0 {
+            AnalyticsSnapshot::new(&self.columnar_path, 0)
+        } else {
+            AnalyticsSnapshot::new(&self.snapshot_path(snapshot_id), snapshot_id)
+        }
     }
 
     pub fn ingest_commit_event(&self, event: &CommitIngestionEvent) -> Result<(), AnalyzerError> {
@@ -593,6 +642,10 @@ impl DualLayerStore {
         self.kv
             .flush()
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let snapshot_id = Self::next_snapshot_id();
+        self.refresh_analytics_snapshot(snapshot_id)?;
+        self.latest_snapshot_id
+            .store(snapshot_id, Ordering::Release);
         Ok(LifecycleStats {
             promoted_events: promoted,
             pruned_events: 0,
@@ -612,7 +665,7 @@ impl DualLayerStore {
         query: &AdminQuery,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
         Self::enforce_analytics_route(route)?;
-        let snapshot = AnalyticsSnapshot::new(&self.columnar_path, 0);
+        let snapshot = self.read_snapshot_for_query();
         self.aggregate_by_query_with_snapshot_on_route(
             query,
             &snapshot,
@@ -659,8 +712,18 @@ impl DualLayerStore {
         mode: AnalyticsQueryMode,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
         snapshot.enforce_mode(mode)?;
+        let snapshot_path = if snapshot.snapshot_id > 0 {
+            let replica_path = self.snapshot_path(snapshot.snapshot_id);
+            if Path::new(&replica_path).exists() {
+                replica_path
+            } else {
+                snapshot.path.clone()
+            }
+        } else {
+            snapshot.path.clone()
+        };
         let conn =
-            Connection::open(&snapshot.path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());
         let release = scrub_text(&query.release.clone().unwrap_or_default());
         let mut stmt = conn

@@ -102,9 +102,10 @@ above and must be kept in sync by updating those sources first.
 - Current status: In Progress
 - TDD AC:
   - Snapshot query tests show reads succeed while promotion runs.
+  - `tests/storage_duallayer_tests.rs::query_aggregates_stable_while_promotion_runs_via_immutable_snapshot`
 - Tasks:
-  1. `TK-035` Read via immutable snapshot/replica strategy.
-  2. Add contention tests under burst writes.
+  1. `TK-035` Read via immutable snapshot/replica strategy. ✅
+  2. Add contention tests under burst writes. ✅
 - Function AC:
   - `AnalyticsSnapshot::enforce_mode` blocks mutable reads under snapshot mode.
   - `query_aggregates` returns stable views under concurrent promotion.
