@@ -63,7 +63,7 @@ fn rejects_wrong_issuer() {
 #[test]
 fn rejects_wrong_signature() {
     let token = issue_test_token("alice", &["admin"], 3600);
-    let mut parts: Vec<&str> = token.split('.').collect();
+    let parts: Vec<&str> = token.split('.').collect();
     assert_eq!(parts.len(), 3);
     let tampered = format!("{}.{}.{}", parts[0], parts[1], "invalidsig");
     assert!(decode_principal(&tampered).is_err());
