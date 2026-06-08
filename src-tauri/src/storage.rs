@@ -337,6 +337,14 @@ impl DualLayerStore {
         parts.next()?.parse::<i64>().ok()
     }
 
+    fn enforce_ingest_route(route: StorageRoute) -> Result<(), AnalyzerError> {
+        route.enforce(StorageOperation::IngestWrite)
+    }
+
+    fn enforce_analytics_route(route: StorageRoute) -> Result<(), AnalyzerError> {
+        route.enforce(StorageOperation::AnalyticsQuery)
+    }
+
     fn init_columnar(&self) -> Result<(), AnalyzerError> {
         let conn =
             Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
@@ -401,6 +409,18 @@ impl DualLayerStore {
         event: &CommitIngestionEvent,
         backend: &IngestionBackendConfig,
     ) -> Result<(), AnalyzerError> {
+        Self::enforce_ingest_route(StorageRoute::Ingestion)?;
+        backend.validate()?;
+        self.ingest_commit_event_with_backend_on_route(event, StorageRoute::Ingestion, backend)
+    }
+
+    pub fn ingest_commit_event_with_backend_on_route(
+        &self,
+        event: &CommitIngestionEvent,
+        route: StorageRoute,
+        backend: &IngestionBackendConfig,
+    ) -> Result<(), AnalyzerError> {
+        Self::enforce_ingest_route(route)?;
         backend.validate()?;
         match backend.kind {
             IngestionBackendKind::SledTransitional => self.ingest_commit_event(event),
@@ -552,8 +572,53 @@ impl DualLayerStore {
         &self,
         query: &AdminQuery,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        self.aggregate_by_query_on_route(StorageRoute::Analytics, query)
+    }
+
+    pub fn aggregate_by_query_on_route(
+        &self,
+        route: StorageRoute,
+        query: &AdminQuery,
+    ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        Self::enforce_analytics_route(route)?;
         let snapshot = AnalyticsSnapshot::new(&self.columnar_path, 0);
-        self.aggregate_by_query_with_snapshot(query, &snapshot, AnalyticsQueryMode::ReadOnly)
+        self.aggregate_by_query_with_snapshot_on_route(
+            query,
+            &snapshot,
+            AnalyticsQueryMode::ReadOnly,
+            route,
+        )
+    }
+
+    pub fn aggregate_by_query_with_snapshot_on_route(
+        &self,
+        query: &AdminQuery,
+        snapshot: &AnalyticsSnapshot,
+        mode: AnalyticsQueryMode,
+        route: StorageRoute,
+    ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        Self::enforce_analytics_route(route)?;
+        self.aggregate_by_query_with_snapshot(query, snapshot, mode)
+    }
+
+    pub fn compute_committer_scores_with_route(
+        &self,
+        route: StorageRoute,
+        query: &AdminQuery,
+        weights: &ScoringWeights,
+    ) -> Result<Vec<CommitterScore>, AnalyzerError> {
+        Self::enforce_analytics_route(route)?;
+        self.compute_committer_scores(query, weights)
+    }
+
+    pub fn rank_open_prs_with_route(
+        &self,
+        route: StorageRoute,
+        prs: &[PrCandidate],
+        weights: &ScoringWeights,
+    ) -> Result<Vec<PrRanking>, AnalyzerError> {
+        Self::enforce_analytics_route(route)?;
+        self.rank_open_prs(prs, weights)
     }
 
     pub fn aggregate_by_query_with_snapshot(

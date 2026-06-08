@@ -1,10 +1,26 @@
 use repo_analyzer_core::storage::{
-    AnalyticsQueryMode, AnalyticsSnapshot, AsyncIngestionEngine, DualLayerStore, RetentionPolicy,
+    AnalyticsQueryMode, AnalyticsSnapshot, AsyncIngestionEngine, DualLayerStore, IngestionBackendConfig,
+    IngestionBackendKind, RetentionPolicy, StorageRoute,
 };
 use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, TelemetryPoint};
 use std::thread;
 use std::time::Duration;
 use tempfile::tempdir;
+
+fn sample_event(id: &str) -> CommitIngestionEvent {
+    CommitIngestionEvent {
+        commit_id: id.to_string(),
+        repo_name: "repo-a".to_string(),
+        release: "v1.0.0".to_string(),
+        committer: "alice".to_string(),
+        telemetry: vec![TelemetryPoint {
+            plugin: "complexity".to_string(),
+            metric_key: "estimated_cyclomatic_complexity".to_string(),
+            metric_value: 8.0,
+            details: "ok".to_string(),
+        }],
+    }
+}
 
 #[test]
 fn promotes_events_and_reads_aggregates() {
@@ -44,6 +60,54 @@ fn promotes_events_and_reads_aggregates() {
 
     assert_eq!(points.len(), 1);
     assert_eq!(points[0].metric_key, "estimated_cyclomatic_complexity");
+}
+
+#[test]
+fn rejects_ingest_route_for_ingestion_command_layer() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let store = DualLayerStore::open(kv.to_str().expect("kv path"), col.to_str().expect("col path"))
+        .expect("open");
+
+    let backend = IngestionBackendConfig {
+        kind: IngestionBackendKind::BadgerSidecar,
+        strict_badger_required: true,
+        endpoint: Some("inproc://badger".to_string()),
+    };
+
+    let err = store
+        .ingest_commit_event_with_backend_on_route(
+            &sample_event("misroute"),
+            StorageRoute::Analytics,
+            &backend,
+        )
+        .expect_err("cross-route ingest should fail");
+    assert!(err
+        .to_string()
+        .contains("Ingestion writes must route exclusively to BadgerDB"));
+}
+
+#[test]
+fn rejects_analytics_route_for_query_command_layer() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let store = DualLayerStore::open(kv.to_str().expect("kv path"), col.to_str().expect("col path"))
+        .expect("open");
+
+    let err = store
+        .aggregate_by_query_on_route(
+            StorageRoute::Ingestion,
+            &AdminQuery {
+                name: Some("repo-a".to_string()),
+                release: None,
+            },
+        )
+        .expect_err("cross-route query should fail");
+    assert!(err
+        .to_string()
+        .contains("Analytics queries must route exclusively to DuckDB"));
 }
 
 #[test]
