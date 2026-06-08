@@ -84,7 +84,7 @@ above and must be kept in sync by updating those sources first.
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-003`
 - Bead context: `B-09`
-- Current status: In Progress
+- Current status: Completed
 - TDD AC:
   - `tests/storage_duallayer_tests.rs` rejects analytics command against ingest route and
     vice versa.
