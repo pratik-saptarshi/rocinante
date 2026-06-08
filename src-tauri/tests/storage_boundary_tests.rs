@@ -5,7 +5,9 @@ fn rejects_ingestion_write_on_analytics_route() {
     let err = StorageRoute::Analytics
         .enforce(StorageOperation::IngestWrite)
         .expect_err("expected route violation");
-    assert!(err.to_string().contains("Ingestion writes must route exclusively to BadgerDB"));
+    assert!(err
+        .to_string()
+        .contains("Ingestion writes must route exclusively to BadgerDB"));
 }
 
 #[test]
@@ -13,7 +15,9 @@ fn rejects_analytics_query_on_ingestion_route() {
     let err = StorageRoute::Ingestion
         .enforce(StorageOperation::AnalyticsQuery)
         .expect_err("expected route violation");
-    assert!(err.to_string().contains("Analytics queries must route exclusively to DuckDB"));
+    assert!(err
+        .to_string()
+        .contains("Analytics queries must route exclusively to DuckDB"));
 }
 
 #[test]

@@ -12,7 +12,10 @@ impl BeadPlugin for CodeQualityPlugin {
 
     fn run(&self, input: &AnalysisInput) -> Result<Vec<AnalysisMetric>, AnalyzerError> {
         let mut todo_hits = 0.0;
-        for entry in walkdir::WalkDir::new(&input.repo.path).into_iter().flatten() {
+        for entry in walkdir::WalkDir::new(&input.repo.path)
+            .into_iter()
+            .flatten()
+        {
             if !entry.file_type().is_file() {
                 continue;
             }

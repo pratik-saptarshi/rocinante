@@ -33,7 +33,9 @@ fn badger_sidecar_requires_endpoint() {
         endpoint: None,
     };
 
-    let err = cfg.validate().expect_err("expected endpoint validation failure");
+    let err = cfg
+        .validate()
+        .expect_err("expected endpoint validation failure");
     assert!(err
         .to_string()
         .contains("Badger sidecar endpoint is required"));
