@@ -5,7 +5,7 @@
 | Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
 | BI-001 | B-04 | `F-008A` BadgerDB conformance profile gates | Red->Green complete | In Progress | implementer | Added `StorageProfile` with strict Badger+DuckDB validation; full runtime migration pending sidecar adapter wiring. |
-| BI-002 | B-05 | `F-008D` raw retention TTL prune semantics | Red->Green complete | In Progress | implementer | Added `RetentionPolicy` TTL expiry logic; next: integrate prune job into ingestion lifecycle. |
+| BI-002 | B-05 | `F-008D` raw retention TTL prune semantics | Red->Green complete | In Progress | implementer | Added async-engine retention-aware promotion (`AsyncIngestionEngine::start_with_interval_and_retention`) and coverage test. |
 | BI-003 | B-09 | `F-008B` non-bypassable API boundary guards | In Progress | In Progress | implementer | Add command-layer guard tests to reject cross-layer misuse. |
 | BI-004 | B-05 | `F-008C` snapshot/replica read isolation | In Progress | In Progress | implementer | Introduce read snapshot strategy and contention tests. |
 | BI-005 | B-04 | `F-008A` Badger sidecar adapter | Red->Green complete | Completed | implementer | Runtime and admin ingestion now enforce strict Badger sidecar config; full transport integration remains a follow-up implementation slice. |
