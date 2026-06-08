@@ -8,6 +8,7 @@ fn redact_with_patterns(input: &str) -> String {
     let mut out = input.to_string();
 
     for key in [
+        "x-api-key",
         "api_key",
         "apikey",
         "access_token",
@@ -122,11 +123,9 @@ fn next_char_boundary(text: &str, cursor: usize) -> usize {
     if cursor >= text.len() {
         return cursor;
     }
-    cursor + text[cursor..]
-        .chars()
-        .next()
-        .map(|c| c.len_utf8())
-        .unwrap_or(0)
+    text.char_indices()
+        .find_map(|(idx, _)| (idx > cursor).then_some(idx))
+        .unwrap_or(text.len())
 }
 
 fn is_token_boundary_before(bytes: &[u8], key_start: usize) -> bool {
