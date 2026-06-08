@@ -116,6 +116,7 @@ above and must be kept in sync by updating those sources first.
 - Current status: In Progress
 - TDD AC:
   - `tests/storage_policy_tests.rs` validates TTL and roll-up execution windows.
+  - `tests/storage_duallayer_tests.rs::async_ingestion_engine_applies_retention_before_promotion` validates background retention on async promotion cycles.
 - Tasks:
   1. `TK-016` Add ingestion durability checks.
   2. `TK-034` Add short-term TTL + prune + roll-up schedule checks.

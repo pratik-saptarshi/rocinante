@@ -222,6 +222,22 @@ impl AsyncIngestionEngine {
         buffer_size: usize,
         promotion_interval_ms: u64,
     ) -> Result<Self, AnalyzerError> {
+        Self::start_with_interval_and_retention(
+            kv_path,
+            columnar_path,
+            buffer_size,
+            promotion_interval_ms,
+            None,
+        )
+    }
+
+    pub fn start_with_interval_and_retention(
+        kv_path: &str,
+        columnar_path: &str,
+        buffer_size: usize,
+        promotion_interval_ms: u64,
+        retention_policy: Option<RetentionPolicy>,
+    ) -> Result<Self, AnalyzerError> {
         let store = DualLayerStore::open(kv_path, columnar_path)?;
         let (tx, rx): (
             SyncSender<QueuedIngestionEvent>,
@@ -237,6 +253,7 @@ impl AsyncIngestionEngine {
         let max_queue_lag_bg = Arc::clone(&max_queue_lag_ms);
         let promotion_interval = Duration::from_millis(promotion_interval_ms.max(1));
         let mut last_promotion = Instant::now();
+        let retention_bg = retention_policy;
 
         thread::spawn(move || loop {
             match rx.recv_timeout(promotion_interval) {
@@ -249,14 +266,28 @@ impl AsyncIngestionEngine {
                     );
 
                     if last_promotion.elapsed() >= promotion_interval {
-                        let _ = store.promote_to_columnar();
+                        let _ = match &retention_bg {
+                            Some(policy) => {
+                                let _ = store.promote_to_columnar_with_retention(policy, now_ts());
+                            }
+                            None => {
+                                let _ = store.promote_to_columnar();
+                            }
+                        };
                         promotion_count_bg.fetch_add(1, Ordering::AcqRel);
                         last_promotion = Instant::now();
                     }
                 }
                 Err(RecvTimeoutError::Timeout) => {
                     if last_promotion.elapsed() >= promotion_interval {
-                        let _ = store.promote_to_columnar();
+                        let _ = match &retention_bg {
+                            Some(policy) => {
+                                let _ = store.promote_to_columnar_with_retention(policy, now_ts());
+                            }
+                            None => {
+                                let _ = store.promote_to_columnar();
+                            }
+                        };
                         promotion_count_bg.fetch_add(1, Ordering::AcqRel);
                         last_promotion = Instant::now();
                     }

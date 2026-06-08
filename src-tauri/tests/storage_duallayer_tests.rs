@@ -3,6 +3,7 @@ use repo_analyzer_core::storage::{
     IngestionBackendKind, RetentionPolicy, StorageRoute,
 };
 use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, TelemetryPoint};
+use serde_json;
 use std::thread;
 use std::time::Duration;
 use tempfile::tempdir;
@@ -12,6 +13,21 @@ fn sample_event(id: &str) -> CommitIngestionEvent {
         commit_id: id.to_string(),
         repo_name: "repo-a".to_string(),
         release: "v1.0.0".to_string(),
+        committer: "alice".to_string(),
+        telemetry: vec![TelemetryPoint {
+            plugin: "complexity".to_string(),
+            metric_key: "estimated_cyclomatic_complexity".to_string(),
+            metric_value: 8.0,
+            details: "ok".to_string(),
+        }],
+    }
+}
+
+fn sample_event_with_release(id: &str, release: &str) -> CommitIngestionEvent {
+    CommitIngestionEvent {
+        commit_id: id.to_string(),
+        repo_name: "repo-a".to_string(),
+        release: release.to_string(),
         committer: "alice".to_string(),
         telemetry: vec![TelemetryPoint {
             plugin: "complexity".to_string(),
@@ -276,4 +292,58 @@ fn async_ingestion_engine_queues_events_before_promotion() {
         thread::sleep(Duration::from_millis(100));
     }
     assert_eq!(queue_depth, 0);
+}
+
+#[test]
+fn async_ingestion_engine_applies_retention_before_promotion() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+
+    let raw_db = sled::open(&kv).expect("open raw kv");
+    let expired = sample_event_with_release("legacy", "legacy-retention");
+    let payload = serde_json::to_vec(&expired).expect("serialize");
+    raw_db
+        .insert("evt:10:ab:legacy", payload)
+        .expect("seed expired raw");
+
+    let engine = AsyncIngestionEngine::start_with_interval_and_retention(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+        16,
+        50,
+        Some(RetentionPolicy { raw_ttl_secs: 50 }),
+    )
+    .expect("start");
+
+    engine
+        .enqueue(sample_event_with_release("active", "active-retention"))
+        .expect("enqueue fresh");
+
+    let mut promoted = false;
+    for _ in 0..20 {
+        if engine.promotion_count() > 0 {
+            promoted = true;
+            break;
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+    assert!(promoted);
+
+    let store = DualLayerStore::open(kv.to_str().expect("kv path"), col.to_str().expect("col path"))
+        .expect("open");
+    let legacy_hits = store
+        .aggregate_by_query(&AdminQuery {
+            name: Some("repo-a".to_string()),
+            release: Some("legacy-retention".to_string()),
+        })
+        .expect("legacy query");
+    let active_hits = store
+        .aggregate_by_query(&AdminQuery {
+            name: Some("repo-a".to_string()),
+            release: Some("active-retention".to_string()),
+        })
+        .expect("active query");
+    assert!(legacy_hits.is_empty());
+    assert!(!active_hits.is_empty());
 }
