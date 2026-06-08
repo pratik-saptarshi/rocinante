@@ -11,6 +11,7 @@ type HmacSha256 = Hmac<Sha256>;
 const JWT_ALG_HEADER: &str = r#"{"alg":"HS256","typ":"JWT"}"#;
 const DEFAULT_ISSUER: &str = "rocinante-console";
 const DEFAULT_AUDIENCE: &str = "repo-analyzer";
+#[allow(dead_code)]
 const CLAIM_TOKEN_TTL_SECONDS: i64 = 900;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -38,12 +39,14 @@ fn encode_base64_url(bytes: &[u8]) -> String {
 }
 
 fn decode_base64_url(payload: &str) -> Result<Vec<u8>, AnalyzerError> {
-    URL_SAFE_NO_PAD.decode(payload).map_err(|_| AnalyzerError::InvalidToken)
+    URL_SAFE_NO_PAD
+        .decode(payload)
+        .map_err(|_| AnalyzerError::InvalidToken)
 }
 
 fn expected_signature(header: &str, payload: &str) -> Result<String, AnalyzerError> {
-    let mut mac =
-        HmacSha256::new_from_slice(token_secret().as_bytes()).map_err(|_| AnalyzerError::InvalidToken)?;
+    let mut mac = HmacSha256::new_from_slice(token_secret().as_bytes())
+        .map_err(|_| AnalyzerError::InvalidToken)?;
     mac.update(format!("{}.{}", header, payload).as_bytes());
     let signature = mac.finalize().into_bytes();
     Ok(encode_base64_url(&signature))

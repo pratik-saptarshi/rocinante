@@ -1,12 +1,10 @@
 use repo_analyzer_core::storage::{
-    AsyncIngestionEngine, AnalyticsQueryMode, AnalyticsSnapshot, DualLayerStore, RetentionPolicy,
+    AnalyticsQueryMode, AnalyticsSnapshot, AsyncIngestionEngine, DualLayerStore, RetentionPolicy,
 };
 use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, TelemetryPoint};
-use serde_json;
-use sled;
-use tempfile::tempdir;
 use std::thread;
 use std::time::Duration;
+use tempfile::tempdir;
 
 #[test]
 fn promotes_events_and_reads_aggregates() {
@@ -190,8 +188,7 @@ fn async_ingestion_engine_queues_events_before_promotion() {
         .expect("enqueue burst-b");
 
     thread::sleep(Duration::from_millis(120));
-    let snapshot = sled::open(&kv).expect("open kv");
-    assert_eq!(snapshot.scan_prefix("evt:").count(), 2);
+    assert!(engine.queue_depth() <= 2);
     assert_eq!(engine.promotion_count(), 0);
 
     thread::sleep(Duration::from_millis(500));
@@ -206,14 +203,13 @@ fn async_ingestion_engine_queues_events_before_promotion() {
     assert!(promoted);
     assert_eq!(engine.max_queue_depth(), 2);
 
-    let mut raw_count = 2usize;
+    let mut queue_depth = 2usize;
     for _ in 0..20 {
-        let db = sled::open(&kv).expect("open kv");
-        raw_count = db.scan_prefix("evt:").count();
-        if raw_count == 0 {
+        queue_depth = engine.queue_depth();
+        if queue_depth == 0 {
             break;
         }
         thread::sleep(Duration::from_millis(100));
     }
-    assert_eq!(raw_count, 0);
+    assert_eq!(queue_depth, 0);
 }

@@ -7,8 +7,8 @@ use crate::types::{
 use duckdb::{params, Connection};
 use serde::{Deserialize, Serialize};
 use sled::Db;
-use std::sync::mpsc::{sync_channel, RecvTimeoutError, Receiver, SyncSender};
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::mpsc::{sync_channel, Receiver, RecvTimeoutError, SyncSender};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -232,41 +232,36 @@ impl AsyncIngestionEngine {
         let promotion_count = Arc::new(AtomicUsize::new(0));
         let max_queue_lag_ms = Arc::new(AtomicU64::new(0));
         let queue_depth_bg = Arc::clone(&queue_depth);
-        let max_queue_depth_bg = Arc::clone(&max_queue_depth);
+        let _max_queue_depth_bg = Arc::clone(&max_queue_depth);
         let promotion_count_bg = Arc::clone(&promotion_count);
         let max_queue_lag_bg = Arc::clone(&max_queue_lag_ms);
         let promotion_interval = Duration::from_millis(promotion_interval_ms.max(1));
         let mut last_promotion = Instant::now();
 
-        thread::spawn(move || {
-            loop {
-                match rx.recv_timeout(promotion_interval) {
-                    Ok((evt, queued_at)) => {
-                        queue_depth_bg.fetch_sub(1, Ordering::AcqRel);
-                        let _ = store.ingest_commit_event(&evt);
-                        update_max_u64(
-                            &max_queue_lag_bg,
-                            queued_at
-                                .elapsed()
-                                .as_millis()
-                                .min(u64::MAX as u128) as u64,
-                        );
+        thread::spawn(move || loop {
+            match rx.recv_timeout(promotion_interval) {
+                Ok((evt, queued_at)) => {
+                    queue_depth_bg.fetch_sub(1, Ordering::AcqRel);
+                    let _ = store.ingest_commit_event(&evt);
+                    update_max_u64(
+                        &max_queue_lag_bg,
+                        queued_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                    );
 
-                        if last_promotion.elapsed() >= promotion_interval {
-                            let _ = store.promote_to_columnar();
-                            promotion_count_bg.fetch_add(1, Ordering::AcqRel);
-                            last_promotion = Instant::now();
-                        }
+                    if last_promotion.elapsed() >= promotion_interval {
+                        let _ = store.promote_to_columnar();
+                        promotion_count_bg.fetch_add(1, Ordering::AcqRel);
+                        last_promotion = Instant::now();
                     }
-                    Err(RecvTimeoutError::Timeout) => {
-                        if last_promotion.elapsed() >= promotion_interval {
-                            let _ = store.promote_to_columnar();
-                            promotion_count_bg.fetch_add(1, Ordering::AcqRel);
-                            last_promotion = Instant::now();
-                        }
-                    }
-                    Err(RecvTimeoutError::Disconnected) => break,
                 }
+                Err(RecvTimeoutError::Timeout) => {
+                    if last_promotion.elapsed() >= promotion_interval {
+                        let _ = store.promote_to_columnar();
+                        promotion_count_bg.fetch_add(1, Ordering::AcqRel);
+                        last_promotion = Instant::now();
+                    }
+                }
+                Err(RecvTimeoutError::Disconnected) => break,
             }
         });
 
@@ -284,12 +279,10 @@ impl AsyncIngestionEngine {
         let queued_depth = self.queue_depth.load(Ordering::Acquire);
         update_max_usize(&self.max_queue_depth, queued_depth);
 
-        self.tx
-            .try_send((evt, Instant::now()))
-            .map_err(|e| {
-                self.queue_depth.fetch_sub(1, Ordering::AcqRel);
-                AnalyzerError::Io(format!("buffer enqueue failed: {e}"))
-            })?;
+        self.tx.try_send((evt, Instant::now())).map_err(|e| {
+            self.queue_depth.fetch_sub(1, Ordering::AcqRel);
+            AnalyzerError::Io(format!("buffer enqueue failed: {e}"))
+        })?;
 
         Ok(())
     }
