@@ -6,9 +6,9 @@ use crate::types::{
 };
 use duckdb::{params, Connection};
 use serde::{Deserialize, Serialize};
+use sled::Db;
 use std::fs;
 use std::path::Path;
-use sled::Db;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, RecvTimeoutError, SyncSender};
 use std::sync::Arc;

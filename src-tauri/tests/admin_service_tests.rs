@@ -172,12 +172,8 @@ fn admin_services_analytics_commands_require_analytics_route() {
     )
     .expect("ingest");
 
-    admin::promote_lifecycle(
-        &token,
-        kv.to_str().expect("kv"),
-        col.to_str().expect("col"),
-    )
-    .expect("promote");
+    admin::promote_lifecycle(&token, kv.to_str().expect("kv"), col.to_str().expect("col"))
+        .expect("promote");
 
     let aggregates = admin::query_aggregates(
         &token,
