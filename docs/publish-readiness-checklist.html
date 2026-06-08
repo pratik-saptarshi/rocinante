@@ -33,10 +33,10 @@ RBAC/auth checks covered by tests | [x] | `src-tauri/tests/auth_tests.rs`
 
 Criterion | Status | Evidence
 ---|---|---
-Formatting | [x] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
-Lint | [x] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
-Unit/integration tests | [x] | `cargo test --manifest-path src-tauri/Cargo.toml` (46 tests, all passing)
-Coverage expectation | [x] | `cargo llvm-cov --summary-only` (Coverage run: lines 77.65%, functions 58.29%, regions 71.91%)
+Formatting | [ ] | PR #11 CI shows `cargo fmt` failure on `src-tauri/src/auth.rs`, `src-tauri/src/storage.rs`, and `src-tauri/src/plugins/sanitizer.rs` (pre-existing relative to base).
+Lint | [ ] | blocked by format check failure in PR #11
+Unit/integration tests | [ ] | blocked by format check failure in PR #11
+Coverage expectation | [ ] | blocked by format check failure in PR #11
 
 ## 5) Gate: Documentation and operations
 
