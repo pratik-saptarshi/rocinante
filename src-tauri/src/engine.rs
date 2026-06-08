@@ -14,20 +14,6 @@ pub struct Pipeline {
     beads: Vec<Arc<dyn BeadPlugin>>,
 }
 
-impl Default for Pipeline {
-    fn default() -> Self {
-        let mut p = Self {
-            mandatory_pre: Arc::new(MandatorySanitizerPlugin),
-            beads: Vec::new(),
-        };
-        p.register(CodeQualityPlugin);
-        p.register(ComplexityPlugin);
-        p.register(ContributionVelocityPlugin);
-        p.register(PrApprovalPlugin);
-        p
-    }
-}
-
 impl Pipeline {
     pub fn register<P: BeadPlugin + 'static>(&mut self, plugin: P) {
         self.beads.push(Arc::new(plugin));
@@ -77,5 +63,19 @@ impl Pipeline {
             release: release.to_string(),
             metrics,
         })
+    }
+}
+
+impl Default for Pipeline {
+    fn default() -> Self {
+        let mut p = Self {
+            mandatory_pre: Arc::new(MandatorySanitizerPlugin),
+            beads: Vec::new(),
+        };
+        p.register(CodeQualityPlugin);
+        p.register(ComplexityPlugin);
+        p.register(ContributionVelocityPlugin);
+        p.register(PrApprovalPlugin);
+        p
     }
 }
