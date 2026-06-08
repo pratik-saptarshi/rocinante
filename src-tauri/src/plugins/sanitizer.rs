@@ -63,83 +63,74 @@ fn redact_key_value(text: &str, key: &str) -> String {
             continue;
         }
 
-        let mut j = key_end;
-        while j < lower.len() {
-            if !lower.is_char_boundary(j) {
-                j = next_char_boundary(text, j);
-                continue;
-            }
-            let separator_candidate = text.as_bytes()[j];
-            if separator_candidate == b' ' || separator_candidate == b'\t' {
-                j += 1;
+        let mut first_delim_candidate = key_end;
+        while first_delim_candidate < lower.len() {
+            let byte = lower.as_bytes()[first_delim_candidate];
+            if byte == b' ' || byte == b'\t' {
+                first_delim_candidate += 1;
                 continue;
             }
             break;
         }
 
-        out.push_str(&text[cursor..key_start]);
+        if first_delim_candidate < lower.len()
+            && (lower.as_bytes()[first_delim_candidate] == b'='
+                || lower.as_bytes()[first_delim_candidate] == b':')
+        {
+            let delim1 = first_delim_candidate;
 
-        if j < text.len() && (text.as_bytes()[j] == b'=' || text.as_bytes()[j] == b':') {
-            out.push_str(&text[key_start..=j]);
-            j += 1;
-            while j < text.len() {
-                if !lower.is_char_boundary(j) {
-                    j = next_char_boundary(text, j);
-                    continue;
-                }
-                let next = text.as_bytes()[j];
-                if next == b' ' || next == b'\t' {
-                    out.push(next as char);
-                    j += 1;
+            let mut second_delim_candidate = delim1 + 1;
+            while second_delim_candidate < lower.len() {
+                let byte = lower.as_bytes()[second_delim_candidate];
+                if byte == b' ' || byte == b'\t' {
+                    second_delim_candidate += 1;
                     continue;
                 }
                 break;
             }
 
-            if j < text.len() {
-                let sep = text.as_bytes()[j] as char;
-                if sep == '=' || sep == ':' {
-                    out.push_str(&text[key_start..=j]);
-                    j += 1;
-                    while j < text.len() {
-                        let ch = text.as_bytes()[j] as char;
-                        if ch == ' ' || ch == '\t' {
-                            out.push(ch);
-                            j += 1;
-                            continue;
-                        }
-                        break;
-                    }
+            let (delim_end, val_start_candidate) = if second_delim_candidate < lower.len()
+                && (lower.as_bytes()[second_delim_candidate] == b'='
+                    || lower.as_bytes()[second_delim_candidate] == b':')
+            {
+                let delim2 = second_delim_candidate;
+                (delim2, delim2 + 1)
+            } else {
+                (delim1, delim1 + 1)
+            };
 
-                    out.push_str(REDACTED);
-                    while j < text.len() {
-                        let ch = text.as_bytes()[j] as char;
-                        if ch == '\n'
-                            || ch == '\r'
-                            || ch == ';'
-                            || ch == ','
-                            || ch == ' '
-                            || ch == '\t'
-                        {
-                            break;
-                        }
-                        j += 1;
-                    }
-                    cursor = j;
+            let mut val_start = val_start_candidate;
+            while val_start < lower.len() {
+                let byte = lower.as_bytes()[val_start];
+                if byte == b' ' || byte == b'\t' {
+                    val_start += 1;
                     continue;
                 }
-                let next = text.as_bytes()[j];
-                if matches!(next, b' ' | b'\t' | b'\r' | b'\n' | b';' | b',') {
+                break;
+            }
+
+            let mut val_end = val_start;
+            while val_end < lower.len() {
+                if !lower.is_char_boundary(val_end) {
+                    val_end = next_char_boundary(&lower, val_end);
+                    continue;
+                }
+                let ch = lower.as_bytes()[val_end] as char;
+                if ch == '\n' || ch == '\r' || ch == ';' || ch == ',' || ch == ' ' || ch == '\t' {
                     break;
                 }
-                j += 1;
+                val_end += 1;
             }
-            cursor = j;
-            continue;
-        }
 
-        out.push_str(&text[cursor..key_end]);
-        cursor = key_end;
+            out.push_str(&text[cursor..key_start]);
+            out.push_str(&text[key_start..=delim_end]);
+            out.push_str(&text[delim_end + 1..val_start]);
+            out.push_str(REDACTED);
+            cursor = val_end;
+        } else {
+            out.push_str(&text[cursor..key_end]);
+            cursor = key_end;
+        }
     }
 
     out

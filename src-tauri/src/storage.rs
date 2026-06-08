@@ -591,8 +591,19 @@ impl DualLayerStore {
         &self,
         query: &AdminQuery,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        let snapshot = AnalyticsSnapshot::new(&self.columnar_path, 0);
+        self.aggregate_by_query_with_snapshot(query, &snapshot, AnalyticsQueryMode::ReadOnly)
+    }
+
+    pub fn aggregate_by_query_with_snapshot(
+        &self,
+        query: &AdminQuery,
+        snapshot: &AnalyticsSnapshot,
+        mode: AnalyticsQueryMode,
+    ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        snapshot.enforce_mode(mode)?;
         let conn =
-            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            Connection::open(&snapshot.path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());
         let release = scrub_text(&query.release.clone().unwrap_or_default());
         let mut stmt = conn
