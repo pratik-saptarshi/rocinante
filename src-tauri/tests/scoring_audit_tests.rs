@@ -17,8 +17,10 @@ fn weight_updates_are_audited_and_admin_only() {
     );
     assert!(denied.is_err());
 
-    let mut w = ScoringWeights::default();
-    w.version = "v2".to_string();
+    let w = ScoringWeights {
+        version: "v2".to_string(),
+        ..ScoringWeights::default()
+    };
     update_scoring_weights(
         "alice:admin",
         weights.to_str().expect("weights path"),

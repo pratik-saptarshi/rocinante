@@ -6,8 +6,11 @@ use tempfile::tempdir;
 #[test]
 fn pipeline_runs_all_beads() {
     let tmp = tempdir().expect("tempdir");
-    fs::write(tmp.path().join("main.rs"), "fn main(){ if true { println!(\"ok\"); } }")
-        .expect("write file");
+    fs::write(
+        tmp.path().join("main.rs"),
+        "fn main(){ if true { println!(\"ok\"); } }",
+    )
+    .expect("write file");
 
     let repo = RepoTarget {
         name: "demo".to_string(),
@@ -19,6 +22,9 @@ fn pipeline_runs_all_beads() {
 
     assert!(record.metrics.iter().any(|m| m.plugin == "code_quality"));
     assert!(record.metrics.iter().any(|m| m.plugin == "complexity"));
-    assert!(record.metrics.iter().any(|m| m.plugin == "contribution_velocity"));
+    assert!(record
+        .metrics
+        .iter()
+        .any(|m| m.plugin == "contribution_velocity"));
     assert!(record.metrics.iter().any(|m| m.plugin == "pr_approval"));
 }

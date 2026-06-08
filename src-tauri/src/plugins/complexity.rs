@@ -25,7 +25,10 @@ impl BeadPlugin for ComplexityPlugin {
                 }
             }
         } else {
-            for entry in walkdir::WalkDir::new(&input.repo.path).into_iter().flatten() {
+            for entry in walkdir::WalkDir::new(&input.repo.path)
+                .into_iter()
+                .flatten()
+            {
                 if !entry.file_type().is_file() {
                     continue;
                 }

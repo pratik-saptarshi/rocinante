@@ -29,7 +29,8 @@ pub fn load_or_init_weights(path: &str) -> Result<ScoringWeights, AnalyzerError>
 }
 
 pub fn persist_weights(path: &str, weights: &ScoringWeights) -> Result<(), AnalyzerError> {
-    let raw = serde_json::to_string_pretty(weights).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+    let raw =
+        serde_json::to_string_pretty(weights).map_err(|e| AnalyzerError::Db(e.to_string()))?;
     fs::write(path, raw)?;
     Ok(())
 }
