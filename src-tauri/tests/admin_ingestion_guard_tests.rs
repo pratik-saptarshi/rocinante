@@ -1,5 +1,4 @@
 use repo_analyzer_core::admin;
-use repo_analyzer_core::auth::issue_test_token;
 use repo_analyzer_core::storage::{IngestionBackendConfig, IngestionBackendKind};
 use repo_analyzer_core::types::{CommitIngestionEvent, TelemetryPoint};
 use tempfile::tempdir;

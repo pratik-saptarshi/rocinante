@@ -213,8 +213,11 @@ impl AsyncIngestionEngine {
         columnar_path: &str,
         buffer_size: usize,
     ) -> Result<Self, AnalyzerError> {
-        Self::start_with_interval(kv_path, columnar_path, buffer_size, 25)
-    }
+        let store = DualLayerStore::open(kv_path, columnar_path)?;
+        let (tx, rx): (
+            SyncSender<CommitIngestionEvent>,
+            Receiver<CommitIngestionEvent>,
+        ) = sync_channel(buffer_size.max(1));
 
     pub fn start_with_interval(
         kv_path: &str,
@@ -552,19 +555,8 @@ impl DualLayerStore {
         &self,
         query: &AdminQuery,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
-        let snapshot = AnalyticsSnapshot::new(&self.columnar_path, 0);
-        self.aggregate_by_query_with_snapshot(query, &snapshot, AnalyticsQueryMode::ReadOnly)
-    }
-
-    pub fn aggregate_by_query_with_snapshot(
-        &self,
-        query: &AdminQuery,
-        snapshot: &AnalyticsSnapshot,
-        mode: AnalyticsQueryMode,
-    ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
-        snapshot.enforce_mode(mode)?;
         let conn =
-            Connection::open(&snapshot.path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());
         let release = scrub_text(&query.release.clone().unwrap_or_default());
         let mut stmt = conn

@@ -96,10 +96,36 @@ fn redact_key_value(text: &str, key: &str) -> String {
                 break;
             }
 
-            out.push_str(REDACTED);
-            while j < text.len() {
-                if !lower.is_char_boundary(j) {
-                    j = next_char_boundary(text, j);
+            if j < text.len() {
+                let sep = text.as_bytes()[j] as char;
+                if sep == '=' || sep == ':' {
+                    out.push_str(&text[start..=j]);
+                    j += 1;
+                    while j < text.len() {
+                        let ch = text.as_bytes()[j] as char;
+                        if ch == ' ' || ch == '\t' {
+                            out.push(ch);
+                            j += 1;
+                            continue;
+                        }
+                        break;
+                    }
+
+                    out.push_str(REDACTED);
+                    while j < text.len() {
+                        let ch = text.as_bytes()[j] as char;
+                        if ch == '\n'
+                            || ch == '\r'
+                            || ch == ';'
+                            || ch == ','
+                            || ch == ' '
+                            || ch == '\t'
+                        {
+                            break;
+                        }
+                        j += 1;
+                    }
+                    i = j;
                     continue;
                 }
                 let next = text.as_bytes()[j];
