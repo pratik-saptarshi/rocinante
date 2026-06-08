@@ -11,13 +11,25 @@ This artifact is the authoritative execution index for implementation, TDD/BDD,
 tracking, and gating. All ticket states and AC are grounded in the five files
 above and must be kept in sync by updating those sources first.
 
-## Remediation execution checkpoint (2026-06-07)
+## Remediation execution checkpoint (2026-06-08)
 
 ### TDD/BDD agent stream commits
 
 - Stream B (Trust + Sanitization): `aa8cc39`
 - Stream A (Storage): `bd189b8`
 - Stream C (Sanitizer): `0c1a868`
+
+- Remediation continuation checkpoint slice (2026-06-08):
+  - `f7e10c6 chore(format): normalize merged rust sources`
+  - `93262b3 chore(merge): apply pending auth and lockfile drift`
+
+- Merge safety evidence:
+  - Local `main` is fully synchronized with upstream `origin/main` for all upstream CodeQL / Dependabot history (`git fetch` + `git rev-list --left-right --count main...origin/main` => `30 0`).
+  - Security workflows currently include CodeQL + TruffleHog (`.github/workflows/security.yml`).
+  - Dependabot configuration exists in `.github/dependabot.yml`.
+
+- Validation status for this checkpoint:
+  - Focused tests attempted, but blocked by network dependency resolution (`sqlite-wasm-rs` from crates.io DNS failure), so functional retest is pending network-enabled environment.
 
 ### Current status mapping
 
