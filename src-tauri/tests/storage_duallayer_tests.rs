@@ -4,6 +4,7 @@ use repo_analyzer_core::storage::{
 };
 use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, TelemetryPoint};
 use serde_json;
+use std::fs;
 use std::thread;
 use std::time::Duration;
 use tempfile::tempdir;
@@ -346,4 +347,64 @@ fn async_ingestion_engine_applies_retention_before_promotion() {
         .expect("active query");
     assert!(legacy_hits.is_empty());
     assert!(!active_hits.is_empty());
+}
+
+#[test]
+fn query_aggregates_stable_while_promotion_runs_via_immutable_snapshot() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+
+    let store = DualLayerStore::open(kv.to_str().expect("kv path"), col.to_str().expect("col path"))
+        .expect("open");
+    store
+        .ingest_commit_event(&sample_event_with_release("anchor", "baseline"))
+        .expect("seed baseline");
+    store
+        .promote_to_columnar()
+        .expect("bootstrap promotion");
+
+    let snapshot_path = dir.path().join("analytics.snapshot.readonly.duckdb");
+    fs::copy(col.to_str().expect("col path"), snapshot_path.to_str().expect("snapshot path"))
+        .expect("snapshot copy");
+    let snapshot = AnalyticsSnapshot::new(
+        snapshot_path.to_str().expect("snapshot path"),
+        42,
+    );
+    let engine = AsyncIngestionEngine::start_with_interval(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+        64,
+        40,
+    )
+    .expect("start");
+
+    for idx in 0..120 {
+        engine
+            .enqueue(sample_event_with_release(&format!("stream-{idx}"), "promotion"))
+            .expect("enqueue");
+    }
+
+    let mut promotion_seen = false;
+    for _ in 0..60 {
+        let points = store
+            .aggregate_by_query_with_snapshot(
+                &AdminQuery {
+                    name: Some("repo-a".to_string()),
+                    release: Some("baseline".to_string()),
+                },
+                &snapshot,
+                AnalyticsQueryMode::ReadOnly,
+            )
+            .expect("snapshot query");
+        assert_eq!(points.len(), 1);
+
+        if engine.promotion_count() > 0 {
+            promotion_seen = true;
+            break;
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
+
+    assert!(promotion_seen);
 }
