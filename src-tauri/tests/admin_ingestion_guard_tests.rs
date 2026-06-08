@@ -46,14 +46,14 @@ fn blocks_ingestion_when_strict_mode_not_badger() {
 }
 
 #[test]
-fn allows_ingestion_when_strict_mode_badger_sidecar() {
+fn allows_ingestion_when_dev_mode_badger_sidecar_uses_inproc_simulation() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
 
     let backend = IngestionBackendConfig {
         kind: IngestionBackendKind::BadgerSidecar,
-        strict_badger_required: true,
+        strict_badger_required: false,
         endpoint: Some("inproc://badger".to_string()),
     };
 

@@ -67,6 +67,9 @@
 
 - Unit tests pass locally via:
   - `cargo test --manifest-path src-tauri/Cargo.toml`
+- Core coverage stays above 85% via:
+  - `cargo llvm-cov --manifest-path src-tauri/Cargo.toml --summary-only --ignore-filename-regex 'src/main.rs' --fail-under-lines 85`
+- Coverage excludes `src-tauri/src/main.rs` because it is Tauri bootstrap/runtime wiring; core behavior is validated through `repo_analyzer_core` tests.
 - New feature includes at least:
   - One positive-path test.
   - One failure/authorization or boundary test.

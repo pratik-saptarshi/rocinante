@@ -182,6 +182,11 @@ impl IngestionBackendConfig {
                     "Badger sidecar endpoint is required".to_string(),
                 ));
             }
+            if self.strict_badger_required && endpoint.starts_with("inproc://") {
+                return Err(AnalyzerError::Db(
+                    "inproc fallback is not allowed in strict mode".to_string(),
+                ));
+            }
         }
         Ok(())
     }
@@ -196,6 +201,11 @@ pub struct DualLayerStore {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LifecycleStats {
     pub promoted_events: usize,
+    pub pruned_events: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetentionStats {
     pub pruned_events: usize,
 }
 
@@ -478,6 +488,35 @@ impl DualLayerStore {
         let mut stats = self.promote_to_columnar()?;
         stats.pruned_events = pruned;
         Ok(stats)
+    }
+
+    pub fn prune_raw_events_older_than(
+        &self,
+        ttl_secs: i64,
+    ) -> Result<RetentionStats, AnalyzerError> {
+        let now = now_ts();
+        let mut pruned = 0usize;
+        for row in self.kv.scan_prefix("evt:") {
+            let (k, _) = row.map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let key = String::from_utf8_lossy(&k).to_string();
+            let ts = key
+                .split(':')
+                .nth(1)
+                .and_then(|s| s.parse::<i64>().ok())
+                .unwrap_or(now);
+            if now - ts > ttl_secs {
+                self.kv
+                    .remove(k)
+                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                pruned += 1;
+            }
+        }
+        self.kv
+            .flush()
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        Ok(RetentionStats {
+            pruned_events: pruned,
+        })
     }
 
     pub fn promote_to_columnar(&self) -> Result<LifecycleStats, AnalyzerError> {

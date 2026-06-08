@@ -28,3 +28,5 @@ telemetry-kv/
 # Logs/temp
 *.log
 tmp/
+
+.worktrees/

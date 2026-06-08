@@ -1,3 +1,4 @@
+pub mod ast_metrics;
 pub mod code_quality;
 pub mod complexity;
 pub mod pr_approval;
