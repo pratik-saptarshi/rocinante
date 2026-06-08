@@ -1,0 +1,124 @@
+# Bill of Materials (BOM) — Rocinante (2026-06-08)
+
+Authoritative components for publication readiness in this repository.
+
+## 1) Repository identity and scope
+
+- Repository: `https://github.com/pratik-saptarshi/rocinante`
+- Branch policy: `main` is primary integration branch
+- Product: Rust + Tauri analyzer with local-bead pipeline and admin command surface
+- Remote publication target: `origin` (GitHub)
+- Single-source roadmap link for execution: `docs/roadmap/execution-ticket-artifact.md`
+
+## 2) Build stack and dependency surface
+
+### Toolchain and runtime
+
+- Language/runtime: `Rust` (via `dtolnay/rust-toolchain@stable` in CI)
+- UI shell stack: `Tauri 2` (`tauri` and `tauri-build`)
+- Operating systems in CI:
+  - Ubuntu for automated checks
+  - Linux system packages required at CI build:
+    - `libglib2.0-dev`
+    - `libgtk-3-dev`
+    - `libwebkit2gtk-4.1-dev`
+    - `libayatana-appindicator3-dev`
+    - `librsvg2-dev`
+    - `patchelf`
+
+### Rust component dependencies (`src-tauri/Cargo.toml`)
+
+- Runtime dependencies
+  - `serde = 1` (features: derive)
+  - `serde_json = 1`
+  - `thiserror = 1`
+  - `walkdir = 2`
+  - `rusqlite = 0.31` (features: bundled)
+  - `tauri = 2` (features: wry, default-features false)
+  - `sled = 0.34`
+  - `duckdb = 1.1` (features: bundled)
+  - `base64 = 0.22`
+  - `hmac = 0.12`
+  - `sha2 = 0.10`
+- Dev dependencies
+  - `tempfile = 3`
+- Build dependencies
+  - `tauri-build = 2`
+- Lockfile
+  - `src-tauri/Cargo.lock` (generated, checked in)
+  - `cargo tree` expected to be run before any dependency policy change
+
+### Automation dependencies
+
+- GitHub Actions
+  - `actions/checkout@v4`
+  - `dtolnay/rust-toolchain@stable`
+  - `Swatinem/rust-cache@v2`
+  - `actions/dependency-review-action@v4`
+  - `github/codeql-action/init@v3`
+  - `github/codeql-action/autobuild@v3`
+  - `github/codeql-action/analyze@v3`
+  - `trufflesecurity/trufflehog@v3.90.5`
+- Hardening script
+  - `scripts/harden-github.sh` (uses `gh` CLI)
+
+## 3) Source modules and critical files
+
+### Core app
+- `src-tauri/Cargo.toml`
+- `src-tauri/src/main.rs`
+- `src-tauri/src/lib.rs`
+- `src-tauri/src/auth.rs`
+- `src-tauri/src/storage.rs`
+- `src-tauri/src/plugins/sanitizer.rs`
+
+### Test surface
+- `src-tauri/tests/auth_tests.rs`
+- `src-tauri/tests/storage_duallayer_tests.rs`
+- `src-tauri/tests/sanitizer_tests.rs`
+- `src-tauri/tests/engine_tests.rs`
+- `src-tauri/tests/scoring_audit_tests.rs`
+- `src-tauri/tests/storage_policy_tests.rs` (test intent in execution artifacts)
+
+### Governance and publish operations
+- `README.md`
+- `SECURITY.md`
+- `docs/github-setup.md`
+- `.github/workflows/ci.yml`
+- `.github/workflows/security.yml`
+- `.github/workflows/dependency-review.yml`
+- `scripts/harden-github.sh`
+- `.gitignore`
+
+## 4) Security and privacy assets
+
+- Security policy: `SECURITY.md`
+- Secret scanning:
+  - CI job: `security.yml` with TruffleHog OSS scan (`--only-verified`)
+  - Dependency review for pull requests (`dependency-review.yml`, fail-on-severity high)
+- Input-surface controls:
+  - `src-tauri/src/auth.rs` RBAC and claim checks
+  - Command input validation and deny-by-default behavior in command handlers
+- Local hygiene:
+  - `.gitignore` masks:
+    - `.env*`, credential extensions (`*.pem`, `*.key`, `*.p12`, `*.crt`, etc.)
+    - runtime database artifacts (`telemetry.db`, `analytics.duckdb`, `telemetry-kv/`)
+
+## 5) Documentation footprint
+
+- `docs/project-rules.html` (repo operational constraints)
+- `docs/roadmap/*` (feature/badges/beads/execution source of truth)
+- `docs/github-setup.md` (hardening setup runbook)
+- `docs/bill-of-materials.html` (this document)
+- `docs/publish-readiness-checklist.html` (publication gate)
+
+## 6) Publish-gate readiness summary
+
+- Documentation standard: `.html` docs under `docs/` is followed.
+- Security checks for remote publication are defined as gating in
+  `docs/publish-readiness-checklist.html`.
+- Branch-coverage and hardening evidence should be validated before merging/publishing.
+- Any dependency or workflow change requires:
+  - lockfile update (if applicable),
+  - security scan refresh,
+  - and rerun of `cargo fmt/clippy/test`.
