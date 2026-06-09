@@ -4,10 +4,34 @@ use repo_analyzer_core::storage::{
 };
 use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, TelemetryPoint};
 use serde_json;
+use sled;
 use std::fs;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tempfile::tempdir;
+
+fn enqueue_with_backpressure(
+    engine: &AsyncIngestionEngine,
+    evt: CommitIngestionEvent,
+) {
+    for attempt in 0..120 {
+        if let Ok(()) = engine.enqueue(evt.clone()) {
+            return;
+        }
+        if attempt > 80 {
+            panic!("buffer enqueue failed after retries");
+        }
+        thread::sleep(Duration::from_millis(2));
+    }
+    panic!("buffer enqueue failed after retries");
+}
+
+fn now_ts_for_test() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
 
 fn sample_event(id: &str) -> CommitIngestionEvent {
     CommitIngestionEvent {
@@ -306,26 +330,34 @@ fn async_ingestion_engine_applies_retention_before_promotion() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
-
-    let raw_db = sled::open(&kv).expect("open raw kv");
     let expired = sample_event_with_release("legacy", "legacy-retention");
-    let payload = serde_json::to_vec(&expired).expect("serialize");
-    raw_db
-        .insert("evt:10:ab:legacy", payload)
-        .expect("seed expired raw");
+    let old_payload = serde_json::to_vec(&expired).expect("serialize legacy event");
+    let old_key = format!("evt:{}:aa:legacy", now_ts_for_test().saturating_sub(120));
+    {
+        let db = sled::open(&kv).expect("open kv");
+        db.insert(old_key.as_bytes(), old_payload)
+            .expect("insert legacy event");
+        db.flush().expect("flush legacy event");
+    }
 
-    let engine = AsyncIngestionEngine::start_with_interval_and_retention(
+    let store = DualLayerStore::open(
         kv.to_str().expect("kv path"),
         col.to_str().expect("col path"),
+    )
+    .expect("open");
+
+    let engine = AsyncIngestionEngine::start_with_store(
+        store.clone(),
         16,
         50,
         Some(RetentionPolicy { raw_ttl_secs: 50 }),
     )
     .expect("start");
 
-    engine
-        .enqueue(sample_event_with_release("active", "active-retention"))
-        .expect("enqueue fresh");
+    enqueue_with_backpressure(
+        &engine,
+        sample_event_with_release("active", "active-retention"),
+    );
 
     let mut promoted = false;
     for _ in 0..20 {
@@ -337,11 +369,6 @@ fn async_ingestion_engine_applies_retention_before_promotion() {
     }
     assert!(promoted);
 
-    let store = DualLayerStore::open(
-        kv.to_str().expect("kv path"),
-        col.to_str().expect("col path"),
-    )
-    .expect("open");
     let legacy_hits = store
         .aggregate_by_query(&AdminQuery {
             name: Some("repo-a".to_string()),
@@ -381,21 +408,19 @@ fn query_aggregates_stable_while_promotion_runs_via_immutable_snapshot() {
     )
     .expect("snapshot copy");
     let snapshot = AnalyticsSnapshot::new(snapshot_path.to_str().expect("snapshot path"), 42);
-    let engine = AsyncIngestionEngine::start_with_interval(
-        kv.to_str().expect("kv path"),
-        col.to_str().expect("col path"),
-        64,
+    let engine = AsyncIngestionEngine::start_with_store(
+        store.clone(),
+        256,
         40,
+        None,
     )
     .expect("start");
 
     for idx in 0..120 {
-        engine
-            .enqueue(sample_event_with_release(
-                &format!("stream-{idx}"),
-                "promotion",
-            ))
-            .expect("enqueue");
+        enqueue_with_backpressure(
+            &engine,
+            sample_event_with_release(&format!("stream-{idx}"), "promotion"),
+        );
     }
 
     let mut promotion_seen = false;
@@ -420,4 +445,80 @@ fn query_aggregates_stable_while_promotion_runs_via_immutable_snapshot() {
     }
 
     assert!(promotion_seen);
+}
+
+#[test]
+fn dual_layer_store_rejects_duplicate_open_for_same_kv_path() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
+
+    let open_again_err = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    );
+    assert!(open_again_err.is_err(), "expected lock ownership rejection");
+    assert!(open_again_err
+        .err()
+        .expect("expected lock ownership rejection")
+        .to_string()
+        .contains("already owned by another writer"));
+
+    drop(store);
+
+    DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open after release");
+}
+
+#[test]
+fn aggregate_queries_remain_non_empty_during_promotion_handoff() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
+    store
+        .ingest_commit_event(&sample_event("anchor"))
+        .expect("seed anchor");
+    store.promote_to_columnar().expect("bootstrap promotion");
+
+    let engine = AsyncIngestionEngine::start_with_store(
+        store.clone(),
+        256,
+        40,
+        None,
+    )
+    .expect("start");
+
+    for idx in 0..80 {
+        enqueue_with_backpressure(&engine, sample_event(&format!("stream-{idx}")));
+    }
+
+    for _ in 0..120 {
+        let points = store
+            .aggregate_by_query(&AdminQuery {
+                name: Some("repo-a".to_string()),
+                release: Some("v1.0.0".to_string()),
+            })
+            .expect("query");
+        assert!(!points.is_empty(), "aggregate visibility must stay non-empty during handoff");
+
+        if engine.promotion_count() > 0 {
+            break;
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
 }

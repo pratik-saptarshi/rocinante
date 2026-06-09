@@ -37,14 +37,16 @@ above and must be kept in sync by updating those sources first.
 - `F-028` (async ingestion decoupling): In Progress (implemented, pending final gate).
 - `F-029` (UTF-safe sanitization): In Progress (implemented, pending final gate).
 - `FE-009` and `F-031` command contract tracks remain In Progress; requires UI commit-plane sweep.
+- `F-008E` (storage lock ownership): Completed.
+- `F-008F` (promotion snapshot visibility): Completed.
 
 ## Roadmap Completion Snapshot (as of 2026-06-07)
 
-- Completed features: `F-001` … `F-014` (14)
+- Completed features: `F-001` … `F-014`, `F-008E`, `F-008F` (16)
 - In progress features: `F-008A`, `F-008B`, `F-008C`, `F-008D`, `F-028`,
-  `F-029`, `F-030`, `F-031`, `F-015`, `F-016`, `F-017` (11)
+  `F-029`, `F-030`, `F-031`, `F-015`, `F-016`, `F-017` (10)
 - New backlog: `F-018` … `F-027`, `F-032`, `F-033` (12)
-- Completion ratio: `14 / 37 = 37.8%`
+- Completion ratio: `16 / 39 = 41.0%`
 
 ## Global Acceptance Criteria (Capability-level, BDD)
 
@@ -60,6 +62,9 @@ above and must be kept in sync by updating those sources first.
    **then** normalized defaults are deterministic and snapshot metrics stay stable.
 5. **Given** bounded async enqueue under burst load, **when** queue depth rises, **then**
    inline promotion remains deferred to worker cycles and lag stays within SLO.
+6. **Given** concurrent async retention and promotion operations on shared storage paths,
+   **when** ownership and snapshot handoff occurs, **then** lock ownership and aggregate
+   visibility remain deterministic for all query APIs.
 
 ## Execution Tickets (single source)
 
@@ -67,7 +72,7 @@ above and must be kept in sync by updating those sources first.
 
 - Epic `E-STORE-01` — Strict dual-layer storage architecture
 - Governing finding: `R1-F01`, `R1-F02`, `R1-F03`, `R1-F04`, `R1-F05`,
-  `R2-F01`
+  `R2-F01`, `R2-F06`, `R2-F07`
 - Epic AC:
   - Given strict/dual-mode config and concurrent producers, when ingest/query commands
     run, then storage workload never crosses engine boundaries and analytics continue
@@ -139,6 +144,21 @@ above and must be kept in sync by updating those sources first.
   - `RetentionPolicy::is_raw_event_expired` deterministically classifies records.
   - `promote_to_columnar_with_retention` leaves long-term marts queryable.
 
+#### Feature `F-008E` — Storage lock ownership and path exclusivity
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-011`
+- Bead context: `B-10`
+- Current status: In Progress
+- TDD AC:
+  - `tests/storage_duallayer_tests.rs` never exposes shared lock panics.
+  - `tests/storage_duallayer_tests.rs::promotes_events_and_reads_aggregates` requires deterministic ownership across promotion.
+- Tasks:
+  1. `TK-049` Register and serialize DB path ownership.
+  2. `TK-050` Add re-open prevention across concurrent lifecycle calls.
+- Function AC:
+  - `StorageProfile::acquire_owner_token` rejects parallel conflicting open attempts.
+  - `AsyncIngestionEngine` logs ownership transitions and route eligibility.
+
 #### Feature `F-028` — Async ingestion decoupling completion
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-006`
@@ -154,6 +174,21 @@ above and must be kept in sync by updating those sources first.
   3. Add queue-depth telemetry.
 - Function AC:
   - `AsyncIngestionEngine::start` enforces bounded enqueue and worker scheduling.
+
+#### Feature `F-008F` — Promotion snapshot consistency
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-012`
+- Bead context: `B-10`
+- Current status: In Progress
+- TDD AC:
+  - `tests/storage_duallayer_tests.rs::promotes_events_and_reads_aggregates` must return expected aggregate counts after handoff.
+  - `query_aggregates` remains consistent between promotion start and completion.
+- Tasks:
+  1. `TK-051` Enforce snapshot publish barrier before read-route flips.
+  2. `TK-052` Add end-to-end visibility assertions around promotion boundary.
+- Function AC:
+  - `StorageSnapshot::publish` blocks visibility until committed copy is complete.
+  - `query_aggregates` returns committed values or explicit in-progress status.
 
 ### Capability C2: Security and Trust
 
@@ -262,7 +297,9 @@ above and must be kept in sync by updating those sources first.
 ## TDD/BDD Mapping by Capability
 
 - `F-008A/B/C/D` ↔ `T-015`, `T-016`, `T-017`, `T-018`
-- `F-028` ↔ `T-019`
+- `F-008E` ↔ `T-019`
+- `F-008F` ↔ `T-020`
+- `F-028` ↔ `T-009`
 - `F-029` ↔ `T-003`, `T-022`
 - `F-030` ↔ `T-020`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
@@ -272,9 +309,9 @@ above and must be kept in sync by updating those sources first.
 ## Parallel Agent Dispatch (three independent streams)
 
 1. **Stream A — Storage Hardening**
-   - Tickets: `BI-001`, `BI-002`, `BI-003`, `BI-004`, `BI-006`
+   - Tickets: `BI-001`, `BI-002`, `BI-003`, `BI-004`, `BI-005`, `BI-006`, `BI-011`, `BI-012`
    - Dependency: complete before any storage-contract closure is marked done.
-   - Exit gate: `R1-F01..F04` risk evidence + `T-015..T-019`.
+   - Exit gate: `R1-F01..R2-F07` risk evidence + `T-015..T-020`.
 
 2. **Stream B — Trust/Identity + Sanitization**
    - Tickets: `BI-007`, `BI-008`

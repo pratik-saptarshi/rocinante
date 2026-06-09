@@ -31,7 +31,7 @@
 - `F-008/F-010` -> `T-005`
 - `F-011/F-012` -> `T-007`, `T-006`
 - `F-014` -> add integration tests `T-008` (pending)
-- `F-008A/F-008B/F-008C/F-008D` -> `T-015`, `T-016`, `T-017`, `T-018`
+- `F-008A/F-008B/F-008C/F-008D/F-008E/F-008F` -> `T-015`, `T-016`, `T-017`, `T-018`, `T-019`, `T-020`
 
 ## In-Progress Test Work
 
@@ -41,6 +41,12 @@
 - `T-009` Async ingestion load tests:
   - Saturate bounded ring buffer and verify no ingestion deadlocks.
   - Measure promotion lag under sustained commit bursts.
+- `T-019` Storage lock ownership and path exclusivity tests:
+  - Force concurrent raw+analytics path opens and assert one owning writer.
+  - Assert lock-safe retry/fallback behavior in async retention + promotion.
+- `T-020` Promotion snapshot visibility and consistency tests:
+  - Assert `promotes_events_and_reads_aggregates` returns promoted aggregate counts.
+  - Assert analytics reads do not observe empty snapshots during handoff.
 
 ## Planned New Tests
 
