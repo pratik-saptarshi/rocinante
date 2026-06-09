@@ -2,7 +2,7 @@ use repo_analyzer_core::storage::{
     AnalyticsQueryMode, AnalyticsSnapshot, AsyncIngestionEngine, DualLayerStore,
     IngestionBackendConfig, IngestionBackendKind, RetentionPolicy, StorageRoute,
 };
-use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, TelemetryPoint};
+use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, ScoringWeights, TelemetryPoint};
 use serde_json;
 use sled;
 use std::fs;
@@ -521,4 +521,39 @@ fn aggregate_queries_remain_non_empty_during_promotion_handoff() {
         }
         thread::sleep(Duration::from_millis(25));
     }
+}
+
+#[test]
+fn committer_score_read_uses_published_snapshot_when_live_db_is_unavailable() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
+
+    store
+        .ingest_commit_event(&sample_event("snapshot-score"))
+        .expect("seed event");
+    store.promote_to_columnar().expect("promote");
+
+    let query = AdminQuery {
+        name: Some("repo-a".to_string()),
+        release: Some("v1.0.0".to_string()),
+    };
+    let weights = ScoringWeights::default();
+
+    let initial_scores = store
+        .compute_committer_scores(&query, &weights)
+        .expect("compute before corruption");
+    assert_eq!(initial_scores.len(), 1);
+
+    fs::remove_file(&col).expect("remove live analytics db");
+
+    let resilient_scores = store
+        .compute_committer_scores(&query, &weights)
+        .expect("compute from published snapshot");
+    assert_eq!(resilient_scores.len(), 1);
 }

@@ -24,6 +24,9 @@
 - `F-008F` Promotion snapshot correctness and visibility:
   - Add explicit publish/order barriers before analytics reads switch to promoted aggregates.
   - Remove race window where queries observe empty aggregates during promotion handoff.
+- `F-008C` Snapshot/replica read model for zero-contention analytics queries:
+  - Analytics reads use published immutable snapshots when live DB state is unavailable or transitioning.
+  - Query commands remain stable under promotion, including committer score and aggregate reads.
 - `F-011` Baseline complexity seed table and delta-based committer scoring normalization.
 - `F-012` Isolated scoring module with versioned algorithm constant and deterministic weight configuration.
 - `F-013` Audit-logged scoring weight changes with admin-only authorization.
@@ -37,7 +40,6 @@
 - `F-008B` Strict storage boundary enforcement:
   - Ingestion writes route only to BadgerDB APIs.
   - Analytical reads/writes for metric marts route only to DuckDB.
-- `F-008C` Snapshot/replica read model for zero-contention analytics queries.
 - `F-008D` Retention compliance automation:
   - Short-term TTL/prune for raw ingestion logs.
   - Long-term compressed retention by release in DuckDB.

@@ -640,67 +640,71 @@ impl DualLayerStore {
     }
 
     fn promote_to_columnar_no_lock(&self) -> Result<LifecycleStats, AnalyzerError> {
-        let conn =
-            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let mut promoted = 0usize;
+        let promoted = {
+            let conn =
+                Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let mut promoted = 0usize;
 
-        for row in self.kv.scan_prefix("evt:") {
-            let (k, v) = row.map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            let key = String::from_utf8_lossy(&k).to_string();
-            let ts = Self::parse_event_timestamp(&key).unwrap_or_else(now_ts);
-            let event: CommitIngestionEvent =
-                serde_json::from_slice(&v).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            for row in self.kv.scan_prefix("evt:") {
+                let (k, v) = row.map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                let key = String::from_utf8_lossy(&k).to_string();
+                let ts = Self::parse_event_timestamp(&key).unwrap_or_else(now_ts);
+                let event: CommitIngestionEvent =
+                    serde_json::from_slice(&v).map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
-            for point in &event.telemetry {
-                conn.execute(
-                    "INSERT INTO telemetry_history
+                for point in &event.telemetry {
+                    conn.execute(
+                        "INSERT INTO telemetry_history
                     (ts, repo_name, release, committer, plugin, metric_key, metric_value, details)
                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                    params![
-                        ts,
-                        event.repo_name,
-                        event.release,
-                        event.committer,
-                        point.plugin,
-                        point.metric_key,
-                        point.metric_value,
-                        point.details
-                    ],
-                )
-                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            }
+                        params![
+                            ts,
+                            event.repo_name,
+                            event.release,
+                            event.committer,
+                            point.plugin,
+                            point.metric_key,
+                            point.metric_value,
+                            point.details
+                        ],
+                    )
+                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                }
 
-            // Seed baseline complexity for fair delta-based scoring.
-            let baseline_exists: i64 = conn
-                .query_row(
-                    "SELECT COUNT(*) FROM repo_baseline WHERE repo_name = ?1",
-                    params![event.repo_name],
-                    |r| r.get(0),
-                )
-                .unwrap_or(0);
-            if baseline_exists == 0 {
-                let initial_complexity = event
-                    .telemetry
-                    .iter()
-                    .find(|t| t.metric_key == "estimated_cyclomatic_complexity")
-                    .map(|t| t.metric_value)
-                    .unwrap_or(0.0);
-                conn.execute(
-                    "INSERT INTO repo_baseline (repo_name, baseline_complexity) VALUES (?1, ?2)",
-                    params![event.repo_name, initial_complexity],
-                )
-                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                // Seed baseline complexity for fair delta-based scoring.
+                let baseline_exists: i64 = conn
+                    .query_row(
+                        "SELECT COUNT(*) FROM repo_baseline WHERE repo_name = ?1",
+                        params![event.repo_name],
+                        |r| r.get(0),
+                    )
+                    .unwrap_or(0);
+                if baseline_exists == 0 {
+                    let initial_complexity = event
+                        .telemetry
+                        .iter()
+                        .find(|t| t.metric_key == "estimated_cyclomatic_complexity")
+                        .map(|t| t.metric_value)
+                        .unwrap_or(0.0);
+                    conn.execute(
+                        "INSERT INTO repo_baseline (repo_name, baseline_complexity) VALUES (?1, ?2)",
+                        params![event.repo_name, initial_complexity],
+                    )
+                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                }
+
+                self.kv
+                    .remove(k)
+                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                promoted += 1;
             }
 
             self.kv
-                .remove(k)
+                .flush()
                 .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            promoted += 1;
-        }
+            promoted
+        };
 
-        self.kv
-            .flush()
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let snapshot_id = Self::next_snapshot_id();
         if self.validate_and_publish_snapshot(snapshot_id, promoted)? {
             self.latest_snapshot_id
@@ -708,6 +712,7 @@ impl DualLayerStore {
         } else {
             self.latest_snapshot_id.store(0, Ordering::Release);
         }
+
         Ok(LifecycleStats {
             promoted_events: promoted,
             pruned_events: 0,
@@ -792,16 +797,7 @@ impl DualLayerStore {
             .promotion_barrier
             .read()
             .unwrap_or_else(|e| e.into_inner());
-        let snapshot_path = if snapshot.snapshot_id > 0 {
-            let replica_path = self.snapshot_path(snapshot.snapshot_id);
-            if Path::new(&replica_path).exists() {
-                replica_path
-            } else {
-                snapshot.path.clone()
-            }
-        } else {
-            snapshot.path.clone()
-        };
+        let snapshot_path = self.analytics_read_path(snapshot);
         let conn =
             Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());
@@ -831,6 +827,22 @@ impl DualLayerStore {
         }
         Ok(out)
     }
+
+    fn analytics_read_path(&self, snapshot: &AnalyticsSnapshot) -> String {
+        if snapshot.snapshot_id > 0 {
+            let replica_path = self.snapshot_path(snapshot.snapshot_id);
+            if Path::new(&replica_path).exists() {
+                return replica_path;
+            }
+        }
+
+        if Path::new(&snapshot.path).exists() {
+            snapshot.path.clone()
+        } else {
+            self.columnar_path.clone()
+        }
+    }
+
     pub fn compute_committer_scores(
         &self,
         query: &AdminQuery,
@@ -840,8 +852,10 @@ impl DualLayerStore {
             .promotion_barrier
             .read()
             .unwrap_or_else(|e| e.into_inner());
+        let snapshot = self.read_snapshot_for_query();
+        let snapshot_path = self.analytics_read_path(&snapshot);
         let conn =
-            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());
         let release = scrub_text(&query.release.clone().unwrap_or_default());
 

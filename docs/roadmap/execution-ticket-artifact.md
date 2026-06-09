@@ -37,16 +37,17 @@ above and must be kept in sync by updating those sources first.
 - `F-028` (async ingestion decoupling): In Progress (implemented, pending final gate).
 - `F-029` (UTF-safe sanitization): In Progress (implemented, pending final gate).
 - `FE-009` and `F-031` command contract tracks remain In Progress; requires UI commit-plane sweep.
+- `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
 
-## Roadmap Completion Snapshot (as of 2026-06-07)
+## Roadmap Completion Snapshot (as of 2026-06-09)
 
-- Completed features: `F-001` … `F-014`, `F-008E`, `F-008F` (16)
-- In progress features: `F-008A`, `F-008B`, `F-008C`, `F-008D`, `F-028`,
-  `F-029`, `F-030`, `F-031`, `F-015`, `F-016`, `F-017` (10)
+- Completed features: `F-001` … `F-014`, `F-008C`, `F-008E`, `F-008F` (17)
+- In progress features: `F-008A`, `F-008B`, `F-008D`, `F-028`,
+  `F-029`, `F-030`, `F-031`, `F-015`, `F-016`, `F-017` (9)
 - New backlog: `F-018` … `F-027`, `F-032`, `F-033` (12)
-- Completion ratio: `16 / 39 = 41.0%`
+- Completion ratio: `17 / 39 = 43.6%`
 
 ## Global Acceptance Criteria (Capability-level, BDD)
 
@@ -118,13 +119,15 @@ above and must be kept in sync by updating those sources first.
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-004`
 - Bead context: `B-05`
-- Current status: In Progress
+- Current status: Completed
 - TDD AC:
   - Snapshot query tests show reads succeed while promotion runs.
   - `tests/storage_duallayer_tests.rs::query_aggregates_stable_while_promotion_runs_via_immutable_snapshot`
+  - `tests/storage_duallayer_tests.rs::committer_score_read_uses_published_snapshot_when_live_db_is_unavailable`
 - Tasks:
   1. `TK-035` Read via immutable snapshot/replica strategy. ✅
   2. Add contention tests under burst writes. ✅
+  3. `TK-036` Keep committer score read path on published snapshot during fallback. ✅
 - Function AC:
   - `AnalyticsSnapshot::enforce_mode` blocks mutable reads under snapshot mode.
   - `query_aggregates` returns stable views under concurrent promotion.
@@ -148,7 +151,7 @@ above and must be kept in sync by updating those sources first.
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-011`
 - Bead context: `B-10`
-- Current status: In Progress
+- Current status: Completed
 - TDD AC:
   - `tests/storage_duallayer_tests.rs` never exposes shared lock panics.
   - `tests/storage_duallayer_tests.rs::promotes_events_and_reads_aggregates` requires deterministic ownership across promotion.
@@ -179,7 +182,7 @@ above and must be kept in sync by updating those sources first.
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-012`
 - Bead context: `B-10`
-- Current status: In Progress
+- Current status: Completed
 - TDD AC:
   - `tests/storage_duallayer_tests.rs::promotes_events_and_reads_aggregates` must return expected aggregate counts after handoff.
   - `query_aggregates` remains consistent between promotion start and completion.
