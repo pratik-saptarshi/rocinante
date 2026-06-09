@@ -5,13 +5,16 @@ use crate::types::{
     TelemetryPoint,
 };
 use duckdb::{params, Connection};
+use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 use sled::Db;
 use std::fs;
+use std::fs::OpenOptions;
 use std::path::Path;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, RecvTimeoutError, SyncSender};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 #[cfg(unix)]
@@ -193,6 +196,8 @@ impl IngestionBackendConfig {
 pub struct DualLayerStore {
     kv: Arc<Db>,
     columnar_path: String,
+    _kv_lock: Arc<std::fs::File>,
+    promotion_barrier: Arc<RwLock<()>>,
     latest_snapshot_id: Arc<AtomicU64>,
 }
 
@@ -242,6 +247,15 @@ impl AsyncIngestionEngine {
         retention_policy: Option<RetentionPolicy>,
     ) -> Result<Self, AnalyzerError> {
         let store = DualLayerStore::open(kv_path, columnar_path)?;
+        Self::start_with_store(store, buffer_size, promotion_interval_ms, retention_policy)
+    }
+
+    pub fn start_with_store(
+        store: DualLayerStore,
+        buffer_size: usize,
+        promotion_interval_ms: u64,
+        retention_policy: Option<RetentionPolicy>,
+    ) -> Result<Self, AnalyzerError> {
         let (tx, rx): (
             SyncSender<QueuedIngestionEvent>,
             Receiver<QueuedIngestionEvent>,
@@ -257,12 +271,13 @@ impl AsyncIngestionEngine {
         let promotion_interval = Duration::from_millis(promotion_interval_ms.max(1));
         let mut last_promotion = Instant::now();
         let retention_bg = retention_policy;
+        let store_for_worker = store.clone();
 
         thread::spawn(move || loop {
             match rx.recv_timeout(promotion_interval) {
                 Ok((evt, queued_at)) => {
                     queue_depth_bg.fetch_sub(1, Ordering::AcqRel);
-                    let _ = store.ingest_commit_event(&evt);
+                    let _ = store_for_worker.ingest_commit_event(&evt);
                     update_max_u64(
                         &max_queue_lag_bg,
                         queued_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
@@ -349,15 +364,47 @@ impl AsyncIngestionEngine {
 
 impl DualLayerStore {
     pub fn open(kv_path: &str, columnar_path: &str) -> Result<Self, AnalyzerError> {
+        let kv_lock = Self::acquire_kv_lock(kv_path)?;
         let kv = sled::open(kv_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let this = Self {
             kv: Arc::new(kv),
             columnar_path: columnar_path.to_string(),
+            _kv_lock: Arc::new(kv_lock),
+            promotion_barrier: Arc::new(RwLock::new(())),
             latest_snapshot_id: Arc::new(AtomicU64::new(0)),
         };
         this.init_columnar()?;
         let _ = this.refresh_analytics_snapshot(0)?;
         Ok(this)
+    }
+
+    fn kv_lock_file_path(kv_path: &str) -> PathBuf {
+        let path = Path::new(kv_path);
+        let lock_name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .map(|name| format!("{name}.lock"))
+            .unwrap_or_else(|| "kv.lock".to_string());
+        path.with_file_name(lock_name)
+    }
+
+    fn acquire_kv_lock(kv_path: &str) -> Result<std::fs::File, AnalyzerError> {
+        let lock_path = Self::kv_lock_file_path(kv_path);
+        if let Some(parent) = lock_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| AnalyzerError::Io(format!("failed to prepare storage lock directory: {e}")))?;
+        }
+        let lock_file = OpenOptions::new()
+            .create(true)
+            .read(true)
+            .write(true)
+            .open(&lock_path)
+            .map_err(|e| AnalyzerError::Io(format!("failed to open storage lock file: {e}")))?;
+
+        lock_file
+            .try_lock_exclusive()
+            .map_err(|e| AnalyzerError::Db(format!("storage path is already owned by another writer: {e}")))?;
+        Ok(lock_file)
     }
 
     fn event_prefix(timestamp: i64, commit_id: &str) -> String {
@@ -574,13 +621,25 @@ impl DualLayerStore {
         policy: &RetentionPolicy,
         now_ts: i64,
     ) -> Result<LifecycleStats, AnalyzerError> {
+        let _promotion_lock = self
+            .promotion_barrier
+            .write()
+            .unwrap_or_else(|e| e.into_inner());
         let pruned = self.prune_raw_events(policy, now_ts)?;
-        let mut stats = self.promote_to_columnar()?;
+        let mut stats = self.promote_to_columnar_no_lock()?;
         stats.pruned_events = pruned;
         Ok(stats)
     }
 
     pub fn promote_to_columnar(&self) -> Result<LifecycleStats, AnalyzerError> {
+        let _promotion_lock = self
+            .promotion_barrier
+            .write()
+            .unwrap_or_else(|e| e.into_inner());
+        self.promote_to_columnar_no_lock()
+    }
+
+    fn promote_to_columnar_no_lock(&self) -> Result<LifecycleStats, AnalyzerError> {
         let conn =
             Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let mut promoted = 0usize;
@@ -643,13 +702,26 @@ impl DualLayerStore {
             .flush()
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let snapshot_id = Self::next_snapshot_id();
-        self.refresh_analytics_snapshot(snapshot_id)?;
-        self.latest_snapshot_id
-            .store(snapshot_id, Ordering::Release);
+        if self.validate_and_publish_snapshot(snapshot_id, promoted)? {
+            self.latest_snapshot_id
+                .store(snapshot_id, Ordering::Release);
+        } else {
+            self.latest_snapshot_id.store(0, Ordering::Release);
+        }
         Ok(LifecycleStats {
             promoted_events: promoted,
             pruned_events: 0,
         })
+    }
+
+    fn validate_and_publish_snapshot(&self, snapshot_id: u64, min_rows: usize) -> Result<bool, AnalyzerError> {
+        let snapshot_path = self.refresh_analytics_snapshot(snapshot_id)?;
+        let conn = Connection::open(&snapshot_path)
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM telemetry_history", [], |r| r.get(0))
+            .unwrap_or(0);
+        Ok(count >= min_rows as i64)
     }
 
     pub fn aggregate_by_query(
@@ -665,6 +737,10 @@ impl DualLayerStore {
         query: &AdminQuery,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
         Self::enforce_analytics_route(route)?;
+        let _query_lock = self
+            .promotion_barrier
+            .read()
+            .unwrap_or_else(|e| e.into_inner());
         let snapshot = self.read_snapshot_for_query();
         self.aggregate_by_query_with_snapshot_on_route(
             query,
@@ -712,6 +788,10 @@ impl DualLayerStore {
         mode: AnalyticsQueryMode,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
         snapshot.enforce_mode(mode)?;
+        let _query_lock = self
+            .promotion_barrier
+            .read()
+            .unwrap_or_else(|e| e.into_inner());
         let snapshot_path = if snapshot.snapshot_id > 0 {
             let replica_path = self.snapshot_path(snapshot.snapshot_id);
             if Path::new(&replica_path).exists() {
@@ -756,6 +836,10 @@ impl DualLayerStore {
         query: &AdminQuery,
         weights: &ScoringWeights,
     ) -> Result<Vec<CommitterScore>, AnalyzerError> {
+        let _query_lock = self
+            .promotion_barrier
+            .read()
+            .unwrap_or_else(|e| e.into_inner());
         let conn =
             Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());

@@ -11,10 +11,12 @@ Context coverage: full.
 | R1-F03 | HIGH | [VERIFIED] | Raw ingestion short-term retention and prune/roll-up must be explicit | Gap | must-fix | none | 0.90 | Applied (`F-008D`, `TK-034`) |
 | R1-F04 | HIGH | [VERIFIED] | Analytics reads must use snapshot/replica to ensure zero contention | Gap | must-fix | none | 0.88 | Applied (`F-008C`, `TK-035`) |
 | R1-F05 | MEDIUM | [CONSENSUS] | Ingestion needs localized key strategy to avoid global lock pressure | Gap | bundle | none | 0.77 | Applied as implementation bundle (`TK-033`, `T-018`) |
+| R2-F06 | HIGH | [VERIFIED] | Concurrent storage path ownership can violate single-writer invariants and panic on lock acquisition | Gap | must-fix | Data Integrity Veto | 0.93 | Remediated (`F-008E`, `TK-049`) |
+| R2-F07 | HIGH | [VERIFIED] | Promotion handoff lacks deterministic visibility barrier, producing empty aggregates under transition | Gap | must-fix | Consistency Veto | 0.91 | Remediated (`F-008F`, `TK-051`) |
 
-Total findings: 5 | Must-fix: 4 | Bundle: 1 | Defer: 0 | Info: 0
+Total findings: 7 | Must-fix: 6 | Bundle: 1 | Defer: 0 | Info: 0
 
-Final Recommendation: Auto-applied
+Final Recommendation: Action required (`F-008E`, `F-008F` remediated in this checkpoint; proceed to merge gate review)
 
 Dissent Ledger: none
 
@@ -27,3 +29,5 @@ Dissent Ledger: none
 | P1 | implementer | Implement TTL prune + roll-up jobs (`TK-034`) | R1-F03 |
 | P1 | implementer | Add read-only snapshot/replica query mode (`TK-035`) | R1-F04 |
 | P2 | implementer | Add shard-prefix contention controls + throughput tests (`TK-033`, `T-018`) | R1-F05 |
+| P0 | implementer | Enforce single DB path ownership before async promotion/retention operations (`TK-049`) | R2-F06 | Remediated |
+| P0 | implementer | Add snapshot publish barriers and visibility invariants (`TK-051`) | R2-F07 | Remediated |

@@ -18,6 +18,12 @@
   - Dedicated columnar analytics tier (`duckdb`) for read-heavy aggregation.
 - `F-009` Asynchronous ingestion buffering via bounded in-memory ring channel and background promotion worker.
 - `F-010` Lifecycle promotion from raw event stream to historical analytical tables.
+- `F-008E` Storage lock ownership and path exclusivity:
+  - Enforce single-writer/process discipline across async ingestion and promotion.
+  - Prevent database lock panics by eliminating duplicate writer ownership on shared DB paths.
+- `F-008F` Promotion snapshot correctness and visibility:
+  - Add explicit publish/order barriers before analytics reads switch to promoted aggregates.
+  - Remove race window where queries observe empty aggregates during promotion handoff.
 - `F-011` Baseline complexity seed table and delta-based committer scoring normalization.
 - `F-012` Isolated scoring module with versioned algorithm constant and deterministic weight configuration.
 - `F-013` Audit-logged scoring weight changes with admin-only authorization.
@@ -59,3 +65,5 @@
 - `R1-F03` HIGH: Retention policy needs explicit short-term prune vs long-term compressed retention. Disposition: must-fix gap -> `F-008D`.
 - `R1-F04` HIGH: Read layer needs explicit snapshot/replica isolation for zero-contention analytics. Disposition: must-fix gap -> `F-008C`.
 - `R1-F05` MEDIUM: Ingestion key strategy should prevent global lock behavior under burst writes. Disposition: bundle into implementation checklist.
+- `R2-F06` HIGH: Concurrent storage path ownership can violate single-writer rules and trigger lock acquisition panics. Disposition: must-fix -> `F-008E`.
+- `R2-F07` HIGH: Promotion handoff lacks deterministic visibility barrier, allowing zero-result aggregate reads. Disposition: must-fix -> `F-008F`.
