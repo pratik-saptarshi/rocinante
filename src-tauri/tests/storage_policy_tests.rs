@@ -19,7 +19,10 @@ fn accepts_badger_duckdb_profile() {
 
 #[test]
 fn prunes_raw_events_after_ttl_window() {
-    let policy = RetentionPolicy { raw_ttl_secs: 60 };
+    let policy = RetentionPolicy {
+        raw_ttl_secs: 60,
+        ..RetentionPolicy::default()
+    };
     assert!(policy.is_raw_event_expired(100, 161));
     assert!(!policy.is_raw_event_expired(100, 159));
 }
