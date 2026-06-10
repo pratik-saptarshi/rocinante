@@ -1,3 +1,5 @@
+use duckdb::params;
+use duckdb::Connection;
 use repo_analyzer_core::storage::{
     AnalyticsQueryMode, AnalyticsSnapshot, AsyncIngestionEngine, DualLayerStore,
     IngestionBackendConfig, IngestionBackendKind, RetentionPolicy, StorageRoute,
@@ -10,10 +12,7 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tempfile::tempdir;
 
-fn enqueue_with_backpressure(
-    engine: &AsyncIngestionEngine,
-    evt: CommitIngestionEvent,
-) {
+fn enqueue_with_backpressure(engine: &AsyncIngestionEngine, evt: CommitIngestionEvent) {
     for attempt in 0..120 {
         if let Ok(()) = engine.enqueue(evt.clone()) {
             return;
@@ -257,12 +256,81 @@ fn prunes_expired_raw_events_and_counts_pruned_events() {
     )
     .expect("open");
 
-    let policy = RetentionPolicy { raw_ttl_secs: 50 };
+    let policy = RetentionPolicy {
+        raw_ttl_secs: 50,
+        ..RetentionPolicy::default()
+    };
     let stats = store
         .promote_to_columnar_with_retention(&policy, 200)
         .expect("promote with retention");
     assert_eq!(stats.pruned_events, 1);
     assert_eq!(stats.promoted_events, 1);
+}
+
+#[test]
+fn prunes_old_releases_and_preserves_queryability_by_rollup() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
+
+    for id in ["r2019", "r2020", "r2021"] {
+        store
+            .ingest_commit_event(&sample_event_with_release(id, id))
+            .expect("ingest legacy");
+    }
+
+    let policy = RetentionPolicy {
+        raw_ttl_secs: 3600,
+        max_release_partitions: Some(2),
+        ..RetentionPolicy::default()
+    };
+    let stats = store
+        .promote_to_columnar_with_retention(&policy, now_ts_for_test())
+        .expect("promote with retention");
+    assert_eq!(stats.promoted_events, 3);
+
+    let legacy_aggregate = store
+        .aggregate_by_query(&AdminQuery {
+            name: Some("repo-a".to_string()),
+            release: Some("r2019".to_string()),
+        })
+        .expect("legacy aggregate from rollup");
+    assert!(!legacy_aggregate.is_empty());
+
+    for release in ["r2020", "r2021"] {
+        let points = store
+            .aggregate_by_query(&AdminQuery {
+                name: Some("repo-a".to_string()),
+                release: Some(release.to_string()),
+            })
+            .expect("recent aggregate");
+        assert!(!points.is_empty());
+    }
+
+    let conn = Connection::open(col.to_str().expect("col path")).expect("open analytics");
+    let raw_stale_count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM telemetry_history WHERE release = ?1",
+            params!["r2019"],
+            |row| row.get(0),
+        )
+        .expect("count stale raw");
+    let rollup_stale_count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM telemetry_history_rollup WHERE release = ?1",
+            params!["r2019"],
+            |row| row.get(0),
+        )
+        .expect("count stale rollup");
+
+    assert_eq!(raw_stale_count, 0);
+    assert!(rollup_stale_count > 0);
 }
 
 #[test]
@@ -350,7 +418,10 @@ fn async_ingestion_engine_applies_retention_before_promotion() {
         store.clone(),
         16,
         50,
-        Some(RetentionPolicy { raw_ttl_secs: 50 }),
+        Some(RetentionPolicy {
+            raw_ttl_secs: 50,
+            ..RetentionPolicy::default()
+        }),
     )
     .expect("start");
 
@@ -408,13 +479,8 @@ fn query_aggregates_stable_while_promotion_runs_via_immutable_snapshot() {
     )
     .expect("snapshot copy");
     let snapshot = AnalyticsSnapshot::new(snapshot_path.to_str().expect("snapshot path"), 42);
-    let engine = AsyncIngestionEngine::start_with_store(
-        store.clone(),
-        256,
-        40,
-        None,
-    )
-    .expect("start");
+    let engine =
+        AsyncIngestionEngine::start_with_store(store.clone(), 256, 40, None).expect("start");
 
     for idx in 0..120 {
         enqueue_with_backpressure(
@@ -495,13 +561,8 @@ fn aggregate_queries_remain_non_empty_during_promotion_handoff() {
         .expect("seed anchor");
     store.promote_to_columnar().expect("bootstrap promotion");
 
-    let engine = AsyncIngestionEngine::start_with_store(
-        store.clone(),
-        256,
-        40,
-        None,
-    )
-    .expect("start");
+    let engine =
+        AsyncIngestionEngine::start_with_store(store.clone(), 256, 40, None).expect("start");
 
     for idx in 0..80 {
         enqueue_with_backpressure(&engine, sample_event(&format!("stream-{idx}")));
@@ -514,7 +575,10 @@ fn aggregate_queries_remain_non_empty_during_promotion_handoff() {
                 release: Some("v1.0.0".to_string()),
             })
             .expect("query");
-        assert!(!points.is_empty(), "aggregate visibility must stay non-empty during handoff");
+        assert!(
+            !points.is_empty(),
+            "aggregate visibility must stay non-empty during handoff"
+        );
 
         if engine.promotion_count() > 0 {
             break;
@@ -608,7 +672,10 @@ fn async_ingestion_engine_tracks_queue_lag_and_promotion_throughput() {
         thread::sleep(Duration::from_millis(100));
     }
 
-    assert!(observed_promotion, "promotion worker should run under queue pressure");
+    assert!(
+        observed_promotion,
+        "promotion worker should run under queue pressure"
+    );
 
     let mut drained = false;
     for _ in 0..240 {

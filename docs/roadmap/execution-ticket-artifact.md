@@ -149,12 +149,14 @@ above and must be kept in sync by updating those sources first.
 - TDD AC:
   - `tests/storage_policy_tests.rs` validates TTL and roll-up execution windows.
   - `tests/storage_duallayer_tests.rs::async_ingestion_engine_applies_retention_before_promotion` validates background retention on async promotion cycles.
+  - `tests/storage_duallayer_tests.rs::prunes_old_releases_and_preserves_queryability_by_rollup` validates long-term release rollup retention while preserving legacy queryability.
 - Tasks:
   1. `TK-016` Add ingestion durability checks.
   2. `TK-034` Add short-term TTL + prune + roll-up schedule checks.
+  3. `TK-036` Add release-partitioned compression + retention path for long-term marts.
 - Function AC:
   - `RetentionPolicy::is_raw_event_expired` deterministically classifies records.
-  - `promote_to_columnar_with_retention` leaves long-term marts queryable.
+  - `promote_to_columnar_with_retention` retains short-term TTL + archive/publish release partitions in `telemetry_history_rollup`.
 
 #### Feature `F-008E` — Storage lock ownership and path exclusivity
 - Source: `docs/roadmap/feature-backlog.html`

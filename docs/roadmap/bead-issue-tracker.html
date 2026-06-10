@@ -5,7 +5,7 @@
 | Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
 | BI-001 | B-04 | `F-008A` BadgerDB conformance profile gates | Red->Green complete | In Progress | implementer | Added `StorageProfile` with strict Badger+DuckDB validation; full runtime migration pending sidecar adapter wiring. |
-| BI-002 | B-05 | `F-008D` raw retention TTL prune semantics | Red->Green complete | In Progress | implementer | Added async-engine retention-aware promotion (`AsyncIngestionEngine::start_with_interval_and_retention`) and coverage test. |
+| BI-002 | B-05 | `F-008D` raw retention TTL prune semantics | Red->Green complete | Completed | implementer | Added short-term TTL retention and long-term release rollup with queryability coverage (`prunes_old_releases_and_preserves_queryability_by_rollup`). |
 | BI-003 | B-09 | `F-008B` non-bypassable API boundary guards | In Progress | Completed | implementer | Added analytics command-layer coverage in `tests/admin_service_tests.rs`. |
 | BI-004 | B-05 | `F-008C` snapshot/replica read isolation | In Progress | Completed | implementer | Added query-path use of published snapshots for aggregate and committer score reads, plus snapshot-disruption regression test. |
 | BI-005 | B-04 | `F-008A` Badger sidecar adapter | Red->Green complete | Completed | implementer | Runtime and admin ingestion now enforce strict Badger sidecar config; full transport integration remains a follow-up implementation slice. |
@@ -25,3 +25,5 @@
     `query_aggregates_stable_while_promotion_runs_via_immutable_snapshot`,
     `promotes_events_and_reads_aggregates`).
   - Next cycle is remediation design + deterministic lock/visibility controls.
+- Cycle `TDD-C3`:
+  - Added rollup-aware long-term release retention coverage.

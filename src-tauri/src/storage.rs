@@ -153,11 +153,27 @@ impl StorageProfile {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetentionPolicy {
     pub raw_ttl_secs: i64,
+    pub max_release_partitions: Option<usize>,
+}
+
+impl Default for RetentionPolicy {
+    fn default() -> Self {
+        Self {
+            raw_ttl_secs: 24 * 60 * 60,
+            max_release_partitions: None,
+        }
+    }
 }
 
 impl RetentionPolicy {
     pub fn is_raw_event_expired(&self, event_ts: i64, now_ts: i64) -> bool {
         now_ts - event_ts > self.raw_ttl_secs
+    }
+
+    fn max_release_partitions_to_keep(&self) -> Option<i64> {
+        self.max_release_partitions
+            .and_then(|value| i64::try_from(value).ok())
+            .filter(|value| *value > 0)
     }
 }
 
@@ -397,8 +413,9 @@ impl DualLayerStore {
     fn acquire_kv_lock(kv_path: &str) -> Result<std::fs::File, AnalyzerError> {
         let lock_path = Self::kv_lock_file_path(kv_path);
         if let Some(parent) = lock_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| AnalyzerError::Io(format!("failed to prepare storage lock directory: {e}")))?;
+            fs::create_dir_all(parent).map_err(|e| {
+                AnalyzerError::Io(format!("failed to prepare storage lock directory: {e}"))
+            })?;
         }
         let lock_file = OpenOptions::new()
             .create(true)
@@ -407,9 +424,11 @@ impl DualLayerStore {
             .open(&lock_path)
             .map_err(|e| AnalyzerError::Io(format!("failed to open storage lock file: {e}")))?;
 
-        lock_file
-            .try_lock_exclusive()
-            .map_err(|e| AnalyzerError::Db(format!("storage path is already owned by another writer: {e}")))?;
+        lock_file.try_lock_exclusive().map_err(|e| {
+            AnalyzerError::Db(format!(
+                "storage path is already owned by another writer: {e}"
+            ))
+        })?;
         Ok(lock_file)
     }
 
@@ -452,6 +471,17 @@ impl DualLayerStore {
             CREATE TABLE IF NOT EXISTS repo_baseline (
               repo_name TEXT PRIMARY KEY,
               baseline_complexity DOUBLE
+            );
+            CREATE TABLE IF NOT EXISTS telemetry_history_rollup (
+              repo_name TEXT,
+              release TEXT,
+              committer TEXT,
+              plugin TEXT,
+              metric_key TEXT,
+              metric_sum DOUBLE,
+              sample_count BIGINT,
+              details TEXT,
+              PRIMARY KEY (repo_name, release, committer, plugin, metric_key)
             );
             CREATE TABLE IF NOT EXISTS pr_history (
               ts BIGINT,
@@ -634,6 +664,7 @@ impl DualLayerStore {
         let pruned = self.prune_raw_events(policy, now_ts)?;
         let mut stats = self.promote_to_columnar_no_lock()?;
         stats.pruned_events = pruned;
+        self.prune_analytics_releases_with_retention(policy)?;
         Ok(stats)
     }
 
@@ -647,8 +678,8 @@ impl DualLayerStore {
 
     fn promote_to_columnar_no_lock(&self) -> Result<LifecycleStats, AnalyzerError> {
         let promoted = {
-            let conn =
-                Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let conn = Connection::open(&self.columnar_path)
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
             let mut promoted = 0usize;
 
             for row in self.kv.scan_prefix("evt:") {
@@ -725,10 +756,97 @@ impl DualLayerStore {
         })
     }
 
-    fn validate_and_publish_snapshot(&self, snapshot_id: u64, min_rows: usize) -> Result<bool, AnalyzerError> {
-        let snapshot_path = self.refresh_analytics_snapshot(snapshot_id)?;
-        let conn = Connection::open(&snapshot_path)
+    fn prune_analytics_releases_with_retention(
+        &self,
+        policy: &RetentionPolicy,
+    ) -> Result<(), AnalyzerError> {
+        let keep_releases = match policy.max_release_partitions_to_keep() {
+            Some(keep) => keep,
+            None => return Ok(()),
+        };
+
+        let conn =
+            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+
+        let purge_rollup_sql = "
+            WITH ranked AS (
+                SELECT
+                    repo_name,
+                    release,
+                    ROW_NUMBER() OVER (PARTITION BY repo_name ORDER BY MAX(ts) DESC) AS rn
+                FROM telemetry_history
+                GROUP BY repo_name, release
+            )
+            DELETE FROM telemetry_history_rollup
+            WHERE (repo_name, release) IN (
+                SELECT repo_name, release FROM ranked WHERE rn > ?1
+            )
+        ";
+        conn.execute(purge_rollup_sql, params![keep_releases])
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+
+        let rollup_sql = "
+            WITH ranked AS (
+                SELECT
+                    repo_name,
+                    release,
+                    ROW_NUMBER() OVER (PARTITION BY repo_name ORDER BY MAX(ts) DESC) AS rn
+                FROM telemetry_history
+                GROUP BY repo_name, release
+            ),
+            stale_releases AS (
+                SELECT repo_name, release FROM ranked WHERE rn > ?1
+            )
+            INSERT INTO telemetry_history_rollup
+                (repo_name, release, committer, plugin, metric_key, metric_sum, sample_count, details)
+            SELECT
+                h.repo_name,
+                h.release,
+                h.committer,
+                h.plugin,
+                h.metric_key,
+                SUM(h.metric_value),
+                COUNT(*),
+                MIN(h.details)
+            FROM telemetry_history h
+            INNER JOIN stale_releases r
+                ON r.repo_name = h.repo_name
+               AND r.release = h.release
+            GROUP BY
+                h.repo_name, h.release, h.committer, h.plugin, h.metric_key
+        ";
+
+        conn.execute(rollup_sql, params![keep_releases])
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+
+        let purge_sql = "
+            WITH ranked AS (
+                SELECT
+                    repo_name,
+                    release,
+                    ROW_NUMBER() OVER (PARTITION BY repo_name ORDER BY MAX(ts) DESC) AS rn
+                FROM telemetry_history
+                GROUP BY repo_name, release
+            )
+            DELETE FROM telemetry_history
+            WHERE (repo_name, release) IN (
+                SELECT repo_name, release FROM ranked WHERE rn > ?1
+            )
+        ";
+
+        conn.execute(purge_sql, params![keep_releases])
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        Ok(())
+    }
+
+    fn validate_and_publish_snapshot(
+        &self,
+        snapshot_id: u64,
+        min_rows: usize,
+    ) -> Result<bool, AnalyzerError> {
+        let snapshot_path = self.refresh_analytics_snapshot(snapshot_id)?;
+        let conn =
+            Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM telemetry_history", [], |r| r.get(0))
             .unwrap_or(0);
@@ -811,7 +929,28 @@ impl DualLayerStore {
         let mut stmt = conn
             .prepare(
                 "SELECT plugin, metric_key, AVG(metric_value) AS avg_value, MIN(details) AS details
-                 FROM telemetry_history
+                 FROM (
+                   SELECT
+                     plugin,
+                     metric_key,
+                     metric_value,
+                     details,
+                     repo_name,
+                     release
+                   FROM telemetry_history
+                   UNION ALL
+                   SELECT
+                     plugin,
+                     metric_key,
+                     CASE
+                       WHEN sample_count = 0 THEN 0.0
+                       ELSE metric_sum / sample_count
+                     END AS metric_value,
+                     details,
+                     repo_name,
+                     release
+                   FROM telemetry_history_rollup
+                 )
                  WHERE repo_name LIKE '%' || ?1 || '%'
                    AND release LIKE '%' || ?2 || '%'
                  GROUP BY plugin, metric_key
@@ -866,6 +1005,23 @@ impl DualLayerStore {
         let release = scrub_text(&query.release.clone().unwrap_or_default());
 
         let sql = "
+            WITH effective_metrics AS (
+              SELECT
+                h.committer,
+                h.repo_name,
+                h.release,
+                h.metric_key,
+                h.metric_value
+              FROM telemetry_history h
+              UNION ALL
+              SELECT
+                h.committer,
+                h.repo_name,
+                h.release,
+                h.metric_key,
+                CASE WHEN h.sample_count = 0 THEN 0.0 ELSE h.metric_sum / h.sample_count END
+              FROM telemetry_history_rollup h
+            )
             SELECT
               h.committer,
               h.repo_name,
@@ -874,7 +1030,7 @@ impl DualLayerStore {
               AVG(CASE WHEN h.metric_key = 'churn_efficiency' THEN h.metric_value END) AS churn_efficiency,
               AVG(CASE WHEN h.metric_key = 'pipeline_success' THEN h.metric_value END) AS pipeline_success,
               b.baseline_complexity
-            FROM telemetry_history h
+            FROM effective_metrics h
             LEFT JOIN repo_baseline b ON b.repo_name = h.repo_name
             WHERE h.repo_name LIKE '%' || ?1 || '%'
               AND h.release LIKE '%' || ?2 || '%'
