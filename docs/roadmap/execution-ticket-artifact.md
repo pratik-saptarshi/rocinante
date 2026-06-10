@@ -37,6 +37,7 @@ above and must be kept in sync by updating those sources first.
 - `F-028` (async ingestion decoupling): In Progress (implemented, pending final gate).
 - `F-029` (UTF-safe sanitization): In Progress (implemented, pending final gate).
 - `FE-009` and `F-031` command contract tracks remain In Progress; requires UI commit-plane sweep.
+- `F-008D` (retention compliance automation): In Progress (implemented, pending final gate).
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
@@ -57,6 +58,10 @@ above and must be kept in sync by updating those sources first.
   - Added queue lag + promotion throughput assertions under burst pressure
     (`async_ingestion_engine_tracks_queue_lag_and_promotion_throughput` in
     `storage_duallayer_tests.rs`) and aligned acceptance criteria evidence.
+- Readiness checkpoint (2026-06-10, branch `feat/bi-ready-slice-008a-2026-06-10`):
+  - Made release retention tie-break ordering deterministic (`ORDER BY MAX(ts) DESC, MAX(release) DESC`)
+    in `prune_analytics_releases_with_retention` and reran `storage_duallayer_tests`;
+    all 15 tests now pass, including long-release pruning regression.
 
 ## Global Acceptance Criteria (Capability-level, BDD)
 
@@ -152,7 +157,7 @@ above and must be kept in sync by updating those sources first.
   - `tests/storage_duallayer_tests.rs::prunes_old_releases_and_preserves_queryability_by_rollup` validates long-term release rollup retention while preserving legacy queryability.
 - Tasks:
   1. `TK-016` Add ingestion durability checks.
-  2. `TK-034` Add short-term TTL + prune + roll-up schedule checks.
+  2. `TK-034` Add short-term TTL + prune + roll-up schedule checks. complete
   3. `TK-036` Add release-partitioned compression + retention path for long-term marts.
 - Function AC:
   - `RetentionPolicy::is_raw_event_expired` deterministically classifies records.
