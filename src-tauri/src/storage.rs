@@ -773,7 +773,10 @@ impl DualLayerStore {
                 SELECT
                     repo_name,
                     release,
-                    ROW_NUMBER() OVER (PARTITION BY repo_name ORDER BY MAX(ts) DESC) AS rn
+                    ROW_NUMBER() OVER (
+                        PARTITION BY repo_name
+                        ORDER BY MAX(ts) DESC, MAX(release) DESC
+                    ) AS rn
                 FROM telemetry_history
                 GROUP BY repo_name, release
             )
@@ -790,7 +793,10 @@ impl DualLayerStore {
                 SELECT
                     repo_name,
                     release,
-                    ROW_NUMBER() OVER (PARTITION BY repo_name ORDER BY MAX(ts) DESC) AS rn
+                    ROW_NUMBER() OVER (
+                        PARTITION BY repo_name
+                        ORDER BY MAX(ts) DESC, MAX(release) DESC
+                    ) AS rn
                 FROM telemetry_history
                 GROUP BY repo_name, release
             ),
@@ -824,7 +830,10 @@ impl DualLayerStore {
                 SELECT
                     repo_name,
                     release,
-                    ROW_NUMBER() OVER (PARTITION BY repo_name ORDER BY MAX(ts) DESC) AS rn
+                    ROW_NUMBER() OVER (
+                        PARTITION BY repo_name
+                        ORDER BY MAX(ts) DESC, MAX(release) DESC
+                    ) AS rn
                 FROM telemetry_history
                 GROUP BY repo_name, release
             )
