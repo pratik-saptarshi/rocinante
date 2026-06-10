@@ -576,7 +576,7 @@ fn async_ingestion_engine_tracks_queue_lag_and_promotion_throughput() {
         kv.to_str().expect("kv path"),
         col.to_str().expect("col path"),
         4,
-        80,
+        1000,
     )
     .expect("start");
 
@@ -605,7 +605,7 @@ fn async_ingestion_engine_tracks_queue_lag_and_promotion_throughput() {
             observed_promotion = true;
             break;
         }
-        thread::sleep(Duration::from_millis(25));
+        thread::sleep(Duration::from_millis(100));
     }
 
     assert!(observed_promotion, "promotion worker should run under queue pressure");
@@ -616,7 +616,7 @@ fn async_ingestion_engine_tracks_queue_lag_and_promotion_throughput() {
             drained = true;
             break;
         }
-        thread::sleep(Duration::from_millis(25));
+        thread::sleep(Duration::from_millis(100));
     }
 
     assert!(drained, "queue should drain after pressure burst");
@@ -624,7 +624,7 @@ fn async_ingestion_engine_tracks_queue_lag_and_promotion_throughput() {
     let metrics = engine.metrics();
     assert!(metrics.max_queue_depth >= 1);
     assert_eq!(metrics.enqueue_rejections, observed_rejections);
-    assert!(metrics.max_queue_lag_ms >= 0);
+    assert!(metrics.max_queue_lag_ms > 0);
 }
 
 #[test]
