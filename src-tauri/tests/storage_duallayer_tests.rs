@@ -568,6 +568,66 @@ fn async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure() {
 }
 
 #[test]
+fn async_ingestion_engine_tracks_queue_lag_and_promotion_throughput() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let engine = AsyncIngestionEngine::start_with_interval(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+        4,
+        80,
+    )
+    .expect("start");
+
+    let attempts = 120usize;
+    let mut observed_rejections = 0usize;
+    let mut observed_accepts = 0usize;
+
+    for idx in 0..attempts {
+        if engine.enqueue(sample_event(&format!("slo-{idx}"))).is_ok() {
+            observed_accepts += 1;
+        } else {
+            observed_rejections += 1;
+        }
+    }
+
+    assert!(observed_accepts > 0);
+    assert_eq!(observed_accepts + observed_rejections, attempts);
+
+    thread::sleep(Duration::from_millis(40));
+    assert!(engine.queue_depth() <= 4);
+    assert!(engine.max_queue_depth() >= 1);
+
+    let mut observed_promotion = false;
+    for _ in 0..120 {
+        if engine.promotion_count() > 0 {
+            observed_promotion = true;
+            break;
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
+
+    assert!(observed_promotion, "promotion worker should run under queue pressure");
+
+    let mut drained = false;
+    for _ in 0..240 {
+        if engine.queue_depth() == 0 {
+            drained = true;
+            break;
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
+
+    assert!(drained, "queue should drain after pressure burst");
+
+    let metrics = engine.metrics();
+    assert!(metrics.max_queue_depth >= 1);
+    assert_eq!(metrics.enqueue_rejections, observed_rejections);
+    assert!(metrics.max_queue_lag_ms >= 0);
+}
+
+#[test]
 fn committer_score_read_uses_published_snapshot_when_live_db_is_unavailable() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");

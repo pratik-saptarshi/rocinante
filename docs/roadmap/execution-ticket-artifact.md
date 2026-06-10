@@ -53,6 +53,10 @@ above and must be kept in sync by updating those sources first.
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
     in `storage_duallayer_tests.rs`.
   - `F-028` remains In Progress with expanded visibility telemetry evidence.
+- Readiness checkpoint (2026-06-10, branch `feat/bi-ready-f028-queue-lag`):
+  - Added queue lag + promotion throughput assertions under burst pressure
+    (`async_ingestion_engine_tracks_queue_lag_and_promotion_throughput` in
+    `storage_duallayer_tests.rs`) and aligned acceptance criteria evidence.
 
 ## Global Acceptance Criteria (Capability-level, BDD)
 
@@ -178,7 +182,7 @@ above and must be kept in sync by updating those sources first.
   - Worker lag metrics are captured and asserted under burst scenarios.
 - Tasks:
   1. `TK-017` Keep promotions worker-only.
-  2. Add queue-lag and throughput assertions.
+  2. Add queue-lag and throughput assertions. ✅
   3. Add queue-depth telemetry.
 - Function AC:
   - `AsyncIngestionEngine::start` enforces bounded enqueue and worker scheduling.
