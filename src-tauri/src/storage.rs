@@ -47,6 +47,7 @@ pub struct AsyncIngestionMetrics {
     pub queue_depth: usize,
     pub max_queue_depth: usize,
     pub promotion_count: usize,
+    pub enqueue_rejections: usize,
     pub max_queue_lag_ms: u64,
 }
 
@@ -212,6 +213,7 @@ pub struct AsyncIngestionEngine {
     queue_depth: Arc<AtomicUsize>,
     max_queue_depth: Arc<AtomicUsize>,
     promotion_count: Arc<AtomicUsize>,
+    enqueue_rejections: Arc<AtomicUsize>,
     max_queue_lag_ms: Arc<AtomicU64>,
 }
 
@@ -263,6 +265,7 @@ impl AsyncIngestionEngine {
         let queue_depth = Arc::new(AtomicUsize::new(0));
         let max_queue_depth = Arc::new(AtomicUsize::new(0));
         let promotion_count = Arc::new(AtomicUsize::new(0));
+        let enqueue_rejections = Arc::new(AtomicUsize::new(0));
         let max_queue_lag_ms = Arc::new(AtomicU64::new(0));
         let queue_depth_bg = Arc::clone(&queue_depth);
         let _max_queue_depth_bg = Arc::clone(&max_queue_depth);
@@ -319,6 +322,7 @@ impl AsyncIngestionEngine {
             queue_depth,
             max_queue_depth,
             promotion_count,
+            enqueue_rejections,
             max_queue_lag_ms,
         })
     }
@@ -329,6 +333,7 @@ impl AsyncIngestionEngine {
         update_max_usize(&self.max_queue_depth, queued_depth);
 
         self.tx.try_send((evt, Instant::now())).map_err(|e| {
+            self.enqueue_rejections.fetch_add(1, Ordering::AcqRel);
             self.queue_depth.fetch_sub(1, Ordering::AcqRel);
             AnalyzerError::Io(format!("buffer enqueue failed: {e}"))
         })?;
@@ -341,6 +346,7 @@ impl AsyncIngestionEngine {
             queue_depth: self.queue_depth.load(Ordering::Acquire),
             max_queue_depth: self.max_queue_depth.load(Ordering::Acquire),
             promotion_count: self.promotion_count.load(Ordering::Acquire),
+            enqueue_rejections: self.enqueue_rejections.load(Ordering::Acquire),
             max_queue_lag_ms: self.max_queue_lag_ms.load(Ordering::Acquire),
         }
     }

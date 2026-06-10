@@ -524,6 +524,50 @@ fn aggregate_queries_remain_non_empty_during_promotion_handoff() {
 }
 
 #[test]
+fn async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let engine = AsyncIngestionEngine::start_with_interval(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+        1,
+        500,
+    )
+    .expect("start");
+
+    let mut observed_rejections = 0usize;
+    for idx in 0..400 {
+        if engine
+            .enqueue(sample_event(&format!("burst-{idx}")))
+            .is_err()
+        {
+            observed_rejections += 1;
+        }
+    }
+
+    assert!(
+        observed_rejections > 0,
+        "expected at least one enqueue rejection under burst pressure"
+    );
+
+    let mut drained = false;
+    for _ in 0..200 {
+        if engine.queue_depth() == 0 {
+            drained = true;
+            break;
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
+
+    assert!(drained, "queue should drain");
+
+    let metrics = engine.metrics();
+    assert!(metrics.enqueue_rejections >= observed_rejections);
+    assert!(metrics.max_queue_depth >= 1);
+}
+
+#[test]
 fn committer_score_read_uses_published_snapshot_when_live_db_is_unavailable() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
