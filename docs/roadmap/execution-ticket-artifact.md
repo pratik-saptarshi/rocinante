@@ -48,6 +48,11 @@ above and must be kept in sync by updating those sources first.
   `F-029`, `F-030`, `F-031`, `F-015`, `F-016`, `F-017` (9)
 - New backlog: `F-018` … `F-027`, `F-032`, `F-033` (12)
 - Completion ratio: `17 / 39 = 43.6%`
+- Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
+  - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
+    validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
+    in `storage_duallayer_tests.rs`.
+  - `F-028` remains In Progress with expanded visibility telemetry evidence.
 
 ## Global Acceptance Criteria (Capability-level, BDD)
 
