@@ -7,8 +7,8 @@ const REDACTED: &str = "[REDACTED]";
 fn redact_with_patterns(input: &str) -> String {
     let mut out = input.to_string();
 
-    // Common key=value secret patterns.
     for key in [
+        "x-api-key",
         "api_key",
         "apikey",
         "access_token",
@@ -22,7 +22,6 @@ fn redact_with_patterns(input: &str) -> String {
         out = redact_key_value(&out, key);
     }
 
-    // Basic PII patterns.
     out = redact_emails(&out);
     out = redact_phone_like(&out);
 
@@ -33,66 +32,123 @@ fn redact_key_value(text: &str, key: &str) -> String {
     let lower = text.to_lowercase();
     let key_lower = key.to_lowercase();
     let mut out = String::new();
-    let mut i = 0usize;
+    let mut cursor = 0usize;
+    let key_len = key_lower.len();
 
-    while i < text.len() {
-        if let Some(pos) = lower[i..].find(&key_lower) {
-            let start = i + pos;
-            out.push_str(&text[i..start]);
+    while cursor < lower.len() {
+        let remaining = &lower[cursor..];
+        let Some(match_offset) = remaining.find(&key_lower) else {
+            out.push_str(&text[cursor..]);
+            break;
+        };
 
-            let mut j = start + key_lower.len();
-            while j < text.len() {
-                let ch = text.as_bytes()[j] as char;
-                if ch == ' ' || ch == '\t' {
-                    j += 1;
-                    continue;
-                }
-                break;
-            }
-
-            if j < text.len() {
-                let sep = text.as_bytes()[j] as char;
-                if sep == '=' || sep == ':' {
-                    out.push_str(&text[start..=j]);
-                    j += 1;
-                    while j < text.len() {
-                        let ch = text.as_bytes()[j] as char;
-                        if ch == ' ' || ch == '\t' {
-                            out.push(ch);
-                            j += 1;
-                            continue;
-                        }
-                        break;
-                    }
-
-                    out.push_str(REDACTED);
-                    while j < text.len() {
-                        let ch = text.as_bytes()[j] as char;
-                        if ch == '\n'
-                            || ch == '\r'
-                            || ch == ';'
-                            || ch == ','
-                            || ch == ' '
-                            || ch == '\t'
-                        {
-                            break;
-                        }
-                        j += 1;
-                    }
-                    i = j;
-                    continue;
-                }
-            }
-
-            out.push_str(&text[start..start + key_lower.len()]);
-            i = start + key_lower.len();
-        } else {
-            out.push_str(&text[i..]);
+        let key_start = cursor + match_offset;
+        let key_end = key_start + key_len;
+        if key_end > lower.len() {
+            out.push_str(&text[cursor..]);
             break;
         }
+
+        if !lower.is_char_boundary(key_start) || !lower.is_char_boundary(key_end) {
+            out.push_str(&text[cursor..cursor + 1]);
+            cursor += 1;
+            continue;
+        }
+
+        if !is_token_boundary_before(lower.as_bytes(), key_start)
+            || !is_token_boundary_after(lower.as_bytes(), key_end)
+        {
+            out.push_str(&text[cursor..key_end]);
+            cursor = key_end;
+            continue;
+        }
+
+        let mut j = key_end;
+        let mut separator_found = false;
+        while j < lower.len() {
+            if !lower.is_char_boundary(j) {
+                j = next_char_boundary(text, j);
+                continue;
+            }
+            let ch = text[j..].chars().next().unwrap_or_default();
+            if ch == '=' || ch == ':' {
+                separator_found = true;
+                break;
+            }
+            if ch.is_ascii_alphanumeric() || ch == '_' {
+                break;
+            }
+            j += ch.len_utf8();
+        }
+
+        if !separator_found {
+            out.push_str(&text[cursor..key_end]);
+            cursor = key_end;
+            continue;
+        }
+
+        out.push_str(&text[cursor..key_start]);
+
+        out.push_str(&text[key_start..=j]);
+        j += 1;
+        while j < text.len() {
+            if !lower.is_char_boundary(j) {
+                j = next_char_boundary(text, j);
+                continue;
+            }
+            let next = text.as_bytes()[j];
+            if next == b' ' || next == b'\t' {
+                out.push(next as char);
+                j += 1;
+                continue;
+            }
+            break;
+        }
+
+        out.push_str(REDACTED);
+        while j < text.len() {
+            if !lower.is_char_boundary(j) {
+                j = next_char_boundary(text, j);
+                continue;
+            }
+            let next = text.as_bytes()[j];
+            if matches!(next, b' ' | b'\t' | b'\r' | b'\n' | b';' | b',') {
+                break;
+            }
+            j += 1;
+        }
+        cursor = j;
+        continue;
     }
 
     out
+}
+
+fn next_char_boundary(text: &str, cursor: usize) -> usize {
+    if cursor >= text.len() {
+        return cursor;
+    }
+    text.char_indices()
+        .find_map(|(idx, _)| (idx > cursor).then_some(idx))
+        .unwrap_or(text.len())
+}
+
+fn is_token_boundary_before(bytes: &[u8], key_start: usize) -> bool {
+    if key_start == 0 {
+        return true;
+    }
+    !is_token_byte(bytes[key_start - 1])
+}
+
+fn is_token_boundary_after(bytes: &[u8], key_end: usize) -> bool {
+    if key_end >= bytes.len() {
+        return true;
+    }
+    !is_token_byte(bytes[key_end])
+}
+
+fn is_token_byte(byte: u8) -> bool {
+    (byte as char).is_ascii_alphanumeric() || byte == b'_'
 }
 
 fn redact_emails(text: &str) -> String {
@@ -170,5 +226,14 @@ mod tests {
         let scrubbed = scrub_text(raw);
         assert!(scrubbed.contains("token=[REDACTED]"));
         assert!(!scrubbed.contains("alice@example.com"));
+    }
+
+    #[test]
+    fn handles_unicode_key_and_value_boundaries() {
+        let raw = "x-api-key=abc🙂 secret=top-secret payload=abc";
+        let scrubbed = scrub_text(raw);
+        assert!(scrubbed.contains("x-api-key=[REDACTED]"));
+        assert!(scrubbed.contains("secret=[REDACTED]"));
+        assert!(!scrubbed.contains("top-secret"));
     }
 }

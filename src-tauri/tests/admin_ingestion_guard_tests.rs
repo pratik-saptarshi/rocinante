@@ -1,4 +1,5 @@
 use repo_analyzer_core::admin;
+use repo_analyzer_core::auth::issue_test_token;
 use repo_analyzer_core::storage::{IngestionBackendConfig, IngestionBackendKind};
 use repo_analyzer_core::types::{CommitIngestionEvent, TelemetryPoint};
 use tempfile::tempdir;
@@ -31,7 +32,7 @@ fn blocks_ingestion_when_strict_mode_not_badger() {
     };
 
     let err = admin::ingest_event(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
         sample_event(),
@@ -57,7 +58,7 @@ fn allows_ingestion_when_strict_mode_badger_sidecar() {
     };
 
     assert!(admin::ingest_event(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         kv.to_str().expect("kv"),
         col.to_str().expect("col"),
         sample_event(),

@@ -20,6 +20,12 @@ Rust + Tauri on-prem repository analysis application with a bead-based plugin en
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
+## Publish Readiness
+
+- Bill of materials: `docs/bill-of-materials.html`
+- Publish gate checklist: `docs/publish-readiness-checklist.html`
+- Execution single source: `docs/roadmap/execution-ticket-artifact.md`
+
 ## Repository setup
 
 For secure GitHub repository bootstrap and branch protections, see:

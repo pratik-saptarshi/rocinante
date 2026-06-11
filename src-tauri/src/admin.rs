@@ -3,8 +3,8 @@ use crate::engine::Pipeline;
 use crate::errors::AnalyzerError;
 use crate::git::discover_repositories;
 use crate::scoring::{load_or_init_weights, update_weights_with_audit};
-use crate::storage::IngestionBackendConfig;
 use crate::storage::{DualLayerStore, LifecycleStats};
+use crate::storage::{IngestionBackendConfig, StorageOperation, StorageRoute};
 use crate::telemetry::TelemetryStore;
 use crate::types::{
     AdminQuery, AnalysisMetric, CommitIngestionEvent, CommitterScore, PrCandidate, PrRanking,
@@ -45,9 +45,9 @@ pub fn ingest_event(
 ) -> Result<(), AnalyzerError> {
     let principal = decode_principal(token)?;
     require_admin(&principal)?;
-    backend.validate()?;
+    StorageRoute::Ingestion.enforce(StorageOperation::IngestWrite)?;
     let store = DualLayerStore::open(kv_path, col_path)?;
-    store.ingest_commit_event_with_backend(&event, backend)
+    store.ingest_commit_event_with_backend_on_route(&event, StorageRoute::Ingestion, backend)
 }
 
 pub fn promote_lifecycle(
@@ -69,8 +69,9 @@ pub fn query_aggregates(
 ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
     let principal = decode_principal(token)?;
     require_admin(&principal)?;
+    StorageRoute::Analytics.enforce(StorageOperation::AnalyticsQuery)?;
     let store = DualLayerStore::open(kv_path, col_path)?;
-    store.aggregate_by_query(&query)
+    store.aggregate_by_query_on_route(StorageRoute::Analytics, &query)
 }
 
 pub fn committer_scores(
@@ -82,9 +83,10 @@ pub fn committer_scores(
 ) -> Result<Vec<CommitterScore>, AnalyzerError> {
     let principal = decode_principal(token)?;
     require_admin(&principal)?;
+    StorageRoute::Analytics.enforce(StorageOperation::AnalyticsQuery)?;
     let store = DualLayerStore::open(kv_path, col_path)?;
     let weights = load_or_init_weights(weights_path)?;
-    store.compute_committer_scores(&query, &weights)
+    store.compute_committer_scores_with_route(StorageRoute::Analytics, &query, &weights)
 }
 
 pub fn rank_prs(
@@ -96,9 +98,10 @@ pub fn rank_prs(
 ) -> Result<Vec<PrRanking>, AnalyzerError> {
     let principal = decode_principal(token)?;
     require_admin(&principal)?;
+    StorageRoute::Analytics.enforce(StorageOperation::AnalyticsQuery)?;
     let store = DualLayerStore::open(kv_path, col_path)?;
     let weights = load_or_init_weights(weights_path)?;
-    store.rank_open_prs(&prs, &weights)
+    store.rank_open_prs_with_route(StorageRoute::Analytics, &prs, &weights)
 }
 
 pub fn update_scoring_weights(

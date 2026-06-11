@@ -1,4 +1,5 @@
 use repo_analyzer_core::admin::update_scoring_weights;
+use repo_analyzer_core::auth::issue_test_token;
 use repo_analyzer_core::types::ScoringWeights;
 use std::fs;
 use tempfile::tempdir;
@@ -10,7 +11,7 @@ fn weight_updates_are_audited_and_admin_only() {
     let audit = dir.path().join("audit.log");
 
     let denied = update_scoring_weights(
-        "bob:reader",
+        &issue_test_token("bob", &["reader"], 3600),
         weights.to_str().expect("weights path"),
         audit.to_str().expect("audit path"),
         ScoringWeights::default(),
@@ -22,7 +23,7 @@ fn weight_updates_are_audited_and_admin_only() {
         ..ScoringWeights::default()
     };
     update_scoring_weights(
-        "alice:admin",
+        &issue_test_token("alice", &["admin"], 3600),
         weights.to_str().expect("weights path"),
         audit.to_str().expect("audit path"),
         w,
