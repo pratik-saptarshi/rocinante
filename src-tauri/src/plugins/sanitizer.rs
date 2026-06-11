@@ -64,56 +64,61 @@ fn redact_key_value(text: &str, key: &str) -> String {
         }
 
         let mut j = key_end;
+        let mut separator_found = false;
         while j < lower.len() {
             if !lower.is_char_boundary(j) {
                 j = next_char_boundary(text, j);
                 continue;
             }
-            let separator_candidate = text.as_bytes()[j];
-            if separator_candidate == b' ' || separator_candidate == b'\t' {
+            let ch = text[j..].chars().next().unwrap_or_default();
+            if ch == '=' || ch == ':' {
+                separator_found = true;
+                break;
+            }
+            if ch.is_ascii_alphanumeric() || ch == '_' {
+                break;
+            }
+            j += ch.len_utf8();
+        }
+
+        if !separator_found {
+            out.push_str(&text[cursor..key_end]);
+            cursor = key_end;
+            continue;
+        }
+
+        out.push_str(&text[cursor..key_start]);
+
+        out.push_str(&text[key_start..=j]);
+        j += 1;
+        while j < text.len() {
+            if !lower.is_char_boundary(j) {
+                j = next_char_boundary(text, j);
+                continue;
+            }
+            let next = text.as_bytes()[j];
+            if next == b' ' || next == b'\t' {
+                out.push(next as char);
                 j += 1;
                 continue;
             }
             break;
         }
 
-        out.push_str(&text[cursor..key_start]);
-
-        if j < text.len() && (text.as_bytes()[j] == b'=' || text.as_bytes()[j] == b':') {
-            out.push_str(&text[key_start..=j]);
-            j += 1;
-            while j < text.len() {
-                if !lower.is_char_boundary(j) {
-                    j = next_char_boundary(text, j);
-                    continue;
-                }
-                let next = text.as_bytes()[j];
-                if next == b' ' || next == b'\t' {
-                    out.push(next as char);
-                    j += 1;
-                    continue;
-                }
+        out.push_str(REDACTED);
+        while j < text.len() {
+            if !lower.is_char_boundary(j) {
+                j = next_char_boundary(text, j);
+                continue;
+            }
+            let next = text.as_bytes()[j];
+            if matches!(next, b' ' | b'\t' | b'\r' | b'\n' | b';' | b',') {
                 break;
             }
-
-            out.push_str(REDACTED);
-            while j < text.len() {
-                if !lower.is_char_boundary(j) {
-                    j = next_char_boundary(text, j);
-                    continue;
-                }
-                let next = text.as_bytes()[j];
-                if matches!(next, b' ' | b'\t' | b'\r' | b'\n' | b';' | b',') {
-                    break;
-                }
-                j += 1;
-            }
-            cursor = j;
-            continue;
+            j += 1;
         }
-
-        out.push_str(&text[cursor..key_end]);
-        cursor = key_end;
+        cursor = j;
+        continue;
     }
 
     out
