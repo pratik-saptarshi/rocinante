@@ -204,6 +204,12 @@ impl IngestionBackendConfig {
                     "Badger sidecar endpoint is required".to_string(),
                 ));
             }
+            if !(endpoint.starts_with("inproc://") || endpoint.starts_with("unix://")) {
+                return Err(AnalyzerError::Db(
+                    "Badger sidecar endpoint must start with inproc:// or unix://"
+                        .to_string(),
+                ));
+            }
         }
         Ok(())
     }

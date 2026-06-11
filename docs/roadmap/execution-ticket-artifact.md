@@ -67,6 +67,15 @@ above and must be kept in sync by updating those sources first.
   - Normalized Badger sidecar endpoint parsing to trim whitespace before transport dispatch;
     added `badger_sidecar_inproc_transport_trims_endpoint_whitespace` in
     `ingestion_transport_tests.rs` and confirmed transport tests green.
+- Readiness checkpoint (2026-06-10, branch
+  `feat/bi-ready-slice-008a-endpoint-schema`):
+  - Added strict Badger sidecar endpoint scheme validation in
+    `IngestionBackendConfig::validate` (`inproc://` + `unix://` only),
+    blocking unsupported schemes before transport dispatch.
+  - Added `badger_sidecar_rejects_invalid_endpoint_scheme` and
+    `badger_sidecar_rejects_empty_endpoint_with_whitespace` in
+    `ingestion_backend_tests.rs`; updated transport unsupported-scheme regression to
+    assert validation-time rejection.
 
 ## Global Acceptance Criteria (Capability-level, BDD)
 
