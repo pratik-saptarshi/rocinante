@@ -5,8 +5,6 @@ use repo_analyzer_core::storage::{
     IngestionBackendConfig, IngestionBackendKind, RetentionPolicy, StorageRoute,
 };
 use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, ScoringWeights, TelemetryPoint};
-use serde_json;
-use sled;
 use std::fs;
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -288,7 +286,6 @@ fn prunes_old_releases_and_preserves_queryability_by_rollup() {
     let policy = RetentionPolicy {
         raw_ttl_secs: 3600,
         max_release_partitions: Some(2),
-        ..RetentionPolicy::default()
     };
     let stats = store
         .promote_to_columnar_with_retention(&policy, now_ts_for_test())

@@ -92,7 +92,7 @@ fn badger_sidecar_transport_failure_does_not_persist_raw_event() {
         db.scan_prefix("evt:").count()
     };
 
-    let err = match {
+    let res = {
         let store =
             DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col")).expect("open");
         let backend = IngestionBackendConfig {
@@ -101,7 +101,8 @@ fn badger_sidecar_transport_failure_does_not_persist_raw_event() {
             endpoint: Some("unix:///tmp/does-not-exist-badger.sock".to_string()),
         };
         store.ingest_commit_event_with_backend(&sample_event("c5"), &backend)
-    } {
+    };
+    let err = match res {
         Ok(()) => panic!("expected transport failure"),
         Err(err) => err,
     };
