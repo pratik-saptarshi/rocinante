@@ -78,7 +78,7 @@ fn badger_sidecar_rejects_unsupported_endpoint_scheme() {
         .expect_err("expected unsupported scheme");
     assert!(err
         .to_string()
-        .contains("badger sidecar transport failed: unsupported endpoint scheme"));
+        .contains("Badger sidecar endpoint must start with inproc:// or unix://"));
 }
 
 #[test]
