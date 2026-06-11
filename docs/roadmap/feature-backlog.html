@@ -16,6 +16,12 @@
 - `F-008` Dual-layer offline-first storage architecture (pattern validated):
   - Dedicated write-optimized KV ingestion tier.
   - Dedicated columnar analytics tier (`duckdb`) for read-heavy aggregation.
+- `F-008A` Storage engine conformance migration:
+  - Ingestion tier persists through BadgerDB sidecar validation and transport checks.
+  - DuckDB remains analytics-only and all transport fallbacks are validated.
+- `F-008D` Retention compliance automation:
+  - Short-term raw TTL prune with long-term release rollup retention.
+  - Release partition retention remains queryable after pruning.
 - `F-009` Asynchronous ingestion buffering via bounded in-memory ring channel and background promotion worker.
 - `F-010` Lifecycle promotion from raw event stream to historical analytical tables.
 - `F-008E` Storage lock ownership and path exclusivity:
@@ -34,15 +40,9 @@
 
 ## In Progress
 
-- `F-008A` Storage engine conformance migration:
-  - Replace ingestion tier implementation with `BadgerDB` (LSM KV) through a local on-prem sidecar boundary.
-  - Keep `DuckDB` as analytics-only engine.
 - `F-008B` Strict storage boundary enforcement:
   - Ingestion writes route only to BadgerDB APIs.
   - Analytical reads/writes for metric marts route only to DuckDB.
-- `F-008D` Retention compliance automation:
-  - Short-term TTL/prune for raw ingestion logs.
-  - Long-term compressed retention by release in DuckDB.
 - `F-015` Admin UI integration for newly wired Tauri commands (`ingest_event`, `promote_lifecycle`, `query_aggregates`, `committer_scores`, `rank_prs`, `update_scoring_weights`).
 - `F-016` Rich dashboard visualizations for trend lines and PR risk ranking rationale.
 - `F-017` Expanded sanitizer detection rules and policy packs per compliance domain.

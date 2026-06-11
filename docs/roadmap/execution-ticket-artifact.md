@@ -33,23 +33,24 @@ above and must be kept in sync by updating those sources first.
 
 ### Current status mapping
 
-- `F-030` (signed principal hardening): In Progress (implemented, pending final gate).
-- `F-028` (async ingestion decoupling): In Progress (implemented, pending final gate).
+- `F-008A` (storage engine conformance migration): Completed.
+- `F-008B` (strict storage boundary enforcement): Completed.
+- `F-008D` (retention compliance automation): Completed.
+- `F-028` (async ingestion decoupling): Completed.
 - `F-029` (UTF-safe sanitization): Completed.
+- `F-030` (signed principal hardening): Completed.
 - `FE-009` and `F-031` command contract tracks remain In Progress; requires UI commit-plane sweep.
-- `F-008D` (retention compliance automation): In Progress (implemented, pending final gate).
-- `F-008A` (storage engine conformance migration): In Progress (implemented, pending final gate).
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
 
-## Roadmap Completion Snapshot (as of 2026-06-09)
+## Roadmap Completion Snapshot (as of 2026-06-11)
 
-- Completed features: `F-001` … `F-014`, `F-008C`, `F-008E`, `F-008F`, `F-029` (18)
-- In progress features: `F-008A`, `F-008B`, `F-008D`, `F-028`,
-  `F-030`, `F-031`, `F-015`, `F-016`, `F-017` (8)
+- Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
+  `F-008E`, `F-008F`, `F-028`, `F-029`, `F-030` (23)
+- In progress features: `F-031`, `F-015`, `F-016`, `F-017` (4)
 - New backlog: `F-018` … `F-027`, `F-032`, `F-033` (12)
-- Completion ratio: `18 / 39 = 46.2%`
+- Completion ratio: `23 / 39 = 59.0%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -123,7 +124,7 @@ above and must be kept in sync by updating those sources first.
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-001`, `BI-005`
 - Bead context: `B-04`
-- Current status: In Progress
+- Current status: Completed
 - TDD AC:
   - `StorageProfile::validate` and `IngestionBackendConfig::validate` reject non-Badger
     ingestion settings.
@@ -177,7 +178,7 @@ above and must be kept in sync by updating those sources first.
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-002`
 - Bead context: `B-05`
-- Current status: In Progress
+- Current status: Completed
 - TDD AC:
   - `tests/storage_policy_tests.rs` validates TTL and roll-up execution windows.
   - `tests/storage_duallayer_tests.rs::async_ingestion_engine_applies_retention_before_promotion` validates background retention on async promotion cycles.
@@ -209,7 +210,7 @@ above and must be kept in sync by updating those sources first.
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-006`
 - Bead context: `B-05`
-- Current status: In Progress
+- Current status: Completed
 - Governing finding: `R2-F01`
 - TDD AC:
   - `AsyncIngestionEngine::enqueue` never invokes promotion inline.
@@ -217,7 +218,7 @@ above and must be kept in sync by updating those sources first.
 - Tasks:
   1. `TK-017` Keep promotions worker-only.
   2. Add queue-lag and throughput assertions. ✅
-  3. Add queue-depth telemetry.
+  3. Add queue-depth telemetry. ✅
 - Function AC:
   - `AsyncIngestionEngine::start` enforces bounded enqueue and worker scheduling.
 
@@ -248,7 +249,7 @@ above and must be kept in sync by updating those sources first.
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-007`
 - Bead context: `B-10`
-- Current status: In Progress
+- Current status: Completed
 - Tasks:
   1. `TK-038` Replace plain decode with signed claim parsing.
   2. `TK-039` Validate expiry, issuer, audience.
@@ -279,7 +280,7 @@ above and must be kept in sync by updating those sources first.
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-008`
 - Bead context: `B-11`
-- Current status: In Progress
+- Current status: Completed
 - Tasks:
   1. `TK-042` Replace byte-index parsing with UTF-8 scanners.
   2. `TK-043` Add boundary-aware inline key-value redaction.
