@@ -35,7 +35,7 @@ above and must be kept in sync by updating those sources first.
 
 - `F-030` (signed principal hardening): In Progress (implemented, pending final gate).
 - `F-028` (async ingestion decoupling): In Progress (implemented, pending final gate).
-- `F-029` (UTF-safe sanitization): In Progress (implemented, pending final gate).
+- `F-029` (UTF-safe sanitization): Completed.
 - `FE-009` and `F-031` command contract tracks remain In Progress; requires UI commit-plane sweep.
 - `F-008D` (retention compliance automation): In Progress (implemented, pending final gate).
 - `F-008A` (storage engine conformance migration): In Progress (implemented, pending final gate).
@@ -45,11 +45,11 @@ above and must be kept in sync by updating those sources first.
 
 ## Roadmap Completion Snapshot (as of 2026-06-09)
 
-- Completed features: `F-001` … `F-014`, `F-008C`, `F-008E`, `F-008F` (17)
+- Completed features: `F-001` … `F-014`, `F-008C`, `F-008E`, `F-008F`, `F-029` (18)
 - In progress features: `F-008A`, `F-008B`, `F-008D`, `F-028`,
-  `F-029`, `F-030`, `F-031`, `F-015`, `F-016`, `F-017` (9)
+  `F-030`, `F-031`, `F-015`, `F-016`, `F-017` (8)
 - New backlog: `F-018` … `F-027`, `F-032`, `F-033` (12)
-- Completion ratio: `17 / 39 = 43.6%`
+- Completion ratio: `18 / 39 = 46.2%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -81,6 +81,13 @@ above and must be kept in sync by updating those sources first.
   - Added transport-failure durability regression coverage in
     `ingestion_transport_tests.rs` ensuring unix socket errors do not persist raw
     `evt:` rows in Sled while returning transport error.
+- Readiness checkpoint (2026-06-11, branch
+  `feat/bi-ready-slice-029-punct-emoji`):
+  - Added punctuation/emoji regression coverage to sanitizer redaction with
+    `scrubs_secret_values_with_emoji_separator_noise` in `sanitizer_tests.rs`.
+  - Extended `redact_key_value` to tolerate punctuation/emoji noise between
+    key and separator while still failing closed if a real token begins first.
+  - Re-ran the full `src-tauri` test suite; all tests passed.
 
 ## Global Acceptance Criteria (Capability-level, BDD)
 
