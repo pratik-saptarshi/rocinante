@@ -93,8 +93,8 @@ fn badger_sidecar_transport_failure_does_not_persist_raw_event() {
     };
 
     let err = match {
-        let store =
-            DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col")).expect("open");
+        let store = DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col"))
+            .expect("open");
         let backend = IngestionBackendConfig {
             kind: IngestionBackendKind::BadgerSidecar,
             strict_badger_required: true,
