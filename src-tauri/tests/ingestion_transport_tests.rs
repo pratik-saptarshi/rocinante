@@ -80,3 +80,20 @@ fn badger_sidecar_rejects_unsupported_endpoint_scheme() {
         .to_string()
         .contains("badger sidecar transport failed: unsupported endpoint scheme"));
 }
+
+#[test]
+fn badger_sidecar_inproc_transport_trims_endpoint_whitespace() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let store =
+        DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col")).expect("open");
+    let backend = IngestionBackendConfig {
+        kind: IngestionBackendKind::BadgerSidecar,
+        strict_badger_required: true,
+        endpoint: Some("  inproc://badger  ".to_string()),
+    };
+    assert!(store
+        .ingest_commit_event_with_backend(&sample_event("c4"), &backend)
+        .is_ok());
+}

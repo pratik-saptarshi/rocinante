@@ -38,6 +38,7 @@ above and must be kept in sync by updating those sources first.
 - `F-029` (UTF-safe sanitization): In Progress (implemented, pending final gate).
 - `FE-009` and `F-031` command contract tracks remain In Progress; requires UI commit-plane sweep.
 - `F-008D` (retention compliance automation): In Progress (implemented, pending final gate).
+- `F-008A` (storage engine conformance migration): In Progress (implemented, pending final gate).
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
@@ -62,6 +63,10 @@ above and must be kept in sync by updating those sources first.
   - Made release retention tie-break ordering deterministic (`ORDER BY MAX(ts) DESC, MAX(release) DESC`)
     in `prune_analytics_releases_with_retention` and reran `storage_duallayer_tests`;
     all 15 tests now pass, including long-release pruning regression.
+- Readiness checkpoint (2026-06-10, branch `feat/bi-ready-slice-008a-2026-06-10`):
+  - Normalized Badger sidecar endpoint parsing to trim whitespace before transport dispatch;
+    added `badger_sidecar_inproc_transport_trims_endpoint_whitespace` in
+    `ingestion_transport_tests.rs` and confirmed transport tests green.
 
 ## Global Acceptance Criteria (Capability-level, BDD)
 
@@ -102,6 +107,7 @@ above and must be kept in sync by updating those sources first.
   - `StorageProfile::validate` and `IngestionBackendConfig::validate` reject non-Badger
     ingestion settings.
   - `tests/storage_policy_tests.rs` verifies red-to-green on valid/invalid profile.
+  - `tests/ingestion_transport_tests.rs` verifies endpoint normalization for sidecar dispatch.
 - Tasks:
   1. `TK-014` Persist to BadgerDB via sidecar boundary.
   2. `TK-015` Preserve parallel ingestion safety.
