@@ -1,5 +1,6 @@
 use repo_analyzer_core::storage::{DualLayerStore, IngestionBackendConfig, IngestionBackendKind};
 use repo_analyzer_core::types::{CommitIngestionEvent, TelemetryPoint};
+use sled;
 use tempfile::tempdir;
 
 fn sample_event(id: &str) -> CommitIngestionEvent {
@@ -79,6 +80,38 @@ fn badger_sidecar_rejects_unsupported_endpoint_scheme() {
     assert!(err
         .to_string()
         .contains("Badger sidecar endpoint must start with inproc:// or unix://"));
+}
+
+#[test]
+fn badger_sidecar_transport_failure_does_not_persist_raw_event() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let before_count = {
+        let db = sled::open(&kv).expect("open kv");
+        db.scan_prefix("evt:").count()
+    };
+
+    let err = match {
+        let store =
+            DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col")).expect("open");
+        let backend = IngestionBackendConfig {
+            kind: IngestionBackendKind::BadgerSidecar,
+            strict_badger_required: true,
+            endpoint: Some("unix:///tmp/does-not-exist-badger.sock".to_string()),
+        };
+        store.ingest_commit_event_with_backend(&sample_event("c5"), &backend)
+    } {
+        Ok(()) => panic!("expected transport failure"),
+        Err(err) => err,
+    };
+    assert!(err.to_string().contains("badger sidecar transport failed"));
+
+    let after_count = {
+        let db = sled::open(&kv).expect("open kv");
+        db.scan_prefix("evt:").count()
+    };
+    assert_eq!(before_count, after_count);
 }
 
 #[test]

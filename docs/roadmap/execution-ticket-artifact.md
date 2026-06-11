@@ -76,6 +76,11 @@ above and must be kept in sync by updating those sources first.
     `badger_sidecar_rejects_empty_endpoint_with_whitespace` in
     `ingestion_backend_tests.rs`; updated transport unsupported-scheme regression to
     assert validation-time rejection.
+- Readiness checkpoint (2026-06-10, branch
+  `feat/bi-ready-slice-008a-ingest-durability`):
+  - Added transport-failure durability regression coverage in
+    `ingestion_transport_tests.rs` ensuring unix socket errors do not persist raw
+    `evt:` rows in Sled while returning transport error.
 
 ## Global Acceptance Criteria (Capability-level, BDD)
 
