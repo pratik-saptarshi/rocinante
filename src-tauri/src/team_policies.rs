@@ -7,19 +7,10 @@ pub struct TeamPolicyProfile {
     pub weights: ScoringWeights,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TeamPolicyCatalog {
     pub default_weights: ScoringWeights,
     pub profiles: Vec<TeamPolicyProfile>,
-}
-
-impl Default for TeamPolicyCatalog {
-    fn default() -> Self {
-        Self {
-            default_weights: ScoringWeights::default(),
-            profiles: Vec::new(),
-        }
-    }
 }
 
 pub fn resolve_team_weights(catalog: &TeamPolicyCatalog, team: Option<&str>) -> ScoringWeights {

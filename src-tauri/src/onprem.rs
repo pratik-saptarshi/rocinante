@@ -33,10 +33,10 @@ impl StaticDirectoryLookup {
             .into_iter()
             .map(|(user, groups)| {
                 (
-                    normalize_principal(&user, "user").unwrap_or_else(|_| user),
+                    normalize_principal(&user, "user").unwrap_or(user),
                     groups
                         .into_iter()
-                        .map(|group| normalize_principal(&group, "group").unwrap_or_else(|_| group))
+                        .map(|group| normalize_principal(&group, "group").unwrap_or(group))
                         .collect(),
                 )
             })
