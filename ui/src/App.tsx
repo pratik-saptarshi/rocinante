@@ -20,17 +20,10 @@ import {
 import { useState } from 'react';
 import { readLimits, readPayload } from './dashboard-contract';
 import { buildAdminBridgePayload } from './admin-bridge-contract';
+import { dashboardAudienceHighlights, dashboardFindingGroups, type AuditStatus, type DashboardFinding } from './dashboard-content';
 import { buildDashboardInsights, type InsightPayload } from './insight-engine';
 import { buildQualityPulse, type StakeholderAudience } from './domain/quality-pulse';
 import { invokeAdminCommand, type AdminBridgeCommand } from './tauri-admin';
-
-interface Finding {
-  id: string;
-  text: string;
-  status: AuditStatus;
-}
-
-type AuditStatus = 'good' | 'medium' | 'bad';
 
 function StatusBadge({ status, label }: { status: AuditStatus; label: string }) {
   const palette = {
@@ -82,7 +75,7 @@ function ScoreGauge({ value, subtitle, status }: { value: number; subtitle: stri
   );
 }
 
-function FindingSection({ title, items }: { title: string; items: Finding[] }) {
+function FindingSection({ title, items }: { title: string; items: DashboardFinding[] }) {
   return (
     <Box sx={{ mt: 1.5 }}>
       <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
@@ -139,49 +132,6 @@ function App() {
   const [insights, setInsights] = useState(() => buildDashboardInsights());
   const [adminToken, setAdminToken] = useState('alice:admin');
   const [adminResult, setAdminResult] = useState('No admin command executed yet.');
-
-  const accessibilityFindings: Finding[] = [
-    { id: 'alt-text', text: 'Missing image alt text (7 instances)', status: 'bad' },
-    { id: 'contrast', text: 'Low color contrast on buttons', status: 'medium' },
-    { id: 'keyboard', text: 'Keyboard navigation traps found', status: 'medium' }
-  ];
-
-  const seoGuidance: Finding[] = [
-    { id: 'h1', text: 'Improve H1 and title tag consistency', status: 'medium' },
-    { id: 'faq', text: 'Add FAQ schema', status: 'medium' },
-    { id: 'qa', text: 'Optimize for long-tail, question-based queries', status: 'medium' }
-  ];
-
-  const securityFindings: Finding[] = [
-    { id: 'csp', text: 'Content-Security-Policy: Missing', status: 'bad' },
-    { id: 'frame', text: 'X-Frame-Options: SAMEORIGIN', status: 'good' },
-    { id: 'hsts', text: 'Strict-Transport-Security: Enabled', status: 'good' }
-  ];
-
-  const performanceFindings: Finding[] = [
-    { id: 'lcp', text: 'Largest Contentful Paint (LCP): 2.9s', status: 'medium' },
-    { id: 'cls', text: 'Cumulative Layout Shift (CLS): 0.05', status: 'good' },
-    { id: 'tbt', text: 'Total Blocking Time (TBT): 350ms', status: 'medium' }
-  ];
-
-  const audienceHighlights: Record<StakeholderAudience, { tone: string; guidance: string }> = {
-    lead: {
-      tone: 'Team leads: prioritize blocked PR hotspots and coaching cues.',
-      guidance: 'Prioritize review-ready commits before opening the next work cycle.'
-    },
-    manager: {
-      tone: 'Managers: monitor cycle time, reviewer load, and handoff stability.',
-      guidance: 'Uncover queue pressure to rebalance approval throughput and merge cadence.'
-    },
-    executive: {
-      tone: 'Executives: monitor strategic quality and delivery predictability.',
-      guidance: 'Use the opportunity list to stabilize throughput and defect risk over time.'
-    },
-    security: {
-      tone: 'Security: prioritize policy drift and dependency risk signals.',
-      guidance: 'Surface release and dependency risks before they enter long-running branches.'
-    }
-  };
 
   const { commitRiskCards, bottlenecks, opportunities } = insights;
   const qualityPulse = buildQualityPulse(insights);
@@ -274,7 +224,7 @@ function App() {
         </ToggleButtonGroup>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-          {audienceHighlights[audience].tone}
+          {dashboardAudienceHighlights[audience].tone}
         </Typography>
 
         <Divider sx={{ my: 1 }} />
@@ -423,7 +373,7 @@ function App() {
               Team Lead Focus
             </Typography>
             <Typography variant="caption" display="block" sx={{ mb: 1 }}>
-              {audienceHighlights[audience].guidance}
+              {dashboardAudienceHighlights[audience].guidance}
             </Typography>
             <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Top Commit Risks
@@ -445,7 +395,7 @@ function App() {
               Manager Focus
             </Typography>
             <Typography variant="caption" display="block" sx={{ mb: 1 }}>
-              {audienceHighlights[audience].guidance}
+              {dashboardAudienceHighlights[audience].guidance}
             </Typography>
             <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Bottleneck Radar
@@ -473,7 +423,7 @@ function App() {
               Executive Focus
             </Typography>
             <Typography variant="caption" display="block" sx={{ mb: 1 }}>
-              {audienceHighlights[audience].guidance}
+              {dashboardAudienceHighlights[audience].guidance}
             </Typography>
             <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Top Improvement Opportunities
@@ -500,7 +450,7 @@ function App() {
               Security Focus
             </Typography>
             <Typography variant="caption" display="block" sx={{ mb: 1 }}>
-              {audienceHighlights[audience].guidance}
+              {dashboardAudienceHighlights[audience].guidance}
             </Typography>
             <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Security-Weighted Commit Signals
@@ -544,7 +494,7 @@ function App() {
           >
             Run Full Audit
           </Button>
-          <FindingSection title="Findings" items={accessibilityFindings} />
+          <FindingSection title="Findings" items={dashboardFindingGroups.accessibility} />
         </Box>
 
         <Divider sx={{ my: 2 }} />
@@ -566,7 +516,7 @@ function App() {
             value="65/100 (Improve structural clarity for citations)"
           />
           <MetricItem label="Geographic SEO" value="N/A (Set service areas)" />
-          <FindingSection title={`Example guidance (${seoTab})`} items={seoGuidance} />
+          <FindingSection title={`Example guidance (${seoTab})`} items={dashboardFindingGroups.seo} />
         </Box>
 
         <Divider sx={{ my: 2 }} />
@@ -579,7 +529,7 @@ function App() {
           </Stack>
           <StatusBadge status="good" label="General Site Security: High" />
           <Divider sx={{ mt: 1.5 }} />
-          <FindingSection title="Drupal-Specific Checks" items={securityFindings} />
+          <FindingSection title="Drupal-Specific Checks" items={dashboardFindingGroups.security} />
           <Typography variant="body2" sx={{ mt: 1 }}>
             Recommendation: Install SecKit module for enhanced CSP.
           </Typography>
@@ -594,7 +544,7 @@ function App() {
             </Typography>
           </Stack>
           <ScoreGauge value={65} subtitle="Overall Score" status="medium" />
-          <FindingSection title="Top Recommendations" items={performanceFindings} />
+          <FindingSection title="Top Recommendations" items={dashboardFindingGroups.performance} />
 
           <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5, gap: 1 }}>
             <Typography variant="body2">Field Data</Typography>
