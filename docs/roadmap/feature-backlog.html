@@ -37,13 +37,13 @@
 - `F-012` Isolated scoring module with versioned algorithm constant and deterministic weight configuration.
 - `F-013` Audit-logged scoring weight changes with admin-only authorization.
 - `F-014` Tauri command surface wired for scan, ingest, promote, aggregate query, scoring, PR ranking, and weight updates.
+- `F-015` Admin UI integration for newly wired Tauri commands (`ingest_event`, `promote_lifecycle`, `query_aggregates`, `committer_scores`, `rank_prs`, `update_scoring_weights`).
 
 ## In Progress
 
 - `F-008B` Strict storage boundary enforcement:
   - Ingestion writes route only to BadgerDB APIs.
   - Analytical reads/writes for metric marts route only to DuckDB.
-- `F-015` Admin UI integration for newly wired Tauri commands (`ingest_event`, `promote_lifecycle`, `query_aggregates`, `committer_scores`, `rank_prs`, `update_scoring_weights`).
 - `F-016` Rich dashboard visualizations for trend lines and PR risk ranking rationale.
 - `F-017` Expanded sanitizer detection rules and policy packs per compliance domain.
 

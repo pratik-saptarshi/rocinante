@@ -40,6 +40,7 @@ above and must be kept in sync by updating those sources first.
 - `F-029` (UTF-safe sanitization): Completed.
 - `F-030` (signed principal hardening): Completed.
 - `FE-009` and `F-031` command contract tracks remain In Progress; requires UI commit-plane sweep.
+- `F-015` command bridge now exposes all Tauri admin controls in the UI with test coverage; checkpoint validated on `feat/f015-admin-ui-bridge`.
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
@@ -47,10 +48,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-028`, `F-029`, `F-030` (23)
-- In progress features: `F-031`, `F-015`, `F-016`, `F-017` (4)
+  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030` (24)
+- In progress features: `F-031`, `F-016`, `F-017` (3)
 - New backlog: `F-018` … `F-027`, `F-032`, `F-033` (12)
-- Completion ratio: `23 / 39 = 59.0%`
+- Completion ratio: `24 / 39 = 61.5%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -328,8 +329,8 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-015` — Admin UI integration for command set (`FE-007`-like lane)
 - Ticket: `BI-FE-015`
-- Status: In Progress
-- AC: End-user command controls exist for ingest/promote/query with explicit browser/Tauri fallback.
+- Status: Completed
+- AC: End-user command controls exist for ingest/promote/query/committer-scores/PR-ranking/weight-update with explicit browser/Tauri fallback and test coverage.
 
 - Feature `F-016` — Rich dashboard visualizations
 - Ticket: `BI-FE-015` (continued operational context)
