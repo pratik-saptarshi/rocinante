@@ -22,6 +22,7 @@ import { readLimits, readPayload } from './dashboard-contract';
 import { buildAdminBridgePayload } from './admin-bridge-contract';
 import { dashboardAudienceHighlights, dashboardFindingGroups, type AuditStatus, type DashboardFinding } from './dashboard-content';
 import { buildExplainabilityTraces } from './dashboard-explainability';
+import { buildTrendRiskCards } from './dashboard-visuals';
 import { buildDashboardInsights, type InsightPayload } from './insight-engine';
 import { buildQualityPulse, type StakeholderAudience } from './domain/quality-pulse';
 import { invokeAdminCommand, type AdminBridgeCommand } from './tauri-admin';
@@ -137,6 +138,7 @@ function App() {
   const { commitRiskCards, bottlenecks, opportunities } = insights;
   const qualityPulse = buildQualityPulse(insights);
   const explainabilityTraces = buildExplainabilityTraces(qualityPulse);
+  const trendRiskCards = buildTrendRiskCards(qualityPulse);
   const audienceActions = qualityPulse.recommendations[audience];
   const audienceRoute = qualityPulse.actionRoutes[audience];
   const topOpps = opportunities.slice(0, 2);
@@ -313,6 +315,30 @@ function App() {
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {trace.detail}
+                </Typography>
+              </Paper>
+            ))}
+          </Stack>
+        </Box>
+
+        <Box sx={{ mb: 1.5 }} data-testid="trend-risk-section">
+          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+            Trend &amp; Risk View
+          </Typography>
+          <Stack spacing={1}>
+            {trendRiskCards.map((card) => (
+              <Paper key={card.id} variant="outlined" sx={{ p: 1.1, borderRadius: 2 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.75 }}>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    {card.title}
+                  </Typography>
+                  <StatusBadge status={card.status} label={card.status} />
+                </Stack>
+                <Typography variant="body2" fontWeight={600}>
+                  {card.summary}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {card.detail}
                 </Typography>
               </Paper>
             ))}
