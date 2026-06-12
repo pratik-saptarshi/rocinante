@@ -401,6 +401,19 @@ above and must be kept in sync by updating those sources first.
   - `buildExplainabilityTraces` derives the same trace cards for a given `QualityPulse`.
   - `App.tsx` explainability panel renders fallback-safe trace cards from current telemetry.
 
+- Feature `F-024` — Explainability panel
+- Ticket: `BI-FE-018`
+- Status: In Progress
+- AC: score decomposition traces remain deterministic across payload refreshes and custom
+  telemetry pulses.
+- Tasks:
+  1. `TK-FE-037` Extract explainability trace builder from dashboard pulse data.
+  2. `TK-FE-038` Render trace cards in the dashboard shell with stable labels and summaries.
+  3. `TK-FE-039` Add regression tests for sample and custom payload decomposition paths.
+- Function AC:
+  - `buildExplainabilityTraces` derives the same trace cards for a given `QualityPulse`.
+  - `App.tsx` explainability panel renders fallback-safe trace cards from current telemetry.
+
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`
 - Status: In Progress
