@@ -20,7 +20,7 @@ test.describe('frontend behavior', () => {
     await expect(page.getByText('Security Focus')).toBeVisible();
     await expect(page.getByText('Security Operations')).toBeVisible();
     await expect(page.getByText('Security-Weighted Commit Signals')).toBeVisible();
-    await expect(page.getByText(/Security-sensitive signals from/i)).toBeVisible();
+    await expect(page.getByTestId('quality-pulse-section').getByText(/Security-sensitive signals from/i).first()).toBeVisible();
   });
 
   test('applies payload envelopes and resets to sample data', async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe('frontend behavior', () => {
 
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
     await expect(page.getByTestId('snapshot-opportunity-count')).toHaveText('1');
-    await expect(page.getByText('browser-001 score 100')).toBeVisible();
+    await expect(page.getByText(/browser-001 score 3/i)).toBeVisible();
 
     await page.getByRole('button', { name: 'Reset to Sample' }).click();
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('3');

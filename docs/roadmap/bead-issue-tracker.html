@@ -11,14 +11,13 @@
 | BI-005 | B-04 | `F-008A` Badger sidecar adapter | Red->Green complete | Completed | implementer | Runtime and admin ingestion now enforce strict Badger sidecar config; transport normalization and failure-safe coverage are complete. |
 | BI-011 | B-05 | `F-008E` storage lock ownership + path exclusivity | Red->Green complete | Completed | implementer | Added process-level lock ownership guard and open-path duplicate-open rejection coverage (`dual_layer_store_rejects_duplicate_open_for_same_kv_path`). |
 | BI-012 | B-10 | `F-008F` promotion snapshot visibility | Red->Green complete | Completed | implementer | Added read/write snapshot barriers (`promote_to_columnar`, `aggregate_by_query`) and query-stability regression coverage (`aggregate_queries_remain_non_empty_during_promotion_handoff`). |
-| BI-013 | B-11 | `F-032` Playwright frontend behavioral and functional coverage | Planned | New | implementer | Headless-only browser coverage for dashboard shell, role switching, payload envelopes, and admin fallback behavior. |
+| BI-013 | B-11 | `F-032` Playwright frontend behavioral and functional coverage | Red->Green complete | Completed | implementer | Headless-only browser coverage now validates dashboard shell, role switching, payload envelopes, and admin fallback behavior. |
 
 ## Phase Priority
 
 1. Control-plane convergence
   - `F-031` frontend structural decomposition
   - `FE-009` command schema and backend contract convergence
-  - `F-032` Playwright frontend behavioral and functional coverage (headless-only)
 2. Dashboard and operational insight
   - `F-016` rich dashboard visualizations
   - `F-024` explainability panel

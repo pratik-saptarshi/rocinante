@@ -44,6 +44,7 @@ above and must be kept in sync by updating those sources first.
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
+- `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
 
 ### Remaining feature hierarchy
 
@@ -72,10 +73,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030` (24)
+  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
 - In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-018` … `F-027`, `F-032`, `F-033` (12)
-- Completion ratio: `24 / 39 = 61.5%`
+- New backlog: `F-018` … `F-027`, `F-033` (11)
+- Completion ratio: `25 / 39 = 64.1%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
