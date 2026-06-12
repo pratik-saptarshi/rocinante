@@ -275,8 +275,14 @@ mod tests {
 
     #[test]
     fn applies_privacy_and_payments_packs_without_affecting_general_scrub() {
-        let privacy = scrub_text_with_pack("ssn=123-45-6789 dob=1990-01-01", SanitizerPolicyPack::Privacy);
-        let payments = scrub_text_with_pack("card_number=4111111111111111 cvv=123", SanitizerPolicyPack::Payments);
+        let privacy = scrub_text_with_pack(
+            "ssn=123-45-6789 dob=1990-01-01",
+            SanitizerPolicyPack::Privacy,
+        );
+        let payments = scrub_text_with_pack(
+            "card_number=4111111111111111 cvv=123",
+            SanitizerPolicyPack::Payments,
+        );
         let general = scrub_text_with_pack("token=abc123", SanitizerPolicyPack::General);
 
         assert!(privacy.contains("ssn=[REDACTED]"));
