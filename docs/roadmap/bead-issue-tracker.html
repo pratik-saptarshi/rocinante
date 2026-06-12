@@ -16,6 +16,27 @@
 | BI-015 | B-13 | `F-019` per-team policy profiles for scoring/approval weighting | TDD kickoff | In Progress | implementer | Added backend-only team profile resolution helper with default fallback and profile lookup tests. |
 | BI-017 | B-13 | `F-023` Active Directory / LDAP group mapping hardening | TDD kickoff | In Progress | implementer | Added LDAP group lookup cache, alias canonicalization, and fail-closed principal normalization. |
 
+## Phase Priority
+
+1. Control-plane convergence
+  - `F-031` frontend structural decomposition
+  - `FE-009` command schema and backend contract convergence
+2. Dashboard and operational insight
+  - `F-016` rich dashboard visualizations
+  - `F-024` explainability panel
+  - `F-025` release baseline management UI
+  - `F-026` job observability
+3. Governance and trust
+   - `F-018` signed scoring-config integrity verification
+   - `F-017` expanded sanitizer rules
+   - `F-019` per-team policy profiles
+   - `F-022` internal Git provider adapters
+   - `F-023` AD/LDAP group mapping hardening
+4. Scale and history
+   - `F-020` incremental AST cache and parser plugin
+   - `F-021` historical partition pruning and retention policies
+   - `F-027` bulk import utility
+
 ## TDD Ledger
 
 - Cycle `TDD-C1`:
@@ -56,3 +77,8 @@
    - `F-020` incremental AST cache and parser plugin
    - `F-021` historical partition pruning and retention policies
    - `F-027` bulk import utility
+## Current Frontend Phase
+
+- `F-024` explainability panel: active slice; local Vitest and TypeScript validation are green.
+- `F-031` frontend structural decomposition: checkpointed and ready for merge path.
+- `F-016` rich dashboard visualizations: next adjacent insight slice after explainability.
