@@ -59,7 +59,6 @@ above and must be kept in sync by updating those sources first.
    - `F-026` job observability
 3. Governance and trust
    - `F-017` expanded sanitizer rules
-   - `F-018` signed scoring-config integrity verification
    - `F-019` per-team policy profiles
    - `F-022` internal Git provider adapters
    - `F-023` AD/LDAP group mapping hardening
@@ -73,10 +72,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
+  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-028`, `F-029`, `F-030`, `F-032` (26)
 - In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-018` … `F-027`, `F-033` (11)
-- Completion ratio: `25 / 39 = 64.1%`
+- New backlog: `F-019` … `F-027`, `F-033` (10)
+- Completion ratio: `26 / 39 = 66.7%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -400,6 +399,15 @@ above and must be kept in sync by updating those sources first.
   - Added `SanitizerPolicyPack` variants for General, Security, Privacy, and Payments.
   - Added pack-aware `scrub_text_with_pack(...)` coverage without changing the baseline `scrub_text(...)` contract.
   - Sanitizer regression tests now prove domain-specific redaction behavior and preserve existing emoji-separator handling.
+
+- Feature `F-018` — Signed scoring-config integrity verification
+- Ticket: `BI-014`
+- Status: Completed
+- AC: persisted scoring configs carry tamper-evident hash/signature envelopes and reject altered content.
+- Readiness checkpoint:
+  - Added signed scoring-config envelope persistence with hash and signature verification.
+  - Kept legacy raw JSON compatibility for existing weight files.
+  - Added tamper-rejection and persistence regression coverage.
 
 ## TDD/BDD Mapping by Capability
 

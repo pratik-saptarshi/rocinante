@@ -36,6 +36,9 @@
 - `F-008C` Snapshot/replica read model for zero-contention analytics queries:
   - Analytics reads use published immutable snapshots when live DB state is unavailable or transitioning.
   - Query commands remain stable under promotion, including committer score and aggregate reads.
+- `F-018` Signed scoring-config integrity verification:
+  - Persist weights with tamper-evident hash + signature envelope.
+  - Reject altered config envelopes while remaining backward-compatible with legacy raw JSON.
 - `F-011` Baseline complexity seed table and delta-based committer scoring normalization.
 - `F-012` Isolated scoring module with versioned algorithm constant and deterministic weight configuration.
 - `F-013` Audit-logged scoring weight changes with admin-only authorization.
@@ -51,7 +54,6 @@
 
 ## New Backlog
 
-- `F-018` Signed scoring-config integrity verification (tamper-evident signatures/hashes).
 - `F-019` Per-team policy profiles for scoring/approval weighting.
 - `F-020` Incremental AST cache and parser plugin for language-aware metrics.
 - `F-021` Historical partition pruning and retention policies for long-lived repositories.
