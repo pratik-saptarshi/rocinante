@@ -10,6 +10,8 @@ pub enum AnalyzerError {
     Io(String),
     #[error("db error: {0}")]
     Db(String),
+    #[error("integrity error: {0}")]
+    Integrity(String),
     #[error("git error: {0}")]
     Git(String),
 }

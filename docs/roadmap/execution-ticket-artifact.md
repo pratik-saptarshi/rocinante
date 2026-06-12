@@ -74,8 +74,8 @@ above and must be kept in sync by updating those sources first.
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
   `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
-- In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-018` … `F-027`, `F-033` (11)
+- In progress features: `F-024`, `F-031`, `F-016`, `F-017`, `F-018`, `F-019` (6)
+- New backlog: `F-020`, `F-021`, `F-022`, `F-023`, `F-025`, `F-026`, `F-027`, `F-033` (8)
 - Completion ratio: `25 / 39 = 64.1%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
@@ -388,10 +388,40 @@ above and must be kept in sync by updating those sources first.
   - Added focused unit coverage for sample and custom payload trend/risk rendering.
   - Trend/risk cards remain deterministic across sample and fallback payload inputs.
 
+- Feature `F-024` — Explainability panel
+- Ticket: `BI-FE-018`
+- Status: In Progress
+- AC: score decomposition traces remain deterministic across payload refreshes and custom
+  telemetry pulses.
+- Tasks:
+  1. `TK-FE-037` Extract explainability trace builder from dashboard pulse data.
+  2. `TK-FE-038` Render trace cards in the dashboard shell with stable labels and summaries.
+  3. `TK-FE-039` Add regression tests for sample and custom payload decomposition paths.
+- Function AC:
+  - `buildExplainabilityTraces` derives the same trace cards for a given `QualityPulse`.
+  - `App.tsx` explainability panel renders fallback-safe trace cards from current telemetry.
+
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`
 - Status: In Progress
 - AC: additional policy packs apply without regressions in existing redaction engine tests.
+- Readiness checkpoint:
+  - Added `SanitizerPolicyPack` to extend `scrub_text` with domain-specific keys.
+  - Added external regression coverage for privacy, security, and payments packs.
+  - Core redaction remains the default path for existing callers.
+
+- Feature `F-018` — Signed scoring-config integrity verification
+- Ticket: `BI-014`
+- Bead context: `B-12`
+- Status: In Progress
+- AC: scoring weights persist as signed envelopes and fail closed on tampered config.
+- Tasks:
+  1. `TK-045` Persist signed weight envelopes with deterministic signatures.
+  2. `TK-046` Verify envelope integrity on load and reject tampered payloads.
+  3. `TK-047` Add regression coverage for signed persistence and tamper failure.
+- Function AC:
+  - `load_or_init_weights` rejects mutated signatures or mutated signed payloads.
+  - `persist_weights` writes the signed envelope format with a stable signature string.
 
 - Feature `F-018` — Signed scoring-config integrity verification
 - Ticket: `BI-014`
