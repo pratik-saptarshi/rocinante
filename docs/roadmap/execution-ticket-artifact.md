@@ -44,8 +44,9 @@ above and must be kept in sync by updating those sources first.
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
+- `F-018` (signed scoring-config integrity verification): Completed.
 - `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
-- `F-023` (AD/LDAP group mapping hardening): In Progress.
+- `F-022` (internal Git provider adapters): In Progress.
 
 ### Remaining feature hierarchy
 
@@ -60,7 +61,6 @@ above and must be kept in sync by updating those sources first.
    - `F-026` job observability
 3. Governance and trust
    - `F-017` expanded sanitizer rules
-   - `F-018` signed scoring-config integrity verification
    - `F-019` per-team policy profiles
    - `F-022` internal Git provider adapters
    - `F-023` AD/LDAP group mapping hardening
@@ -74,10 +74,11 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
-- In progress features: `F-031`, `F-016`, `F-017`, `F-018`, `F-019`, `F-023`, `F-024` (7)
-- New backlog: `F-020`, `F-021`, `F-022`, `F-025`, `F-026`, `F-027`, `F-033` (7)
-- Completion ratio: `25 / 39 = 64.1%`
+  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-028`, `F-029`, `F-030`, `F-032` (26)
+- In progress features: `F-031`, `F-016`, `F-017`, `F-019`, `F-022` (5)
+- New backlog: `F-020`, `F-021`, `F-023`, `F-024`, `F-025`, `F-026`, `F-027`,
+  `F-033` (8)
+- Completion ratio: `26 / 39 = 66.7%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -389,45 +390,15 @@ above and must be kept in sync by updating those sources first.
   - Added focused unit coverage for sample and custom payload trend/risk rendering.
   - Trend/risk cards remain deterministic across sample and fallback payload inputs.
 
-- Feature `F-024` — Explainability panel
-- Ticket: `BI-FE-018`
-- Status: In Progress
-- AC: score decomposition traces remain deterministic across payload refreshes and custom
-  telemetry pulses.
-- Tasks:
-  1. `TK-FE-037` Extract explainability trace builder from dashboard pulse data.
-  2. `TK-FE-038` Render trace cards in the dashboard shell with stable labels and summaries.
-  3. `TK-FE-039` Add regression tests for sample and custom payload decomposition paths.
-- Function AC:
-  - `buildExplainabilityTraces` derives the same trace cards for a given `QualityPulse`.
-  - `App.tsx` explainability panel renders fallback-safe trace cards from current telemetry.
-
-- Feature `F-024` — Explainability panel
-- Ticket: `BI-FE-018`
-- Status: In Progress
-- AC: score decomposition traces remain deterministic across payload refreshes and custom
-  telemetry pulses.
-- Tasks:
-  1. `TK-FE-037` Extract explainability trace builder from dashboard pulse data.
-  2. `TK-FE-038` Render trace cards in the dashboard shell with stable labels and summaries.
-  3. `TK-FE-039` Add regression tests for sample and custom payload decomposition paths.
-- Function AC:
-  - `buildExplainabilityTraces` derives the same trace cards for a given `QualityPulse`.
-  - `App.tsx` explainability panel renders fallback-safe trace cards from current telemetry.
-
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`
 - Status: In Progress
 - AC: additional policy packs apply without regressions in existing redaction engine tests.
-- Readiness checkpoint:
-  - Added `SanitizerPolicyPack` to extend `scrub_text` with domain-specific keys.
-  - Added external regression coverage for privacy, security, and payments packs.
-  - Core redaction remains the default path for existing callers.
 
 - Feature `F-018` — Signed scoring-config integrity verification
 - Ticket: `BI-014`
 - Bead context: `B-12`
-- Status: In Progress
+- Status: Completed
 - AC: scoring weights persist as signed envelopes and fail closed on tampered config.
 - Tasks:
   1. `TK-045` Persist signed weight envelopes with deterministic signatures.
@@ -436,37 +407,23 @@ above and must be kept in sync by updating those sources first.
 - Function AC:
   - `load_or_init_weights` rejects mutated signatures or mutated signed payloads.
   - `persist_weights` writes the signed envelope format with a stable signature string.
+- Readiness checkpoint:
+  - Added signed envelope persistence and tamper rejection coverage for scoring weights.
 
-- Feature `F-018` — Signed scoring-config integrity verification
-- Ticket: `BI-014`
-- Status: In Progress
-- AC: scoring weights persist as signed envelopes and fail closed on tampered config.
-
-- Feature `F-019` — Per-team policy profiles for scoring/approval weighting
-- Ticket: `BI-015`
-- Status: In Progress
-- AC: team-specific score weights resolve deterministically with default fallback.
-- Tasks:
-  1. `TK-045` Add team policy profile resolution helper.
-  2. `TK-046` Add default fallback and team-match tests.
-  3. `TK-047` Wire profile lookup into scoring/approval decision paths.
-- Function AC:
-  - `resolve_team_weights` returns team-specific weights when profile exists.
-  - `resolve_team_weights` falls back to default weights for unknown teams.
-
-- Feature `F-023` — Active Directory / LDAP group mapping hardening
-- Ticket: `BI-017`
-- Bead context: `B-13`
+- Feature `F-022` — Internal Git provider adapters
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-016`
+- Bead context: `B-12`
 - Current status: In Progress
-- AC: directory lookups normalize principals, resolve canonical group aliases, and fail closed on invalid principals or circular alias maps.
+- AC: provider normalization yields stable API base URLs, clone URLs, and bearer auth headers for GHE, GitLab, and Bitbucket Server.
 - Tasks:
-  1. `TK-051` Add directory lookup source abstraction for mocked group queries.
-  2. `TK-052` Add alias canonicalization and cache-backed membership resolution.
-  3. `TK-053` Add regression coverage for invalid principals, unknown groups, and alias cycles.
-- Function AC:
-  - `is_in_group` trims and normalizes user/group principals before lookup.
-  - `is_in_group` caches resolved membership decisions for repeated queries.
-  - `is_in_group` returns a permission error on blank or control-character principals.
+  1. `TK-048` Normalize provider host, namespace, and repository shapes for on-prem Git providers.
+  2. `TK-049` Derive provider-specific API base URLs and clone URLs.
+  3. `TK-050` Add adapter tests for bearer auth shaping and URL parity.
+- Readiness checkpoint:
+  - Added provider adapter helpers in `src-tauri/src/git_providers.rs`.
+  - Added focused normalization coverage in `src-tauri/tests/git_provider_tests.rs`.
+  - `src-tauri/src/lib.rs` exports the provider module for future command wiring.
 
 ## TDD/BDD Mapping by Capability
 
@@ -477,9 +434,8 @@ above and must be kept in sync by updating those sources first.
 - `F-029` ↔ `T-003`, `T-022`
 - `F-030` ↔ `T-020`
 - `F-018` ↔ `T-010`
-- `F-019` ↔ `T-024`
-- `F-023` ↔ `T-011`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
+- `F-022` ↔ `T-025`
 - `FE-009` command failures and parity ↔ `T-021`, `T-023`
 - Security-sensitive features additionally require `T-001` and `T-020` authorization checks.
 
@@ -491,9 +447,9 @@ above and must be kept in sync by updating those sources first.
    - Exit gate: `R1-F01..R2-F07` risk evidence + `T-015..T-020`.
 
 2. **Stream B — Trust/Identity + Sanitization**
-   - Tickets: `BI-007`, `BI-008`, `BI-014`, `BI-015`, `BI-017`
+   - Tickets: `BI-007`, `BI-008`, `BI-014`, `BI-015`, `BI-016`
    - Dependency: `R2-F02` and `R2-F03` green in traceability.
-   - Exit gate: `T-010`, `T-011`, `T-020`, `T-022`, `T-024`, auth no-side-effect verification.
+   - Exit gate: `T-010`, `T-020`, `T-022`, `T-024`, `T-025`, auth no-side-effect verification.
 
 3. **Stream C — Frontend Contract Safety**
    - Tickets: `BI-FE-016`, `BI-FE-017`
