@@ -392,6 +392,10 @@ above and must be kept in sync by updating those sources first.
 - Ticket: `BI-008`
 - Status: In Progress
 - AC: additional policy packs apply without regressions in existing redaction engine tests.
+- Readiness checkpoint:
+  - Added `SanitizerPolicyPack` to extend `scrub_text` with domain-specific keys.
+  - Added external regression coverage for privacy, security, and payments packs.
+  - Core redaction remains the default path for existing callers.
 
 - Feature `F-018` — Signed scoring-config integrity verification
 - Ticket: `BI-014`
