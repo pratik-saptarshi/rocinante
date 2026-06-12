@@ -20,7 +20,7 @@ pub fn resolve_team_weights(catalog: &TeamPolicyCatalog, team: Option<&str>) -> 
             .iter()
             .find(|profile| profile.team == team_name)
             .map(|profile| profile.weights.clone())
-            .unwrap_or_else(|| catalog.default_weights.clone()),
+            .unwrap_or(catalog.default_weights.clone()),
         None => catalog.default_weights.clone(),
     }
 }
