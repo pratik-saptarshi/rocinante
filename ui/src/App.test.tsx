@@ -58,7 +58,11 @@ describe('Optimization sidebar layout', () => {
     expect(screen.getByText(/Lead Reviewer/i)).toBeInTheDocument();
     expect(screen.getByText(/Sprint now/i)).toBeInTheDocument();
     expect(screen.getByTestId('pulse-score')).toHaveTextContent(/\/100/);
-    expect(within(qualityPulseSection).getAllByText(/Focus first on high-risk commit/i)).toHaveLength(2);
+    expect(
+      within(qualityPulseSection).getByText(
+        /Focus first on high-risk commit A-124 before expanding the next cycle\./i
+      )
+    ).toBeInTheDocument();
     expect(screen.getByTestId('pulse-top-bottleneck')).toBeInTheDocument();
   });
 
@@ -72,7 +76,11 @@ describe('Optimization sidebar layout', () => {
     expect(screen.getByText(/Engineering Manager/i)).toBeInTheDocument();
     expect(screen.getByText(/This week/i)).toBeInTheDocument();
     expect(screen.getByText(/Bottleneck Radar/i)).toBeInTheDocument();
-    expect(within(qualityPulseSection).getAllByText(/Critical stage\(s\): review/i)).toHaveLength(2);
+    expect(
+      within(qualityPulseSection).getByText(
+        /Critical stage\(s\): review need additional reviewer capacity\./i
+      )
+    ).toBeInTheDocument();
   });
 
   it('switches to executive insights when selected', () => {
@@ -80,12 +88,13 @@ describe('Optimization sidebar layout', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Executive' }));
     const qualityPulseSection = screen.getByTestId('quality-pulse-section');
+    const recommendationList = within(qualityPulseSection).getAllByRole('list')[0];
 
     expect(screen.getByText(/Executive Focus/i)).toBeInTheDocument();
     expect(screen.getByText(/Delivery Leadership/i)).toBeInTheDocument();
     expect(screen.getByText(/This month/i)).toBeInTheDocument();
     expect(screen.getByText(/Top Improvement Opportunities/i)).toBeInTheDocument();
-    expect(within(qualityPulseSection).getAllByText(/Top opportunity:/i)).toHaveLength(2);
+    expect(within(recommendationList).getByText(/Top opportunity: Trim flaky tests/i)).toBeInTheDocument();
   });
 
   it('switches to security insights when selected', () => {
@@ -95,7 +104,9 @@ describe('Optimization sidebar layout', () => {
 
     expect(screen.getByText(/Security Focus/i)).toBeInTheDocument();
     expect(screen.getByText(/Security Operations/i)).toBeInTheDocument();
-    expect(screen.getByText(/Before release/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Security-sensitive signals from A-124 should be reviewed before release\./i)
+    ).toBeInTheDocument();
     expect(screen.getByText(/Security-Weighted Commit Signals/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Security-sensitive signals from/i).length).toBeGreaterThanOrEqual(1);
   });
@@ -172,7 +183,9 @@ describe('Optimization sidebar layout', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Reset to Sample/i }));
     expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('3');
-    expect(screen.getByText(/A-124/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Focus first on high-risk commit A-124 before expanding the next cycle\./i)
+    ).toBeInTheDocument();
   });
 
   it(
@@ -251,8 +264,12 @@ describe('Optimization sidebar layout', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
 
-    expect(screen.getByText(/Prioritize quick-win opportunities before adding new scope/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Focus first on high-risk commit dry-1 before expanding the next cycle\./i)
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Security' }));
-    expect(screen.getAllByText(/Security-sensitive signals from/i).length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getByText(/Security-sensitive signals from dry-1 should be reviewed before release\./i)
+    ).toBeInTheDocument();
   });
 });

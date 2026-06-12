@@ -344,6 +344,10 @@ above and must be kept in sync by updating those sources first.
   - Extracted static dashboard copy and section finding groups into `dashboard-content`.
   - Added focused unit coverage for role copy and reusable finding-group content.
   - `App.tsx` now consumes shared dashboard content constants for the lead/manager/executive/security views.
+- Readiness checkpoint:
+  - Extracted `insight-engine` and `quality-pulse` helpers for the audience-pane decomposition slice.
+  - Tightened App tests around exact recommendation messages and list scoping.
+  - `App.tsx` now keeps routing text, score summaries, and action lists in testable helper modules.
 
 #### Feature `FE-009` — Command schema and backend contract convergence
 - Source: `docs/roadmap/beads.html`
