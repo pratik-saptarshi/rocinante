@@ -59,7 +59,6 @@ above and must be kept in sync by updating those sources first.
    - `F-026` job observability
 3. Governance and trust
    - `F-017` expanded sanitizer rules
-   - `F-019` per-team policy profiles
    - `F-022` internal Git provider adapters
    - `F-023` AD/LDAP group mapping hardening
 4. Scale and history
@@ -74,8 +73,8 @@ above and must be kept in sync by updating those sources first.
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
   `F-008E`, `F-008F`, `F-015`, `F-018`, `F-028`, `F-029`, `F-030`, `F-032` (26)
 - In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-019` … `F-027`, `F-033` (10)
-- Completion ratio: `26 / 39 = 66.7%`
+- New backlog: `F-020` … `F-027`, `F-033` (9)
+- Completion ratio: `27 / 39 = 69.2%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -408,6 +407,15 @@ above and must be kept in sync by updating those sources first.
   - Added signed scoring-config envelope persistence with hash and signature verification.
   - Kept legacy raw JSON compatibility for existing weight files.
   - Added tamper-rejection and persistence regression coverage.
+
+- Feature `F-019` — Per-team policy profiles for scoring/approval weighting
+- Ticket: `BI-015`
+- Status: Completed
+- AC: team policies resolve to deterministic score/approval weight profiles with a safe default fallback.
+- Readiness checkpoint:
+  - Added a shared policy catalog for security, frontend, and platform profiles.
+  - Added per-team scoring weight resolution plus fallback coverage for unknown teams.
+  - Team-specific approval weighting now shifts without altering the baseline defaults.
 
 ## TDD/BDD Mapping by Capability
 

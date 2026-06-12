@@ -13,6 +13,7 @@
 | BI-012 | B-10 | `F-008F` promotion snapshot visibility | Red->Green complete | Completed | implementer | Added read/write snapshot barriers (`promote_to_columnar`, `aggregate_by_query`) and query-stability regression coverage (`aggregate_queries_remain_non_empty_during_promotion_handoff`). |
 | BI-013 | B-11 | `F-032` Playwright frontend behavioral and functional coverage | Red->Green complete | Completed | implementer | Headless-only browser coverage now validates dashboard shell, role switching, payload envelopes, and admin fallback behavior. |
 | BI-014 | B-12 | `F-018` signed scoring-config integrity verification | Red->Green complete | Completed | implementer | Added signed envelope persistence, tamper rejection, and legacy raw JSON compatibility coverage for scoring configuration files. |
+| BI-015 | B-13 | `F-019` per-team policy profiles for scoring/approval weighting | Red->Green complete | Completed | implementer | Added team policy catalog resolution and per-team weight adjustments with fallback profile coverage. |
 
 ## Phase Priority
 
@@ -29,7 +30,6 @@
 3. Governance and trust
    - `F-017` expanded sanitizer rules
     - Validated checkpoint: policy-pack scrubber now covers General, Security, Privacy, and Payments domains with regression coverage.
-   - `F-019` per-team policy profiles
    - `F-022` internal Git provider adapters
    - `F-023` AD/LDAP group mapping hardening
 4. Scale and history

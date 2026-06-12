@@ -39,6 +39,9 @@
 - `F-018` Signed scoring-config integrity verification:
   - Persist weights with tamper-evident hash + signature envelope.
   - Reject altered config envelopes while remaining backward-compatible with legacy raw JSON.
+- `F-019` Per-team policy profiles for scoring/approval weighting:
+  - Team-specific scoring weight profiles resolve deterministically from a shared catalog.
+  - Approval-fidelity and coverage bias can shift per team without changing the baseline defaults.
 - `F-011` Baseline complexity seed table and delta-based committer scoring normalization.
 - `F-012` Isolated scoring module with versioned algorithm constant and deterministic weight configuration.
 - `F-013` Audit-logged scoring weight changes with admin-only authorization.
@@ -54,7 +57,6 @@
 
 ## New Backlog
 
-- `F-019` Per-team policy profiles for scoring/approval weighting.
 - `F-020` Incremental AST cache and parser plugin for language-aware metrics.
 - `F-021` Historical partition pruning and retention policies for long-lived repositories.
 - `F-022` Internal Git provider adapters (GitLab/GHE/Bitbucket Server APIs) with on-prem auth.
