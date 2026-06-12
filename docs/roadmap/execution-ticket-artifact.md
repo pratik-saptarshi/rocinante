@@ -383,6 +383,10 @@ above and must be kept in sync by updating those sources first.
 - Ticket: `BI-FE-015` (continued operational context)
 - Status: In Progress
 - AC: trend/risk views are deterministic under valid and fallback payloads.
+- Readiness checkpoint:
+  - Added `dashboard-visuals` trend/risk summary cards and integrated them into `App.tsx`.
+  - Added focused unit coverage for sample and custom payload trend/risk rendering.
+  - Trend/risk cards remain deterministic across sample and fallback payload inputs.
 
 - Feature `F-024` — Explainability panel
 - Ticket: `BI-FE-018`
