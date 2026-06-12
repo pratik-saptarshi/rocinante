@@ -19,6 +19,9 @@
 - `F-008A` Storage engine conformance migration:
   - Ingestion tier persists through BadgerDB sidecar validation and transport checks.
   - DuckDB remains analytics-only and all transport fallbacks are validated.
+- `F-008B` Strict storage boundary enforcement:
+  - Ingestion writes route only to BadgerDB APIs.
+  - Analytical reads/writes for metric marts route only to DuckDB.
 - `F-008D` Retention compliance automation:
   - Short-term raw TTL prune with long-term release rollup retention.
   - Release partition retention remains queryable after pruning.
@@ -41,9 +44,6 @@
 
 ## In Progress
 
-- `F-008B` Strict storage boundary enforcement:
-  - Ingestion writes route only to BadgerDB APIs.
-  - Analytical reads/writes for metric marts route only to DuckDB.
 - `F-016` Rich dashboard visualizations for trend lines and PR risk ranking rationale.
 - `F-017` Expanded sanitizer detection rules and policy packs per compliance domain.
 
@@ -59,6 +59,8 @@
 - `F-025` Release baseline management UI (re-seed baselines and compare windows).
 - `F-026` Job observability: queue depth, worker throughput, promotion lag metrics.
 - `F-027` Bulk import utility for historical commits and prior telemetry migration.
+- `F-032` Playwright frontend behavioral and functional coverage suite (headless-only).
+- `F-033` Reserved for next ready frontend or backend readiness slice.
 
 ## Review Integration (plan-review-integrator)
 

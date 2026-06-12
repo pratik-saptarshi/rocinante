@@ -18,7 +18,8 @@ import {
   Typography
 } from '@mui/material';
 import { useState } from 'react';
-import { buildDashboardInsights, type InsightLimits, type InsightPayload } from './insight-engine';
+import { readLimits, readPayload } from './dashboard-contract';
+import { buildDashboardInsights, type InsightPayload } from './insight-engine';
 import { buildQualityPulse, type StakeholderAudience } from './domain/quality-pulse';
 import { invokeAdminCommand, type AdminBridgeCommand } from './tauri-admin';
 
@@ -29,39 +30,6 @@ interface Finding {
 }
 
 type AuditStatus = 'good' | 'medium' | 'bad';
-
-function toPositiveOptional(value: unknown): number | undefined {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    return undefined;
-  }
-  return Math.max(1, Math.floor(value));
-}
-
-function readLimits(payload: Record<string, unknown>): InsightLimits {
-  const limitsSource = payload.limits;
-  const candidate = (typeof limitsSource === 'object' && limitsSource !== null ? limitsSource : payload) as Record<
-    string,
-    unknown
-  >;
-
-  return {
-    risks: toPositiveOptional(candidate.risks),
-    opportunities: toPositiveOptional(candidate.opportunities),
-    severityThreshold:
-      typeof candidate.severityThreshold === 'number' && Number.isFinite(candidate.severityThreshold)
-        ? candidate.severityThreshold
-        : undefined,
-    latencyP95Ms: toPositiveOptional(candidate.latencyP95Ms)
-  };
-}
-
-function readPayload(payload: Record<string, unknown>): Record<string, unknown> {
-  const nestedPayload = payload.payload;
-  if (typeof nestedPayload === 'object' && nestedPayload !== null) {
-    return nestedPayload as Record<string, unknown>;
-  }
-  return payload;
-}
 
 function StatusBadge({ status, label }: { status: AuditStatus; label: string }) {
   const palette = {

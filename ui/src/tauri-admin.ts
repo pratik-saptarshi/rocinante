@@ -83,7 +83,7 @@ type AdminCommandArgs = {
   update_scoring_weights: AdminUpdateWeightsPayload;
 };
 
-type InvokeFn = (command: string, args?: Record<string, unknown>) => Promise<unknown>;
+type InvokeFn = (command: string, args?: unknown) => Promise<unknown>;
 
 function resolveInvoke(): InvokeFn | null {
   const tauriCore = (globalThis as { __TAURI__?: { core?: { invoke?: InvokeFn } } }).__TAURI__?.core;

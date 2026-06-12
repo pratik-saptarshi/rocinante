@@ -45,6 +45,30 @@ above and must be kept in sync by updating those sources first.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
 
+### Remaining feature hierarchy
+
+1. Control-plane convergence
+   - `F-031` frontend structural decomposition
+   - `FE-009` command schema and backend contract convergence
+   - `F-032` Playwright frontend behavioral and functional coverage (headless-only)
+2. Dashboard and operational insight
+   - `F-016` rich dashboard visualizations
+   - `F-024` explainability panel
+   - `F-025` release baseline management UI
+   - `F-026` job observability
+3. Governance and trust
+   - `F-017` expanded sanitizer rules
+   - `F-018` signed scoring-config integrity verification
+   - `F-019` per-team policy profiles
+   - `F-022` internal Git provider adapters
+   - `F-023` AD/LDAP group mapping hardening
+4. Scale and history
+   - `F-020` incremental AST cache and parser plugin
+   - `F-021` historical partition pruning and retention policies
+   - `F-027` bulk import utility
+5. Untriaged backlog tail
+   - `F-033`
+
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
@@ -324,6 +348,19 @@ above and must be kept in sync by updating those sources first.
 - Function AC:
   - `invokeAdminCommand` argument shape must map 1:1 to backend signatures.
   - `main.rs` command parse/dispatch emits deterministic error envelopes.
+
+#### Feature `F-032` — Playwright frontend behavioral and functional coverage suite
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-013`
+- Bead context: `B-11`
+- Current status: Planned
+- Tasks:
+  1. `TK-FE-034` Add headless-only browser harness against the local Vite server.
+  2. `TK-FE-035` Cover dashboard shell, role switching, payload envelopes, and admin fallback flows.
+  3. `TK-FE-036` Gate the suite in CI as the browser behavior contract for frontend changes.
+- Function AC:
+  - Headless Chromium runs verify the visible dashboard shell and core user flows.
+  - Browser tests exercise behavioral and functional coverage without relying on headed mode.
 
 ### Frontend Delivery Strand (already active)
 
