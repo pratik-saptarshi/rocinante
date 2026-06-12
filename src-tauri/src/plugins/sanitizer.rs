@@ -23,7 +23,11 @@ impl SanitizerPolicyPack {
     }
 }
 
-fn redact_with_patterns(input: &str, pack: SanitizerPolicyPack) -> String {
+fn redact_with_patterns(
+    input: &str,
+    pack: SanitizerPolicyPack,
+    apply_general_cleanup: bool,
+) -> String {
     let mut out = input.to_string();
 
     for key in [
@@ -45,8 +49,10 @@ fn redact_with_patterns(input: &str, pack: SanitizerPolicyPack) -> String {
         out = redact_key_value(&out, key);
     }
 
-    out = redact_emails(&out);
-    out = redact_phone_like(&out);
+    if apply_general_cleanup {
+        out = redact_emails(&out);
+        out = redact_phone_like(&out);
+    }
 
     out
 }
@@ -202,11 +208,11 @@ fn redact_phone_like(text: &str) -> String {
 }
 
 pub fn scrub_text(input: &str) -> String {
-    redact_with_patterns(input, SanitizerPolicyPack::General)
+    redact_with_patterns(input, SanitizerPolicyPack::General, true)
 }
 
 pub fn scrub_text_with_pack(input: &str, pack: SanitizerPolicyPack) -> String {
-    redact_with_patterns(input, pack)
+    redact_with_patterns(input, pack, false)
 }
 
 pub fn scrub_metric(metric: &mut AnalysisMetric) {
