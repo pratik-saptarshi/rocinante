@@ -4,7 +4,26 @@ use crate::types::{AnalysisInput, AnalysisMetric};
 
 const REDACTED: &str = "[REDACTED]";
 
-fn redact_with_patterns(input: &str) -> String {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SanitizerPolicyPack {
+    General,
+    Security,
+    Privacy,
+    Payments,
+}
+
+impl SanitizerPolicyPack {
+    fn extra_keys(self) -> &'static [&'static str] {
+        match self {
+            SanitizerPolicyPack::General => &[],
+            SanitizerPolicyPack::Security => &["client_secret", "private_key", "bearer"],
+            SanitizerPolicyPack::Privacy => &["ssn", "dob", "birth_date"],
+            SanitizerPolicyPack::Payments => &["card_number", "pan", "cvv"],
+        }
+    }
+}
+
+fn redact_with_patterns(input: &str, pack: SanitizerPolicyPack) -> String {
     let mut out = input.to_string();
 
     for key in [
@@ -19,6 +38,10 @@ fn redact_with_patterns(input: &str) -> String {
         "auth",
         "token",
     ] {
+        out = redact_key_value(&out, key);
+    }
+
+    for key in pack.extra_keys() {
         out = redact_key_value(&out, key);
     }
 
@@ -179,7 +202,11 @@ fn redact_phone_like(text: &str) -> String {
 }
 
 pub fn scrub_text(input: &str) -> String {
-    redact_with_patterns(input)
+    redact_with_patterns(input, SanitizerPolicyPack::General)
+}
+
+pub fn scrub_text_with_pack(input: &str, pack: SanitizerPolicyPack) -> String {
+    redact_with_patterns(input, pack)
 }
 
 pub fn scrub_metric(metric: &mut AnalysisMetric) {
@@ -218,7 +245,7 @@ impl BeadPlugin for MandatorySanitizerPlugin {
 
 #[cfg(test)]
 mod tests {
-    use super::scrub_text;
+    use super::{scrub_text, scrub_text_with_pack, SanitizerPolicyPack};
 
     #[test]
     fn redacts_token_and_email() {
@@ -235,5 +262,27 @@ mod tests {
         assert!(scrubbed.contains("x-api-key=[REDACTED]"));
         assert!(scrubbed.contains("secret=[REDACTED]"));
         assert!(!scrubbed.contains("top-secret"));
+    }
+
+    #[test]
+    fn applies_security_policy_pack_to_additional_credentials() {
+        let raw = "client_secret=sk_live bearer=eyJhbGciOiJIUzI1NiJ9 private_key=-----BEGIN";
+        let scrubbed = scrub_text_with_pack(raw, SanitizerPolicyPack::Security);
+        assert!(scrubbed.contains("client_secret=[REDACTED]"));
+        assert!(scrubbed.contains("bearer=[REDACTED]"));
+        assert!(scrubbed.contains("private_key=[REDACTED]"));
+    }
+
+    #[test]
+    fn applies_privacy_and_payments_packs_without_affecting_general_scrub() {
+        let privacy = scrub_text_with_pack("ssn=123-45-6789 dob=1990-01-01", SanitizerPolicyPack::Privacy);
+        let payments = scrub_text_with_pack("card_number=4111111111111111 cvv=123", SanitizerPolicyPack::Payments);
+        let general = scrub_text_with_pack("token=abc123", SanitizerPolicyPack::General);
+
+        assert!(privacy.contains("ssn=[REDACTED]"));
+        assert!(privacy.contains("dob=[REDACTED]"));
+        assert!(payments.contains("card_number=[REDACTED]"));
+        assert!(payments.contains("cvv=[REDACTED]"));
+        assert!(general.contains("token=[REDACTED]"));
     }
 }
