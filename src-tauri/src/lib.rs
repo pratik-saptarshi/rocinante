@@ -3,6 +3,7 @@ pub mod auth;
 pub mod engine;
 pub mod errors;
 pub mod git;
+pub mod git_providers;
 pub mod onprem;
 pub mod plugins;
 pub mod scoring;

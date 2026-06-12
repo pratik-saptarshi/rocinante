@@ -44,7 +44,9 @@ above and must be kept in sync by updating those sources first.
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
+- `F-018` (signed scoring-config integrity verification): Completed.
 - `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
+- `F-022` (internal Git provider adapters): In Progress.
 
 ### Remaining feature hierarchy
 
@@ -59,7 +61,6 @@ above and must be kept in sync by updating those sources first.
    - `F-026` job observability
 3. Governance and trust
    - `F-017` expanded sanitizer rules
-   - `F-018` signed scoring-config integrity verification
    - `F-019` per-team policy profiles
    - `F-022` internal Git provider adapters
    - `F-023` AD/LDAP group mapping hardening
@@ -73,10 +74,11 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
-- In progress features: `F-031`, `F-016`, `F-017`, `F-018` (4)
-- New backlog: `F-019` … `F-027`, `F-033` (10)
-- Completion ratio: `25 / 39 = 64.1%`
+  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-028`, `F-029`, `F-030`, `F-032` (26)
+- In progress features: `F-031`, `F-016`, `F-017`, `F-019`, `F-022` (5)
+- New backlog: `F-020`, `F-021`, `F-023`, `F-024`, `F-025`, `F-026`, `F-027`,
+  `F-033` (8)
+- Completion ratio: `26 / 39 = 66.7%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -396,7 +398,7 @@ above and must be kept in sync by updating those sources first.
 - Feature `F-018` — Signed scoring-config integrity verification
 - Ticket: `BI-014`
 - Bead context: `B-12`
-- Status: In Progress
+- Status: Completed
 - AC: scoring weights persist as signed envelopes and fail closed on tampered config.
 - Tasks:
   1. `TK-045` Persist signed weight envelopes with deterministic signatures.
@@ -405,6 +407,23 @@ above and must be kept in sync by updating those sources first.
 - Function AC:
   - `load_or_init_weights` rejects mutated signatures or mutated signed payloads.
   - `persist_weights` writes the signed envelope format with a stable signature string.
+- Readiness checkpoint:
+  - Added signed envelope persistence and tamper rejection coverage for scoring weights.
+
+- Feature `F-022` — Internal Git provider adapters
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-016`
+- Bead context: `B-12`
+- Current status: In Progress
+- AC: provider normalization yields stable API base URLs, clone URLs, and bearer auth headers for GHE, GitLab, and Bitbucket Server.
+- Tasks:
+  1. `TK-048` Normalize provider host, namespace, and repository shapes for on-prem Git providers.
+  2. `TK-049` Derive provider-specific API base URLs and clone URLs.
+  3. `TK-050` Add adapter tests for bearer auth shaping and URL parity.
+- Readiness checkpoint:
+  - Added provider adapter helpers in `src-tauri/src/git_providers.rs`.
+  - Added focused normalization coverage in `src-tauri/tests/git_provider_tests.rs`.
+  - `src-tauri/src/lib.rs` exports the provider module for future command wiring.
 
 ## TDD/BDD Mapping by Capability
 
@@ -416,6 +435,7 @@ above and must be kept in sync by updating those sources first.
 - `F-030` ↔ `T-020`
 - `F-018` ↔ `T-010`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
+- `F-022` ↔ `T-025`
 - `FE-009` command failures and parity ↔ `T-021`, `T-023`
 - Security-sensitive features additionally require `T-001` and `T-020` authorization checks.
 
@@ -427,9 +447,9 @@ above and must be kept in sync by updating those sources first.
    - Exit gate: `R1-F01..R2-F07` risk evidence + `T-015..T-020`.
 
 2. **Stream B — Trust/Identity + Sanitization**
-   - Tickets: `BI-007`, `BI-008`, `BI-014`
+   - Tickets: `BI-007`, `BI-008`, `BI-014`, `BI-015`, `BI-016`
    - Dependency: `R2-F02` and `R2-F03` green in traceability.
-   - Exit gate: `T-010`, `T-020`, `T-022`, auth no-side-effect verification.
+   - Exit gate: `T-010`, `T-020`, `T-022`, `T-024`, `T-025`, auth no-side-effect verification.
 
 3. **Stream C — Frontend Contract Safety**
    - Tickets: `BI-FE-016`, `BI-FE-017`
