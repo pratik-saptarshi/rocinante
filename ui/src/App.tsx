@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { readLimits, readPayload } from './dashboard-contract';
+import { buildAdminBridgePayload } from './admin-bridge-contract';
 import { buildDashboardInsights, type InsightPayload } from './insight-engine';
 import { buildQualityPulse, type StakeholderAudience } from './domain/quality-pulse';
 import { invokeAdminCommand, type AdminBridgeCommand } from './tauri-admin';
@@ -221,65 +222,7 @@ function App() {
   };
 
   const runAdminBridge = async (command: AdminBridgeCommand) => {
-    const result = await invokeAdminCommand(command, {
-      ingest_event: {
-        token: adminToken,
-        event: {
-          commit_id: 'ui-bridge-001',
-          repo_name: 'sample-repo',
-          release: 'v1.0.0',
-          committer: 'ui',
-          telemetry: [
-            {
-              plugin: 'ui',
-              metric_key: 'bridge_probe',
-              metric_value: 1,
-              details: 'admin bridge probe'
-            }
-          ]
-        }
-      },
-      promote_lifecycle: {
-        token: adminToken
-      },
-      query_aggregates: {
-        token: adminToken,
-        name: 'sample-repo',
-        release: 'v1.0.0'
-      },
-      committer_scores: {
-        token: adminToken,
-        name: 'sample-repo',
-        release: 'v1.0.0'
-      },
-      rank_prs: {
-        token: adminToken,
-        prs: [
-          {
-            pr_id: 'pr-001',
-            repo_name: 'sample-repo',
-            author: 'ui',
-            release: 'v1.0.0',
-            file_risk: 0.4,
-            author_velocity: 0.6,
-            approval_fidelity: 0.9
-          }
-        ]
-      },
-      update_scoring_weights: {
-        token: adminToken,
-        weights: {
-          version: 'v1',
-          complexity_weight: 0.3,
-          coverage_weight: 0.25,
-          churn_weight: 0.2,
-          pipeline_weight: 0.25,
-          pr_file_risk_weight: 0.5,
-          pr_velocity_weight: 0.2,
-          pr_approval_weight: 0.3
-        }
-      }
-    }[command]);
+    const result = await invokeAdminCommand(command, buildAdminBridgePayload(command, adminToken));
 
     setAdminResult(`${result.ok ? 'OK' : 'ERR'} ${result.command}: ${result.message}`);
   };

@@ -336,6 +336,11 @@ above and must be kept in sync by updating those sources first.
   - `readPayload` and `readLimits` fail-safe on malformed input.
   - App shell only orchestrates composed components; no business logic leakage.
 
+- Readiness checkpoint:
+  - Extracted `dashboard-contract` and `admin-bridge-contract` helpers from `App.tsx`.
+  - Added unit coverage for nested payload/limit normalization and admin command payload mapping.
+  - App shell now delegates payload normalization and admin bridge payload shaping to testable modules.
+
 #### Feature `FE-009` — Command schema and backend contract convergence
 - Source: `docs/roadmap/beads.html`
 - Ticket: `BI-FE-017`
@@ -354,7 +359,7 @@ above and must be kept in sync by updating those sources first.
 - Source: `docs/roadmap/feature-backlog.html`
 - Ticket: `BI-013`
 - Bead context: `B-11`
-- Current status: Planned
+- Current status: Completed
 - Tasks:
   1. `TK-FE-034` Add headless-only browser harness against the local Vite server.
   2. `TK-FE-035` Cover dashboard shell, role switching, payload envelopes, and admin fallback flows.
