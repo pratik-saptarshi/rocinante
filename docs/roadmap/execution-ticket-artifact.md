@@ -423,23 +423,6 @@ above and must be kept in sync by updating those sources first.
   - `load_or_init_weights` rejects mutated signatures or mutated signed payloads.
   - `persist_weights` writes the signed envelope format with a stable signature string.
 
-- Feature `F-018` — Signed scoring-config integrity verification
-- Ticket: `BI-014`
-- Status: In Progress
-- AC: scoring weights persist as signed envelopes and fail closed on tampered config.
-
-- Feature `F-019` — Per-team policy profiles for scoring/approval weighting
-- Ticket: `BI-015`
-- Status: In Progress
-- AC: team-specific score weights resolve deterministically with default fallback.
-- Tasks:
-  1. `TK-045` Add team policy profile resolution helper.
-  2. `TK-046` Add default fallback and team-match tests.
-  3. `TK-047` Wire profile lookup into scoring/approval decision paths.
-- Function AC:
-  - `resolve_team_weights` returns team-specific weights when profile exists.
-  - `resolve_team_weights` falls back to default weights for unknown teams.
-
 ## TDD/BDD Mapping by Capability
 
 - `F-008A/B/C/D` ↔ `T-015`, `T-016`, `T-017`, `T-018`
