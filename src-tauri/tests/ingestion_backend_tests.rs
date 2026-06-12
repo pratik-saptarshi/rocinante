@@ -68,7 +68,13 @@ fn badger_sidecar_rejects_empty_endpoint_with_whitespace() {
     let err = cfg
         .validate()
         .expect_err("expected whitespace endpoint validation failure");
+<<<<<<< HEAD
     assert!(err
         .to_string()
         .contains("Badger sidecar endpoint is required"));
+=======
+    assert!(err
+        .to_string()
+        .contains("Badger sidecar endpoint is required"));
+>>>>>>> origin/main
 }

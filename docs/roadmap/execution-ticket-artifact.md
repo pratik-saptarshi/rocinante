@@ -40,17 +40,43 @@ above and must be kept in sync by updating those sources first.
 - `F-029` (UTF-safe sanitization): Completed.
 - `F-030` (signed principal hardening): Completed.
 - `FE-009` and `F-031` command contract tracks remain In Progress; requires UI commit-plane sweep.
+- `F-015` command bridge now exposes all Tauri admin controls in the UI with test coverage; checkpoint validated on `feat/f015-admin-ui-bridge`.
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
+- `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
+
+### Remaining feature hierarchy
+
+1. Control-plane convergence
+   - `F-031` frontend structural decomposition
+   - `FE-009` command schema and backend contract convergence
+   - `F-032` Playwright frontend behavioral and functional coverage (headless-only)
+2. Dashboard and operational insight
+   - `F-016` rich dashboard visualizations
+   - `F-024` explainability panel
+   - `F-025` release baseline management UI
+   - `F-026` job observability
+3. Governance and trust
+   - `F-017` expanded sanitizer rules
+   - `F-018` signed scoring-config integrity verification
+   - `F-019` per-team policy profiles
+   - `F-022` internal Git provider adapters
+   - `F-023` AD/LDAP group mapping hardening
+4. Scale and history
+   - `F-020` incremental AST cache and parser plugin
+   - `F-021` historical partition pruning and retention policies
+   - `F-027` bulk import utility
+5. Untriaged backlog tail
+   - `F-033`
 
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-028`, `F-029`, `F-030` (23)
-- In progress features: `F-031`, `F-015`, `F-016`, `F-017` (4)
-- New backlog: `F-018` … `F-027`, `F-032`, `F-033` (12)
-- Completion ratio: `23 / 39 = 59.0%`
+  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
+- In progress features: `F-031`, `F-016`, `F-017` (3)
+- New backlog: `F-018` … `F-027`, `F-033` (11)
+- Completion ratio: `25 / 39 = 64.1%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -310,6 +336,11 @@ above and must be kept in sync by updating those sources first.
   - `readPayload` and `readLimits` fail-safe on malformed input.
   - App shell only orchestrates composed components; no business logic leakage.
 
+- Readiness checkpoint:
+  - Extracted `dashboard-contract` and `admin-bridge-contract` helpers from `App.tsx`.
+  - Added unit coverage for nested payload/limit normalization and admin command payload mapping.
+  - App shell now delegates payload normalization and admin bridge payload shaping to testable modules.
+
 #### Feature `FE-009` — Command schema and backend contract convergence
 - Source: `docs/roadmap/beads.html`
 - Ticket: `BI-FE-017`
@@ -324,12 +355,25 @@ above and must be kept in sync by updating those sources first.
   - `invokeAdminCommand` argument shape must map 1:1 to backend signatures.
   - `main.rs` command parse/dispatch emits deterministic error envelopes.
 
+#### Feature `F-032` — Playwright frontend behavioral and functional coverage suite
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-013`
+- Bead context: `B-11`
+- Current status: Completed
+- Tasks:
+  1. `TK-FE-034` Add headless-only browser harness against the local Vite server.
+  2. `TK-FE-035` Cover dashboard shell, role switching, payload envelopes, and admin fallback flows.
+  3. `TK-FE-036` Gate the suite in CI as the browser behavior contract for frontend changes.
+- Function AC:
+  - Headless Chromium runs verify the visible dashboard shell and core user flows.
+  - Browser tests exercise behavioral and functional coverage without relying on headed mode.
+
 ### Frontend Delivery Strand (already active)
 
 - Feature `F-015` — Admin UI integration for command set (`FE-007`-like lane)
 - Ticket: `BI-FE-015`
-- Status: In Progress
-- AC: End-user command controls exist for ingest/promote/query with explicit browser/Tauri fallback.
+- Status: Completed
+- AC: End-user command controls exist for ingest/promote/query/committer-scores/PR-ranking/weight-update with explicit browser/Tauri fallback and test coverage.
 
 - Feature `F-016` — Rich dashboard visualizations
 - Ticket: `BI-FE-015` (continued operational context)
