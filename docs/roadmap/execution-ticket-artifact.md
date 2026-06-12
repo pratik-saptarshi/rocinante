@@ -396,6 +396,10 @@ above and must be kept in sync by updating those sources first.
 - Ticket: `BI-008`
 - Status: In Progress
 - AC: additional policy packs apply without regressions in existing redaction engine tests.
+- Readiness checkpoint:
+  - Added `SanitizerPolicyPack` variants for General, Security, Privacy, and Payments.
+  - Added pack-aware `scrub_text_with_pack(...)` coverage without changing the baseline `scrub_text(...)` contract.
+  - Sanitizer regression tests now prove domain-specific redaction behavior and preserve existing emoji-separator handling.
 
 ## TDD/BDD Mapping by Capability
 
