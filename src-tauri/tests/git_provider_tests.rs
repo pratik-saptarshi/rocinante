@@ -26,7 +26,10 @@ fn builds_provider_specific_api_bases() {
 
     assert_eq!(ghe.api_base_url(), "https://ghe.example.com/api/v3");
     assert_eq!(gitlab.api_base_url(), "https://gitlab.example.com/api/v4");
-    assert_eq!(bitbucket.api_base_url(), "https://bitbucket.example.com/rest/api/1.0");
+    assert_eq!(
+        bitbucket.api_base_url(),
+        "https://bitbucket.example.com/rest/api/1.0"
+    );
 }
 
 #[test]
