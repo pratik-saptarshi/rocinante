@@ -45,6 +45,7 @@ above and must be kept in sync by updating those sources first.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
 - `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
+- `F-023` (AD/LDAP group mapping hardening): In Progress.
 
 ### Remaining feature hierarchy
 
@@ -74,8 +75,8 @@ above and must be kept in sync by updating those sources first.
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
   `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
-- In progress features: `F-024`, `F-031`, `F-016`, `F-017`, `F-018`, `F-019` (6)
-- New backlog: `F-020`, `F-021`, `F-022`, `F-023`, `F-025`, `F-026`, `F-027`, `F-033` (8)
+- In progress features: `F-031`, `F-016`, `F-017`, `F-018`, `F-019`, `F-023`, `F-024` (7)
+- New backlog: `F-020`, `F-021`, `F-022`, `F-025`, `F-026`, `F-027`, `F-033` (7)
 - Completion ratio: `25 / 39 = 64.1%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
@@ -436,6 +437,37 @@ above and must be kept in sync by updating those sources first.
   - `load_or_init_weights` rejects mutated signatures or mutated signed payloads.
   - `persist_weights` writes the signed envelope format with a stable signature string.
 
+- Feature `F-018` — Signed scoring-config integrity verification
+- Ticket: `BI-014`
+- Status: In Progress
+- AC: scoring weights persist as signed envelopes and fail closed on tampered config.
+
+- Feature `F-019` — Per-team policy profiles for scoring/approval weighting
+- Ticket: `BI-015`
+- Status: In Progress
+- AC: team-specific score weights resolve deterministically with default fallback.
+- Tasks:
+  1. `TK-045` Add team policy profile resolution helper.
+  2. `TK-046` Add default fallback and team-match tests.
+  3. `TK-047` Wire profile lookup into scoring/approval decision paths.
+- Function AC:
+  - `resolve_team_weights` returns team-specific weights when profile exists.
+  - `resolve_team_weights` falls back to default weights for unknown teams.
+
+- Feature `F-023` — Active Directory / LDAP group mapping hardening
+- Ticket: `BI-017`
+- Bead context: `B-13`
+- Current status: In Progress
+- AC: directory lookups normalize principals, resolve canonical group aliases, and fail closed on invalid principals or circular alias maps.
+- Tasks:
+  1. `TK-051` Add directory lookup source abstraction for mocked group queries.
+  2. `TK-052` Add alias canonicalization and cache-backed membership resolution.
+  3. `TK-053` Add regression coverage for invalid principals, unknown groups, and alias cycles.
+- Function AC:
+  - `is_in_group` trims and normalizes user/group principals before lookup.
+  - `is_in_group` caches resolved membership decisions for repeated queries.
+  - `is_in_group` returns a permission error on blank or control-character principals.
+
 ## TDD/BDD Mapping by Capability
 
 - `F-008A/B/C/D` ↔ `T-015`, `T-016`, `T-017`, `T-018`
@@ -446,6 +478,7 @@ above and must be kept in sync by updating those sources first.
 - `F-030` ↔ `T-020`
 - `F-018` ↔ `T-010`
 - `F-019` ↔ `T-024`
+- `F-023` ↔ `T-011`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
 - `FE-009` command failures and parity ↔ `T-021`, `T-023`
 - Security-sensitive features additionally require `T-001` and `T-020` authorization checks.
@@ -458,9 +491,9 @@ above and must be kept in sync by updating those sources first.
    - Exit gate: `R1-F01..R2-F07` risk evidence + `T-015..T-020`.
 
 2. **Stream B — Trust/Identity + Sanitization**
-   - Tickets: `BI-007`, `BI-008`, `BI-014`, `BI-015`
+   - Tickets: `BI-007`, `BI-008`, `BI-014`, `BI-015`, `BI-017`
    - Dependency: `R2-F02` and `R2-F03` green in traceability.
-   - Exit gate: `T-010`, `T-024`, `T-020`, `T-022`, auth no-side-effect verification.
+   - Exit gate: `T-010`, `T-011`, `T-020`, `T-022`, `T-024`, auth no-side-effect verification.
 
 3. **Stream C — Frontend Contract Safety**
    - Tickets: `BI-FE-016`, `BI-FE-017`
