@@ -340,6 +340,10 @@ above and must be kept in sync by updating those sources first.
   - Extracted `dashboard-contract` and `admin-bridge-contract` helpers from `App.tsx`.
   - Added unit coverage for nested payload/limit normalization and admin command payload mapping.
   - App shell now delegates payload normalization and admin bridge payload shaping to testable modules.
+- Readiness checkpoint:
+  - Extracted static dashboard copy and section finding groups into `dashboard-content`.
+  - Added focused unit coverage for role copy and reusable finding-group content.
+  - `App.tsx` now consumes shared dashboard content constants for the lead/manager/executive/security views.
 
 #### Feature `FE-009` — Command schema and backend contract convergence
 - Source: `docs/roadmap/beads.html`
@@ -379,6 +383,10 @@ above and must be kept in sync by updating those sources first.
 - Ticket: `BI-FE-015` (continued operational context)
 - Status: In Progress
 - AC: trend/risk views are deterministic under valid and fallback payloads.
+- Readiness checkpoint:
+  - Added `dashboard-visuals` trend/risk summary cards and integrated them into `App.tsx`.
+  - Added focused unit coverage for sample and custom payload trend/risk rendering.
+  - Trend/risk cards remain deterministic across sample and fallback payload inputs.
 
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`
