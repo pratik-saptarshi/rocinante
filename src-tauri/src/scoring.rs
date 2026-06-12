@@ -1,6 +1,7 @@
 use crate::errors::AnalyzerError;
 use crate::types::{CommitterScore, PrRanking, ScoringWeights};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::Path;
@@ -16,6 +17,12 @@ pub struct ScoringAuditEntry {
     pub new_version: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct SignedScoringWeights {
+    weights: ScoringWeights,
+    signature: String,
+}
+
 pub fn load_or_init_weights(path: &str) -> Result<ScoringWeights, AnalyzerError> {
     if !Path::new(path).exists() {
         let defaults = ScoringWeights::default();
@@ -23,14 +30,23 @@ pub fn load_or_init_weights(path: &str) -> Result<ScoringWeights, AnalyzerError>
         return Ok(defaults);
     }
     let raw = fs::read_to_string(path)?;
-    let parsed = serde_json::from_str::<ScoringWeights>(&raw)
-        .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-    Ok(parsed)
+    let parsed = serde_json::from_str::<SignedScoringWeights>(&raw)
+        .map_err(|e| AnalyzerError::Integrity(e.to_string()))?;
+    let expected = signature_for_weights(&parsed.weights)?;
+    if parsed.signature != expected {
+        return Err(AnalyzerError::Integrity(
+            "scoring config signature mismatch".to_string(),
+        ));
+    }
+    Ok(parsed.weights)
 }
 
 pub fn persist_weights(path: &str, weights: &ScoringWeights) -> Result<(), AnalyzerError> {
-    let raw =
-        serde_json::to_string_pretty(weights).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+    let raw = serde_json::to_string_pretty(&SignedScoringWeights {
+        weights: weights.clone(),
+        signature: signature_for_weights(weights)?,
+    })
+    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
     fs::write(path, raw)?;
     Ok(())
 }
@@ -88,4 +104,11 @@ fn now_ts() -> i64 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs() as i64)
         .unwrap_or(0)
+}
+
+fn signature_for_weights(weights: &ScoringWeights) -> Result<String, AnalyzerError> {
+    let payload = serde_json::to_vec(weights).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+    let mut hasher = Sha256::new();
+    hasher.update(payload);
+    Ok(format!("{:x}", hasher.finalize()))
 }

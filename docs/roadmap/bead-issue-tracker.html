@@ -1,6 +1,6 @@
 # Bead Issue Tracker (TDD Execution)
 
-## Active Sprint: Control-Plane Convergence
+## Active Sprint: Governance and Trust
 
 | Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
@@ -12,6 +12,7 @@
 | BI-011 | B-05 | `F-008E` storage lock ownership + path exclusivity | Red->Green complete | Completed | implementer | Added process-level lock ownership guard and open-path duplicate-open rejection coverage (`dual_layer_store_rejects_duplicate_open_for_same_kv_path`). |
 | BI-012 | B-10 | `F-008F` promotion snapshot visibility | Red->Green complete | Completed | implementer | Added read/write snapshot barriers (`promote_to_columnar`, `aggregate_by_query`) and query-stability regression coverage (`aggregate_queries_remain_non_empty_during_promotion_handoff`). |
 | BI-013 | B-11 | `F-032` Playwright frontend behavioral and functional coverage | Red->Green complete | Completed | implementer | Headless-only browser coverage now validates dashboard shell, role switching, payload envelopes, and admin fallback behavior. |
+| BI-014 | B-12 | `F-018` signed scoring-config integrity verification | In Progress | In Progress | implementer | Added signed envelope persistence and tamper rejection coverage for scoring weights; see `tests/scoring_integrity_tests.rs`. |
 
 ## Phase Priority
 
@@ -24,8 +25,8 @@
   - `F-025` release baseline management UI
   - `F-026` job observability
 3. Governance and trust
-   - `F-017` expanded sanitizer rules
    - `F-018` signed scoring-config integrity verification
+   - `F-017` expanded sanitizer rules
    - `F-019` per-team policy profiles
    - `F-022` internal Git provider adapters
    - `F-023` AD/LDAP group mapping hardening
