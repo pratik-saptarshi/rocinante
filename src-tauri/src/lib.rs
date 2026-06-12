@@ -8,5 +8,6 @@ pub mod onprem;
 pub mod plugins;
 pub mod scoring;
 pub mod storage;
+pub mod team_policies;
 pub mod telemetry;
 pub mod types;

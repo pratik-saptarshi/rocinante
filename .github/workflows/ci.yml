@@ -34,6 +34,10 @@ jobs:
             librsvg2-dev \
             patchelf
       - uses: dtolnay/rust-toolchain@stable
+      - name: Prime Rust toolchain
+        run: |
+          rustc --version
+          cargo --version
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
