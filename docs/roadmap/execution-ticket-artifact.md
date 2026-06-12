@@ -74,8 +74,8 @@ above and must be kept in sync by updating those sources first.
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
   `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
-- In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-018` … `F-027`, `F-033` (11)
+- In progress features: `F-031`, `F-016`, `F-017`, `F-018` (4)
+- New backlog: `F-019` … `F-027`, `F-033` (10)
 - Completion ratio: `25 / 39 = 64.1%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
@@ -395,20 +395,16 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-018` — Signed scoring-config integrity verification
 - Ticket: `BI-014`
+- Bead context: `B-12`
 - Status: In Progress
 - AC: scoring weights persist as signed envelopes and fail closed on tampered config.
-
-- Feature `F-019` — Per-team policy profiles for scoring/approval weighting
-- Ticket: `BI-015`
-- Status: In Progress
-- AC: team-specific score weights resolve deterministically with default fallback.
 - Tasks:
-  1. `TK-045` Add team policy profile resolution helper.
-  2. `TK-046` Add default fallback and team-match tests.
-  3. `TK-047` Wire profile lookup into scoring/approval decision paths.
+  1. `TK-045` Persist signed weight envelopes with deterministic signatures.
+  2. `TK-046` Verify envelope integrity on load and reject tampered payloads.
+  3. `TK-047` Add regression coverage for signed persistence and tamper failure.
 - Function AC:
-  - `resolve_team_weights` returns team-specific weights when profile exists.
-  - `resolve_team_weights` falls back to default weights for unknown teams.
+  - `load_or_init_weights` rejects mutated signatures or mutated signed payloads.
+  - `persist_weights` writes the signed envelope format with a stable signature string.
 
 ## TDD/BDD Mapping by Capability
 
@@ -419,7 +415,6 @@ above and must be kept in sync by updating those sources first.
 - `F-029` ↔ `T-003`, `T-022`
 - `F-030` ↔ `T-020`
 - `F-018` ↔ `T-010`
-- `F-019` ↔ `T-024`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
 - `FE-009` command failures and parity ↔ `T-021`, `T-023`
 - Security-sensitive features additionally require `T-001` and `T-020` authorization checks.
@@ -432,9 +427,9 @@ above and must be kept in sync by updating those sources first.
    - Exit gate: `R1-F01..R2-F07` risk evidence + `T-015..T-020`.
 
 2. **Stream B — Trust/Identity + Sanitization**
-   - Tickets: `BI-007`, `BI-008`, `BI-014`, `BI-015`
+   - Tickets: `BI-007`, `BI-008`, `BI-014`
    - Dependency: `R2-F02` and `R2-F03` green in traceability.
-   - Exit gate: `T-010`, `T-024`, `T-020`, `T-022`, auth no-side-effect verification.
+   - Exit gate: `T-010`, `T-020`, `T-022`, auth no-side-effect verification.
 
 3. **Stream C — Frontend Contract Safety**
    - Tickets: `BI-FE-016`, `BI-FE-017`
