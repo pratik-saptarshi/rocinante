@@ -387,6 +387,10 @@ above and must be kept in sync by updating those sources first.
 - Ticket: `BI-FE-015` (continued operational context)
 - Status: In Progress
 - AC: trend/risk views are deterministic under valid and fallback payloads.
+- Readiness checkpoint:
+  - Extracted `dashboard-visuals` to centralize trend and PR risk ranking derivation.
+  - Added UI coverage for the new trend/risk view and helper-backed ranking copy.
+  - `App.tsx` now renders the trend/risk lane from shared helper output rather than inline composition.
 
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`

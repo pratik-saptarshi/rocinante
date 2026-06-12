@@ -66,6 +66,16 @@ describe('Optimization sidebar layout', () => {
     expect(screen.getByTestId('pulse-top-bottleneck')).toBeInTheDocument();
   });
 
+  it('renders trend and risk visuals from the shared insight helper', () => {
+    render(<App />);
+
+    const trendRiskSection = screen.getByTestId('trend-risk-section');
+    expect(screen.getByText(/Trend & Risk View/i)).toBeInTheDocument();
+    expect(screen.getByText(/PR Risk Trajectory/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bottleneck Pressure/i)).toBeInTheDocument();
+    expect(within(trendRiskSection).getByText(/A-124 score 100/i)).toBeInTheDocument();
+  });
+
   it('switches to manager insights when selected', () => {
     render(<App />);
 
@@ -157,7 +167,7 @@ describe('Optimization sidebar layout', () => {
     expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
     expect(screen.getByTestId('snapshot-bottleneck-count')).toHaveTextContent('0 critical, 1 high');
     expect(screen.getByTestId('snapshot-opportunity-count')).toHaveTextContent('1');
-    expect(screen.getByText(/custom-999 score 100/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/custom-999 score 100/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows payload validation errors for malformed JSON', () => {
