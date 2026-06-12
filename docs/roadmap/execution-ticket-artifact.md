@@ -393,6 +393,23 @@ above and must be kept in sync by updating those sources first.
 - Status: In Progress
 - AC: additional policy packs apply without regressions in existing redaction engine tests.
 
+- Feature `F-018` — Signed scoring-config integrity verification
+- Ticket: `BI-014`
+- Status: In Progress
+- AC: scoring weights persist as signed envelopes and fail closed on tampered config.
+
+- Feature `F-019` — Per-team policy profiles for scoring/approval weighting
+- Ticket: `BI-015`
+- Status: In Progress
+- AC: team-specific score weights resolve deterministically with default fallback.
+- Tasks:
+  1. `TK-045` Add team policy profile resolution helper.
+  2. `TK-046` Add default fallback and team-match tests.
+  3. `TK-047` Wire profile lookup into scoring/approval decision paths.
+- Function AC:
+  - `resolve_team_weights` returns team-specific weights when profile exists.
+  - `resolve_team_weights` falls back to default weights for unknown teams.
+
 ## TDD/BDD Mapping by Capability
 
 - `F-008A/B/C/D` ↔ `T-015`, `T-016`, `T-017`, `T-018`
@@ -401,6 +418,8 @@ above and must be kept in sync by updating those sources first.
 - `F-028` ↔ `T-009`
 - `F-029` ↔ `T-003`, `T-022`
 - `F-030` ↔ `T-020`
+- `F-018` ↔ `T-010`
+- `F-019` ↔ `T-024`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
 - `FE-009` command failures and parity ↔ `T-021`, `T-023`
 - Security-sensitive features additionally require `T-001` and `T-020` authorization checks.
@@ -413,9 +432,9 @@ above and must be kept in sync by updating those sources first.
    - Exit gate: `R1-F01..R2-F07` risk evidence + `T-015..T-020`.
 
 2. **Stream B — Trust/Identity + Sanitization**
-   - Tickets: `BI-007`, `BI-008`
+   - Tickets: `BI-007`, `BI-008`, `BI-014`, `BI-015`
    - Dependency: `R2-F02` and `R2-F03` green in traceability.
-   - Exit gate: `T-020`, `T-022`, auth no-side-effect verification.
+   - Exit gate: `T-010`, `T-024`, `T-020`, `T-022`, auth no-side-effect verification.
 
 3. **Stream C — Frontend Contract Safety**
    - Tickets: `BI-FE-016`, `BI-FE-017`
