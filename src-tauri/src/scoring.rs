@@ -3,11 +3,11 @@ use crate::types::{CommitterScore, PrRanking, ScoringWeights};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
-use sha2::{Digest, Sha256};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -58,13 +58,18 @@ fn envelope_for(weights: &ScoringWeights) -> Result<ScoringConfigEnvelope, Analy
 }
 
 fn verify_envelope(envelope: &ScoringConfigEnvelope) -> Result<(), AnalyzerError> {
-    let raw = serde_json::to_string(&envelope.weights).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+    let raw =
+        serde_json::to_string(&envelope.weights).map_err(|e| AnalyzerError::Db(e.to_string()))?;
     let expected_hash = sha256_hex(&raw);
     if envelope.sha256 != expected_hash {
-        return Err(AnalyzerError::Db("scoring config hash mismatch".to_string()));
+        return Err(AnalyzerError::Db(
+            "scoring config hash mismatch".to_string(),
+        ));
     }
     if sign_hash(&envelope.sha256)? != envelope.signature {
-        return Err(AnalyzerError::Db("scoring config signature mismatch".to_string()));
+        return Err(AnalyzerError::Db(
+            "scoring config signature mismatch".to_string(),
+        ));
     }
     Ok(())
 }

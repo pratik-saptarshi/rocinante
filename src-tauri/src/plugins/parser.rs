@@ -62,7 +62,9 @@ impl ParserPlugin {
             }
         };
 
-        *counts.entry(format!("language_{}_files", summary.language)).or_insert(0.0) += 1.0;
+        *counts
+            .entry(format!("language_{}_files", summary.language))
+            .or_insert(0.0) += 1.0;
         *node_estimate += summary.node_estimate;
     }
 }
@@ -135,12 +137,16 @@ impl BeadPlugin for ParserPlugin {
 
         let mut language_metrics: Vec<_> = counts.into_iter().collect();
         language_metrics.sort_by(|a, b| a.0.cmp(&b.0));
-        metrics.extend(language_metrics.into_iter().map(|(key, value)| AnalysisMetric {
-            plugin: self.name().to_string(),
-            key,
-            value,
-            details: "Language-aware file classification count".to_string(),
-        }));
+        metrics.extend(
+            language_metrics
+                .into_iter()
+                .map(|(key, value)| AnalysisMetric {
+                    plugin: self.name().to_string(),
+                    key,
+                    value,
+                    details: "Language-aware file classification count".to_string(),
+                }),
+        );
 
         Ok(metrics)
     }
@@ -163,12 +169,17 @@ fn language_for(path: &str) -> &'static str {
 }
 
 fn estimate_nodes(contents: &str, language: &str) -> f64 {
-    let lines = contents.lines().filter(|line| !line.trim().is_empty()).count() as f64;
+    let lines = contents
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .count() as f64;
     let structural_tokens = match language {
-        "rust" => ["fn ", "impl ", "match ", "if ", "for ", "while ", "struct ", "enum "]
-            .iter()
-            .map(|token| contents.matches(token).count() as f64)
-            .sum(),
+        "rust" => [
+            "fn ", "impl ", "match ", "if ", "for ", "while ", "struct ", "enum ",
+        ]
+        .iter()
+        .map(|token| contents.matches(token).count() as f64)
+        .sum(),
         "typescript" | "javascript" => [
             "function ",
             "const ",

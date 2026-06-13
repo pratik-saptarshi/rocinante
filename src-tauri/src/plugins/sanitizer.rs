@@ -36,7 +36,13 @@ impl SanitizerPolicyPack {
                 "token",
             ],
             Self::Privacy => &["ssn", "dob", "birthdate", "address", "email"],
-            Self::Payments => &["card_number", "cvv", "iban", "routing_number", "account_number"],
+            Self::Payments => &[
+                "card_number",
+                "cvv",
+                "iban",
+                "routing_number",
+                "account_number",
+            ],
         }
     }
 }

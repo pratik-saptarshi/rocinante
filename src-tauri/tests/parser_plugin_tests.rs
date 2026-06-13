@@ -43,14 +43,20 @@ fn parser_plugin_tracks_language_counts_and_incremental_cache_hits() {
     assert_eq!(parser_metric_value(&first, "ast_cache_hits"), 0.0);
     assert_eq!(parser_metric_value(&first, "ast_cache_misses"), 2.0);
     assert_eq!(parser_metric_value(&first, "language_rust_files"), 1.0);
-    assert_eq!(parser_metric_value(&first, "language_typescript_files"), 1.0);
+    assert_eq!(
+        parser_metric_value(&first, "language_typescript_files"),
+        1.0
+    );
     assert!(parser_metric_value(&first, "ast_node_estimate") > 0.0);
 
     let second = plugin.run(&input).expect("second parse");
     assert_eq!(parser_metric_value(&second, "ast_cache_hits"), 2.0);
     assert_eq!(parser_metric_value(&second, "ast_cache_misses"), 0.0);
     assert_eq!(parser_metric_value(&second, "language_rust_files"), 1.0);
-    assert_eq!(parser_metric_value(&second, "language_typescript_files"), 1.0);
+    assert_eq!(
+        parser_metric_value(&second, "language_typescript_files"),
+        1.0
+    );
 
     fs::write(
         tmp.path().join("web/app.ts"),
@@ -62,7 +68,10 @@ fn parser_plugin_tracks_language_counts_and_incremental_cache_hits() {
     assert_eq!(parser_metric_value(&third, "ast_cache_hits"), 1.0);
     assert_eq!(parser_metric_value(&third, "ast_cache_misses"), 1.0);
     assert_eq!(parser_metric_value(&third, "language_rust_files"), 1.0);
-    assert_eq!(parser_metric_value(&third, "language_typescript_files"), 1.0);
+    assert_eq!(
+        parser_metric_value(&third, "language_typescript_files"),
+        1.0
+    );
 }
 
 #[test]
@@ -83,5 +92,8 @@ fn pipeline_default_exposes_parser_metrics() {
 
     assert!(record.metrics.iter().any(|m| m.plugin == "parser"));
     assert!(record.metrics.iter().any(|m| m.key == "ast_cache_hits"));
-    assert!(record.metrics.iter().any(|m| m.key == "language_rust_files"));
+    assert!(record
+        .metrics
+        .iter()
+        .any(|m| m.key == "language_rust_files"));
 }

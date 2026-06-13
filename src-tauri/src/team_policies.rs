@@ -27,7 +27,8 @@ impl Default for TeamPolicyCatalog {
                 TeamPolicyProfile {
                     team: "security".to_string(),
                     label: "Security Review".to_string(),
-                    approval_note: "Bias toward stronger approval fidelity and pipeline stability".to_string(),
+                    approval_note: "Bias toward stronger approval fidelity and pipeline stability"
+                        .to_string(),
                     scoring_weights: ScoringWeights {
                         version: "policy-security".to_string(),
                         complexity_weight: 0.24,
@@ -42,7 +43,8 @@ impl Default for TeamPolicyCatalog {
                 TeamPolicyProfile {
                     team: "frontend".to_string(),
                     label: "Frontend Delivery".to_string(),
-                    approval_note: "Favor coverage and PR velocity when UX changes are routine".to_string(),
+                    approval_note: "Favor coverage and PR velocity when UX changes are routine"
+                        .to_string(),
                     scoring_weights: ScoringWeights {
                         version: "policy-frontend".to_string(),
                         complexity_weight: 0.22,

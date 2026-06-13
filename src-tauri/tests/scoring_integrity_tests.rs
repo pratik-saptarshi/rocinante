@@ -40,7 +40,11 @@ fn rejects_tampered_scoring_config_envelope() {
         "signature": "invalid"
     });
 
-    std::fs::write(&weights_path, serde_json::to_string_pretty(&tampered).expect("json")).expect("write");
+    std::fs::write(
+        &weights_path,
+        serde_json::to_string_pretty(&tampered).expect("json"),
+    )
+    .expect("write");
 
     let err = load_or_init_weights(weights_path.to_str().expect("path")).expect_err("tamper");
     assert!(err.to_string().contains("scoring config"));

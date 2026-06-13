@@ -1,4 +1,6 @@
-use repo_analyzer_core::plugins::sanitizer::{scrub_text, scrub_text_with_pack, SanitizerPolicyPack};
+use repo_analyzer_core::plugins::sanitizer::{
+    scrub_text, scrub_text_with_pack, SanitizerPolicyPack,
+};
 
 #[test]
 fn scrubs_pii_and_secret_values() {
