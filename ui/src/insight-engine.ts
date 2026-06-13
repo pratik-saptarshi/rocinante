@@ -1,16 +1,3 @@
-import { assessCommitRisks, type CommitEvent } from './domain/risk';
-import { detectBottlenecks, type PipelineStage } from './domain/bottleneck';
-import { rankOpportunities, type Signal } from './domain/opportunity';
-import { defaultInsightConfig, sampleCommits, sampleSignals, sampleStages } from './insight-data';
-
-export type RawInput = string | number | boolean | null | undefined | Record<string, unknown> | unknown[];
-
-export interface InsightPayload {
-  commits?: Array<Partial<CommitEvent> & Record<string, RawInput>>;
-  stages?: Array<Partial<PipelineStage> & Record<string, RawInput>>;
-  signals?: Array<Partial<Signal> & Record<string, RawInput>>;
-}
-
 export interface InsightLimits {
   risks?: number;
   opportunities?: number;
@@ -18,71 +5,152 @@ export interface InsightLimits {
   latencyP95Ms?: number;
 }
 
+export interface InsightCommit {
+  id: string;
+  files: number;
+  changedLines: number;
+  dependencyChanges: number;
+  testTouch: boolean;
+  failedAutomations: number;
+}
+
+export interface InsightStage {
+  name: string;
+  queueDepth: number;
+  throughput: number;
+  avgLatencyMs: number;
+}
+
+export interface InsightSignal {
+  id: string;
+  area: string;
+  title: string;
+  impact: number;
+  effort: number;
+  confidence: number;
+}
+
+export interface InsightPayload {
+  commits?: InsightCommit[];
+  stages?: InsightStage[];
+  signals?: InsightSignal[];
+}
+
+export interface CommitRiskCard {
+  id: string;
+  score: number;
+  level: 'high' | 'medium' | 'good';
+  reasons: string[];
+}
+
+export interface BottleneckCard {
+  name: string;
+  status: 'critical' | 'high' | 'medium' | 'good';
+  impact: number;
+  rationale: string;
+}
+
+export interface OpportunityCard {
+  id: string;
+  title: string;
+  priorityScore: number;
+}
+
 export interface DashboardInsights {
-  commitRiskCards: ReturnType<typeof assessCommitRisks>;
-  bottlenecks: ReturnType<typeof detectBottlenecks>;
-  opportunities: ReturnType<typeof rankOpportunities>;
+  commitRiskCards: CommitRiskCard[];
+  bottlenecks: BottleneckCard[];
+  opportunities: OpportunityCard[];
 }
 
-function toPositiveInt(value: unknown): number {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    return 0;
+const defaultCommitSeed: InsightCommit[] = [
+  { id: 'A-124', files: 16, changedLines: 280, dependencyChanges: 1, testTouch: false, failedAutomations: 1 },
+  { id: 'B-245', files: 9, changedLines: 110, dependencyChanges: 0, testTouch: true, failedAutomations: 0 },
+  { id: 'C-381', files: 4, changedLines: 28, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }
+];
+
+const defaultStageSeed: InsightStage[] = [
+  { name: 'review', queueDepth: 10, throughput: 9, avgLatencyMs: 1100 },
+  { name: 'build', queueDepth: 5, throughput: 12, avgLatencyMs: 850 },
+  { name: 'release', queueDepth: 4, throughput: 18, avgLatencyMs: 420 }
+];
+
+const defaultSignalSeed: InsightSignal[] = [
+  { id: 'op-1', area: 'tests', title: 'Trim flaky tests', impact: 5, effort: 2, confidence: 0.9 },
+  { id: 'op-2', area: 'deps', title: 'Reduce dependency churn', impact: 4, effort: 3, confidence: 0.8 },
+  { id: 'op-3', area: 'ui', title: 'Split dashboard rendering concerns', impact: 3, effort: 2, confidence: 0.75 }
+];
+
+function clampScore(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function scoreCommit(commit: InsightCommit): CommitRiskCard {
+  const rawScore =
+    commit.changedLines / 8 +
+    commit.files * 2 +
+    commit.dependencyChanges * 8 +
+    commit.failedAutomations * 20 +
+    (commit.testTouch ? 0 : 10);
+  const score = clampScore(rawScore);
+  const level = score >= 80 ? 'high' : score >= 50 ? 'medium' : 'good';
+  const reasons = [
+    ...(commit.dependencyChanges > 0 ? ['Dependency risk'] : []),
+    ...(commit.failedAutomations > 0 ? ['Automation failures'] : []),
+    ...(commit.files >= 12 ? ['Large diff surface'] : []),
+    ...(commit.testTouch ? [] : ['Missing test coverage'])
+  ];
+
+  return { id: commit.id, score, level, reasons };
+}
+
+function stageToBottleneck(stage: InsightStage, latencyCeiling: number): BottleneckCard {
+  if (stage.queueDepth >= 10 || stage.avgLatencyMs >= latencyCeiling * 3) {
+    return {
+      name: stage.name,
+      status: 'critical',
+      impact: stage.queueDepth + 5,
+      rationale: `Critical stage(s): ${stage.name} is exceeding the tolerated queue window.`
+    };
   }
-  return Math.max(0, Math.floor(value));
-}
 
-function toCommitEvent(raw: Partial<CommitEvent>): CommitEvent {
+  if (stage.queueDepth >= 4 || stage.avgLatencyMs >= latencyCeiling) {
+    return {
+      name: stage.name,
+      status: 'high',
+      impact: stage.queueDepth + 2,
+      rationale: `Critical stage(s): ${stage.name} is approaching the queue pressure ceiling.`
+    };
+  }
+
   return {
-    id: String(raw.id ?? ''),
-    files: toPositiveInt(raw.files),
-    changedLines: toPositiveInt(raw.changedLines),
-    dependencyChanges: toPositiveInt(raw.dependencyChanges),
-    testTouch: Boolean(raw.testTouch),
-    failedAutomations: toPositiveInt(raw.failedAutomations)
+    name: stage.name,
+    status: 'good',
+    impact: Math.max(1, stage.queueDepth),
+    rationale: `${stage.name} stays within the healthy execution window.`
   };
 }
 
-function toStage(raw: Partial<PipelineStage>): PipelineStage {
+function signalToOpportunity(signal: InsightSignal): OpportunityCard {
   return {
-    name: String(raw.name ?? 'un-named stage'),
-    queueDepth: toPositiveInt(raw.queueDepth),
-    throughput: toPositiveInt(raw.throughput),
-    avgLatencyMs: toPositiveInt(raw.avgLatencyMs)
+    id: signal.id,
+    title: signal.title,
+    priorityScore: clampScore(signal.impact * 16 + signal.confidence * 10 - signal.effort * 3)
   };
 }
 
-function toSignal(raw: Partial<Signal>): Signal {
-  const effort = Math.max(0.1, toPositiveInt(raw.effort));
-  const rawConfidence = raw.confidence;
-  const normalizedConfidence =
-    typeof rawConfidence === 'number' ? Math.min(1, Math.max(0, rawConfidence)) : 0;
-
-  return {
-    id: String(raw.id ?? ''),
-    area: String(raw.area ?? 'general'),
-    title: String(raw.title ?? 'Untitled opportunity'),
-    impact: toPositiveInt(raw.impact),
-    effort,
-    confidence: normalizedConfidence
-  };
+function limitList<T>(items: T[], limit?: number): T[] {
+  return typeof limit === 'number' && Number.isFinite(limit) ? items.slice(0, Math.max(0, Math.floor(limit))) : items;
 }
 
-export function buildDashboardInsights(payload?: InsightPayload, limits?: InsightLimits): DashboardInsights {
-  const commitsSource = payload?.commits?.length ? payload.commits : sampleCommits;
-  const stagesSource = payload?.stages?.length ? payload.stages : sampleStages;
-  const signalsSource = payload?.signals?.length ? payload.signals : sampleSignals;
-
-  const riskLimit = Math.max(1, toPositiveInt(limits?.risks ?? defaultInsightConfig.riskLimit));
-  const opportunityLimit = Math.max(1, toPositiveInt(limits?.opportunities ?? defaultInsightConfig.opportunityLimit));
-  const severityThreshold = limits?.severityThreshold ?? defaultInsightConfig.severityThreshold;
-  const latencyP95Ms = toPositiveInt(limits?.latencyP95Ms ?? defaultInsightConfig.latencyP95Ms);
+export function buildDashboardInsights(payload: InsightPayload = {}, limits: InsightLimits = {}): DashboardInsights {
+  const commits = limitList(payload.commits?.length ? payload.commits : defaultCommitSeed, limits.risks);
+  const stages = payload.stages?.length ? payload.stages : defaultStageSeed;
+  const signals = limitList(payload.signals?.length ? payload.signals : defaultSignalSeed, limits.opportunities);
+  const latencyCeiling = limits.latencyP95Ms ?? 1_000;
 
   return {
-    commitRiskCards: assessCommitRisks(commitsSource.map(toCommitEvent), riskLimit),
-    bottlenecks: detectBottlenecks(stagesSource.map(toStage), {
-      severityThreshold,
-      latencyP95Ms: latencyP95Ms || defaultInsightConfig.latencyP95Ms
-    }),
-    opportunities: rankOpportunities(signalsSource.map(toSignal), opportunityLimit)
+    commitRiskCards: commits.map(scoreCommit),
+    bottlenecks: stages.map((stage) => stageToBottleneck(stage, latencyCeiling)),
+    opportunities: signals.map(signalToOpportunity)
   };
 }

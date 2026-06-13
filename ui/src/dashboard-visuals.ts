@@ -1,42 +1,91 @@
-import type { AuditStatus } from './dashboard-content';
-import type { QualityPulse } from './domain/quality-pulse';
+import type { DashboardInsights } from './insight-engine';
 
-export interface TrendRiskCard {
+export type VisualTone = 'good' | 'medium' | 'bad';
+
+export interface TrendLineCard {
   id: string;
-  title: string;
-  summary: string;
-  detail: string;
-  status: AuditStatus;
+  label: string;
+  value: string;
+  tone: VisualTone;
+  rationale: string;
 }
 
-export function buildTrendRiskCards(pulse: QualityPulse): TrendRiskCard[] {
-  const totalRisk = Math.max(1, pulse.riskBuckets.low + pulse.riskBuckets.medium + pulse.riskBuckets.high);
-  const riskStatus: AuditStatus = pulse.riskBuckets.high > 0 ? 'bad' : pulse.riskBuckets.medium > 0 ? 'medium' : 'good';
-  const bottleneckStatus: AuditStatus =
-    pulse.bottleneckBuckets.critical > 0 ? 'bad' : pulse.bottleneckBuckets.high > 0 ? 'medium' : 'good';
-  const opportunityStatus: AuditStatus = pulse.opportunityCount > 0 ? 'good' : 'medium';
+export interface PrRiskRankingCard {
+  id: string;
+  title: string;
+  score: number;
+  tone: VisualTone;
+  rationale: string;
+}
 
-  return [
-    {
-      id: 'risk-trend',
-      title: 'Risk Trend',
-      summary: `${pulse.riskBuckets.high} high-risk commit(s) out of ${totalRisk}`,
-      detail: `${pulse.riskBuckets.medium} medium-risk commit(s) keep the pre-merge queue active.`,
-      status: riskStatus
-    },
-    {
-      id: 'bottleneck-trend',
-      title: 'Bottleneck Trend',
-      summary: `${pulse.bottleneckBuckets.critical} critical / ${pulse.bottleneckBuckets.high} high bottleneck(s)`,
-      detail: pulse.topBottleneckName,
-      status: bottleneckStatus
-    },
-    {
-      id: 'opportunity-trend',
-      title: 'Opportunity Trend',
-      summary: `${pulse.opportunityCount} actionable opportunity(s)`,
-      detail: `Top opportunity: ${pulse.topOpportunityTitle}`,
-      status: opportunityStatus
-    }
-  ];
+export interface DashboardVisuals {
+  summary: string;
+  trendLines: TrendLineCard[];
+  prRiskRankings: PrRiskRankingCard[];
+}
+
+function toneFromRiskScore(score: number): VisualTone {
+  if (score >= 80) return 'bad';
+  if (score >= 50) return 'medium';
+  return 'good';
+}
+
+function toneFromOpportunityScore(score: number): VisualTone {
+  if (score >= 70) return 'good';
+  if (score >= 45) return 'medium';
+  return 'bad';
+}
+
+export function buildDashboardVisuals(insights: DashboardInsights): DashboardVisuals {
+  const sortedRisks = [...insights.commitRiskCards].sort((left, right) => right.score - left.score);
+  const sortedBottlenecks = [...insights.bottlenecks].sort((left, right) => right.impact - left.impact);
+  const sortedOpportunities = [...insights.opportunities].sort((left, right) => right.priorityScore - left.priorityScore);
+
+  const topRisk = sortedRisks[0];
+  const criticalRisks = sortedRisks.filter((risk) => risk.level === 'high').length;
+  const pressureStages = insights.bottlenecks.filter((stage) => stage.status === 'critical' || stage.status === 'high').length;
+  const topStage = sortedBottlenecks[0];
+  const topOpportunity = sortedOpportunities[0];
+
+  return {
+    summary: topRisk
+      ? `${criticalRisks} high-risk commits and ${pressureStages} pressured stages`
+      : 'No risk signals available',
+    trendLines: [
+      {
+        id: 'risk-trajectory',
+        label: 'PR Risk Trajectory',
+        value: topRisk ? `${criticalRisks} high-risk commits` : 'No high-risk commits',
+        tone: topRisk ? toneFromRiskScore(topRisk.score) : 'good',
+        rationale: topRisk
+          ? `Top risk ${topRisk.id} is driven by ${topRisk.reasons.slice(0, 2).join(', ') || 'sample data'}.`
+          : 'The current sample window has no elevated commit risks.'
+      },
+      {
+        id: 'bottleneck-pressure',
+        label: 'Bottleneck Pressure',
+        value: `${pressureStages} pressured stages`,
+        tone: topStage ? topStage.status : 'good',
+        rationale: topStage
+          ? `Highest-pressure stage ${topStage.name} needs ${topStage.status === 'critical' ? 'immediate' : 'near-term'} attention.`
+          : 'The current sample window has no pressured stages.'
+      },
+      {
+        id: 'opportunity-velocity',
+        label: 'Opportunity Velocity',
+        value: `${insights.opportunities.length} actionable opportunities`,
+        tone: topOpportunity ? toneFromOpportunityScore(topOpportunity.priorityScore) : 'good',
+        rationale: topOpportunity
+          ? `Lead opportunity ${topOpportunity.title} should unblock the next cycle.`
+          : 'No opportunities surfaced in the current payload.'
+      }
+    ],
+    prRiskRankings: sortedRisks.slice(0, 3).map((risk) => ({
+      id: risk.id,
+      title: `${risk.id} score ${risk.score}`,
+      score: risk.score,
+      tone: risk.level === 'high' ? 'bad' : risk.level === 'medium' ? 'medium' : 'good',
+      rationale: risk.reasons.length ? risk.reasons.join(', ') : 'No named risk factors'
+    }))
+  };
 }
