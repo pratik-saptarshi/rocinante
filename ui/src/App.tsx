@@ -21,6 +21,7 @@ import { useState } from 'react';
 import { readLimits, readPayload } from './dashboard-contract';
 import { buildAdminBridgePayload } from './admin-bridge-contract';
 import { dashboardAudienceHighlights, dashboardFindingGroups, type AuditStatus, type DashboardFinding } from './dashboard-content';
+import { buildDashboardVisuals } from './dashboard-visuals';
 import { buildDashboardInsights, type InsightPayload } from './insight-engine';
 import { buildQualityPulse, type StakeholderAudience } from './domain/quality-pulse';
 import { invokeAdminCommand, type AdminBridgeCommand } from './tauri-admin';
@@ -135,6 +136,7 @@ function App() {
 
   const { commitRiskCards, bottlenecks, opportunities } = insights;
   const qualityPulse = buildQualityPulse(insights);
+  const dashboardVisuals = buildDashboardVisuals(insights);
   const audienceActions = qualityPulse.recommendations[audience];
   const audienceRoute = qualityPulse.actionRoutes[audience];
   const topOpps = opportunities.slice(0, 2);
@@ -291,6 +293,29 @@ function App() {
               ))}
             </List>
           </Paper>
+        </Box>
+
+        <Box sx={{ mb: 1.5 }} data-testid="trend-risk-section">
+          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+            Trend & Risk View
+          </Typography>
+          <MetricItem label="Trend summary" value={dashboardVisuals.summary} />
+          <FindingSection
+            title="Trend Lines"
+            items={dashboardVisuals.trendLines.map((item) => ({
+              id: item.id,
+              text: `${item.label}: ${item.value} — ${item.rationale}`,
+              status: item.tone === 'good' ? 'good' : item.tone === 'medium' ? 'medium' : 'bad'
+            }))}
+          />
+          <FindingSection
+            title="PR Risk Ranking"
+            items={dashboardVisuals.prRiskRankings.map((item) => ({
+              id: item.id,
+              text: `${item.title} — ${item.rationale}`,
+              status: item.tone === 'good' ? 'good' : item.tone === 'medium' ? 'medium' : 'bad'
+            }))}
+          />
         </Box>
 
         <Box sx={{ mb: 1.5 }}>

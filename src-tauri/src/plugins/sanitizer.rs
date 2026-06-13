@@ -4,21 +4,47 @@ use crate::types::{AnalysisInput, AnalysisMetric};
 
 const REDACTED: &str = "[REDACTED]";
 
-fn redact_with_patterns(input: &str) -> String {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SanitizerPolicyPack {
+    General,
+    Security,
+    Privacy,
+    Payments,
+}
+
+impl SanitizerPolicyPack {
+    fn keys(self) -> &'static [&'static str] {
+        match self {
+            Self::General => &[
+                "x-api-key",
+                "api_key",
+                "apikey",
+                "access_token",
+                "refresh_token",
+                "password",
+                "secret",
+                "authorization",
+                "auth",
+                "token",
+            ],
+            Self::Security => &[
+                "x-api-key",
+                "authorization",
+                "client_secret",
+                "private_key",
+                "shared_secret",
+                "token",
+            ],
+            Self::Privacy => &["ssn", "dob", "birthdate", "address", "email"],
+            Self::Payments => &["card_number", "cvv", "iban", "routing_number", "account_number"],
+        }
+    }
+}
+
+fn redact_with_patterns(input: &str, keys: &[&str]) -> String {
     let mut out = input.to_string();
 
-    for key in [
-        "x-api-key",
-        "api_key",
-        "apikey",
-        "access_token",
-        "refresh_token",
-        "password",
-        "secret",
-        "authorization",
-        "auth",
-        "token",
-    ] {
+    for key in keys {
         out = redact_key_value(&out, key);
     }
 
@@ -179,7 +205,11 @@ fn redact_phone_like(text: &str) -> String {
 }
 
 pub fn scrub_text(input: &str) -> String {
-    redact_with_patterns(input)
+    scrub_text_with_pack(input, SanitizerPolicyPack::General)
+}
+
+pub fn scrub_text_with_pack(input: &str, pack: SanitizerPolicyPack) -> String {
+    redact_with_patterns(input, pack.keys())
 }
 
 pub fn scrub_metric(metric: &mut AnalysisMetric) {

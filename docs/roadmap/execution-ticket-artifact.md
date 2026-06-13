@@ -44,6 +44,7 @@ above and must be kept in sync by updating those sources first.
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
+- `F-020` (incremental AST cache and parser plugin): Completed; validates language-aware metrics with incremental cache hit/miss tracking.
 - `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
 
 ### Remaining feature hierarchy
@@ -59,12 +60,9 @@ above and must be kept in sync by updating those sources first.
    - `F-026` job observability
 3. Governance and trust
    - `F-017` expanded sanitizer rules
-   - `F-018` signed scoring-config integrity verification
-   - `F-019` per-team policy profiles
    - `F-022` internal Git provider adapters
    - `F-023` AD/LDAP group mapping hardening
 4. Scale and history
-   - `F-020` incremental AST cache and parser plugin
    - `F-021` historical partition pruning and retention policies
    - `F-027` bulk import utility
 5. Untriaged backlog tail
@@ -73,10 +71,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
+  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-019`, `F-020`, `F-028`, `F-029`, `F-030`, `F-032` (28)
 - In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-018` … `F-027`, `F-033` (11)
-- Completion ratio: `25 / 39 = 64.1%`
+- New backlog: `F-021` … `F-027`, `F-033` (8)
+- Completion ratio: `28 / 39 = 71.8%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -344,6 +342,10 @@ above and must be kept in sync by updating those sources first.
   - Extracted static dashboard copy and section finding groups into `dashboard-content`.
   - Added focused unit coverage for role copy and reusable finding-group content.
   - `App.tsx` now consumes shared dashboard content constants for the lead/manager/executive/security views.
+- Readiness checkpoint:
+  - Extracted `insight-engine` and `quality-pulse` helpers for the audience-pane decomposition slice.
+  - Tightened App tests around exact recommendation messages and list scoping.
+  - `App.tsx` now keeps routing text, score summaries, and action lists in testable helper modules.
 
 #### Feature `FE-009` — Command schema and backend contract convergence
 - Source: `docs/roadmap/beads.html`
@@ -383,11 +385,46 @@ above and must be kept in sync by updating those sources first.
 - Ticket: `BI-FE-015` (continued operational context)
 - Status: In Progress
 - AC: trend/risk views are deterministic under valid and fallback payloads.
+- Readiness checkpoint:
+  - Extracted `dashboard-visuals` to centralize trend and PR risk ranking derivation.
+  - Added UI coverage for the new trend/risk view and helper-backed ranking copy.
+  - `App.tsx` now renders the trend/risk lane from shared helper output rather than inline composition.
 
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`
 - Status: In Progress
 - AC: additional policy packs apply without regressions in existing redaction engine tests.
+- Readiness checkpoint:
+  - Added `SanitizerPolicyPack` variants for General, Security, Privacy, and Payments.
+  - Added pack-aware `scrub_text_with_pack(...)` coverage without changing the baseline `scrub_text(...)` contract.
+  - Sanitizer regression tests now prove domain-specific redaction behavior and preserve existing emoji-separator handling.
+
+- Feature `F-018` — Signed scoring-config integrity verification
+- Ticket: `BI-014`
+- Status: Completed
+- AC: persisted scoring configs carry tamper-evident hash/signature envelopes and reject altered content.
+- Readiness checkpoint:
+  - Added signed scoring-config envelope persistence with hash and signature verification.
+  - Kept legacy raw JSON compatibility for existing weight files.
+  - Added tamper-rejection and persistence regression coverage.
+
+- Feature `F-019` — Per-team policy profiles for scoring/approval weighting
+- Ticket: `BI-015`
+- Status: Completed
+- AC: team policies resolve to deterministic score/approval weight profiles with a safe default fallback.
+- Readiness checkpoint:
+  - Added a shared policy catalog for security, frontend, and platform profiles.
+  - Added per-team scoring weight resolution plus fallback coverage for unknown teams.
+  - Team-specific approval weighting now shifts without altering the baseline defaults.
+
+- Feature `F-020` — Incremental AST cache and parser plugin
+- Ticket: `BI-016`
+- Status: Completed
+- AC: language-aware parser metrics classify supported file types and reuse cached summaries for unchanged file content.
+- Readiness checkpoint:
+  - Added `ParserPlugin` with incremental cache hit/miss accounting and language classification for Rust, TypeScript, JavaScript, Python, Markdown, and unknown files.
+  - Registered the parser plugin in the default pipeline alongside the existing bead plugins.
+  - Added parser-specific regression coverage for cache reuse, cache invalidation, and default pipeline exposure.
 
 ## TDD/BDD Mapping by Capability
 
@@ -397,6 +434,7 @@ above and must be kept in sync by updating those sources first.
 - `F-028` ↔ `T-009`
 - `F-029` ↔ `T-003`, `T-022`
 - `F-030` ↔ `T-020`
+- `F-020` ↔ `T-012`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
 - `FE-009` command failures and parity ↔ `T-021`, `T-023`
 - Security-sensitive features additionally require `T-001` and `T-020` authorization checks.

@@ -36,6 +36,15 @@
 - `F-008C` Snapshot/replica read model for zero-contention analytics queries:
   - Analytics reads use published immutable snapshots when live DB state is unavailable or transitioning.
   - Query commands remain stable under promotion, including committer score and aggregate reads.
+- `F-018` Signed scoring-config integrity verification:
+  - Persist weights with tamper-evident hash + signature envelope.
+  - Reject altered config envelopes while remaining backward-compatible with legacy raw JSON.
+- `F-019` Per-team policy profiles for scoring/approval weighting:
+  - Team-specific scoring weight profiles resolve deterministically from a shared catalog.
+  - Approval-fidelity and coverage bias can shift per team without changing the baseline defaults.
+- `F-020` Incremental AST cache and parser plugin for language-aware metrics:
+  - Language-aware parser metrics now track cache hits/misses and classify Rust, TypeScript, JavaScript, Python, and Markdown files.
+  - The parser plugin is registered in the default analysis pipeline.
 - `F-011` Baseline complexity seed table and delta-based committer scoring normalization.
 - `F-012` Isolated scoring module with versioned algorithm constant and deterministic weight configuration.
 - `F-013` Audit-logged scoring weight changes with admin-only authorization.
@@ -45,15 +54,12 @@
 
 ## In Progress
 
-- `F-031` Frontend structural decomposition and dashboard content extraction.
-- `F-016` Rich dashboard visualizations for trend lines and PR risk ranking rationale.
-- `F-017` Expanded sanitizer detection rules and policy packs per compliance domain.
+- `F-031` Frontend structural decomposition and dashboard content extraction, including the validated audience-pane / quality-pulse helper split.
+- `F-016` Rich dashboard visualizations for trend lines and PR risk ranking rationale, including the extracted trend/risk helper module.
+- `F-017` Expanded sanitizer detection rules and policy packs per compliance domain, including the validated pack-aware redaction helper.
 
 ## New Backlog
 
-- `F-018` Signed scoring-config integrity verification (tamper-evident signatures/hashes).
-- `F-019` Per-team policy profiles for scoring/approval weighting.
-- `F-020` Incremental AST cache and parser plugin for language-aware metrics.
 - `F-021` Historical partition pruning and retention policies for long-lived repositories.
 - `F-022` Internal Git provider adapters (GitLab/GHE/Bitbucket Server APIs) with on-prem auth.
 - `F-023` Active Directory / LDAP group mapping hardening and cache strategy.
