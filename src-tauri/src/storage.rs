@@ -594,7 +594,12 @@ impl DualLayerStore {
         match backend.kind {
             IngestionBackendKind::SledTransitional => self.ingest_commit_event(event),
             IngestionBackendKind::BadgerSidecar => {
-                let endpoint = backend.endpoint.clone().unwrap_or_default().trim().to_string();
+                let endpoint = backend
+                    .endpoint
+                    .clone()
+                    .unwrap_or_default()
+                    .trim()
+                    .to_string();
                 if endpoint.starts_with("inproc://") {
                     self.ingest_commit_event(event)
                 } else if endpoint.starts_with("unix://") {
