@@ -75,5 +75,9 @@ fn signature_for_weights(weights: &ScoringWeights) -> String {
     let payload = serde_json::to_vec(weights).expect("weights json");
     let mut hasher = Sha256::new();
     hasher.update(payload);
-    format!("{:x}", hasher.finalize())
+    hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect()
 }
