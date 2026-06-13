@@ -45,6 +45,7 @@ above and must be kept in sync by updating those sources first.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
 - `F-020` (incremental AST cache and parser plugin): Completed; validates language-aware metrics with incremental cache hit/miss tracking.
+- `F-021` (historical partition pruning and retention policies): Completed; release-partition pruning now applies per repository and keeps historical queries queryable via rollup.
 - `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
 
 ### Remaining feature hierarchy
@@ -52,7 +53,6 @@ above and must be kept in sync by updating those sources first.
 1. Control-plane convergence
    - `F-031` frontend structural decomposition
    - `FE-009` command schema and backend contract convergence
-   - `F-032` Playwright frontend behavioral and functional coverage (headless-only)
 2. Dashboard and operational insight
    - `F-016` rich dashboard visualizations
    - `F-024` explainability panel
@@ -63,7 +63,6 @@ above and must be kept in sync by updating those sources first.
    - `F-022` internal Git provider adapters
    - `F-023` AD/LDAP group mapping hardening
 4. Scale and history
-   - `F-021` historical partition pruning and retention policies
    - `F-027` bulk import utility
 5. Untriaged backlog tail
    - `F-033`
@@ -71,10 +70,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-019`, `F-020`, `F-028`, `F-029`, `F-030`, `F-032` (28)
+  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-019`, `F-020`, `F-021`, `F-028`, `F-029`, `F-030`, `F-032` (29)
 - In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-021` … `F-027`, `F-033` (8)
-- Completion ratio: `28 / 39 = 71.8%`
+- New backlog: `F-022` … `F-027`, `F-033` (7)
+- Completion ratio: `29 / 39 = 74.4%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -426,6 +425,15 @@ above and must be kept in sync by updating those sources first.
   - Registered the parser plugin in the default pipeline alongside the existing bead plugins.
   - Added parser-specific regression coverage for cache reuse, cache invalidation, and default pipeline exposure.
 
+- Feature `F-021` — Historical partition pruning and retention policies
+- Ticket: `BI-017`
+- Status: Completed
+- AC: release partition retention prunes per repository while keeping stale historical releases queryable through rollup.
+- Readiness checkpoint:
+  - Added per-repo historical partition pruning coverage.
+  - Preserved older releases in rollup form while pruning raw release partitions.
+  - Added regression coverage for cross-repo retention isolation and queryability.
+
 ## TDD/BDD Mapping by Capability
 
 - `F-008A/B/C/D` ↔ `T-015`, `T-016`, `T-017`, `T-018`
@@ -435,6 +443,7 @@ above and must be kept in sync by updating those sources first.
 - `F-029` ↔ `T-003`, `T-022`
 - `F-030` ↔ `T-020`
 - `F-020` ↔ `T-012`
+- `F-021` ↔ `T-013`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
 - `FE-009` command failures and parity ↔ `T-021`, `T-023`
 - Security-sensitive features additionally require `T-001` and `T-020` authorization checks.

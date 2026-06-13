@@ -45,6 +45,9 @@
 - `F-020` Incremental AST cache and parser plugin for language-aware metrics:
   - Language-aware parser metrics now track cache hits/misses and classify Rust, TypeScript, JavaScript, Python, and Markdown files.
   - The parser plugin is registered in the default analysis pipeline.
+- `F-021` Historical partition pruning and retention policies for long-lived repositories:
+  - Release-partition pruning now applies per repository and preserves older releases in rollup form.
+  - Historical aggregates remain queryable after retention pruning.
 - `F-011` Baseline complexity seed table and delta-based committer scoring normalization.
 - `F-012` Isolated scoring module with versioned algorithm constant and deterministic weight configuration.
 - `F-013` Audit-logged scoring weight changes with admin-only authorization.
@@ -60,7 +63,6 @@
 
 ## New Backlog
 
-- `F-021` Historical partition pruning and retention policies for long-lived repositories.
 - `F-022` Internal Git provider adapters (GitLab/GHE/Bitbucket Server APIs) with on-prem auth.
 - `F-023` Active Directory / LDAP group mapping hardening and cache strategy.
 - `F-024` Explainability panel: score decomposition traces per committer and PR.
