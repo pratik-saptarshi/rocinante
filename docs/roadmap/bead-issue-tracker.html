@@ -1,6 +1,6 @@
 # Bead Issue Tracker (TDD Execution)
 
-## Active Sprint: Scale and History
+## Active Sprint: Governance and Trust
 
 | Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
@@ -16,11 +16,12 @@
 | BI-015 | B-13 | `F-019` per-team policy profiles for scoring/approval weighting | Red->Green complete | Completed | implementer | Added team policy catalog resolution and per-team weight adjustments with fallback profile coverage. |
 | BI-016 | B-14 | `F-020` incremental AST cache and parser plugin | Red->Green complete | Completed | implementer | Added language-aware parser plugin with incremental cache hit/miss accounting and default pipeline registration. |
 | BI-017 | B-15 | `F-021` historical partition pruning and retention policies | Red->Green complete | Completed | implementer | Added per-repo partition pruning coverage that preserves historical releases in rollup form while keeping queries queryable. |
+| BI-018 | B-16 | `F-022` internal Git provider adapters | Red->Green complete | Completed | implementer | Added provider-specific repo, PR, clone, and auth helpers for GHE, GitLab, and Bitbucket Server. |
 
 ## Phase Priority
 
-1. Scale and history
-   - `F-021` historical partition pruning and retention policies
+1. Governance and trust
+   - `F-023` AD/LDAP group mapping hardening
 2. Control-plane convergence
   - `F-031` frontend structural decomposition
     - Validated checkpoint: audience-pane decomposition now uses shared insight-engine and quality-pulse helpers.
@@ -31,12 +32,9 @@
   - `F-024` explainability panel
   - `F-025` release baseline management UI
   - `F-026` job observability
-4. Governance and trust
+4. Scale and history
    - `F-017` expanded sanitizer rules
     - Validated checkpoint: policy-pack scrubber now covers General, Security, Privacy, and Payments domains with regression coverage.
-   - `F-022` internal Git provider adapters
-   - `F-023` AD/LDAP group mapping hardening
-5. Bulk import utility
    - `F-027` bulk import utility
 
 ## TDD Ledger

@@ -1,5 +1,6 @@
 use repo_analyzer_core::storage::{DualLayerStore, IngestionBackendConfig, IngestionBackendKind};
 use repo_analyzer_core::types::{CommitIngestionEvent, TelemetryPoint};
+use sled;
 use tempfile::tempdir;
 
 fn sample_event(id: &str) -> CommitIngestionEvent {
