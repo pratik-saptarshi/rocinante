@@ -10,14 +10,14 @@ describe('dashboard explainability', () => {
       {
         id: 'explain-score',
         title: 'Score Decomposition',
-        summary: 'Overall score 45/100',
-        detail: 'Risk 2 high / 0 medium, bottlenecks 1 critical / 2 high',
+        summary: 'Overall score 65/100',
+        detail: 'Risk 1 high / 0 medium, bottlenecks 1 critical / 2 high',
         status: 'medium'
       },
       {
         id: 'explain-risk',
         title: 'Top Risk Commit',
-        summary: 'A-121',
+        summary: 'A-124',
         detail: 'High-risk commit drives merge caution.',
         status: 'bad'
       },
@@ -31,7 +31,7 @@ describe('dashboard explainability', () => {
       {
         id: 'explain-opportunity',
         title: 'Opportunity Lift',
-        summary: 'Gate dependency updates through staged canary',
+        summary: 'Trim flaky tests',
         detail: '3 opportunity signal(s) are boosting the score.',
         status: 'good'
       }

@@ -143,14 +143,16 @@ function limitList<T>(items: T[], limit?: number): T[] {
 }
 
 export function buildDashboardInsights(payload: InsightPayload = {}, limits: InsightLimits = {}): DashboardInsights {
-  const commits = limitList(payload.commits?.length ? payload.commits : defaultCommitSeed, limits.risks);
+  const commits = payload.commits?.length ? payload.commits : defaultCommitSeed;
   const stages = payload.stages?.length ? payload.stages : defaultStageSeed;
-  const signals = limitList(payload.signals?.length ? payload.signals : defaultSignalSeed, limits.opportunities);
+  const signals = payload.signals?.length ? payload.signals : defaultSignalSeed;
   const latencyCeiling = limits.latencyP95Ms ?? 1_000;
+  const commitRiskCards = commits.map(scoreCommit).sort((left, right) => right.score - left.score);
+  const opportunityCards = signals.map(signalToOpportunity).sort((left, right) => right.priorityScore - left.priorityScore);
 
   return {
-    commitRiskCards: commits.map(scoreCommit),
+    commitRiskCards: limitList(commitRiskCards, limits.risks),
     bottlenecks: stages.map((stage) => stageToBottleneck(stage, latencyCeiling)),
-    opportunities: signals.map(signalToOpportunity)
+    opportunities: limitList(opportunityCards, limits.opportunities)
   };
 }
