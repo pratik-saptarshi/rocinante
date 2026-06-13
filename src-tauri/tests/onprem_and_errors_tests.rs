@@ -32,6 +32,28 @@ fn active_directory_provider_returns_group_membership() {
 }
 
 #[test]
+fn active_directory_provider_bounded_cache_evicts_old_entries() {
+    let mut memberships = HashMap::new();
+    memberships.insert("alice".to_string(), vec!["engineering".to_string()]);
+    memberships.insert("bob".to_string(), vec!["engineering".to_string()]);
+    let source = Arc::new(StaticDirectoryLookup::new(memberships));
+    let d = ActiveDirectoryProvider::with_cache_limit(source.clone(), 1);
+
+    assert!(d
+        .is_in_group("alice", "engineering")
+        .expect("alice group check"));
+    assert!(d
+        .is_in_group("bob", "engineering")
+        .expect("bob group check"));
+    assert_eq!(d.cache_size(), 1);
+
+    assert!(d
+        .is_in_group("alice", "engineering")
+        .expect("alice group check after eviction"));
+    assert!(source.lookup_count() >= 3);
+}
+
+#[test]
 fn active_directory_provider_denies_blank_or_invalid_inputs() {
     let source = Arc::new(StaticDirectoryLookup::new(HashMap::new()));
     let d = ActiveDirectoryProvider::new(source);

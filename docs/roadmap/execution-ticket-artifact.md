@@ -47,6 +47,7 @@ above and must be kept in sync by updating those sources first.
 - `F-020` (incremental AST cache and parser plugin): Completed; validates language-aware metrics with incremental cache hit/miss tracking.
 - `F-021` (historical partition pruning and retention policies): Completed; release-partition pruning now applies per repository and keeps historical queries queryable via rollup.
 - `F-022` (internal Git provider adapters): Completed; provider helpers now build repo, PR, clone, and auth endpoints per provider kind.
+- `F-023` (AD/LDAP group mapping hardening and cache strategy): Completed; directory lookups now use bounded membership caching with deterministic eviction and alias-cycle rejection.
 - `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
 
 ### Remaining feature hierarchy
@@ -61,7 +62,6 @@ above and must be kept in sync by updating those sources first.
    - `F-026` job observability
 3. Governance and trust
    - `F-017` expanded sanitizer rules
-   - `F-023` AD/LDAP group mapping hardening
 4. Scale and history
    - `F-027` bulk import utility
 5. Untriaged backlog tail
@@ -70,10 +70,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-019`, `F-020`, `F-021`, `F-022`, `F-028`, `F-029`, `F-030`, `F-032` (30)
-- In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-023` … `F-027`, `F-033` (6)
-- Completion ratio: `30 / 39 = 76.9%`
+  `F-008E`, `F-008F`, `F-015`, `F-016`, `F-017`, `F-024`, `F-028`, `F-029`, `F-030`, `F-032` (28)
+- In progress features: `F-031`, `F-018` (2)
+- New backlog: `F-019` … `F-023`, `F-025` … `F-027`, `F-033` (9)
+- Completion ratio: `28 / 39 = 71.8%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -283,6 +283,24 @@ above and must be kept in sync by updating those sources first.
   - `require_admin` returns `DENY` for expired/wrong-audience/unsigned inputs.
   - `main.rs` command handlers do not open backends on auth failure.
 
+#### Feature `F-023` — AD/LDAP group mapping hardening and cache strategy
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-019`
+- Bead context: `B-17`
+- Current status: Completed
+- Tasks:
+  1. `TK-045` Add bounded membership cache with eviction limit.
+  2. `TK-046` Reject alias cycles and invalid lookup inputs.
+  3. `TK-047` Add coverage for repeated directory lookups and cache growth control.
+- Function AC:
+  - `ActiveDirectoryProvider::with_cache_limit` bounds directory membership cache growth.
+  - `canonical_group` fails closed on alias cycles or blank/control-character inputs.
+  - `is_in_group` remains deterministic under repeated access.
+- Readiness checkpoint:
+  - Added bounded FIFO membership caching for AD/LDAP lookups with configurable limit.
+  - Added alias-cycle rejection plus invalid-input coverage for repeated directory access.
+  - Provider tests verify cache eviction, lookup stability, and membership correctness.
+
 #### Feature `F-007` — Existing RBAC baseline continuity
 - Source: `docs/roadmap/feature-backlog.html`
 - Governing reference: `B-08`, `R1-F02`
@@ -382,7 +400,7 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-016` — Rich dashboard visualizations
 - Ticket: `BI-FE-015` (continued operational context)
-- Status: In Progress
+- Status: Completed
 - AC: trend/risk views are deterministic under valid and fallback payloads.
 - Readiness checkpoint:
   - Extracted `dashboard-visuals` to centralize trend and PR risk ranking derivation.
@@ -391,12 +409,21 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`
-- Status: In Progress
+- Status: Completed
 - AC: additional policy packs apply without regressions in existing redaction engine tests.
 - Readiness checkpoint:
   - Added `SanitizerPolicyPack` variants for General, Security, Privacy, and Payments.
   - Added pack-aware `scrub_text_with_pack(...)` coverage without changing the baseline `scrub_text(...)` contract.
   - Sanitizer regression tests now prove domain-specific redaction behavior and preserve existing emoji-separator handling.
+
+- Feature `F-024` — Explainability panel
+- Ticket: `BI-FE-018`
+- Status: Completed
+- AC: score decomposition traces remain deterministic across payload refreshes and custom telemetry pulses.
+- Readiness checkpoint:
+  - Added deterministic score decomposition traces for committer and PR decisions.
+  - Rendered explainability cards in the dashboard shell with stable titles and summaries.
+  - Added unit coverage for sample and custom payload trace output.
 
 - Feature `F-018` — Signed scoring-config integrity verification
 - Ticket: `BI-014`
@@ -434,6 +461,19 @@ above and must be kept in sync by updating those sources first.
   - Preserved older releases in rollup form while pruning raw release partitions.
   - Added regression coverage for cross-repo retention isolation and queryability.
 
+- Feature `F-018` — Signed scoring-config integrity verification
+- Ticket: `BI-014`
+- Bead context: `B-12`
+- Status: In Progress
+- AC: scoring weights persist as signed envelopes and fail closed on tampered config.
+- Tasks:
+  1. `TK-045` Persist signed weight envelopes with deterministic signatures.
+  2. `TK-046` Verify envelope integrity on load and reject tampered payloads.
+  3. `TK-047` Add regression coverage for signed persistence and tamper failure.
+- Function AC:
+  - `load_or_init_weights` rejects mutated signatures or mutated signed payloads.
+  - `persist_weights` writes the signed envelope format with a stable signature string.
+
 ## TDD/BDD Mapping by Capability
 
 - `F-008A/B/C/D` ↔ `T-015`, `T-016`, `T-017`, `T-018`
@@ -442,9 +482,11 @@ above and must be kept in sync by updating those sources first.
 - `F-028` ↔ `T-009`
 - `F-029` ↔ `T-003`, `T-022`
 - `F-030` ↔ `T-020`
+- `F-018` ↔ `T-010`
 - `F-020` ↔ `T-012`
 - `F-021` ↔ `T-013`
 - `F-022` ↔ `T-025`
+- `F-023` ↔ `T-011`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
 - `FE-009` command failures and parity ↔ `T-021`, `T-023`
 - Security-sensitive features additionally require `T-001` and `T-020` authorization checks.
@@ -457,9 +499,9 @@ above and must be kept in sync by updating those sources first.
    - Exit gate: `R1-F01..R2-F07` risk evidence + `T-015..T-020`.
 
 2. **Stream B — Trust/Identity + Sanitization**
-   - Tickets: `BI-007`, `BI-008`
+   - Tickets: `BI-007`, `BI-008`, `BI-014`
    - Dependency: `R2-F02` and `R2-F03` green in traceability.
-   - Exit gate: `T-020`, `T-022`, auth no-side-effect verification.
+   - Exit gate: `T-010`, `T-020`, `T-022`, auth no-side-effect verification.
 
 3. **Stream C — Frontend Contract Safety**
    - Tickets: `BI-FE-016`, `BI-FE-017`

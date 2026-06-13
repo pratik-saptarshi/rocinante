@@ -22,6 +22,8 @@
   - `tests/scoring_audit_tests.rs`
 - `T-007` Baseline delta scoring normalization:
   - `tests/baseline_delta_tests.rs`
+- `T-011` AD/LDAP provider behavior tests with mocked directory responses:
+  - `tests/onprem_and_errors_tests.rs`
 
 ## Feature-to-Test Matrix
 
@@ -35,6 +37,7 @@
 - `F-020` -> `T-012`
 - `F-021` -> `T-013`
 - `F-022` -> `T-025`
+- `F-023` -> `T-011`
 
 ## In-Progress Test Work
 
@@ -54,7 +57,6 @@
 ## Planned New Tests
 
 - `T-010` Signed scoring config verification tests (`F-018`).
-- `T-011` AD/LDAP provider behavior tests with mocked directory responses (`F-023`).
 - `T-025` Internal Git provider adapter tests (`F-022`):
   - `tests/git_provider_tests.rs`
   - `tests/onprem_and_errors_tests.rs`

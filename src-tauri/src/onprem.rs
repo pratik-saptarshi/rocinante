@@ -1,5 +1,5 @@
 use crate::errors::AnalyzerError;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -67,6 +67,8 @@ pub struct ActiveDirectoryProvider {
     source: Arc<dyn DirectoryLookup>,
     group_aliases: HashMap<String, String>,
     membership_cache: Mutex<HashMap<(String, String), bool>>,
+    cache_order: Mutex<VecDeque<(String, String)>>,
+    cache_limit: usize,
 }
 
 impl ActiveDirectoryProvider {
@@ -74,9 +76,21 @@ impl ActiveDirectoryProvider {
         Self::with_group_aliases(source, HashMap::new())
     }
 
+    pub fn with_cache_limit(source: Arc<dyn DirectoryLookup>, cache_limit: usize) -> Self {
+        Self::with_group_aliases_and_cache_limit(source, HashMap::new(), cache_limit)
+    }
+
     pub fn with_group_aliases(
         source: Arc<dyn DirectoryLookup>,
         group_aliases: HashMap<String, String>,
+    ) -> Self {
+        Self::with_group_aliases_and_cache_limit(source, group_aliases, 1024)
+    }
+
+    pub fn with_group_aliases_and_cache_limit(
+        source: Arc<dyn DirectoryLookup>,
+        group_aliases: HashMap<String, String>,
+        cache_limit: usize,
     ) -> Self {
         let group_aliases = group_aliases
             .into_iter()
@@ -91,6 +105,8 @@ impl ActiveDirectoryProvider {
             source,
             group_aliases,
             membership_cache: Mutex::new(HashMap::new()),
+            cache_order: Mutex::new(VecDeque::new()),
+            cache_limit: cache_limit.max(1),
         }
     }
 
@@ -99,6 +115,38 @@ impl ActiveDirectoryProvider {
             .lock()
             .map(|cache| cache.len())
             .unwrap_or_default()
+    }
+
+    fn record_cache_entry(
+        &self,
+        key: (String, String),
+        allowed: bool,
+    ) -> Result<(), AnalyzerError> {
+        let mut cache = self
+            .membership_cache
+            .lock()
+            .map_err(|e| AnalyzerError::PermissionDenied(e.to_string()))?;
+        let mut order = self
+            .cache_order
+            .lock()
+            .map_err(|e| AnalyzerError::PermissionDenied(e.to_string()))?;
+
+        if cache.contains_key(&key) {
+            cache.insert(key.clone(), allowed);
+            return Ok(());
+        }
+
+        while cache.len() >= self.cache_limit {
+            if let Some(oldest) = order.pop_front() {
+                cache.remove(&oldest);
+            } else {
+                break;
+            }
+        }
+
+        cache.insert(key.clone(), allowed);
+        order.push_back(key);
+        Ok(())
     }
 
     fn canonical_group(&self, group: &str) -> Result<String, AnalyzerError> {
@@ -147,10 +195,7 @@ impl DirectoryProvider for ActiveDirectoryProvider {
             .collect::<Result<HashSet<_>, _>>()?
             .contains(&group);
 
-        self.membership_cache
-            .lock()
-            .map_err(|e| AnalyzerError::PermissionDenied(e.to_string()))?
-            .insert((user, group), allowed);
+        self.record_cache_entry((user, group), allowed)?;
 
         Ok(allowed)
     }
