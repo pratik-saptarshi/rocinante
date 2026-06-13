@@ -47,6 +47,7 @@ above and must be kept in sync by updating those sources first.
 - `F-020` (incremental AST cache and parser plugin): Completed; validates language-aware metrics with incremental cache hit/miss tracking.
 - `F-021` (historical partition pruning and retention policies): Completed; release-partition pruning now applies per repository and keeps historical queries queryable via rollup.
 - `F-022` (internal Git provider adapters): Completed; provider helpers now build repo, PR, clone, and auth endpoints per provider kind.
+- `F-023` (AD/LDAP group mapping hardening and cache strategy): Completed; directory lookups now use bounded membership caching with deterministic eviction and alias-cycle rejection.
 - `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
 
 ### Remaining feature hierarchy
@@ -61,7 +62,6 @@ above and must be kept in sync by updating those sources first.
    - `F-026` job observability
 3. Governance and trust
    - `F-017` expanded sanitizer rules
-   - `F-023` AD/LDAP group mapping hardening
 4. Scale and history
    - `F-027` bulk import utility
 5. Untriaged backlog tail
@@ -70,10 +70,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-019`, `F-020`, `F-021`, `F-022`, `F-028`, `F-029`, `F-030`, `F-032` (30)
+  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-019`, `F-020`, `F-021`, `F-022`, `F-023`, `F-028`, `F-029`, `F-030`, `F-032` (31)
 - In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-023` … `F-027`, `F-033` (6)
-- Completion ratio: `30 / 39 = 76.9%`
+- New backlog: `F-024` … `F-027`, `F-033` (5)
+- Completion ratio: `31 / 39 = 79.5%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -283,6 +283,24 @@ above and must be kept in sync by updating those sources first.
   - `require_admin` returns `DENY` for expired/wrong-audience/unsigned inputs.
   - `main.rs` command handlers do not open backends on auth failure.
 
+#### Feature `F-023` — AD/LDAP group mapping hardening and cache strategy
+- Source: `docs/roadmap/feature-backlog.html`
+- Ticket: `BI-019`
+- Bead context: `B-17`
+- Current status: Completed
+- Tasks:
+  1. `TK-045` Add bounded membership cache with eviction limit.
+  2. `TK-046` Reject alias cycles and invalid lookup inputs.
+  3. `TK-047` Add coverage for repeated directory lookups and cache growth control.
+- Function AC:
+  - `ActiveDirectoryProvider::with_cache_limit` bounds directory membership cache growth.
+  - `canonical_group` fails closed on alias cycles or blank/control-character inputs.
+  - `is_in_group` remains deterministic under repeated access.
+- Readiness checkpoint:
+  - Added bounded FIFO membership caching for AD/LDAP lookups with configurable limit.
+  - Added alias-cycle rejection plus invalid-input coverage for repeated directory access.
+  - Provider tests verify cache eviction, lookup stability, and membership correctness.
+
 #### Feature `F-007` — Existing RBAC baseline continuity
 - Source: `docs/roadmap/feature-backlog.html`
 - Governing reference: `B-08`, `R1-F02`
@@ -445,6 +463,7 @@ above and must be kept in sync by updating those sources first.
 - `F-020` ↔ `T-012`
 - `F-021` ↔ `T-013`
 - `F-022` ↔ `T-025`
+- `F-023` ↔ `T-011`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
 - `FE-009` command failures and parity ↔ `T-021`, `T-023`
 - Security-sensitive features additionally require `T-001` and `T-020` authorization checks.
