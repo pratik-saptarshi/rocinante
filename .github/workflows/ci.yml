@@ -34,8 +34,13 @@ jobs:
             librsvg2-dev \
             patchelf
       - uses: dtolnay/rust-toolchain@stable
+      - name: Prime Rust toolchain
+        run: |
+          rustc --version
+          cargo --version
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: src-tauri
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Format check
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check

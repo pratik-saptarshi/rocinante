@@ -60,6 +60,25 @@ fn sample_event_with_release(id: &str, release: &str) -> CommitIngestionEvent {
     }
 }
 
+fn sample_event_for_repo_release(
+    repo_name: &str,
+    commit_id: &str,
+    release: &str,
+) -> CommitIngestionEvent {
+    CommitIngestionEvent {
+        commit_id: commit_id.to_string(),
+        repo_name: repo_name.to_string(),
+        release: release.to_string(),
+        committer: "alice".to_string(),
+        telemetry: vec![TelemetryPoint {
+            plugin: "complexity".to_string(),
+            metric_key: "estimated_cyclomatic_complexity".to_string(),
+            metric_value: 8.0,
+            details: "ok".to_string(),
+        }],
+    }
+}
+
 #[test]
 fn promotes_events_and_reads_aggregates() {
     let dir = tempdir().expect("tmp");
@@ -328,6 +347,75 @@ fn prunes_old_releases_and_preserves_queryability_by_rollup() {
 
     assert_eq!(raw_stale_count, 0);
     assert!(rollup_stale_count > 0);
+}
+
+#[test]
+fn prunes_release_partitions_per_repo_without_cross_repo_drift() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
+
+    for (repo, releases) in [
+        ("repo-a", ["r2019", "r2020", "r2021"]),
+        ("repo-b", ["r2018", "r2019", "r2020"]),
+    ] {
+        for release in releases {
+            store
+                .ingest_commit_event(&sample_event_for_repo_release(
+                    repo,
+                    &format!("{repo}-{release}"),
+                    release,
+                ))
+                .expect("ingest historical release");
+        }
+    }
+
+    let policy = RetentionPolicy {
+        raw_ttl_secs: 3600,
+        max_release_partitions: Some(2),
+    };
+    let stats = store
+        .promote_to_columnar_with_retention(&policy, now_ts_for_test())
+        .expect("promote with retention");
+    assert_eq!(stats.promoted_events, 6);
+
+    let conn = Connection::open(col.to_str().expect("col path")).expect("open analytics");
+
+    for (repo, stale_release, kept_release) in
+        [("repo-a", "r2019", "r2021"), ("repo-b", "r2018", "r2020")]
+    {
+        let stale_raw_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM telemetry_history WHERE repo_name = ?1 AND release = ?2",
+                params![repo, stale_release],
+                |row| row.get(0),
+            )
+            .expect("count stale raw");
+        let stale_rollup_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM telemetry_history_rollup WHERE repo_name = ?1 AND release = ?2",
+                params![repo, stale_release],
+                |row| row.get(0),
+            )
+            .expect("count stale rollup");
+        let kept_raw_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM telemetry_history WHERE repo_name = ?1 AND release = ?2",
+                params![repo, kept_release],
+                |row| row.get(0),
+            )
+            .expect("count kept raw");
+
+        assert_eq!(stale_raw_count, 0);
+        assert!(stale_rollup_count > 0);
+        assert!(kept_raw_count > 0);
+    }
 }
 
 #[test]

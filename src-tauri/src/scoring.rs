@@ -22,7 +22,6 @@ struct SignedScoringWeights {
     weights: ScoringWeights,
     signature: String,
 }
-
 pub fn load_or_init_weights(path: &str) -> Result<ScoringWeights, AnalyzerError> {
     if !Path::new(path).exists() {
         let defaults = ScoringWeights::default();
@@ -30,15 +29,18 @@ pub fn load_or_init_weights(path: &str) -> Result<ScoringWeights, AnalyzerError>
         return Ok(defaults);
     }
     let raw = fs::read_to_string(path)?;
-    let parsed = serde_json::from_str::<SignedScoringWeights>(&raw)
-        .map_err(|e| AnalyzerError::Integrity(e.to_string()))?;
-    let expected = signature_for_weights(&parsed.weights)?;
-    if parsed.signature != expected {
-        return Err(AnalyzerError::Integrity(
-            "scoring config signature mismatch".to_string(),
-        ));
+    if let Ok(envelope) = serde_json::from_str::<SignedScoringWeights>(&raw) {
+        let expected = signature_for_weights(&envelope.weights)?;
+        if envelope.signature != expected {
+            return Err(AnalyzerError::Integrity(
+                "scoring config signature mismatch".to_string(),
+            ));
+        }
+        return Ok(envelope.weights);
     }
-    Ok(parsed.weights)
+    let parsed = serde_json::from_str::<ScoringWeights>(&raw)
+        .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+    Ok(parsed)
 }
 
 pub fn persist_weights(path: &str, weights: &ScoringWeights) -> Result<(), AnalyzerError> {

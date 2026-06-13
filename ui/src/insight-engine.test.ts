@@ -1,33 +1,55 @@
 import { describe, expect, it } from 'vitest';
-import { buildDashboardInsights, type InsightPayload } from './insight-engine';
+import { buildDashboardInsights } from './insight-engine';
 
-describe('insight engine', () => {
-  it('falls back to sample data when payload is empty', () => {
-    const dashboard = buildDashboardInsights();
+describe('buildDashboardInsights', () => {
+  it('builds the default sample insight view model', () => {
+    const insights = buildDashboardInsights();
 
-    expect(dashboard.commitRiskCards).toHaveLength(3);
-    expect(dashboard.bottlenecks).toHaveLength(3);
-    expect(dashboard.opportunities).toHaveLength(3);
+    expect(insights.commitRiskCards).toHaveLength(3);
+    expect(insights.commitRiskCards[0]).toEqual(
+      expect.objectContaining({
+        id: 'A-124',
+        score: 100,
+        level: 'high'
+      })
+    );
+    expect(insights.bottlenecks).toHaveLength(3);
+    expect(insights.opportunities).toHaveLength(3);
   });
 
-  it('normalizes provided payload and applies limits', () => {
-    const payload: InsightPayload = {
-      commits: [
-        { id: 'custom-1', files: 14, changedLines: 310, dependencyChanges: 2, testTouch: false, failedAutomations: 1 }
-      ],
-      stages: [{ name: 'build', queueDepth: 20, throughput: 10, avgLatencyMs: 900 }],
-      signals: [
-        { id: 'custom-op', area: 'infra', title: 'Tune infra', impact: 4, effort: 1, confidence: 1.2 }
-      ]
-    };
+  it('derives custom payload insights from telemetry envelopes', () => {
+    const insights = buildDashboardInsights(
+      {
+        commits: [
+          {
+            id: 'custom-999',
+            files: 25,
+            changedLines: 800,
+            dependencyChanges: 1,
+            testTouch: false,
+            failedAutomations: 1
+          }
+        ],
+        stages: [{ name: 'build', queueDepth: 8, throughput: 8, avgLatencyMs: 1500 }],
+        signals: [{ id: 'custom-op-1', area: 'infra', title: 'Cache invalidation map', impact: 5, effort: 2, confidence: 0.9 }]
+      },
+      {
+        risks: 1,
+        opportunities: 1,
+        severityThreshold: 4,
+        latencyP95Ms: 700
+      }
+    );
 
-    const dashboard = buildDashboardInsights(payload, { risks: 1, opportunities: 1, latencyP95Ms: 1000 });
-
-    expect(dashboard.commitRiskCards).toHaveLength(1);
-    expect(dashboard.commitRiskCards[0].id).toBe('custom-1');
-    expect(dashboard.bottlenecks).toHaveLength(1);
-    expect(dashboard.bottlenecks[0].name).toBe('build');
-    expect(dashboard.opportunities).toHaveLength(1);
-    expect(dashboard.opportunities[0].id).toBe('custom-op');
+    expect(insights.commitRiskCards).toHaveLength(1);
+    expect(insights.commitRiskCards[0]).toEqual(
+      expect.objectContaining({
+        id: 'custom-999',
+        score: 100,
+        level: 'high'
+      })
+    );
+    expect(insights.bottlenecks).toHaveLength(1);
+    expect(insights.opportunities).toHaveLength(1);
   });
 });
