@@ -22,16 +22,21 @@ fn scrubs_secret_values_with_emoji_separator_noise() {
 }
 
 #[test]
-fn scrubs_domain_specific_policy_pack_values() {
-    let raw = "ssn=123-45-6789 client_secret=sk_live_private card_number=4111111111111111";
-    let scrubbed = scrub_text_with_pack(raw, SanitizerPolicyPack::Privacy);
-    let scrubbed = scrub_text_with_pack(&scrubbed, SanitizerPolicyPack::Security);
-    let scrubbed = scrub_text_with_pack(&scrubbed, SanitizerPolicyPack::Payments);
+fn scrubs_policy_pack_specific_values() {
+    let raw = "ssn=123-45-6789 card_number=masked client_secret=super-secret";
 
-    assert!(scrubbed.contains("ssn=[REDACTED]"));
-    assert!(scrubbed.contains("client_secret=[REDACTED]"));
-    assert!(scrubbed.contains("card_number=[REDACTED]"));
-    assert!(!scrubbed.contains("123-45-6789"));
-    assert!(!scrubbed.contains("sk_live_private"));
-    assert!(!scrubbed.contains("4111111111111111"));
+    let privacy = scrub_text_with_pack(raw, SanitizerPolicyPack::Privacy);
+    assert!(privacy.contains("ssn=[REDACTED]"));
+    assert!(privacy.contains("card_number=masked"));
+    assert!(privacy.contains("client_secret=super-secret"));
+
+    let payments = scrub_text_with_pack(raw, SanitizerPolicyPack::Payments);
+    assert!(payments.contains("card_number=[REDACTED]"));
+    assert!(payments.contains("ssn=123-45-6789"));
+    assert!(payments.contains("client_secret=super-secret"));
+
+    let security = scrub_text_with_pack(raw, SanitizerPolicyPack::Security);
+    assert!(security.contains("client_secret=[REDACTED]"));
+    assert!(security.contains("ssn=123-45-6789"));
+    assert!(security.contains("card_number=masked"));
 }

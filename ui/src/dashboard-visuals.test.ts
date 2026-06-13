@@ -1,96 +1,44 @@
 import { describe, expect, it } from 'vitest';
 import { buildDashboardInsights } from './insight-engine';
-import { buildQualityPulse } from './domain/quality-pulse';
-import { buildTrendRiskCards } from './dashboard-visuals';
+import { buildDashboardVisuals } from './dashboard-visuals';
 
-describe('dashboard visuals', () => {
-  it('builds deterministic trend and risk cards from sample insights', () => {
-    const pulse = buildQualityPulse(buildDashboardInsights());
+describe('buildDashboardVisuals', () => {
+  it('summarizes the default dashboard risk and opportunity lanes', () => {
+    const visuals = buildDashboardVisuals(buildDashboardInsights());
 
-    expect(buildTrendRiskCards(pulse)).toEqual([
-      {
-        id: 'risk-trend',
-        title: 'Risk Trend',
-        summary: '2 high-risk commit(s) out of 3',
-        detail: '0 medium-risk commit(s) keep the pre-merge queue active.',
-        status: 'bad'
-      },
-      {
-        id: 'bottleneck-trend',
-        title: 'Bottleneck Trend',
-        summary: '1 critical / 2 high bottleneck(s)',
-        detail: 'review',
-        status: 'bad'
-      },
-      {
-        id: 'opportunity-trend',
-        title: 'Opportunity Trend',
-        summary: '3 actionable opportunity(s)',
-        detail: 'Top opportunity: Gate dependency updates through staged canary',
-        status: 'good'
-      }
-    ]);
+    expect(visuals.summary).toContain('high-risk commits');
+    expect(visuals.trendLines).toHaveLength(3);
+    expect(visuals.trendLines[0]).toMatchObject({
+      label: 'PR Risk Trajectory',
+      value: '1 high-risk commits'
+    });
+    expect(visuals.prRiskRankings[0]).toMatchObject({
+      id: 'A-124',
+      title: 'A-124 score 100',
+      tone: 'bad'
+    });
   });
 
-  it('adapts the trend and risk cards for a fallback payload', () => {
-    const pulse = buildQualityPulse(
-      buildDashboardInsights(
-        {
-          commits: [
-            {
-              id: 'custom-1',
-              files: 24,
-              changedLines: 650,
-              dependencyChanges: 1,
-              testTouch: false,
-              failedAutomations: 1
-            }
-          ],
-          stages: [
-            {
-              name: 'build',
-              queueDepth: 8,
-              throughput: 4,
-              avgLatencyMs: 1500
-            }
-          ],
-          signals: [
-            {
-              id: 'op-1',
-              area: 'infra',
-              title: 'Reduce release coupling',
-              impact: 5,
-              effort: 3,
-              confidence: 0.8
-            }
-          ]
-        },
-        { risks: 1, opportunities: 1, severityThreshold: 1, latencyP95Ms: 1200 }
-      )
+  it('adapts to custom payload risk and bottleneck data', () => {
+    const visuals = buildDashboardVisuals(
+      buildDashboardInsights({
+        commits: [
+          { id: 'custom-999', files: 25, changedLines: 800, dependencyChanges: 1, testTouch: false, failedAutomations: 1 }
+        ],
+        stages: [{ name: 'build', queueDepth: 8, throughput: 8, avgLatencyMs: 1500 }],
+        signals: [{ id: 'custom-op-1', area: 'infra', title: 'Cache invalidation map', impact: 5, effort: 2, confidence: 0.9 }]
+      })
     );
 
-    expect(buildTrendRiskCards(pulse)).toEqual([
-      {
-        id: 'risk-trend',
-        title: 'Risk Trend',
-        summary: '1 high-risk commit(s) out of 1',
-        detail: '0 medium-risk commit(s) keep the pre-merge queue active.',
-        status: 'bad'
-      },
-      {
-        id: 'bottleneck-trend',
-        title: 'Bottleneck Trend',
-        summary: '1 critical / 0 high bottleneck(s)',
-        detail: 'build',
-        status: 'bad'
-      },
-      {
-        id: 'opportunity-trend',
-        title: 'Opportunity Trend',
-        summary: '1 actionable opportunity(s)',
-        detail: 'Top opportunity: Reduce release coupling',
-        status: 'good'
-      }
-    ]);
+    expect(visuals.summary).toContain('1 high-risk commits');
+    expect(visuals.trendLines[0].rationale).toContain('custom-999');
+    expect(visuals.trendLines[1]).toMatchObject({
+      label: 'Bottleneck Pressure',
+      value: '1 pressured stages'
+    });
+    expect(visuals.prRiskRankings[0]).toMatchObject({
+      id: 'custom-999',
+      tone: 'bad'
+    });
   });
 });
