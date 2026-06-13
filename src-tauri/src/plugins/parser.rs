@@ -54,7 +54,7 @@ impl ParserPlugin {
                     let summary = ParsedFileSummary {
                         digest,
                         language: language.to_string(),
-                        node_estimate: estimate_nodes(&contents, language),
+                        node_estimate: estimate_nodes(&contents, &language),
                     };
                     cache.insert(rel_path.to_string(), summary.clone());
                     summary

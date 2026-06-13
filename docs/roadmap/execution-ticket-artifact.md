@@ -400,7 +400,7 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-016` — Rich dashboard visualizations
 - Ticket: `BI-FE-015` (continued operational context)
-- Status: In Progress
+- Status: Completed
 - AC: trend/risk views are deterministic under valid and fallback payloads.
 - Readiness checkpoint:
   - Extracted `dashboard-visuals` to centralize trend and PR risk ranking derivation.
@@ -409,12 +409,21 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`
-- Status: In Progress
+- Status: Completed
 - AC: additional policy packs apply without regressions in existing redaction engine tests.
 - Readiness checkpoint:
   - Added `SanitizerPolicyPack` variants for General, Security, Privacy, and Payments.
   - Added pack-aware `scrub_text_with_pack(...)` coverage without changing the baseline `scrub_text(...)` contract.
   - Sanitizer regression tests now prove domain-specific redaction behavior and preserve existing emoji-separator handling.
+
+- Feature `F-024` — Explainability panel
+- Ticket: `BI-FE-018`
+- Status: Completed
+- AC: score decomposition traces remain deterministic across payload refreshes and custom telemetry pulses.
+- Readiness checkpoint:
+  - Added deterministic score decomposition traces for committer and PR decisions.
+  - Rendered explainability cards in the dashboard shell with stable titles and summaries.
+  - Added unit coverage for sample and custom payload trace output.
 
 - Feature `F-018` — Signed scoring-config integrity verification
 - Ticket: `BI-014`
