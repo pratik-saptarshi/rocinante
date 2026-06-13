@@ -1,6 +1,6 @@
 # Bead Issue Tracker (TDD Execution)
 
-## Active Sprint: Governance and Trust
+## Active Sprint: Control-plane convergence
 
 | Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
@@ -17,24 +17,24 @@
 | BI-016 | B-14 | `F-020` incremental AST cache and parser plugin | Red->Green complete | Completed | implementer | Added language-aware parser plugin with incremental cache hit/miss accounting and default pipeline registration. |
 | BI-017 | B-15 | `F-021` historical partition pruning and retention policies | Red->Green complete | Completed | implementer | Added per-repo partition pruning coverage that preserves historical releases in rollup form while keeping queries queryable. |
 | BI-018 | B-16 | `F-022` internal Git provider adapters | Red->Green complete | Completed | implementer | Added provider-specific repo, PR, clone, and auth helpers for GHE, GitLab, and Bitbucket Server. |
+| BI-019 | B-17 | `F-023` AD/LDAP group mapping hardening | Red->Green complete | Completed | implementer | Added bounded membership cache eviction and alias-cycle rejection coverage for deterministic directory lookups. |
 
 ## Phase Priority
 
-1. Governance and trust
-   - `F-023` AD/LDAP group mapping hardening
-2. Control-plane convergence
+1. Control-plane convergence
   - `F-031` frontend structural decomposition
     - Validated checkpoint: audience-pane decomposition now uses shared insight-engine and quality-pulse helpers.
   - `FE-009` command schema and backend contract convergence
-3. Dashboard and operational insight
+2. Dashboard and operational insight
   - `F-016` rich dashboard visualizations
     - Validated checkpoint: trend/risk helper extraction now drives deterministic trajectory and PR risk ranking views.
   - `F-024` explainability panel
   - `F-025` release baseline management UI
   - `F-026` job observability
-4. Scale and history
+3. Governance and trust
    - `F-017` expanded sanitizer rules
     - Validated checkpoint: policy-pack scrubber now covers General, Security, Privacy, and Payments domains with regression coverage.
+4. Scale and history
    - `F-027` bulk import utility
 
 ## TDD Ledger
