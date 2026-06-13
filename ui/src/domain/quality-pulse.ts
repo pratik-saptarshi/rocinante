@@ -1,4 +1,4 @@
-import type { BottleneckCard, CommitRiskCard, DashboardInsights, OpportunityCard } from '../insight-engine';
+import type { BottleneckCard, CommitRiskCard, DashboardInsights } from '../insight-engine';
 
 export type StakeholderAudience = 'lead' | 'manager' | 'executive' | 'security';
 
@@ -17,7 +17,10 @@ export interface PulseRoute {
 export interface QualityPulse {
   overallScore: number;
   securitySignalCount: number;
+  opportunityCount: number;
   topBottleneckName: string;
+  topRiskCommitId: string;
+  topOpportunityTitle: string;
   riskBuckets: {
     high: number;
     medium: number;
@@ -53,6 +56,10 @@ function summarizeBottlenecks(bottlenecks: BottleneckCard[]): QualityPulse['bott
   );
 }
 
+function levelToSeverity(level: 'high' | 'medium' | 'good'): PulseAction['severity'] {
+  return level === 'high' ? 'bad' : level;
+}
+
 function buildRecommendations(
   insights: DashboardInsights
 ): Record<StakeholderAudience, PulseAction[]> {
@@ -68,12 +75,12 @@ function buildRecommendations(
       {
         id: 'lead-1',
         message: `Focus first on high-risk commit ${topRisk?.id ?? 'sample'} before expanding the next cycle.`,
-        severity: topRisk?.level ?? 'medium'
+        severity: levelToSeverity(topRisk?.level ?? 'medium')
       },
       {
         id: 'lead-2',
         message: `Focus first on high-risk commit ${insights.commitRiskCards[1]?.id ?? 'sample'} after automation stabilizes.`,
-        severity: insights.commitRiskCards[1]?.level ?? 'medium'
+        severity: levelToSeverity(insights.commitRiskCards[1]?.level ?? 'medium')
       }
     ],
     manager: [
@@ -104,7 +111,7 @@ function buildRecommendations(
       ? securitySignals.slice(0, 2).map((signal, index) => ({
           id: `security-${index + 1}`,
           message: `Security-sensitive signals from ${signal.id} should be reviewed before release.`,
-          severity: signal.level
+          severity: levelToSeverity(signal.level)
         }))
       : [
           {
@@ -144,16 +151,22 @@ function buildRoutes(): QualityPulse['actionRoutes'] {
 export function buildQualityPulse(insights: DashboardInsights): QualityPulse {
   const riskBuckets = summarizeRiskBuckets(insights.commitRiskCards);
   const bottleneckBuckets = summarizeBottlenecks(insights.bottlenecks);
+  const topRisk = [...insights.commitRiskCards].sort((left, right) => right.score - left.score)[0];
   const topBottleneck = [...insights.bottlenecks].sort((left, right) => right.impact - left.impact)[0];
+  const topOpportunity = [...insights.opportunities].sort((left, right) => right.priorityScore - left.priorityScore)[0];
   const securitySignalCount = insights.commitRiskCards.filter((risk) =>
     risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')
   ).length;
+  const opportunityCount = insights.opportunities.length;
   const overallScore = Math.max(45, 100 - riskBuckets.high * 10 - bottleneckBuckets.critical * 15 - bottleneckBuckets.high * 5);
 
   return {
     overallScore,
     securitySignalCount,
+    opportunityCount,
     topBottleneckName: topBottleneck?.name ?? 'review',
+    topRiskCommitId: topRisk?.id ?? 'sample',
+    topOpportunityTitle: topOpportunity?.title ?? 'trim flaky tests',
     riskBuckets,
     bottleneckBuckets,
     recommendations: buildRecommendations(insights),
