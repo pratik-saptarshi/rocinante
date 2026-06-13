@@ -44,6 +44,7 @@ above and must be kept in sync by updating those sources first.
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
+- `F-024` (explainability panel): Completed; score decomposition traces now render for committer and PR decisions using the shared quality pulse helper.
 - `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
 
 ### Remaining feature hierarchy
@@ -51,10 +52,8 @@ above and must be kept in sync by updating those sources first.
 1. Control-plane convergence
    - `F-031` frontend structural decomposition
    - `FE-009` command schema and backend contract convergence
-   - `F-032` Playwright frontend behavioral and functional coverage (headless-only)
 2. Dashboard and operational insight
    - `F-016` rich dashboard visualizations
-   - `F-024` explainability panel
    - `F-025` release baseline management UI
    - `F-026` job observability
 3. Governance and trust
@@ -73,10 +72,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
+  `F-008E`, `F-008F`, `F-015`, `F-024`, `F-028`, `F-029`, `F-030`, `F-032` (26)
 - In progress features: `F-031`, `F-016`, `F-017`, `F-018` (4)
 - New backlog: `F-019` … `F-027`, `F-033` (10)
-- Completion ratio: `25 / 39 = 64.1%`
+- Completion ratio: `26 / 39 = 66.7%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -390,7 +389,7 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-024` — Explainability panel
 - Ticket: `BI-FE-018`
-- Status: In Progress
+- Status: Completed
 - AC: score decomposition traces remain deterministic across payload refreshes and custom
   telemetry pulses.
 - Tasks:
@@ -400,19 +399,10 @@ above and must be kept in sync by updating those sources first.
 - Function AC:
   - `buildExplainabilityTraces` derives the same trace cards for a given `QualityPulse`.
   - `App.tsx` explainability panel renders fallback-safe trace cards from current telemetry.
-
-- Feature `F-024` — Explainability panel
-- Ticket: `BI-FE-018`
-- Status: In Progress
-- AC: score decomposition traces remain deterministic across payload refreshes and custom
-  telemetry pulses.
-- Tasks:
-  1. `TK-FE-037` Extract explainability trace builder from dashboard pulse data.
-  2. `TK-FE-038` Render trace cards in the dashboard shell with stable labels and summaries.
-  3. `TK-FE-039` Add regression tests for sample and custom payload decomposition paths.
-- Function AC:
-  - `buildExplainabilityTraces` derives the same trace cards for a given `QualityPulse`.
-  - `App.tsx` explainability panel renders fallback-safe trace cards from current telemetry.
+- Readiness checkpoint:
+  - Added deterministic score decomposition traces for committer and PR decisions.
+  - Rendered explainability cards in the dashboard shell with stable titles and summaries.
+  - Added unit coverage for sample and custom payload trace output.
 
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`

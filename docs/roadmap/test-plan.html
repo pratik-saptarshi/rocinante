@@ -22,6 +22,9 @@
   - `tests/scoring_audit_tests.rs`
 - `T-007` Baseline delta scoring normalization:
   - `tests/baseline_delta_tests.rs`
+- `T-026` Explainability panel and decision trace rendering tests:
+  - `ui/src/dashboard-explainability.test.ts`
+  - `ui/src/App.test.tsx`
 
 ## Feature-to-Test Matrix
 
@@ -32,6 +35,7 @@
 - `F-011/F-012` -> `T-007`, `T-006`
 - `F-014` -> add integration tests `T-008` (pending)
 - `F-008A/F-008B/F-008C/F-008D/F-008E/F-008F` -> `T-015`, `T-016`, `T-017`, `T-018`, `T-019`, `T-020`
+- `F-024` -> `T-026`
 
 ## In-Progress Test Work
 
@@ -51,6 +55,9 @@
 ## Planned New Tests
 
 - `T-010` Signed scoring config verification tests (`F-018`).
+- `T-026` Explainability panel tests (`F-024`):
+  - `ui/src/dashboard-explainability.test.ts`
+  - `ui/src/App.test.tsx`
 - `T-011` AD/LDAP provider behavior tests with mocked directory responses (`F-023`).
 - `T-012` AST plugin determinism tests across supported languages (`F-020`).
 - `T-013` Historical retention/partition correctness tests (`F-021`).

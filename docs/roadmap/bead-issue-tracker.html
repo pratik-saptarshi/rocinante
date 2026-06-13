@@ -13,17 +13,17 @@
 | BI-012 | B-10 | `F-008F` promotion snapshot visibility | Red->Green complete | Completed | implementer | Added read/write snapshot barriers (`promote_to_columnar`, `aggregate_by_query`) and query-stability regression coverage (`aggregate_queries_remain_non_empty_during_promotion_handoff`). |
 | BI-013 | B-11 | `F-032` Playwright frontend behavioral and functional coverage | Red->Green complete | Completed | implementer | Headless-only browser coverage now validates dashboard shell, role switching, payload envelopes, and admin fallback behavior. |
 | BI-014 | B-12 | `F-018` signed scoring-config integrity verification | In Progress | In Progress | implementer | Added signed envelope persistence and tamper rejection coverage for scoring weights; see `tests/scoring_integrity_tests.rs`. |
+| BI-020 | B-18 | `F-024` explainability panel | Red->Green complete | Completed | implementer | Added deterministic score decomposition traces and dashboard rendering for committer and PR decisions. |
 
 ## Phase Priority
 
-1. Control-plane convergence
-  - `F-031` frontend structural decomposition
-  - `FE-009` command schema and backend contract convergence
-2. Dashboard and operational insight
+1. Dashboard and operational insight
   - `F-016` rich dashboard visualizations
-  - `F-024` explainability panel
   - `F-025` release baseline management UI
   - `F-026` job observability
+2. Control-plane convergence
+  - `F-031` frontend structural decomposition
+  - `FE-009` command schema and backend contract convergence
 3. Governance and trust
    - `F-018` signed scoring-config integrity verification
    - `F-017` expanded sanitizer rules
@@ -53,6 +53,6 @@
 
 ## Current Frontend Phase
 
-- `F-024` explainability panel: active slice; local Vitest and TypeScript validation are green.
+- `F-024` explainability panel: completed; local Vitest and TypeScript validation are green.
 - `F-031` frontend structural decomposition: checkpointed and ready for merge path.
 - `F-016` rich dashboard visualizations: next adjacent insight slice after explainability.
