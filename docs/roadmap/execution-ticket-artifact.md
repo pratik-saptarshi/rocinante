@@ -70,10 +70,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-019`, `F-020`, `F-021`, `F-022`, `F-023`, `F-028`, `F-029`, `F-030`, `F-032` (31)
-- In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-024` … `F-027`, `F-033` (5)
-- Completion ratio: `31 / 39 = 79.5%`
+  `F-008E`, `F-008F`, `F-015`, `F-016`, `F-017`, `F-024`, `F-028`, `F-029`, `F-030`, `F-032` (28)
+- In progress features: `F-031`, `F-018` (2)
+- New backlog: `F-019` … `F-023`, `F-025` … `F-027`, `F-033` (9)
+- Completion ratio: `28 / 39 = 71.8%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -400,7 +400,7 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-016` — Rich dashboard visualizations
 - Ticket: `BI-FE-015` (continued operational context)
-- Status: In Progress
+- Status: Completed
 - AC: trend/risk views are deterministic under valid and fallback payloads.
 - Readiness checkpoint:
   - Extracted `dashboard-visuals` to centralize trend and PR risk ranking derivation.
@@ -409,12 +409,21 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`
-- Status: In Progress
+- Status: Completed
 - AC: additional policy packs apply without regressions in existing redaction engine tests.
 - Readiness checkpoint:
   - Added `SanitizerPolicyPack` variants for General, Security, Privacy, and Payments.
   - Added pack-aware `scrub_text_with_pack(...)` coverage without changing the baseline `scrub_text(...)` contract.
   - Sanitizer regression tests now prove domain-specific redaction behavior and preserve existing emoji-separator handling.
+
+- Feature `F-024` — Explainability panel
+- Ticket: `BI-FE-018`
+- Status: Completed
+- AC: score decomposition traces remain deterministic across payload refreshes and custom telemetry pulses.
+- Readiness checkpoint:
+  - Added deterministic score decomposition traces for committer and PR decisions.
+  - Rendered explainability cards in the dashboard shell with stable titles and summaries.
+  - Added unit coverage for sample and custom payload trace output.
 
 - Feature `F-018` — Signed scoring-config integrity verification
 - Ticket: `BI-014`
