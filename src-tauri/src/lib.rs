@@ -9,6 +9,5 @@ pub mod plugins;
 pub mod scoring;
 pub mod team_policies;
 pub mod storage;
-pub mod team_policies;
 pub mod telemetry;
 pub mod types;
