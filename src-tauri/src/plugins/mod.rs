@@ -1,5 +1,6 @@
 pub mod code_quality;
 pub mod complexity;
+pub mod parser;
 pub mod pr_approval;
 pub mod sanitizer;
 pub mod velocity;

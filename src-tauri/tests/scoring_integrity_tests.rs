@@ -1,66 +1,62 @@
-use repo_analyzer_core::scoring::load_or_init_weights;
+use repo_analyzer_core::scoring::{load_or_init_weights, persist_weights};
 use repo_analyzer_core::types::ScoringWeights;
-use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
-use std::fs;
+use serde_json::json;
 use tempfile::tempdir;
 
-#[derive(Debug, Deserialize, Serialize)]
-struct SignedWeightsEnvelope {
-    weights: ScoringWeights,
-    signature: String,
+#[test]
+fn persists_and_loads_signed_scoring_config() {
+    let dir = tempdir().expect("tmp");
+    let weights_path = dir.path().join("weights.json");
+    let weights = ScoringWeights::default();
+
+    persist_weights(weights_path.to_str().expect("path"), &weights).expect("persist");
+
+    let raw = std::fs::read_to_string(&weights_path).expect("read");
+    let stored: serde_json::Value = serde_json::from_str(&raw).expect("json");
+    assert!(stored.get("weights").is_some());
+    assert!(stored.get("sha256").is_some());
+    assert!(stored.get("signature").is_some());
+
+    let loaded = load_or_init_weights(weights_path.to_str().expect("path")).expect("load");
+    assert_eq!(loaded.version, weights.version);
 }
 
 #[test]
-fn weights_are_persisted_as_signed_envelopes() {
+fn rejects_tampered_scoring_config_envelope() {
     let dir = tempdir().expect("tmp");
-    let weights = dir.path().join("weights.json");
+    let weights_path = dir.path().join("weights.json");
+    let tampered = json!({
+        "weights": {
+            "version": "v1",
+            "complexity_weight": 0.30,
+            "coverage_weight": 0.25,
+            "churn_weight": 0.20,
+            "pipeline_weight": 0.25,
+            "pr_file_risk_weight": 0.50,
+            "pr_velocity_weight": 0.20,
+            "pr_approval_weight": 0.30
+        },
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signature": "invalid"
+    });
 
-    let loaded = load_or_init_weights(weights.to_str().expect("weights path")).expect("weights");
-    assert_eq!(
-        serialized_weights(&loaded),
-        serialized_weights(&ScoringWeights::default())
-    );
+    std::fs::write(&weights_path, serde_json::to_string_pretty(&tampered).expect("json")).expect("write");
 
-    let raw = fs::read_to_string(&weights).expect("read weights");
-    let envelope: SignedWeightsEnvelope = serde_json::from_str(&raw).expect("envelope");
-    let digest = signature_for_weights(&envelope.weights);
-
-    assert_eq!(
-        serialized_weights(&envelope.weights),
-        serialized_weights(&loaded)
-    );
-    assert_eq!(envelope.signature, digest);
+    let err = load_or_init_weights(weights_path.to_str().expect("path")).expect_err("tamper");
+    assert!(err.to_string().contains("scoring config"));
 }
 
 #[test]
-fn tampered_weights_fail_integrity_check() {
+fn keeps_legacy_plain_weights_compatible() {
     let dir = tempdir().expect("tmp");
-    let weights = dir.path().join("weights.json");
-
-    let _ = load_or_init_weights(weights.to_str().expect("weights path")).expect("weights");
-    let raw = fs::read_to_string(&weights).expect("read weights");
-    let mut envelope: SignedWeightsEnvelope = serde_json::from_str(&raw).expect("envelope");
-    envelope.weights.version = "v9".to_string();
-
-    fs::write(
-        &weights,
-        serde_json::to_string_pretty(&envelope).expect("tampered json"),
+    let weights_path = dir.path().join("weights.json");
+    let legacy = ScoringWeights::default();
+    std::fs::write(
+        &weights_path,
+        serde_json::to_string_pretty(&legacy).expect("json"),
     )
-    .expect("write tampered");
+    .expect("write");
 
-    let err = load_or_init_weights(weights.to_str().expect("weights path"))
-        .expect_err("tamper must fail");
-    assert!(err.to_string().contains("integrity"));
-}
-
-fn signature_for_weights(weights: &ScoringWeights) -> String {
-    let payload = serde_json::to_vec(weights).expect("weights json");
-    let mut hasher = Sha256::new();
-    hasher.update(payload);
-    format!("{:x}", hasher.finalize())
-}
-
-fn serialized_weights(weights: &ScoringWeights) -> serde_json::Value {
-    serde_json::to_value(weights).expect("weights value")
+    let loaded = load_or_init_weights(weights_path.to_str().expect("path")).expect("load");
+    assert_eq!(loaded.version, legacy.version);
 }

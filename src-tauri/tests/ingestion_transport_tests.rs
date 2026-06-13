@@ -1,5 +1,6 @@
 use repo_analyzer_core::storage::{DualLayerStore, IngestionBackendConfig, IngestionBackendKind};
 use repo_analyzer_core::types::{CommitIngestionEvent, TelemetryPoint};
+use sled;
 use tempfile::tempdir;
 
 fn sample_event(id: &str) -> CommitIngestionEvent {
@@ -92,8 +93,8 @@ fn badger_sidecar_transport_failure_does_not_persist_raw_event() {
     };
 
     let res = {
-        let store = DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col"))
-            .expect("open");
+        let store =
+            DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col")).expect("open");
         let backend = IngestionBackendConfig {
             kind: IngestionBackendKind::BadgerSidecar,
             strict_badger_required: true,
