@@ -112,9 +112,6 @@ fn signature_for_weights(weights: &ScoringWeights) -> Result<String, AnalyzerErr
     let payload = serde_json::to_vec(weights).map_err(|e| AnalyzerError::Db(e.to_string()))?;
     let mut hasher = Sha256::new();
     hasher.update(payload);
-    Ok(hasher
-        .finalize()
-        .iter()
-        .map(|byte| format!("{:02x}", byte))
-        .collect())
+    let digest = hasher.finalize();
+    Ok(digest.iter().map(|byte| format!("{:02x}", byte)).collect())
 }
