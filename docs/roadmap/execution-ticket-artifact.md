@@ -70,10 +70,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-016`, `F-017`, `F-024`, `F-028`, `F-029`, `F-030`, `F-032` (28)
-- In progress features: `F-031`, `F-018` (2)
-- New backlog: `F-019` … `F-023`, `F-025` … `F-027`, `F-033` (9)
-- Completion ratio: `28 / 39 = 71.8%`
+  `F-008E`, `F-008F`, `F-015`, `F-018`, `F-019`, `F-020`, `F-021`, `F-022`, `F-023`, `F-028`, `F-029`, `F-030`, `F-032` (31)
+- In progress features: `F-031`, `F-016`, `F-017` (3)
+- New backlog: `F-024` … `F-027`, `F-033` (5)
+- Completion ratio: `31 / 39 = 79.5%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
