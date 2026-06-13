@@ -44,6 +44,8 @@ above and must be kept in sync by updating those sources first.
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
+- `F-016` (rich dashboard visualizations): Completed; trend and PR-risk cards now render from the shared helper with deterministic sample and fallback payload coverage.
+- `F-024` (explainability panel): Completed; score decomposition traces now render for committer and PR decisions using the shared quality pulse helper.
 - `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
 
 ### Remaining feature hierarchy
@@ -51,10 +53,7 @@ above and must be kept in sync by updating those sources first.
 1. Control-plane convergence
    - `F-031` frontend structural decomposition
    - `FE-009` command schema and backend contract convergence
-   - `F-032` Playwright frontend behavioral and functional coverage (headless-only)
 2. Dashboard and operational insight
-   - `F-016` rich dashboard visualizations
-   - `F-024` explainability panel
    - `F-025` release baseline management UI
    - `F-026` job observability
 3. Governance and trust
@@ -73,10 +72,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
-- In progress features: `F-031`, `F-016`, `F-017` (3)
-- New backlog: `F-018` … `F-027`, `F-033` (11)
-- Completion ratio: `25 / 39 = 64.1%`
+  `F-008E`, `F-008F`, `F-015`, `F-016`, `F-024`, `F-028`, `F-029`, `F-030`, `F-032` (27)
+- In progress features: `F-031`, `F-017`, `F-018` (3)
+- New backlog: `F-019` … `F-023`, `F-025` … `F-027`, `F-033` (9)
+- Completion ratio: `27 / 39 = 69.2%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -372,7 +371,7 @@ above and must be kept in sync by updating those sources first.
   - Headless Chromium runs verify the visible dashboard shell and core user flows.
   - Browser tests exercise behavioral and functional coverage without relying on headed mode.
 
-### Frontend Delivery Strand (already active)
+### Frontend Delivery Strand (completed milestones)
 
 - Feature `F-015` — Admin UI integration for command set (`FE-007`-like lane)
 - Ticket: `BI-FE-015`
@@ -381,12 +380,22 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-016` — Rich dashboard visualizations
 - Ticket: `BI-FE-015` (continued operational context)
-- Status: In Progress
+- Status: Completed
 - AC: trend/risk views are deterministic under valid and fallback payloads.
 - Readiness checkpoint:
   - Added `dashboard-visuals` trend/risk summary cards and integrated them into `App.tsx`.
   - Added focused unit coverage for sample and custom payload trend/risk rendering.
   - Trend/risk cards remain deterministic across sample and fallback payload inputs.
+
+- Feature `F-024` — Explainability panel
+- Ticket: `BI-FE-018`
+- Status: Completed
+- AC: score decomposition traces remain deterministic across payload refreshes and custom
+  telemetry pulses.
+- Readiness checkpoint:
+  - Added deterministic score decomposition traces for committer and PR decisions.
+  - Rendered explainability cards in the dashboard shell with stable titles and summaries.
+  - Added unit coverage for sample and custom payload trace output.
 
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`
