@@ -1,5 +1,7 @@
 use crate::errors::AnalyzerError;
 use crate::types::{CommitterScore, PrRanking, ScoringWeights};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use hmac::{Hmac, KeyInit, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::{self, OpenOptions};
