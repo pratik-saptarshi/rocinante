@@ -2,6 +2,7 @@ use crate::errors::AnalyzerError;
 use crate::git::changed_files_since_tag;
 use crate::plugins::code_quality::CodeQualityPlugin;
 use crate::plugins::complexity::ComplexityPlugin;
+use crate::plugins::parser::ParserPlugin;
 use crate::plugins::pr_approval::PrApprovalPlugin;
 use crate::plugins::sanitizer::{scrub_metric, MandatorySanitizerPlugin};
 use crate::plugins::velocity::ContributionVelocityPlugin;
@@ -74,6 +75,7 @@ impl Default for Pipeline {
         };
         p.register(CodeQualityPlugin);
         p.register(ComplexityPlugin);
+        p.register(ParserPlugin::new());
         p.register(ContributionVelocityPlugin);
         p.register(PrApprovalPlugin);
         p

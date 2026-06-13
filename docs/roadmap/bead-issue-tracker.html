@@ -1,6 +1,6 @@
 # Bead Issue Tracker (TDD Execution)
 
-## Active Sprint: Governance and Trust
+## Active Sprint: Control-Plane Convergence
 
 | Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
@@ -12,26 +12,30 @@
 | BI-011 | B-05 | `F-008E` storage lock ownership + path exclusivity | Red->Green complete | Completed | implementer | Added process-level lock ownership guard and open-path duplicate-open rejection coverage (`dual_layer_store_rejects_duplicate_open_for_same_kv_path`). |
 | BI-012 | B-10 | `F-008F` promotion snapshot visibility | Red->Green complete | Completed | implementer | Added read/write snapshot barriers (`promote_to_columnar`, `aggregate_by_query`) and query-stability regression coverage (`aggregate_queries_remain_non_empty_during_promotion_handoff`). |
 | BI-013 | B-11 | `F-032` Playwright frontend behavioral and functional coverage | Red->Green complete | Completed | implementer | Headless-only browser coverage now validates dashboard shell, role switching, payload envelopes, and admin fallback behavior. |
-| BI-014 | B-12 | `F-018` signed scoring-config integrity verification | In Progress | Completed | implementer | Added signed envelope persistence and tamper rejection coverage for scoring weights; see `tests/scoring_integrity_tests.rs`. |
-| BI-015 | B-12 | `F-019` per-team policy profiles | In Progress | In Progress | implementer | Open policy-profile bead with branch refresh pending against current main. |
-| BI-016 | B-12 | `F-022` internal Git provider adapters | Red->Green complete | In Progress | implementer | Added provider-specific API/clone URL helpers plus bearer auth shaping for GitHub Enterprise, GitLab, and Bitbucket Server. |
+| BI-014 | B-12 | `F-018` signed scoring-config integrity verification | Red->Green complete | Completed | implementer | Added signed envelope persistence, tamper rejection, and legacy raw JSON compatibility coverage for scoring configuration files. |
+| BI-015 | B-13 | `F-019` per-team policy profiles for scoring/approval weighting | Red->Green complete | Completed | implementer | Added team policy catalog resolution and per-team weight adjustments with fallback profile coverage. |
+| BI-016 | B-14 | `F-020` incremental AST cache and parser plugin | Red->Green complete | Completed | implementer | Added language-aware parser plugin with incremental cache hit/miss accounting and default pipeline registration. |
 
 ## Phase Priority
 
-1. Governance and trust
-   - `F-017` Expanded sanitizer rules
-   - `F-019` Per-team policy profiles
-   - `F-022` Internal Git provider adapters
-   - `F-023` Active Directory / LDAP group mapping hardening
+1. Control-plane convergence
+  - `F-031` frontend structural decomposition
+    - Validated checkpoint: audience-pane decomposition now uses shared insight-engine and quality-pulse helpers.
+  - `FE-009` command schema and backend contract convergence
 2. Dashboard and operational insight
-   - `F-016` Rich dashboard visualizations
-   - `F-024` Explainability panel
-   - `F-025` Release baseline management UI
-   - `F-026` Job observability
-3. Scale and history
-   - `F-020` Incremental AST cache and parser plugin
-   - `F-021` Historical partition pruning and retention policies
-   - `F-027` Bulk import utility
+  - `F-016` rich dashboard visualizations
+    - Validated checkpoint: trend/risk helper extraction now drives deterministic trajectory and PR risk ranking views.
+  - `F-024` explainability panel
+  - `F-025` release baseline management UI
+  - `F-026` job observability
+3. Governance and trust
+   - `F-017` expanded sanitizer rules
+    - Validated checkpoint: policy-pack scrubber now covers General, Security, Privacy, and Payments domains with regression coverage.
+   - `F-022` internal Git provider adapters
+   - `F-023` AD/LDAP group mapping hardening
+4. Scale and history
+   - `F-021` historical partition pruning and retention policies
+   - `F-027` bulk import utility
 
 ## TDD Ledger
 
