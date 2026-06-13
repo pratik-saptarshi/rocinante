@@ -21,6 +21,7 @@ import { useState } from 'react';
 import { readLimits, readPayload } from './dashboard-contract';
 import { buildAdminBridgePayload } from './admin-bridge-contract';
 import { dashboardAudienceHighlights, dashboardFindingGroups, type AuditStatus, type DashboardFinding } from './dashboard-content';
+import { buildExplainabilityTraces } from './dashboard-explainability';
 import { buildDashboardVisuals } from './dashboard-visuals';
 import { buildDashboardInsights, type InsightPayload } from './insight-engine';
 import { buildQualityPulse, type StakeholderAudience } from './domain/quality-pulse';
@@ -136,6 +137,7 @@ function App() {
 
   const { commitRiskCards, bottlenecks, opportunities } = insights;
   const qualityPulse = buildQualityPulse(insights);
+  const explainabilityTraces = buildExplainabilityTraces(qualityPulse);
   const dashboardVisuals = buildDashboardVisuals(insights);
   const audienceActions = qualityPulse.recommendations[audience];
   const audienceRoute = qualityPulse.actionRoutes[audience];
@@ -293,6 +295,30 @@ function App() {
               ))}
             </List>
           </Paper>
+        </Box>
+
+        <Box sx={{ mb: 1.5 }} data-testid="explainability-section">
+          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+            Explainability Panel
+          </Typography>
+          <Stack spacing={1}>
+            {explainabilityTraces.map((trace) => (
+              <Paper key={trace.id} variant="outlined" sx={{ p: 1.1, borderRadius: 2 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.75 }}>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    {trace.title}
+                  </Typography>
+                  <StatusBadge status={trace.status} label={trace.status} />
+                </Stack>
+                <Typography variant="body2" fontWeight={600}>
+                  {trace.summary}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {trace.detail}
+                </Typography>
+              </Paper>
+            ))}
+          </Stack>
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="trend-risk-section">
