@@ -44,6 +44,9 @@ above and must be kept in sync by updating those sources first.
 - `F-008C` (snapshot/replica read model): Completed.
 - `F-008E` (storage lock ownership): Completed.
 - `F-008F` (promotion snapshot visibility): Completed.
+- `F-016` (rich dashboard visualizations): Completed; trend and PR-risk cards now render from the shared helper with deterministic sample and fallback payload coverage.
+- `F-017` (expanded sanitizer rules): Completed; policy packs now scrub General, Security, Privacy, and Payments domains without regressions.
+- `F-024` (explainability panel): Completed; score decomposition traces now render for committer and PR decisions using the shared quality pulse helper.
 - `F-032` (headless Playwright frontend behavioral and functional coverage): Completed.
 
 ### Remaining feature hierarchy
@@ -53,12 +56,9 @@ above and must be kept in sync by updating those sources first.
    - `FE-009` command schema and backend contract convergence
    - `F-032` Playwright frontend behavioral and functional coverage (headless-only)
 2. Dashboard and operational insight
-   - `F-016` rich dashboard visualizations
-   - `F-024` explainability panel
    - `F-025` release baseline management UI
    - `F-026` job observability
 3. Governance and trust
-   - `F-017` expanded sanitizer rules
    - `F-018` signed scoring-config integrity verification
    - `F-019` per-team policy profiles
    - `F-022` internal Git provider adapters
@@ -73,10 +73,10 @@ above and must be kept in sync by updating those sources first.
 ## Roadmap Completion Snapshot (as of 2026-06-11)
 
 - Completed features: `F-001` … `F-014`, `F-008A`, `F-008B`, `F-008C`, `F-008D`,
-  `F-008E`, `F-008F`, `F-015`, `F-028`, `F-029`, `F-030`, `F-032` (25)
-- In progress features: `F-031`, `F-016`, `F-017`, `F-018` (4)
-- New backlog: `F-019` … `F-027`, `F-033` (10)
-- Completion ratio: `25 / 39 = 64.1%`
+  `F-008E`, `F-008F`, `F-015`, `F-016`, `F-017`, `F-024`, `F-028`, `F-029`, `F-030`, `F-032` (28)
+- In progress features: `F-031`, `F-018` (2)
+- New backlog: `F-019` … `F-023`, `F-025` … `F-027`, `F-033` (9)
+- Completion ratio: `28 / 39 = 71.8%`
 - Readiness checkpoint (2026-06-10, branch `feat/bi-ready-queue-observability`):
   - Added queue backpressure observability for async ingestion (`enqueue_rejections`),
     validated by `async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure`
@@ -381,7 +381,7 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-016` — Rich dashboard visualizations
 - Ticket: `BI-FE-015` (continued operational context)
-- Status: In Progress
+- Status: Completed
 - AC: trend/risk views are deterministic under valid and fallback payloads.
 - Readiness checkpoint:
   - Added `dashboard-visuals` trend/risk summary cards and integrated them into `App.tsx`.
@@ -390,7 +390,7 @@ above and must be kept in sync by updating those sources first.
 
 - Feature `F-017` — Expanded sanitizer rules
 - Ticket: `BI-008`
-- Status: In Progress
+- Status: Completed
 - AC: additional policy packs apply without regressions in existing redaction engine tests.
 - Readiness checkpoint:
   - Added `SanitizerPolicyPack` to extend `scrub_text` with domain-specific keys.
@@ -418,6 +418,8 @@ above and must be kept in sync by updating those sources first.
 - `F-028` ↔ `T-009`
 - `F-029` ↔ `T-003`, `T-022`
 - `F-030` ↔ `T-020`
+- `F-016` ↔ `T-014`
+- `F-017` ↔ `T-003`
 - `F-018` ↔ `T-010`
 - `F-031`/`FE-009` ↔ `T-FE-011`, `T-023`
 - `FE-009` command failures and parity ↔ `T-021`, `T-023`
