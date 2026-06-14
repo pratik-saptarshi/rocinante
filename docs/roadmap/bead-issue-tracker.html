@@ -5,50 +5,46 @@
 | Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
 | BI-001 | B-04 | `F-008A` BadgerDB conformance profile gates | Red->Green complete | Completed | implementer | Added `StorageProfile` with strict Badger+DuckDB validation; runtime migration and sidecar transport coverage now complete. |
-| BI-002 | B-05 | `F-008D` raw retention TTL prune semantics | Red->Green complete | Completed | implementer | Added short-term TTL retention and long-term release rollup with queryability coverage (`prunes_old_releases_and_preserves_queryability_by_rollup`). |
-| BI-003 | B-09 | `F-008B` non-bypassable API boundary guards | In Progress | Completed | implementer | Added analytics command-layer coverage in `tests/admin_service_tests.rs`. |
-| BI-004 | B-05 | `F-008C` snapshot/replica read isolation | In Progress | Completed | implementer | Added query-path use of published snapshots for aggregate and committer score reads, plus snapshot-disruption regression test. |
-| BI-005 | B-04 | `F-008A` Badger sidecar adapter | Red->Green complete | Completed | implementer | Runtime and admin ingestion now enforce strict Badger sidecar config; transport normalization and failure-safe coverage are complete. |
-| BI-011 | B-05 | `F-008E` storage lock ownership + path exclusivity | Red->Green complete | Completed | implementer | Added process-level lock ownership guard and open-path duplicate-open rejection coverage (`dual_layer_store_rejects_duplicate_open_for_same_kv_path`). |
-| BI-012 | B-10 | `F-008F` promotion snapshot visibility | Red->Green complete | Completed | implementer | Added read/write snapshot barriers (`promote_to_columnar`, `aggregate_by_query`) and query-stability regression coverage (`aggregate_queries_remain_non_empty_during_promotion_handoff`). |
-| BI-013 | B-11 | `F-032` Playwright frontend behavioral and functional coverage | Red->Green complete | Completed | implementer | Headless-only browser coverage now validates dashboard shell, role switching, payload envelopes, and admin fallback behavior. |
-| BI-014 | B-12 | `F-018` signed scoring-config integrity verification | Red->Green complete | Completed | implementer | Added signed envelope persistence, tamper rejection, and legacy raw JSON compatibility coverage for scoring configuration files. |
+| BI-002 | B-05 | `F-008D` raw retention TTL prune semantics | Red->Green complete | Completed | implementer | Added short-term TTL retention and long-term release rollup with queryability coverage. |
+| BI-003 | B-09 | `F-008B` non-bypassable API boundary guards | Red->Green complete | Completed | implementer | Added analytics command-layer coverage in `tests/admin_service_tests.rs`. |
+| BI-004 | B-05 | `F-008C` snapshot/replica read isolation | Red->Green complete | Completed | implementer | Added query-path use of published snapshots for aggregate and committer score reads. |
+| BI-005 | B-04 | `F-008A` Badger sidecar adapter | Red->Green complete | Completed | implementer | Runtime and admin ingestion now enforce strict Badger sidecar config. |
+| BI-011 | B-05 | `F-008E` storage lock ownership + path exclusivity | Red->Green complete | Completed | implementer | Added process-level lock ownership guard and open-path duplicate-open rejection coverage. |
+| BI-012 | B-10 | `F-008F` promotion snapshot visibility | Red->Green complete | Completed | implementer | Added read/write snapshot barriers and query-stability regression coverage. |
+| BI-013 | B-11 | `F-032` Playwright frontend behavioral and functional coverage | Red->Green complete | Completed | implementer | Headless-only browser coverage validates dashboard shell, role switching, payload envelopes, and admin fallback behavior. |
+| BI-014 | B-12 | `F-018` signed scoring-config integrity verification | Red->Green complete | Completed | implementer | Added signed envelope persistence, tamper rejection, and legacy raw JSON compatibility coverage. |
 | BI-015 | B-13 | `F-019` per-team policy profiles for scoring/approval weighting | Red->Green complete | Completed | implementer | Added team policy catalog resolution and per-team weight adjustments with fallback profile coverage. |
 | BI-016 | B-14 | `F-020` incremental AST cache and parser plugin | Red->Green complete | Completed | implementer | Added language-aware parser plugin with incremental cache hit/miss accounting and default pipeline registration. |
 | BI-017 | B-15 | `F-021` historical partition pruning and retention policies | Red->Green complete | Completed | implementer | Added per-repo partition pruning coverage that preserves historical releases in rollup form while keeping queries queryable. |
 | BI-018 | B-16 | `F-022` internal Git provider adapters | Red->Green complete | Completed | implementer | Added provider-specific repo, PR, clone, and auth helpers for GHE, GitLab, and Bitbucket Server. |
 | BI-019 | B-17 | `F-023` AD/LDAP group mapping hardening | Red->Green complete | Completed | implementer | Added bounded membership cache eviction and alias-cycle rejection coverage for deterministic directory lookups. |
+| BI-020 | B-18 | `F-024` explainability panel | Red->Green complete | Completed | implementer | Added deterministic score decomposition traces and dashboard rendering for committer and PR decisions. |
+| BI-021 | B-19 | `F-031` frontend structural decomposition | Red->Green active | In Progress | implementer | Keeping dashboard content extraction and contract split aligned while the browser suite validates the live shell. |
 
 ## Phase Priority
 
 1. Control-plane convergence
-  - `F-031` frontend structural decomposition
-    - Validated checkpoint: audience-pane decomposition now uses shared insight-engine and quality-pulse helpers.
-  - `FE-009` command schema and backend contract convergence
+   - `F-031` frontend structural decomposition
+   - `FE-009` command schema and backend contract convergence
 2. Dashboard and operational insight
-  - `F-016` rich dashboard visualizations
-    - Validated checkpoint: trend/risk helper extraction now drives deterministic trajectory and PR risk ranking views.
-  - `F-024` explainability panel
-  - `F-025` release baseline management UI
-  - `F-026` job observability
-3. Governance and trust
-   - `F-017` expanded sanitizer rules
-    - Validated checkpoint: policy-pack scrubber now covers General, Security, Privacy, and Payments domains with regression coverage.
-4. Scale and history
+   - `F-025` release baseline management UI
+   - `F-026` job observability
+3. Scale and history
    - `F-027` bulk import utility
+4. Untriaged backlog tail
+   - `F-033`
 
 ## TDD Ledger
 
-- Cycle `TDD-C1`:
-  - Wrote failing tests in `tests/storage_policy_tests.rs` for profile validation and TTL expiration.
-  - Verified red failure (missing symbols / unresolved imports).
-  - Implemented minimal production code (`IngestionEngine`, `StorageProfile`, `RetentionPolicy`) in `src/storage.rs`.
-  - Verified green for `storage_policy_tests`.
-- Cycle `TDD-C2`:
-  - Added failing regression scenarios for lock ownership and promotion-read consistency.
-  - Captured failing signals in `tests/storage_duallayer_tests.rs` (`async_ingestion_engine_applies_retention_before_promotion`,
-    `query_aggregates_stable_while_promotion_runs_via_immutable_snapshot`,
-    `promotes_events_and_reads_aggregates`).
-  - Next cycle is remediation design + deterministic lock/visibility controls.
-- Cycle `TDD-C3`:
-  - Added rollup-aware long-term release retention coverage.
+- Cycle `TDD-C1`: storage profile validation and TTL expiration.
+- Cycle `TDD-C2`: lock ownership and promotion-read consistency.
+- Cycle `TDD-C3`: rollup-aware long-term release retention.
+
+## Current Frontend Phase
+
+- `F-031` frontend structural decomposition: active merge path.
+- `FE-009` command schema and backend contract convergence: active contract parity.
+- `F-016` rich dashboard visualizations: completed.
+- `F-017` expanded sanitizer rules: completed.
+- `F-018` signed scoring-config integrity verification: completed.
+- `F-024` explainability panel: completed.

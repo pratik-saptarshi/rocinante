@@ -28,14 +28,17 @@ export function buildExplainabilityTraces(pulse: QualityPulse): ExplainabilityTr
     {
       id: 'explain-bottleneck',
       title: 'Top Bottleneck',
-      summary: pulse.topBottleneckName,
+      summary:
+        pulse.bottleneckBuckets.critical > 0 || pulse.bottleneckBuckets.high > 0
+          ? pulse.topBottleneckName
+          : 'No severe bottleneck',
       detail: pulse.bottleneckBuckets.critical > 0 ? 'Critical stage limits delivery confidence.' : 'No critical stage is currently suppressing flow.',
       status: pulse.bottleneckBuckets.critical > 0 ? 'bad' : 'medium'
     },
     {
       id: 'explain-opportunity',
       title: 'Opportunity Lift',
-      summary: pulse.topOpportunityTitle,
+      summary: pulse.opportunityCount > 0 ? pulse.topOpportunityTitle : 'No opportunity signal',
       detail:
         pulse.opportunityCount > 0
           ? `${pulse.opportunityCount} opportunity signal(s) are boosting the score.`

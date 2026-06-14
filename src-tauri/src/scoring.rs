@@ -1,7 +1,5 @@
 use crate::errors::AnalyzerError;
 use crate::types::{CommitterScore, PrRanking, ScoringWeights};
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use hmac::{Hmac, KeyInit, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs::{self, OpenOptions};
@@ -114,5 +112,6 @@ fn signature_for_weights(weights: &ScoringWeights) -> Result<String, AnalyzerErr
     let payload = serde_json::to_vec(weights).map_err(|e| AnalyzerError::Db(e.to_string()))?;
     let mut hasher = Sha256::new();
     hasher.update(payload);
-    Ok(format!("{:x}", hasher.finalize()))
+    let digest = hasher.finalize();
+    Ok(digest.iter().map(|byte| format!("{:02x}", byte)).collect())
 }

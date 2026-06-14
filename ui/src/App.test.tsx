@@ -2,34 +2,61 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, it } from 'vitest';
 import App from './App';
 
+describe('dashboard explainability panel', () => {
+  it('renders deterministic decomposition traces from sample insights', () => {
+    render(<App />);
+
+    const explainabilitySection = screen.getByTestId('explainability-section');
+
+    expect(within(explainabilitySection).getByText(/Explainability Panel/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Score Decomposition/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Top Risk Commit/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Top Bottleneck/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Opportunity Lift/i)).toBeInTheDocument();
+  });
+
+  it('updates explainability traces when payload changes', () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: {
+        value: JSON.stringify({
+          commits: [
+            {
+              id: 'safe-1',
+              files: 1,
+              changedLines: 8,
+              dependencyChanges: 0,
+              testTouch: true,
+              failedAutomations: 0
+            }
+          ],
+          stages: [{ name: 'scan', queueDepth: 1, throughput: 20, avgLatencyMs: 300 }],
+          signals: [
+            { id: 'op-1', area: 'infra', title: 'Reduce release coupling', impact: 5, effort: 3, confidence: 0.8 }
+          ]
+        })
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    const explainabilitySection = screen.getByTestId('explainability-section');
+    expect(within(explainabilitySection).getByText(/Overall score 100\/100/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/safe-1/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Reduce release coupling/i)).toBeInTheDocument();
+  });
+});
+
 describe('Optimization sidebar layout', () => {
   it('renders key sidepanel sections and primary action', () => {
     render(<App />);
 
-    expect(
-      screen.getByText(/The Web Companion: Optimization Hub/i)
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByRole('button', { name: /Run Full Audit/i })
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText(/WCAG 2.1\/2.2 AA Accessibility Audit/i)
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText(/SEO, GEO & AEO Performance/i)
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText(/Security & Drupal Review/i)
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText(/Page Performance Metrics/i)
-    ).toBeInTheDocument();
-
+    expect(screen.getByText(/The Web Companion: Optimization Hub/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Run Full Audit/i })).toBeInTheDocument();
+    expect(screen.getByText(/WCAG 2.1\/2.2 AA Accessibility Audit/i)).toBeInTheDocument();
+    expect(screen.getByText(/SEO, GEO & AEO Performance/i)).toBeInTheDocument();
+    expect(screen.getByText(/Security & Drupal Review/i)).toBeInTheDocument();
+    expect(screen.getByText(/Page Performance Metrics/i)).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Current Page/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Site-Wide/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Run Full Audit/i)).toBeInTheDocument();
@@ -156,9 +183,13 @@ describe('Optimization sidebar layout', () => {
 
     const jsonInput = screen.getByLabelText(/Telemetry payload JSON/i);
     const customPayload = {
-      commits: [{ id: 'custom-999', files: 25, changedLines: 800, dependencyChanges: 1, testTouch: false, failedAutomations: 1 }],
+      commits: [
+        { id: 'custom-999', files: 25, changedLines: 800, dependencyChanges: 1, testTouch: false, failedAutomations: 1 }
+      ],
       stages: [{ name: 'build', queueDepth: 8, throughput: 8, avgLatencyMs: 1500 }],
-      signals: [{ id: 'custom-op-1', area: 'infra', title: 'Cache invalidation map', impact: 5, effort: 2, confidence: 0.9 }]
+      signals: [
+        { id: 'custom-op-1', area: 'infra', title: 'Cache invalidation map', impact: 5, effort: 2, confidence: 0.9 }
+      ]
     };
 
     fireEvent.change(jsonInput, { target: { value: JSON.stringify(customPayload) } });
@@ -227,7 +258,9 @@ describe('Optimization sidebar layout', () => {
 
       const envelopePayload = {
         payload: {
-          commits: [{ id: 'safe-001', files: 1, changedLines: 40, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+          commits: [
+            { id: 'safe-001', files: 1, changedLines: 40, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }
+          ],
           stages: [{ name: 'review', queueDepth: 1, throughput: 20, avgLatencyMs: 300 }],
           signals: [{ id: 'op-1', area: 'tests', title: 'Trim flaky tests', impact: 4, effort: 6, confidence: 0.7 }]
         },
@@ -239,7 +272,9 @@ describe('Optimization sidebar layout', () => {
         }
       };
 
-      fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), { target: { value: JSON.stringify(envelopePayload) } });
+      fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+        target: { value: JSON.stringify(envelopePayload) }
+      });
       fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
 
       expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');

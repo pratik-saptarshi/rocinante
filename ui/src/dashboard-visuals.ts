@@ -65,7 +65,7 @@ export function buildDashboardVisuals(insights: DashboardInsights): DashboardVis
         id: 'bottleneck-pressure',
         label: 'Bottleneck Pressure',
         value: `${pressureStages} pressured stages`,
-        tone: topStage ? topStage.status : 'good',
+        tone: topStage ? (topStage.status === 'critical' ? 'bad' : topStage.status === 'high' ? 'medium' : 'good') : 'good',
         rationale: topStage
           ? `Highest-pressure stage ${topStage.name} needs ${topStage.status === 'critical' ? 'immediate' : 'near-term'} attention.`
           : 'The current sample window has no pressured stages.'
