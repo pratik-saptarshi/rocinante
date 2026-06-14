@@ -22,8 +22,20 @@
   - `tests/scoring_audit_tests.rs`
 - `T-007` Baseline delta scoring normalization:
   - `tests/baseline_delta_tests.rs`
+- `T-010` Signed scoring config verification tests:
+  - `tests/scoring_integrity_tests.rs`
 - `T-011` AD/LDAP provider behavior tests with mocked directory responses:
   - `tests/onprem_and_errors_tests.rs`
+- `T-012` AST plugin determinism tests across supported languages:
+  - `tests/parser_plugin_tests.rs`
+- `T-013` Historical retention/partition correctness tests:
+  - `tests/storage_duallayer_tests.rs`
+- `T-025` Internal Git provider adapter tests:
+  - `tests/git_provider_tests.rs`
+  - `tests/onprem_and_errors_tests.rs`
+- `T-026` Explainability panel and decision trace rendering tests:
+  - `ui/src/dashboard-explainability.test.ts`
+  - `ui/src/App.test.tsx`
 
 ## Feature-to-Test Matrix
 
@@ -34,10 +46,17 @@
 - `F-011/F-012` -> `T-007`, `T-006`
 - `F-014` -> add integration tests `T-008` (pending)
 - `F-008A/F-008B/F-008C/F-008D/F-008E/F-008F` -> `T-015`, `T-016`, `T-017`, `T-018`, `T-019`, `T-020`
+- `F-018` -> `T-010`
+- `F-019` -> `T-024`
 - `F-020` -> `T-012`
 - `F-021` -> `T-013`
 - `F-022` -> `T-025`
 - `F-023` -> `T-011`
+- `F-024` -> `T-026`
+- `F-025` -> `T-027`
+- `F-026` -> `T-014`, `T-028`
+- `F-031` / `FE-009` -> `T-FE-011`, `T-023`
+- `FE-009` command failures and parity -> `T-021`, `T-023`
 
 ## In-Progress Test Work
 
@@ -47,46 +66,20 @@
 - `T-009` Async ingestion load tests:
   - Saturate bounded ring buffer and verify no ingestion deadlocks.
   - Measure promotion lag under sustained commit bursts.
-- `T-019` Storage lock ownership and path exclusivity tests:
-  - Force concurrent raw+analytics path opens and assert one owning writer.
-  - Assert lock-safe retry/fallback behavior in async retention + promotion.
-- `T-020` Promotion snapshot visibility and consistency tests:
-  - Assert `promotes_events_and_reads_aggregates` returns promoted aggregate counts.
-  - Assert analytics reads do not observe empty snapshots during handoff.
+- `T-FE-011` Frontend contract safety tests for `F-031` / `FE-009`.
 
 ## Planned New Tests
 
-- `T-010` Signed scoring config verification tests (`F-018`).
-- `T-025` Internal Git provider adapter tests (`F-022`):
-  - `tests/git_provider_tests.rs`
-  - `tests/onprem_and_errors_tests.rs`
-- `T-012` AST plugin determinism tests across supported languages (`F-020`):
-  - `tests/parser_plugin_tests.rs`
-  - `tests/engine_tests.rs`
-- `T-013` Historical retention/partition correctness tests (`F-021`):
-  - `tests/storage_duallayer_tests.rs`
-  - `prunes_old_releases_and_preserves_queryability_by_rollup`
-  - `prunes_release_partitions_per_repo_without_cross_repo_drift`
 - `T-014` End-to-end dashboard query performance regression tests (`F-016`, `F-026`).
-- `T-015` Storage boundary conformance tests:
-  - Reject analytics queries against ingestion API.
-  - Reject ingestion writes against analytics API.
-  - Validate Badger-only ingest path and DuckDB-only analytic path.
-- `T-016` Retention lifecycle tests:
-  - Verify raw ingestion TTL prune/roll-up execution windows.
-  - Verify long-term compressed release marts remain queryable.
-- `T-017` Snapshot isolation tests for analytics:
-  - Ensure read queries run against immutable snapshot while promotion proceeds.
-  - Ensure no query lock contention during ingestion bursts.
-- `T-018` Ingestion concurrency tests:
-  - Validate sharded key strategy and localized write contention behavior.
-  - Validate sustained append throughput under parallel producers.
-
-## Definition of Done (Testing)
-
-- Unit tests pass locally via:
-  - `cargo test --manifest-path src-tauri/Cargo.toml`
-- New feature includes at least:
-  - One positive-path test.
-  - One failure/authorization or boundary test.
-- Security-sensitive features include explicit RBAC + sanitization assertions.
+- `T-015` Storage boundary conformance tests.
+- `T-016` Badger sidecar transport conformance tests.
+- `T-017` Snapshot/replica isolation tests.
+- `T-018` Retention pruning tests.
+- `T-019` Storage ownership and path exclusivity tests.
+- `T-020` Promotion visibility tests.
+- `T-021` Command parse/dispatch error envelope tests.
+- `T-022` UTF-safe sanitizer regression corpus.
+- `T-023` Nested payload and fallback contract tests.
+- `T-024` Team policy profile tests (`F-019`).
+- `T-027` Release baseline management UI tests (`F-025`).
+- `T-028` Job observability and queue-depth dashboard tests (`F-026`).

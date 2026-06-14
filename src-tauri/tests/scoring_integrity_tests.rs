@@ -1,7 +1,15 @@
 use repo_analyzer_core::scoring::{load_or_init_weights, persist_weights};
 use repo_analyzer_core::types::ScoringWeights;
-use serde_json::json;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::fs;
 use tempfile::tempdir;
+
+#[derive(Debug, Deserialize, Serialize)]
+struct SignedWeightsEnvelope {
+    weights: ScoringWeights,
+    signature: String,
+}
 
 #[test]
 fn persists_and_loads_signed_scoring_config() {
@@ -11,11 +19,10 @@ fn persists_and_loads_signed_scoring_config() {
 
     persist_weights(weights_path.to_str().expect("path"), &weights).expect("persist");
 
-    let raw = std::fs::read_to_string(&weights_path).expect("read");
-    let stored: serde_json::Value = serde_json::from_str(&raw).expect("json");
-    assert!(stored.get("weights").is_some());
-    assert!(stored.get("sha256").is_some());
-    assert!(stored.get("signature").is_some());
+    let raw = fs::read_to_string(&weights_path).expect("read");
+    let stored: SignedWeightsEnvelope = serde_json::from_str(&raw).expect("json");
+    assert_eq!(stored.signature, signature_for_weights(&stored.weights));
+    assert_eq!(stored.weights.version, weights.version);
 
     let loaded = load_or_init_weights(weights_path.to_str().expect("path")).expect("load");
     assert_eq!(loaded.version, weights.version);
@@ -25,20 +32,19 @@ fn persists_and_loads_signed_scoring_config() {
 fn rejects_tampered_scoring_config_envelope() {
     let dir = tempdir().expect("tmp");
     let weights_path = dir.path().join("weights.json");
-    let tampered = json!({
-        "weights": {
-            "version": "v1",
-            "complexity_weight": 0.30,
-            "coverage_weight": 0.25,
-            "churn_weight": 0.20,
-            "pipeline_weight": 0.25,
-            "pr_file_risk_weight": 0.50,
-            "pr_velocity_weight": 0.20,
-            "pr_approval_weight": 0.30
+    let tampered = SignedWeightsEnvelope {
+        weights: ScoringWeights {
+            version: "v1".to_string(),
+            complexity_weight: 0.30,
+            coverage_weight: 0.25,
+            churn_weight: 0.20,
+            pipeline_weight: 0.25,
+            pr_file_risk_weight: 0.50,
+            pr_velocity_weight: 0.20,
+            pr_approval_weight: 0.30,
         },
-        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-        "signature": "invalid"
-    });
+        signature: "invalid".to_string(),
+    };
 
     std::fs::write(
         &weights_path,
@@ -47,7 +53,7 @@ fn rejects_tampered_scoring_config_envelope() {
     .expect("write");
 
     let err = load_or_init_weights(weights_path.to_str().expect("path")).expect_err("tamper");
-    assert!(err.to_string().contains("scoring config"));
+    assert!(err.to_string().contains("integrity"));
 }
 
 #[test]
@@ -63,4 +69,15 @@ fn keeps_legacy_plain_weights_compatible() {
 
     let loaded = load_or_init_weights(weights_path.to_str().expect("path")).expect("load");
     assert_eq!(loaded.version, legacy.version);
+}
+
+fn signature_for_weights(weights: &ScoringWeights) -> String {
+    let payload = serde_json::to_vec(weights).expect("weights json");
+    let mut hasher = Sha256::new();
+    hasher.update(payload);
+    hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect()
 }
