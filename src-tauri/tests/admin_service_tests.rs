@@ -1,5 +1,6 @@
 use repo_analyzer_core::admin;
 use repo_analyzer_core::auth::issue_test_token;
+use repo_analyzer_core::risk_contract::{PrRiskDecision, PrRiskSchema};
 use repo_analyzer_core::storage::{IngestionBackendConfig, IngestionBackendKind};
 use repo_analyzer_core::types::{
     AdminQuery, CommitIngestionEvent, PrCandidate, ScoringWeights, TelemetryPoint,
@@ -217,4 +218,73 @@ fn admin_services_analytics_commands_require_analytics_route() {
     )
     .expect("rank prs");
     assert_eq!(ranked.len(), 1);
+}
+
+#[test]
+fn admin_services_evaluate_pr_risk_using_the_default_contract() {
+    let token = issue_test_token("alice", &["admin"], 3600);
+    let candidate = PrCandidate {
+        pr_id: "pr-9".to_string(),
+        repo_name: "repo-a".to_string(),
+        author: "alice".to_string(),
+        release: "v1.0.0".to_string(),
+        file_risk: 0.92,
+        author_velocity: 0.35,
+        approval_fidelity: 0.45,
+    };
+
+    let evaluation = admin::evaluate_pr_risk(&token, candidate).expect("evaluate pr risk");
+
+    assert_eq!(evaluation.schema_version, "risk-v1");
+    assert_eq!(evaluation.decision, PrRiskDecision::Block);
+    assert!(evaluation
+        .reason_codes
+        .iter()
+        .any(|reason| reason.starts_with("file_risk=")));
+}
+
+#[test]
+fn admin_services_evaluate_pr_risk_with_injected_schema() {
+    let token = issue_test_token("alice", &["admin"], 3600);
+    let candidate = PrCandidate {
+        pr_id: "pr-10".to_string(),
+        repo_name: "repo-a".to_string(),
+        author: "alice".to_string(),
+        release: "v1.0.0".to_string(),
+        file_risk: 0.92,
+        author_velocity: 0.35,
+        approval_fidelity: 0.45,
+    };
+    let schema = PrRiskSchema {
+        version: "risk-custom".to_string(),
+        file_risk_weight: 0.0,
+        velocity_weight: 0.0,
+        approval_weight: 0.0,
+        review_threshold: 0.10,
+        block_threshold: 0.20,
+    };
+
+    let evaluation =
+        admin::evaluate_pr_risk_with_schema(&token, candidate, schema).expect("evaluate pr risk");
+
+    assert_eq!(evaluation.schema_version, "risk-custom");
+    assert_eq!(evaluation.decision, PrRiskDecision::Allow);
+}
+
+#[test]
+fn admin_services_reject_non_admin_pr_risk_evaluation() {
+    let token = issue_test_token("bob", &["reader"], 3600);
+    let candidate = PrCandidate {
+        pr_id: "pr-11".to_string(),
+        repo_name: "repo-a".to_string(),
+        author: "bob".to_string(),
+        release: "v1.0.0".to_string(),
+        file_risk: 0.4,
+        author_velocity: 0.4,
+        approval_fidelity: 0.4,
+    };
+
+    let err = admin::evaluate_pr_risk(&token, candidate).expect_err("non-admin rejected");
+
+    assert!(matches!(err, repo_analyzer_core::errors::AnalyzerError::PermissionDenied(_)));
 }

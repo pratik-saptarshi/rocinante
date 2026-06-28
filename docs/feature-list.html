@@ -1,0 +1,44 @@
+# Feature List
+
+This backlog covers two implementation tracks:
+
+1. HighStakes-style AI quality checking.
+2. Loop-engineering safety controls and loop discipline.
+
+## Prioritized Implementation Order
+
+1. Shared planning and traceability.
+2. HighStakes-style quality checks.
+3. Loop-engineering controls.
+4. Cross-track convergence and release hardening.
+
+## Backlog
+
+| Priority | Epic | Feature | Capability | Function | Task | Acceptance Criteria | TDD State | Bead Issue | Status |
+|---|---|---|---|---|---|---|---|---|---|
+| P0 | EP-00 Shared planning | F-000 Artifact scaffolding | C-000 Single-source roadmap | FN-000 Docs skeleton | TK-000 Create `docs/feature-list.html` and `docs/product-roadmap.html` | Both docs exist under `/docs`, use `.html`, explain the priority order, and link back to the bead tracker and test plan. | Red | BI-020 | Planned |
+| P1 | EP-01 AI quality checking | F-010 Risk contract | C-010 Versioned tier schema | FN-010 Contract serializer | TK-010 Add risk schema and tier tests | Risk output is deterministic, versioned, and includes tier and review requirement fields for the same input every time. | Red | BI-021 | Planned |
+| P1 | EP-01 AI quality checking | F-011 File and PR risk scoring | C-011 Static plus history signal model | FN-011 PR risk evaluator | TK-011 Add scoring and fallback tests | Highest-risk file determines the PR tier, missing files fall back safely, and circuit-breaker signals are surfaced. | Red | BI-022 | Planned |
+| P1 | EP-01 AI quality checking | F-012 CI gate, command surface, and comment output | C-012 Workflow and command contract | FN-012 Gate runner | TK-012 Add workflow contract tests | CI posts a stable risk summary, blocks high and critical merges, exposes the risk command contract, and preserves human-readable review requirements. | Red | BI-023 | Planned |
+| P2 | EP-01 AI quality checking | F-013 Incident and annotation feedback | C-013 Manual overrides and cache | FN-013 Incident store | TK-013 Add override precedence tests | Recorded incidents and annotations can raise risk, invalidate cached assessments, and remain auditable. | Red | BI-024 | Planned |
+| P1 | EP-01 AI quality checking | F-034 Admin PR risk command surface and risk-v1 contract convergence | C-014 Backend contract convergence | FN-014 Tauri command surface | TK-014 Add `evaluate_pr_risk` command tests | Admin callers can evaluate PR risk through the command surface with deterministic risk-v1 evaluation and admin-only access. | Green | BI-030 | Completed |
+| P1 | EP-01 AI quality checking | F-035 PR risk service abstraction and schema injection | C-015 Configured risk evaluator | FN-015 Injected policy source | TK-015 Add injected-schema tests | PR risk evaluation accepts injected schema/config, the command layer stays thin, and alternate thresholds can be tested without code changes. | Green | BI-031 | Completed |
+| P2 | EP-01 AI quality checking | F-036 Admin PR risk command boundary coverage | C-016 End-to-end command invocation | FN-016 Tauri bridge exerciser | TK-016 Add command-surface integration tests | Admin callers can evaluate PR risk through the command surface with deterministic risk-v1 evaluation and admin-only access. | Green | BI-032 | Completed |
+| P2 | EP-01 AI quality checking | F-037 Admin PR risk browser bridge e2e validation | C-017 Browser bridge contract | FN-017 UI invoke harness | TK-017 Add browser e2e tests | Browser bridge invocation reaches the Tauri command and reports admin allow/deny outcomes once pnpm is available. | Green | BI-033 | Completed |
+| P2 | EP-01 AI quality checking | F-024 Explainability panel | C-018 Explainability trace renderer | FN-018 Trace decomposition view | TK-018 Add explainability trace assertions | Dashboard render shows score decomposition, risk trajectory, top bottleneck, and opportunity lift traces from the shared quality pulse, and the App test asserts the section remains visible. | Green | BI-034 | Completed |
+| P2 | EP-01 AI quality checking | F-026 Job observability | C-019 Stage telemetry renderer | FN-019 Queue-lag dashboard | TK-019 Add job observability tests | Dashboard render shows queue depth, worker throughput, and promotion lag metrics from shared stage telemetry, and the App test asserts the observability section remains visible. | Red | BI-035 | In Progress |
+| P1 | EP-01 AI quality checking | F-025 Release baseline management UI | C-027 Baseline query/reseed controls | FN-027 Baseline selector and reseed bridge | TK-027 Add baseline query/reseed tests | Dashboard render shows the current release baseline, the bridge can query and reseed the value, and the baseline controls stay visible in the UI. | Red | BI-039 | In Progress |
+| P1 | EP-01 AI quality checking | F-038 Admin bridge async settlement hardening | C-024 Admin bridge settlement contract | FN-024 Bridge timeout and cancellation guard | TK-024 Add bridge settlement tests | `runAdminBridge` must not leave unresolved async work; clicks surface bounded timeout or cancellation errors and targeted App tests exit cleanly. | Green | BI-036 | Completed |
+| P1 | EP-01 AI quality checking | F-039 Deterministic admin bridge mock seam | C-025 Mockable runtime seam | FN-025 Runtime adapter and mock hook | TK-025 Add deterministic bridge seam tests | App tests should use a local runtime mock seam instead of mutating `globalThis.__TAURI__`, keeping targeted Vitest runs deterministic and isolated. | Green | BI-037 | Completed |
+| P1 | EP-00 Shared planning | F-040 Vitest and Playwright runner boundary | C-026 Test runner separation | FN-026 Unit/e2e config boundary | TK-026 Exclude Playwright specs from Vitest | Vitest should include only `src/**/*.{test,spec}.{ts,tsx}` while Playwright keeps owning `e2e/**`, so `npm --prefix ui test` and `npm --prefix ui run test:e2e` stay separate. | Green | BI-038 | Completed |
+| P1 | EP-02 Loop-engineering controls | F-020 Structured triage output | C-020 Report-only loop input | FN-020 Triage formatter | TK-020 Add triage report tests | Triage output has High-Priority, Watch, Noise, and State Updates sections, with no architectural invention during triage. | Red | BI-025 | Planned |
+| P1 | EP-02 Loop-engineering controls | F-021 Budget guard and kill switch | C-021 Cost ceiling enforcement | FN-021 Budget checker | TK-021 Add cap and exit tests | Report-only mode starts at 80 percent of budget, exits at 100 percent, and respects pause flags without spawning work. | Red | BI-026 | Planned |
+| P1 | EP-02 Loop-engineering controls | F-022 Maker/checker verifier | C-022 Separate approval role | FN-022 Verifier contract | TK-022 Add reject-by-default tests | A distinct verifier runs tests and can only approve with evidence; the implementer cannot self-approve. | Red | BI-027 | Planned |
+| P2 | EP-02 Loop-engineering controls | F-023 Minimal-fix and escalation | C-023 One-problem diffs | FN-023 Fix proposal loop | TK-023 Add attempt-cap tests | Each remediation addresses one issue, retries are capped, and escalation is forced with full context after the cap. | Red | BI-028 | Planned |
+| P2 | EP-03 Convergence | F-030 Shared release gates | C-030 Unified rollout | FN-030 Phase coordinator | TK-030 Add roadmap coherence tests | Both tracks converge behind a single release gate with explicit exit criteria and no dangling tasks. | Red | BI-029 | Planned |
+
+## Notes
+
+- The HighStakes-style track is prioritized first because it reuses rocinante's existing scoring, review, and CI surfaces.
+- The loop-engineering track follows because it depends on stable decision artifacts, budget rules, and verification boundaries.
+- No feature advances to implementation without a red test, a minimal green fix, and a verified acceptance criterion.

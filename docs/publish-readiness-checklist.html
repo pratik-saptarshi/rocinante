@@ -3,6 +3,15 @@
 ## 1) Purpose and governance
 
 This checklist is the required gating artifact for **remote publication to `origin/main`**.
+
+Current planning artifacts that must stay in sync:
+
+- `docs/feature-list.html`
+- `docs/product-roadmap.html`
+- `docs/roadmap/bead-issue-tracker.html`
+- `docs/roadmap/feature-backlog.html`
+- `docs/roadmap/test-plan.html`
+- `codemap.md`
 It is grounded in:
 - `docs/roadmap/feature-backlog.html`
 - `docs/roadmap/bead-issue-tracker.html`
@@ -51,7 +60,7 @@ Execution single-source remains authoritative | [x] | roadmap and beads files pr
 Current roadmap completion ratio (grounded in `docs/roadmap/execution-ticket-artifact.md`):
 - Completed features: `14 / 37 = 37.8%` (as documented)
 - In-progress features remain active but under implementation:
-  - `F-008A`, `F-008B`, `F-008C`, `F-008D`, `F-028`, `F-029`, `F-030`, `F-031`, `F-015`, `F-016`, `F-017`
+  - `F-031`, `F-016`, `F-026`, `F-017`, `F-025`
 
 No publish should proceed if required security findings mapped in
 `docs/roadmap/plan-review-traceability.html` are unaddressed.
@@ -61,9 +70,24 @@ No publish should proceed if required security findings mapped in
 1) Fill all open `[ ]` as `[x]` with evidence.
 2) Commit all docs/code changes with conventional commit message.
 3) Push branch to `origin`.
+   - The `release-please` workflow on `main` owns the `src-tauri` changelog and release PR generation using `GITHUB_TOKEN`.
 4) Merge to `main` only after required CI workflows pass:
    - `CI`
    - `Security`
    - `Dependency Review`
 
 Approval criteria: all security and quality gates must be `[x]` before merge.
+
+Current implementation checkpoint: the HighStakes-style PR risk contract is
+implemented in `src-tauri/src/risk_contract.rs` and covered by
+`src-tauri/tests/pr_risk_contract_tests.rs`, the admin command surface is
+wired in `src-tauri/src/admin.rs` / `src-tauri/src/main.rs` with coverage in
+`src-tauri/tests/admin_service_tests.rs` and `src-tauri/tests/tauri_command_tests.rs`,
+the release-baseline flow is split across `src-tauri/src/app_support.rs`,
+`src-tauri/src/storage.rs`, `src-tauri/src/tauri_commands.rs`, and the focused
+`src-tauri/tests/release_baseline_*` coverage, browser smoke is authored in
+`ui/e2e/app.spec.ts` and React-level bridge coverage is authored in
+`ui/src/App.test.tsx`, explainability panel coverage is also asserted there,
+job observability coverage is authored in `ui/src/App.test.tsx` but remains
+blocked from execution until the frontend toolchain is available, and browser
+e2e validation remains blocked until `pnpm` is available in the environment.

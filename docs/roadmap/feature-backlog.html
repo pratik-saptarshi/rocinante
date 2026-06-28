@@ -54,27 +54,38 @@
 - `F-023` Active Directory / LDAP group mapping hardening and cache strategy:
   - Directory lookups now use a bounded membership cache with deterministic eviction.
   - Group alias resolution rejects cycles and keeps membership checks stable under repeated access.
+- `F-024` Explainability panel: score decomposition traces per committer and PR, now rendered and tested in the dashboard.
 - `F-011` Baseline complexity seed table and delta-based committer scoring normalization.
 - `F-012` Isolated scoring module with versioned algorithm constant and deterministic weight configuration.
 - `F-013` Audit-logged scoring weight changes with admin-only authorization.
 - `F-014` Tauri command surface wired for scan, ingest, promote, aggregate query, scoring, PR ranking, and weight updates.
 - `F-015` Admin UI integration for newly wired Tauri commands (`ingest_event`, `promote_lifecycle`, `query_aggregates`, `committer_scores`, `rank_prs`, `update_scoring_weights`).
 - `F-032` Playwright frontend behavioral and functional coverage suite (headless-only).
+- `F-034` Admin PR risk command surface and risk-v1 contract convergence, including the deterministic risk contract, admin-only command surface, and block/allow parity coverage.
+- `F-035` PR risk service abstraction and schema injection for the admin risk evaluator.
+- `F-036` Admin PR risk command boundary coverage through the Tauri bridge and command-surface integration tests.
+- `F-038` Admin bridge async settlement hardening for the App slice (timeout, cancellation, and readable errors).
+- `F-039` Deterministic admin bridge mock seam for App tests (stop mutating `globalThis.__TAURI__` directly).
 
 ## In Progress
 
+- `F-025` Release baseline management UI (query current baseline and reseed values from the dashboard, with an extracted baseline persistence adapter, registered-handler proof, and split handler/storage tests in progress).
 - `F-031` Frontend structural decomposition and dashboard content extraction, including the validated audience-pane / quality-pulse helper split.
 - `F-016` Rich dashboard visualizations for trend lines and PR risk ranking rationale, including the extracted trend/risk helper module.
+- `F-026` Job observability: queue depth, worker throughput, promotion lag metrics, now surfaced in the dashboard with an active UI test slice.
 - `F-017` Expanded sanitizer detection rules and policy packs per compliance domain, including the validated pack-aware redaction helper.
-- `F-023` Active Directory / LDAP group mapping hardening and cache strategy, including bounded cache eviction and alias-cycle rejection coverage.
 
 ## New Backlog
 
-- `F-024` Explainability panel: score decomposition traces per committer and PR.
-- `F-025` Release baseline management UI (re-seed baselines and compare windows).
-- `F-026` Job observability: queue depth, worker throughput, promotion lag metrics.
 - `F-027` Bulk import utility for historical commits and prior telemetry migration.
 - `F-033` Reserved for next ready frontend or backend readiness slice.
+
+## Cross-Track Planning References
+
+- `docs/feature-list.html` is the task-level backlog for the HighStakes-style and loop-engineering tracks.
+- `docs/product-roadmap.html` is the phase/stage sequencing and release gate document for those tracks.
+- `docs/roadmap/bead-issue-tracker.html` remains the execution ledger for the current implementation queue.
+- Roundtable follow-up beads `BI-040..BI-043` track the release-baseline command, handler, storage, and roadmap hygiene concerns uncovered during the current slice.
 
 ## Review Integration (plan-review-integrator)
 

@@ -223,6 +223,11 @@ pub struct DualLayerStore {
     latest_snapshot_id: Arc<AtomicU64>,
 }
 
+#[derive(Clone)]
+pub struct BaselineStore {
+    store: DualLayerStore,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LifecycleStats {
     pub promoted_events: usize,
@@ -687,6 +692,46 @@ impl DualLayerStore {
         self.promote_to_columnar_no_lock()
     }
 
+    pub fn read_release_baseline(&self, repo_name: &str) -> Result<Option<f64>, AnalyzerError> {
+        let conn =
+            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT baseline_complexity FROM repo_baseline WHERE repo_name = ?1 LIMIT 1",
+            )
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let mut rows = stmt
+            .query(params![repo_name])
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        if let Some(row) = rows.next().map_err(|e| AnalyzerError::Db(e.to_string()))? {
+            let baseline = row
+                .get::<_, f64>(0)
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            Ok(Some(baseline))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn reseed_release_baseline(
+        &self,
+        repo_name: &str,
+        baseline_complexity: f64,
+    ) -> Result<f64, AnalyzerError> {
+        let conn =
+            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        conn.execute(
+            "
+            INSERT INTO repo_baseline (repo_name, baseline_complexity)
+            VALUES (?1, ?2)
+            ON CONFLICT(repo_name) DO UPDATE SET baseline_complexity = excluded.baseline_complexity
+            ",
+            params![repo_name, baseline_complexity],
+        )
+        .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        Ok(baseline_complexity)
+    }
+
     fn promote_to_columnar_no_lock(&self) -> Result<LifecycleStats, AnalyzerError> {
         let promoted = {
             let conn = Connection::open(&self.columnar_path)
@@ -1130,6 +1175,27 @@ impl DualLayerStore {
         }
         out.sort_by(|a, b| b.rank_score.total_cmp(&a.rank_score));
         Ok(out)
+    }
+}
+
+impl BaselineStore {
+    pub fn open(kv_path: &str, columnar_path: &str) -> Result<Self, AnalyzerError> {
+        Ok(Self {
+            store: DualLayerStore::open(kv_path, columnar_path)?,
+        })
+    }
+
+    pub fn read_release_baseline(&self, repo_name: &str) -> Result<Option<f64>, AnalyzerError> {
+        self.store.read_release_baseline(repo_name)
+    }
+
+    pub fn reseed_release_baseline(
+        &self,
+        repo_name: &str,
+        baseline_complexity: f64,
+    ) -> Result<f64, AnalyzerError> {
+        self.store
+            .reseed_release_baseline(repo_name, baseline_complexity)
     }
 }
 

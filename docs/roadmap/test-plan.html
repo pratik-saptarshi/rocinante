@@ -6,6 +6,13 @@
 - Every backlog item must map to at least one automated test target.
 - Block feature completion unless tests for functional behavior and security controls pass.
 
+## Current execution slices
+
+- `F-031` frontend structural decomposition and dashboard content extraction.
+- `F-016` -> `T-014`
+- `F-026` -> `T-041`
+- `F-017` -> `T-003`
+
 ## Existing Test Coverage
 
 - `T-001` Auth/RBAC enforcement:
@@ -13,7 +20,7 @@
 - `T-002` Bead pipeline execution and plugin coverage:
   - `tests/engine_tests.rs`
 - `T-003` Sanitizer behavior and redaction correctness:
-  - `tests/sanitizer_tests.rs`
+  - `tests/sanitizer_tests.rs` with `F-017` domain policy-pack redaction coverage.
 - `T-004` Telemetry write/query behavior:
   - `tests/telemetry_tests.rs`
 - `T-005` Dual-layer storage lifecycle promotion + aggregate reads:
@@ -27,6 +34,10 @@
 
 ## Feature-to-Test Matrix
 
+- `F-031/FE-009` -> `T-008`
+- `F-016` -> `T-014`
+- `F-026` -> `T-041`
+- `F-017` -> `T-003`
 - `F-001/F-005/F-006` -> `T-002`
 - `F-002` -> `T-003`
 - `F-007/F-013` -> `T-001`, `T-006`
@@ -38,21 +49,34 @@
 - `F-021` -> `T-013`
 - `F-022` -> `T-025`
 - `F-023` -> `T-011`
+- `F-036` -> `T-038`
+- `F-037` -> `T-039`
+- `F-038` -> `T-042`
+- `F-039` -> `T-043`
+- `F-040` -> `T-044`
+- `F-025` -> `T-045`
+- `F-034` -> `T-036`
 
 ## In-Progress Test Work
 
 - `T-008` Tauri command integration tests:
-  - Validate command input/output contracts for all admin commands.
-  - Validate command-level RBAC denial/allow flows.
-- `T-009` Async ingestion load tests:
-  - Saturate bounded ring buffer and verify no ingestion deadlocks.
-  - Measure promotion lag under sustained commit bursts.
-- `T-019` Storage lock ownership and path exclusivity tests:
-  - Force concurrent raw+analytics path opens and assert one owning writer.
-  - Assert lock-safe retry/fallback behavior in async retention + promotion.
-- `T-020` Promotion snapshot visibility and consistency tests:
-  - Assert `promotes_events_and_reads_aggregates` returns promoted aggregate counts.
-  - Assert analytics reads do not observe empty snapshots during handoff.
+  - Validate command input/output contracts for the current command-schema slice and command-level RBAC denial/allow flows.
+- `T-003` Sanitizer behavior and redaction correctness:
+  - Extend domain policy-pack coverage for the current sanitizer slice.
+- `T-039` Admin PR risk browser bridge e2e tests:
+  - Authored browser invocation through the Tauri bridge with browser-side allow/deny coverage pending UI toolchain availability.
+- `T-041` Job observability panel tests:
+  - `ui/src/App.test.tsx`
+  - `ui/src/App.tsx`
+  - Dashboard render exposes queue depth, throughput, and promotion lag metrics from shared stage telemetry.
+- `T-045` Release baseline management tests:
+  - `ui/src/App.test.tsx`
+  - `ui/src/tauri-admin.test.ts`
+  - `ui/e2e/app.spec.ts`
+  - `src-tauri/tests/release_baseline_tests.rs`
+  - `src-tauri/tests/release_baseline_handler_tests.rs`
+  - `src-tauri/tests/release_baseline_storage_tests.rs`
+  - Dashboard render exposes current release baseline query/reseed controls from the shared admin bridge, the registered Tauri handler path, and the extracted baseline store boundary.
 
 ## Planned New Tests
 
@@ -90,3 +114,69 @@
   - One positive-path test.
   - One failure/authorization or boundary test.
 - Security-sensitive features include explicit RBAC + sanitization assertions.
+
+## Planned New Test Tracks
+
+- `T-030` Risk contract and PR scoring tests:
+  - Versioned risk output schema.
+  - Highest-risk-file PR tier selection.
+  - Missing-file fallback behavior.
+- `T-031` CI gate and comment contract tests:
+  - High/critical merge blocking.
+  - Stable review requirement summary.
+  - Comment payload shape and fields.
+- `T-032` Incident and annotation feedback tests:
+  - Manual override precedence over cached assessments.
+  - Cache invalidation when a new incident is recorded.
+  - Auditability of raised risk.
+- `T-033` Structured triage and state loop tests:
+  - High-Priority, Watch, Noise, and State Updates sections.
+  - Report-only output mode.
+  - No architectural invention during triage.
+- `T-034` Budget guard and kill switch tests:
+  - Report-only at 80 percent.
+  - Hard exit at 100 percent.
+  - Immediate stop on pause flag.
+- `T-035` Verifier and minimal-fix tests:
+  - Separate checker defaulting to reject.
+  - Test evidence required for approve.
+  - One-problem diff and attempt-cap escalation.
+
+## Existing Test Coverage Additions
+
+- `T-037` PR risk service abstraction tests:
+  - `tests/admin_service_tests.rs`
+  - Injected schema/config overrides default risk-v1 behavior without code changes.
+  - Service-layer injection covers default and custom PR policies without changing the command surface.
+
+- `T-038` Admin PR risk command boundary tests:
+  - `tests/tauri_command_tests.rs`
+  - End-to-end command invocation through the Tauri bridge.
+  - RBAC denial/allow flow for the command facade.
+
+- `T-036` Admin PR risk command tests:
+  - `tests/pr_risk_contract_tests.rs`
+  - `tests/admin_service_tests.rs`
+  - Admin-only access for `evaluate_pr_risk`, `risk-v1` schema defaulting, block/allow decision parity with the contract module, and negative RBAC rejection coverage.
+
+- `T-040` Explainability panel tests:
+  - `ui/src/App.test.tsx`
+  - `ui/src/App.tsx`
+  - Dashboard render exposes the shared quality pulse explainability traces for score decomposition, risk trajectory, top bottleneck, and opportunity lift.
+
+- `T-042` Admin bridge settlement and timeout tests (`F-038`):
+  - `ui/src/tauri-admin.test.ts`
+  - Ensure bridge calls surface bounded timeout or cancellation failures instead of leaving unresolved async work.
+
+- `T-043` Deterministic admin bridge mock seam tests (`F-039`):
+  - `ui/src/tauri-admin.test.ts`
+  - Verify the App test harness uses a local runtime seam and does not mutate `globalThis.__TAURI__` directly.
+
+- `T-039` Admin PR risk browser bridge e2e tests:
+  - `ui/e2e/app.spec.ts`
+  - Browser invocation through the Tauri bridge reports admin allow/deny outcomes and browser-shim payload handling.
+
+- `T-044` Vitest and Playwright runner boundary tests (`F-040`):
+  - `ui/vite.config.ts`
+  - `ui/test:e2e`
+  - Ensure Vitest excludes `e2e/**` and the Playwright runner keeps owning browser coverage.

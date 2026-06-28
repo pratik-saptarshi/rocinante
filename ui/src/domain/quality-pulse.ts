@@ -18,6 +18,9 @@ export interface QualityPulse {
   overallScore: number;
   securitySignalCount: number;
   topBottleneckName: string;
+  topRiskCommitId: string;
+  topOpportunityTitle: string;
+  opportunityCount: number;
   riskBuckets: {
     high: number;
     medium: number;
@@ -53,9 +56,7 @@ function summarizeBottlenecks(bottlenecks: BottleneckCard[]): QualityPulse['bott
   );
 }
 
-function buildRecommendations(
-  insights: DashboardInsights
-): Record<StakeholderAudience, PulseAction[]> {
+function buildRecommendations(insights: DashboardInsights): Record<StakeholderAudience, PulseAction[]> {
   const [topRisk] = insights.commitRiskCards;
   const [topOpportunity, secondOpportunity] = insights.opportunities;
   const [criticalStage] = insights.bottlenecks.filter((item) => item.status === 'critical' || item.status === 'high');
@@ -144,16 +145,22 @@ function buildRoutes(): QualityPulse['actionRoutes'] {
 export function buildQualityPulse(insights: DashboardInsights): QualityPulse {
   const riskBuckets = summarizeRiskBuckets(insights.commitRiskCards);
   const bottleneckBuckets = summarizeBottlenecks(insights.bottlenecks);
+  const [topRisk] = insights.commitRiskCards;
+  const topOpportunity = [...insights.opportunities].sort((left, right) => right.priorityScore - left.priorityScore)[0];
   const topBottleneck = [...insights.bottlenecks].sort((left, right) => right.impact - left.impact)[0];
   const securitySignalCount = insights.commitRiskCards.filter((risk) =>
     risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')
   ).length;
+  const opportunityCount = insights.opportunities.length;
   const overallScore = Math.max(45, 100 - riskBuckets.high * 10 - bottleneckBuckets.critical * 15 - bottleneckBuckets.high * 5);
 
   return {
     overallScore,
     securitySignalCount,
     topBottleneckName: topBottleneck?.name ?? 'review',
+    topRiskCommitId: topRisk?.id ?? '',
+    topOpportunityTitle: topOpportunity?.title ?? '',
+    opportunityCount,
     riskBuckets,
     bottleneckBuckets,
     recommendations: buildRecommendations(insights),

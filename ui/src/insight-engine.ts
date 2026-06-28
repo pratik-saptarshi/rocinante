@@ -60,6 +60,7 @@ export interface DashboardInsights {
   commitRiskCards: CommitRiskCard[];
   bottlenecks: BottleneckCard[];
   opportunities: OpportunityCard[];
+  stages: InsightStage[];
 }
 
 const defaultCommitSeed: InsightCommit[] = [
@@ -151,6 +152,7 @@ export function buildDashboardInsights(payload: InsightPayload = {}, limits: Ins
   return {
     commitRiskCards: commits.map(scoreCommit),
     bottlenecks: stages.map((stage) => stageToBottleneck(stage, latencyCeiling)),
-    opportunities: signals.map(signalToOpportunity)
+    opportunities: signals.map(signalToOpportunity),
+    stages
   };
 }
