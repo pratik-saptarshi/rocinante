@@ -8,23 +8,28 @@ use crate::risk_contract::{
 use crate::scoring::{load_or_init_weights, update_weights_with_audit};
 use crate::storage::{BaselineStore, DualLayerStore, LifecycleStats};
 use crate::storage::{IngestionBackendConfig, StorageOperation, StorageRoute};
-use crate::telemetry::TelemetryStore;
+use crate::telemetry::{TelemetryImportSummary, TelemetryStore};
 use crate::types::{
     AdminQuery, AnalysisMetric, CommitIngestionEvent, CommitterScore, PrCandidate, PrRanking,
     ScoringWeights, TelemetryPoint,
 };
 
-pub fn run_scan(root: &str, release: &str, db_path: &str) -> Result<usize, AnalyzerError> {
+pub fn run_scan(
+    root: &str,
+    release: &str,
+    db_path: &str,
+) -> Result<TelemetryImportSummary, AnalyzerError> {
     let repos = discover_repositories(root);
     let pipeline = Pipeline::default();
     let store = TelemetryStore::open(db_path)?;
+    let mut records = Vec::new();
 
     for repo in &repos {
         let record = pipeline.analyze_repo(repo.clone(), release)?;
-        store.insert_record(&record)?;
+        records.push(record);
     }
 
-    Ok(repos.len())
+    store.insert_records(&records, release)
 }
 
 pub fn query_metrics(

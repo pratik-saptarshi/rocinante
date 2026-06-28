@@ -35,13 +35,13 @@ export interface AdminQueryPayload {
 
 export interface AdminReleaseBaselineQueryPayload {
   token: string;
-  repo_name: string;
+  repoName: string;
 }
 
 export interface AdminReleaseBaselineReseedPayload {
   token: string;
-  repo_name: string;
-  baseline_complexity: number;
+  repoName: string;
+  baselineComplexity: number;
 }
 
 export interface AdminCommitterScoresPayload {
@@ -111,8 +111,6 @@ type InvokeOptions = {
   timeoutMs?: number;
 };
 
-const DEFAULT_INVOKE_TIMEOUT_MS = 2500;
-
 let testInvoke: InvokeFn | null = null;
 
 export function setAdminInvokeForTesting(invoke: InvokeFn | null) {
@@ -174,7 +172,8 @@ export async function invokeAdminCommand(
   }
 
   try {
-    const response = await withTimeout(invoke(command, args), options.timeoutMs ?? DEFAULT_INVOKE_TIMEOUT_MS);
+    const response =
+      typeof options.timeoutMs === 'number' ? await withTimeout(invoke(command, args), options.timeoutMs) : await invoke(command, args);
     return {
       ok: true,
       command,
