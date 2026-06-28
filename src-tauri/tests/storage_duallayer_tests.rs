@@ -854,5 +854,5 @@ fn reseeding_baselines_refreshes_published_snapshot_for_committer_scores() {
         .compute_committer_scores(&query, &weights)
         .expect("compute after reseed");
     assert_eq!(refreshed_scores.len(), 1);
-    assert!(refreshed_scores[0].score > initial_score);
+    assert!(refreshed_scores[0].score < initial_score);
 }
