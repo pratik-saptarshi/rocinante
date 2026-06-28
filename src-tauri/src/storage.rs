@@ -529,10 +529,6 @@ impl DualLayerStore {
             self.snapshot_path(snapshot_id)
         };
 
-        if Path::new(&snapshot_path).exists() && snapshot_id != 0 {
-            return Ok(snapshot_path);
-        }
-
         if snapshot_id == 0 {
             return Ok(snapshot_path);
         }
@@ -720,17 +716,19 @@ impl DualLayerStore {
             .promotion_barrier
             .write()
             .unwrap_or_else(|e| e.into_inner());
-        let conn =
-            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        conn.execute(
-            "
-            INSERT INTO repo_baseline (repo_name, baseline_complexity)
-            VALUES (?1, ?2)
-            ON CONFLICT(repo_name) DO UPDATE SET baseline_complexity = excluded.baseline_complexity
-            ",
-            params![repo_name, baseline_complexity],
-        )
-        .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        {
+            let conn = Connection::open(&self.columnar_path)
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            conn.execute(
+                "
+                INSERT INTO repo_baseline (repo_name, baseline_complexity)
+                VALUES (?1, ?2)
+                ON CONFLICT(repo_name) DO UPDATE SET baseline_complexity = excluded.baseline_complexity
+                ",
+                params![repo_name, baseline_complexity],
+            )
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        }
         let snapshot_id = self.latest_snapshot_id.load(Ordering::Acquire);
         if snapshot_id != 0 {
             let _ = self.refresh_analytics_snapshot(snapshot_id)?;
