@@ -260,14 +260,14 @@ describe('Optimization sidebar layout', () => {
 
     expect(invoke).toHaveBeenCalledWith(
       'query_release_baseline',
-      expect.objectContaining({ repoName: 'repo-a', token: 'alice:admin' })
+      expect.objectContaining({ repo_name: 'repo-a', token: 'alice:admin' })
     );
     expect(invoke).toHaveBeenCalledWith(
       'reseed_release_baseline',
       expect.objectContaining({
-        repoName: 'repo-a',
+        repo_name: 'repo-a',
         token: 'alice:admin',
-        baselineComplexity: 12.25
+        baseline_complexity: 12.25
       })
     );
   });

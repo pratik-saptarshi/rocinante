@@ -144,9 +144,7 @@ function limitList<T>(items: T[], limit?: number): T[] {
 }
 
 export function buildDashboardInsights(payload: InsightPayload = {}, limits: InsightLimits = {}): DashboardInsights {
-  const commits = (payload.commits?.length ? payload.commits : defaultCommitSeed)
-    .map(scoreCommit)
-    .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
+  const commits = limitList(payload.commits?.length ? payload.commits : defaultCommitSeed, limits.risks);
   const stages = payload.stages?.length ? payload.stages : defaultStageSeed;
   const signals = (payload.signals?.length ? payload.signals : defaultSignalSeed)
     .map(signalToOpportunity)
@@ -154,9 +152,9 @@ export function buildDashboardInsights(payload: InsightPayload = {}, limits: Ins
   const latencyCeiling = limits.latencyP95Ms ?? 1_000;
 
   return {
-    commitRiskCards: limitList(commits, limits.risks),
+    commitRiskCards: commits.map(scoreCommit),
     bottlenecks: stages.map((stage) => stageToBottleneck(stage, latencyCeiling)),
-    opportunities: limitList(signals, limits.opportunities),
+    opportunities: limitList(signals.map(signalToOpportunity), limits.opportunities),
     stages
   };
 }

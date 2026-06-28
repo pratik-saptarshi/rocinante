@@ -56,27 +56,9 @@ function summarizeBottlenecks(bottlenecks: BottleneckCard[]): QualityPulse['bott
   );
 }
 
-function rankRiskCards(commitRiskCards: CommitRiskCard[]): CommitRiskCard[] {
-  return [...commitRiskCards].sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
-}
-
-function rankOpportunities(opportunities: OpportunityCard[]): OpportunityCard[] {
-  return [...opportunities].sort((left, right) => right.priorityScore - left.priorityScore || left.id.localeCompare(right.id));
-}
-
-function normalizePulseSeverity(level: CommitRiskCard['level'] | undefined): PulseAction['severity'] {
-  if (level === 'high') {
-    return 'bad';
-  }
-
-  return level ?? 'medium';
-}
-
 function buildRecommendations(insights: DashboardInsights): Record<StakeholderAudience, PulseAction[]> {
-  const rankedRiskCards = rankRiskCards(insights.commitRiskCards);
-  const rankedOpportunities = rankOpportunities(insights.opportunities);
-  const [topRisk] = rankedRiskCards;
-  const [topOpportunity, secondOpportunity] = rankedOpportunities;
+  const [topRisk] = insights.commitRiskCards;
+  const [topOpportunity, secondOpportunity] = insights.opportunities;
   const [criticalStage] = insights.bottlenecks.filter((item) => item.status === 'critical' || item.status === 'high');
   const securitySignals = rankedRiskCards.filter((risk) =>
     risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')
@@ -87,12 +69,12 @@ function buildRecommendations(insights: DashboardInsights): Record<StakeholderAu
       {
         id: 'lead-1',
         message: `Focus first on high-risk commit ${topRisk?.id ?? 'sample'} before expanding the next cycle.`,
-        severity: normalizePulseSeverity(topRisk?.level)
+        severity: topRisk?.level ?? 'medium'
       },
       {
         id: 'lead-2',
-        message: `Focus first on high-risk commit ${rankedRiskCards[1]?.id ?? 'sample'} after automation stabilizes.`,
-        severity: normalizePulseSeverity(rankedRiskCards[1]?.level)
+        message: `Focus first on high-risk commit ${insights.commitRiskCards[1]?.id ?? 'sample'} after automation stabilizes.`,
+        severity: insights.commitRiskCards[1]?.level ?? 'medium'
       }
     ],
     manager: [
@@ -123,7 +105,7 @@ function buildRecommendations(insights: DashboardInsights): Record<StakeholderAu
       ? securitySignals.slice(0, 2).map((signal, index) => ({
           id: `security-${index + 1}`,
           message: `Security-sensitive signals from ${signal.id} should be reviewed before release.`,
-          severity: normalizePulseSeverity(signal.level)
+          severity: signal.level
         }))
       : [
           {
@@ -163,8 +145,8 @@ function buildRoutes(): QualityPulse['actionRoutes'] {
 export function buildQualityPulse(insights: DashboardInsights): QualityPulse {
   const riskBuckets = summarizeRiskBuckets(insights.commitRiskCards);
   const bottleneckBuckets = summarizeBottlenecks(insights.bottlenecks);
-  const [topRisk] = rankRiskCards(insights.commitRiskCards);
-  const topOpportunity = rankOpportunities(insights.opportunities)[0];
+  const [topRisk] = insights.commitRiskCards;
+  const topOpportunity = [...insights.opportunities].sort((left, right) => right.priorityScore - left.priorityScore)[0];
   const topBottleneck = [...insights.bottlenecks].sort((left, right) => right.impact - left.impact)[0];
   const securitySignalCount = insights.commitRiskCards.filter((risk) =>
     risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')

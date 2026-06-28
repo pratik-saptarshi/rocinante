@@ -65,7 +65,7 @@ describe('dashboard explainability', () => {
       {
         id: 'explain-risk',
         title: 'Top Risk Commit',
-        summary: 'safe-2',
+        summary: 'safe-1',
         detail: 'No high-risk commit currently dominates the pulse.',
         status: 'good'
       },
