@@ -41,4 +41,27 @@ describe('buildDashboardVisuals', () => {
       tone: 'bad'
     });
   });
+
+  it('renders a neutral summary when no signals are present', () => {
+    const visuals = buildDashboardVisuals({
+      commitRiskCards: [],
+      bottlenecks: [],
+      opportunities: [],
+      stages: []
+    });
+
+    expect(visuals.summary).toBe('No risk signals available');
+    expect(visuals.trendLines[0]).toMatchObject({
+      value: 'No high-risk commits',
+      tone: 'good'
+    });
+    expect(visuals.trendLines[1]).toMatchObject({
+      value: '0 pressured stages',
+      tone: 'good'
+    });
+    expect(visuals.trendLines[2]).toMatchObject({
+      value: '0 actionable opportunities',
+      tone: 'good'
+    });
+  });
 });

@@ -52,4 +52,42 @@ describe('buildDashboardInsights', () => {
     expect(insights.bottlenecks).toHaveLength(1);
     expect(insights.opportunities).toHaveLength(1);
   });
+
+  it('applies risk and opportunity limits after ranking the strongest entries', () => {
+    const insights = buildDashboardInsights(
+      {
+        commits: [
+          {
+            id: 'low-risk',
+            files: 1,
+            changedLines: 4,
+            dependencyChanges: 0,
+            testTouch: true,
+            failedAutomations: 0
+          },
+          {
+            id: 'high-risk',
+            files: 24,
+            changedLines: 900,
+            dependencyChanges: 2,
+            testTouch: false,
+            failedAutomations: 1
+          }
+        ],
+        signals: [
+          { id: 'low-opportunity', area: 'ops', title: 'Low opportunity', impact: 1, effort: 5, confidence: 0.2 },
+          { id: 'high-opportunity', area: 'infra', title: 'High opportunity', impact: 5, effort: 1, confidence: 0.95 }
+        ]
+      },
+      {
+        risks: 1,
+        opportunities: 1
+      }
+    );
+
+    expect(insights.commitRiskCards).toHaveLength(1);
+    expect(insights.commitRiskCards[0]?.id).toBe('high-risk');
+    expect(insights.opportunities).toHaveLength(1);
+    expect(insights.opportunities[0]?.id).toBe('high-opportunity');
+  });
 });

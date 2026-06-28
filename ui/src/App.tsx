@@ -192,7 +192,7 @@ function App() {
   const loadReleaseBaseline = async () => {
     const result = await invokeAdminCommand('query_release_baseline', {
       token: adminToken,
-      repo_name: baselineRepoName
+      repoName: baselineRepoName
     });
     setBaselineResult(
       `${result.ok ? 'OK' : 'ERR'} query_release_baseline: ${
@@ -210,8 +210,8 @@ function App() {
 
     const result = await invokeAdminCommand('reseed_release_baseline', {
       token: adminToken,
-      repo_name: baselineRepoName,
-      baseline_complexity: parsedBaseline
+      repoName: baselineRepoName,
+      baselineComplexity: parsedBaseline
     });
     setBaselineResult(`${result.ok ? 'OK' : 'ERR'} reseed_release_baseline: ${result.message}`);
   };

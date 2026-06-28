@@ -4,6 +4,8 @@ import type {
   AdminIngestPayload,
   AdminPromotePayload,
   AdminQueryPayload,
+  AdminReleaseBaselineQueryPayload,
+  AdminReleaseBaselineReseedPayload,
   AdminRankPrsPayload,
   AdminUpdateWeightsPayload
 } from './tauri-admin';
@@ -14,6 +16,8 @@ export type AdminBridgeArgsMap = {
   query_aggregates: AdminQueryPayload;
   committer_scores: AdminCommitterScoresPayload;
   rank_prs: AdminRankPrsPayload;
+  query_release_baseline: AdminReleaseBaselineQueryPayload;
+  reseed_release_baseline: AdminReleaseBaselineReseedPayload;
   update_scoring_weights: AdminUpdateWeightsPayload;
 };
 
@@ -49,6 +53,15 @@ export function buildAdminBridgeArgs(token: string): AdminBridgeArgsMap {
       name: 'sample-repo',
       release: 'v1.0.0'
     },
+    query_release_baseline: {
+      token,
+      repoName: 'sample-repo'
+    },
+    reseed_release_baseline: {
+      token,
+      repoName: 'sample-repo',
+      baselineComplexity: 18.5
+    },
     rank_prs: {
       token,
       prs: [
@@ -59,7 +72,14 @@ export function buildAdminBridgeArgs(token: string): AdminBridgeArgsMap {
           release: 'v1.0.0',
           file_risk: 0.4,
           author_velocity: 0.6,
-          approval_fidelity: 0.9
+          approval_fidelity: 0.9,
+          files: [
+            {
+              path: 'src/ui-bridge.ts',
+              risk: 0.72
+            }
+          ],
+          circuit_breaker_triggered: true
         }
       ]
     },

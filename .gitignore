@@ -28,3 +28,6 @@ telemetry-kv/
 # Logs/temp
 *.log
 tmp/
+ui/coverage/
+ui/playwright-report/
+ui/test-results/

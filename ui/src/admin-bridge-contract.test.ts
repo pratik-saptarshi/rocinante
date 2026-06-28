@@ -10,7 +10,11 @@ describe('admin bridge contract helpers', () => {
     expect(args.promote_lifecycle.token).toBe('alice:admin');
     expect(args.query_aggregates.release).toBe('v1.0.0');
     expect(args.committer_scores.name).toBe('sample-repo');
+    expect(args.query_release_baseline.repoName).toBe('sample-repo');
+    expect(args.reseed_release_baseline.baselineComplexity).toBe(18.5);
     expect(args.rank_prs.prs).toHaveLength(1);
+    expect(args.rank_prs.prs[0].files).toHaveLength(1);
+    expect(args.rank_prs.prs[0].circuit_breaker_triggered).toBe(true);
     expect(args.update_scoring_weights.weights.version).toBe('v1');
   });
 

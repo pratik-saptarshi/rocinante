@@ -24,6 +24,23 @@ describe('tauri admin bridge', () => {
     expect(result.message).toMatch(/Tauri runtime not detected/i);
   });
 
+  it('does not apply a timeout by default', async () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    const invoke = vi.fn().mockResolvedValue('ok');
+    setAdminInvokeForTesting(invoke);
+
+    try {
+      const result = await invokeAdminCommand('promote_lifecycle', {
+        token: 'alice:admin'
+      });
+
+      expect(result.ok).toBe(true);
+      expect(setTimeoutSpy).not.toHaveBeenCalled();
+    } finally {
+      setTimeoutSpy.mockRestore();
+    }
+  });
+
   it('returns success when invoke resolves with string payload', async () => {
     const invoke = vi.fn().mockResolvedValue('ok');
     setAdminInvokeForTesting(invoke);
@@ -177,12 +194,12 @@ describe('tauri admin bridge', () => {
 
     const result = await invokeAdminCommand('query_release_baseline', {
       token: 'alice:admin',
-      repo_name: 'repo-a'
+      repoName: 'repo-a'
     });
 
     expect(invoke).toHaveBeenCalledWith('query_release_baseline', {
       token: 'alice:admin',
-      repo_name: 'repo-a'
+      repoName: 'repo-a'
     });
     expect(result.ok).toBe(true);
     expect(result.message).toBe('9.75');
@@ -194,14 +211,14 @@ describe('tauri admin bridge', () => {
 
     const result = await invokeAdminCommand('reseed_release_baseline', {
       token: 'alice:admin',
-      repo_name: 'repo-a',
-      baseline_complexity: 12.25
+      repoName: 'repo-a',
+      baselineComplexity: 12.25
     });
 
     expect(invoke).toHaveBeenCalledWith('reseed_release_baseline', {
       token: 'alice:admin',
-      repo_name: 'repo-a',
-      baseline_complexity: 12.25
+      repoName: 'repo-a',
+      baselineComplexity: 12.25
     });
     expect(result.ok).toBe(true);
     expect(result.message).toBe('12.25');
