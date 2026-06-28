@@ -27,24 +27,61 @@ impl TelemetryStore {
     }
 
     pub fn insert_record(&self, record: &AnalysisRecord) -> Result<(), AnalyzerError> {
-        let (repo_name, release) = scrub_record_strings(&record.repo_name, &record.release);
-        for metric in &record.metrics {
-            let mut m = metric.clone();
-            scrub_metric(&mut m);
-            self.conn.execute(
-                "INSERT INTO telemetry (repo_name, release, plugin, metric_key, metric_value, details)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                params![
-                    repo_name,
-                    release,
-                    m.plugin,
-                    m.key,
-                    m.value,
-                    m.details
-                ],
-            )?;
+        self.insert_records(std::slice::from_ref(record))
+            .map(|_| ())
+    }
+
+    pub fn insert_records(&self, records: &[AnalysisRecord]) -> Result<usize, AnalyzerError> {
+        if records.is_empty() {
+            return Ok(0);
         }
-        Ok(())
+
+        self.conn
+            .execute_batch("BEGIN IMMEDIATE TRANSACTION;")
+            .map_err(AnalyzerError::from)?;
+
+        let result = (|| -> Result<usize, AnalyzerError> {
+            let mut inserted = 0usize;
+            {
+                let mut stmt = self.conn.prepare(
+                    "INSERT INTO telemetry (repo_name, release, plugin, metric_key, metric_value, details)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                )?;
+
+                for record in records {
+                    let (repo_name, release) =
+                        scrub_record_strings(&record.repo_name, &record.release);
+                    for metric in &record.metrics {
+                        let mut m = metric.clone();
+                        scrub_metric(&mut m);
+                        stmt.execute(params![
+                            repo_name.as_str(),
+                            release.as_str(),
+                            m.plugin,
+                            m.key,
+                            m.value,
+                            m.details
+                        ])?;
+                        inserted += 1;
+                    }
+                }
+            }
+
+            Ok(inserted)
+        })();
+
+        match result {
+            Ok(inserted) => {
+                self.conn
+                    .execute_batch("COMMIT;")
+                    .map_err(AnalyzerError::from)?;
+                Ok(inserted)
+            }
+            Err(err) => {
+                let _ = self.conn.execute_batch("ROLLBACK;");
+                Err(err)
+            }
+        }
     }
 
     pub fn query(&self, query: &AdminQuery) -> Result<Vec<AnalysisMetric>, AnalyzerError> {

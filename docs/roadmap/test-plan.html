@@ -54,6 +54,7 @@
 - `F-039` -> `T-043`
 - `F-040` -> `T-044`
 - `F-025` -> `T-045`
+- `F-027` -> `T-047`
 - `F-034` -> `T-036`
 
 ## In-Progress Test Work
@@ -96,6 +97,10 @@
 - `T-018` Ingestion concurrency tests:
   - Validate sharded key strategy and localized write contention behavior.
   - Validate sustained append throughput under parallel producers.
+
+- `T-047` Bulk import utility tests (`F-027`):
+  - `src-tauri/tests/telemetry_tests.rs`
+  - Historical commit import, prior telemetry migration, duplicate-source-key handling, and summary telemetry coverage.
 
 ## Definition of Done (Testing)
 
