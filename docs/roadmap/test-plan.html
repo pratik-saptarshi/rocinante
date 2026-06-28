@@ -8,8 +8,7 @@
 
 ## Current execution slices
 
-- `F-027` bulk import utility for historical commits and prior telemetry migration.
-- `F-033` reserved for the next ready frontend or backend readiness slice.
+- none
 
 ## Existing Test Coverage
 
@@ -55,6 +54,7 @@
 - `F-040` -> `T-044`
 - `F-025` -> `T-045`
 - `F-034` -> `T-036`
+- `F-033` -> `T-047`
 
 ## In-Progress Test Work
 
@@ -113,6 +113,11 @@
   - Highest-risk-file PR tier selection.
   - Missing-file fallback behavior.
 ## Existing Test Coverage Additions
+
+- `T-047` Bulk-import worker evidence and summary telemetry (`F-033`):
+  - Historical commit import coverage target.
+  - Prior telemetry migration coverage target.
+  - Bulk-import summary telemetry, duplicate-source-key handling, and worker evidence are covered by `src-tauri/tests/telemetry_tests.rs`.
 
 - `T-037` PR risk service abstraction tests:
   - `tests/admin_service_tests.rs`

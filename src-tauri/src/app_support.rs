@@ -69,7 +69,10 @@ pub fn build_app<R: tauri::Runtime>(
 }
 
 #[tauri::command]
-fn run_scan(state: tauri::State<AppState>, payload: ScanPayload) -> Result<usize, String> {
+fn run_scan(
+    state: tauri::State<AppState>,
+    payload: ScanPayload,
+) -> Result<crate::telemetry::TelemetryImportSummary, String> {
     let db = state.db_path.lock().map_err(|e| e.to_string())?.clone();
     admin::run_scan(&payload.root, &payload.release, &db).map_err(|e| e.to_string())
 }
