@@ -728,6 +728,8 @@ impl DualLayerStore {
                 params![repo_name, baseline_complexity],
             )
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            conn.execute("CHECKPOINT", [])
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
         }
         let snapshot_id = self.latest_snapshot_id.load(Ordering::Acquire);
         if snapshot_id != 0 {
