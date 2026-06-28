@@ -35,7 +35,7 @@ export function buildExplainabilityTraces(pulse: QualityPulse): ExplainabilityTr
     {
       id: 'explain-opportunity',
       title: 'Opportunity Lift',
-      summary: pulse.topOpportunityTitle,
+      summary: pulse.opportunityCount > 0 ? pulse.topOpportunityTitle : 'No opportunity signal',
       detail:
         pulse.opportunityCount > 0
           ? `${pulse.opportunityCount} opportunity signal(s) are boosting the score.`
