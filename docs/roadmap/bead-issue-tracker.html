@@ -4,16 +4,8 @@
 
 ## Active execution slices
 
-- `F-027` bulk import utility for historical commits and prior telemetry migration.
+- `F-027` bulk import utility for historical commits and prior telemetry migration, with duplicate-source-key handling and summary telemetry.
 - `F-033` reserved for the next ready frontend or backend readiness slice.
-
-## Active execution slices
-
-- `F-031` frontend structural decomposition and dashboard content extraction.
-- `F-016` rich dashboard visualizations for trend lines and PR risk ranking rationale.
-- `F-026` job observability for queue depth, worker throughput, and promotion lag metrics.
-- `F-025` release baseline management for current baseline query/reseed controls.
-- `F-017` expanded sanitizer detection rules and policy packs per compliance domain.
 
 | Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
@@ -50,6 +42,7 @@
     - Validated checkpoint: policy-pack scrubber now covers General, Security, Privacy, and Payments domains with regression coverage.
 4. Scale and history
    - `F-027` bulk import utility
+   - `F-033` reserved for the next ready frontend or backend readiness slice
 
 ## TDD Ledger
 
@@ -95,3 +88,4 @@
 | BI-041 | Stage 1 | EP-01 AI quality checking | F-025 Release baseline management UI | C-029 Registered-handler integration | FN-029 Main-handler exerciser | TK-029 Add main-handler integration tests | Red->Green complete | Completed | The release-baseline commands are exercised through the registered Tauri handlers, so `AppState` wiring and `generate_handler!` registration failures are caught end to end. | implementer | Proved by `src-tauri/tests/release_baseline_handler_tests.rs` plus `src-tauri/src/app_support.rs`. |
 | BI-042 | Stage 1 | EP-01 AI quality checking | F-025 Release baseline management UI | C-030 Baseline persistence boundary | FN-030 Baseline repository adapter | TK-030 Extract baseline persistence adapter | Red->Green complete | Completed | Release-baseline reads and writes sit behind a smaller baseline-specific abstraction, so `DualLayerStore` does not absorb unrelated domain policy and future changes stay localized. | implementer | Proved by `src-tauri/src/storage.rs`, `src-tauri/tests/release_baseline_storage_tests.rs`, and `src-tauri/tests/release_baseline_tests.rs`. |
 | BI-043 | Stage 0 | EP-00 Shared planning | F-000 Artifact scaffolding | C-001 Backlog hygiene | FN-001 Roadmap deduper | TK-001 Remove duplicate feature-test mapping | Red->Green complete | Completed | The roadmap and test-plan stay single-source, with no duplicate `F-025 -> T-045` lines and no drift between the feature list, roadmap, and test plan. | implementer | Review follow-up completed by removing the duplicate mapping from the current execution slices. |
+| BI-044 | Stage 4 | EP-04 Scale and history | F-027 Bulk import utility | C-031 Historical import pipeline | FN-031 Batch import helper | TK-031 Add bulk import tests | Planned | In Progress | implementer | Historical commit import, prior telemetry migration, duplicate-source-key handling, and summary telemetry remain open. |

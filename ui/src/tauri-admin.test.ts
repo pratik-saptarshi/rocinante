@@ -194,12 +194,12 @@ describe('tauri admin bridge', () => {
 
     const result = await invokeAdminCommand('query_release_baseline', {
       token: 'alice:admin',
-      repo_name: 'repo-a'
+      repoName: 'repo-a'
     });
 
     expect(invoke).toHaveBeenCalledWith('query_release_baseline', {
       token: 'alice:admin',
-      repo_name: 'repo-a'
+      repoName: 'repo-a'
     });
     expect(result.ok).toBe(true);
     expect(result.message).toBe('9.75');
@@ -211,14 +211,14 @@ describe('tauri admin bridge', () => {
 
     const result = await invokeAdminCommand('reseed_release_baseline', {
       token: 'alice:admin',
-      repo_name: 'repo-a',
-      baseline_complexity: 12.25
+      repoName: 'repo-a',
+      baselineComplexity: 12.25
     });
 
     expect(invoke).toHaveBeenCalledWith('reseed_release_baseline', {
       token: 'alice:admin',
-      repo_name: 'repo-a',
-      baseline_complexity: 12.25
+      repoName: 'repo-a',
+      baselineComplexity: 12.25
     });
     expect(result.ok).toBe(true);
     expect(result.message).toBe('12.25');

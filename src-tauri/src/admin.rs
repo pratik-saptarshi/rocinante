@@ -19,11 +19,12 @@ pub fn run_scan(root: &str, release: &str, db_path: &str) -> Result<usize, Analy
     let pipeline = Pipeline::default();
     let store = TelemetryStore::open(db_path)?;
 
+    let mut records = Vec::with_capacity(repos.len());
     for repo in &repos {
-        let record = pipeline.analyze_repo(repo.clone(), release)?;
-        store.insert_record(&record)?;
+        records.push(pipeline.analyze_repo(repo.clone(), release)?);
     }
 
+    store.insert_records(&records)?;
     Ok(repos.len())
 }
 
@@ -124,17 +125,6 @@ pub fn evaluate_pr_risk_with_schema(
     Ok(evaluate_pr_risk_contract(&candidate, &schema))
 }
 
-pub fn update_scoring_weights(
-    token: &str,
-    weights_path: &str,
-    audit_path: &str,
-    new_weights: ScoringWeights,
-) -> Result<(), AnalyzerError> {
-    let principal = decode_principal(token)?;
-    require_admin(&principal)?;
-    update_weights_with_audit(weights_path, audit_path, &principal.user, new_weights)
-}
-
 pub fn query_release_baseline(
     token: &str,
     kv_path: &str,
@@ -158,4 +148,15 @@ pub fn reseed_release_baseline(
     require_admin(&principal)?;
     let store = BaselineStore::open(kv_path, col_path)?;
     store.reseed_release_baseline(repo_name, baseline_complexity)
+}
+
+pub fn update_scoring_weights(
+    token: &str,
+    weights_path: &str,
+    audit_path: &str,
+    weights: ScoringWeights,
+) -> Result<(), AnalyzerError> {
+    let principal = decode_principal(token)?;
+    require_admin(&principal)?;
+    update_weights_with_audit(weights_path, audit_path, &principal.user, weights)
 }

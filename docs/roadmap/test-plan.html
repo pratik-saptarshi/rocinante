@@ -8,10 +8,8 @@
 
 ## Current execution slices
 
-- `F-031` frontend structural decomposition and dashboard content extraction.
-- `F-016` -> `T-014`
-- `F-026` -> `T-041`
-- `F-017` -> `T-003`
+- `F-027` bulk import utility for historical commits and prior telemetry migration.
+- `F-033` reserved for the next ready frontend or backend readiness slice.
 
 ## Existing Test Coverage
 
@@ -56,28 +54,13 @@
 - `F-039` -> `T-043`
 - `F-040` -> `T-044`
 - `F-025` -> `T-045`
+- `F-027` -> `T-047`
 - `F-034` -> `T-036`
 
 ## In-Progress Test Work
 
 - `T-008` Tauri command integration tests:
   - Validate command input/output contracts for the current command-schema slice and command-level RBAC denial/allow flows.
-- `T-003` Sanitizer behavior and redaction correctness:
-  - Extend domain policy-pack coverage for the current sanitizer slice.
-- `T-039` Admin PR risk browser bridge e2e tests:
-  - Authored browser invocation through the Tauri bridge with browser-side allow/deny coverage pending UI toolchain availability.
-- `T-041` Job observability panel tests:
-  - `ui/src/App.test.tsx`
-  - `ui/src/App.tsx`
-  - Dashboard render exposes queue depth, throughput, and promotion lag metrics from shared stage telemetry.
-- `T-045` Release baseline management tests:
-  - `ui/src/App.test.tsx`
-  - `ui/src/tauri-admin.test.ts`
-  - `ui/e2e/app.spec.ts`
-  - `src-tauri/tests/release_baseline_tests.rs`
-  - `src-tauri/tests/release_baseline_handler_tests.rs`
-  - `src-tauri/tests/release_baseline_storage_tests.rs`
-  - Dashboard render exposes current release baseline query/reseed controls from the shared admin bridge, the registered Tauri handler path, and the extracted baseline store boundary.
 
 - `T-031` CI gate and comment contract tests:
   - `src-tauri/tests/ci_gate_tests.rs`
@@ -114,6 +97,10 @@
 - `T-018` Ingestion concurrency tests:
   - Validate sharded key strategy and localized write contention behavior.
   - Validate sustained append throughput under parallel producers.
+
+- `T-047` Bulk import utility tests (`F-027`):
+  - `src-tauri/tests/telemetry_tests.rs`
+  - Historical commit import, prior telemetry migration, duplicate-source-key handling, and summary telemetry coverage.
 
 ## Definition of Done (Testing)
 
@@ -179,6 +166,20 @@
 - `T-039` Admin PR risk browser bridge e2e tests:
   - `ui/e2e/app.spec.ts`
   - Browser invocation through the Tauri bridge reports admin allow/deny outcomes and browser-shim payload handling.
+
+- `T-041` Job observability panel tests:
+  - `ui/src/App.test.tsx`
+  - `ui/src/App.tsx`
+  - Dashboard render exposes queue depth, throughput, and promotion lag metrics from shared stage telemetry.
+
+- `T-045` Release baseline management tests:
+  - `ui/src/App.test.tsx`
+  - `ui/src/tauri-admin.test.ts`
+  - `ui/e2e/app.spec.ts`
+  - `src-tauri/tests/release_baseline_tests.rs`
+  - `src-tauri/tests/release_baseline_handler_tests.rs`
+  - `src-tauri/tests/release_baseline_storage_tests.rs`
+  - Dashboard render exposes current release baseline query/reseed controls from the shared admin bridge, the registered Tauri handler path, and the extracted baseline store boundary.
 
 - `T-044` Vitest and Playwright runner boundary tests (`F-040`):
   - `ui/vite.config.ts`
