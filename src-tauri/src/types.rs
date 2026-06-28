@@ -66,7 +66,7 @@ pub struct CommitterScore {
     pub pipeline_component: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PrCandidate {
     pub pr_id: String,
     pub repo_name: String,
@@ -75,15 +75,28 @@ pub struct PrCandidate {
     pub file_risk: f64,
     pub author_velocity: f64,
     pub approval_fidelity: f64,
+    #[serde(default)]
+    pub files: Vec<PrFileSignal>,
+    #[serde(default)]
+    pub circuit_breaker_triggered: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PrFileSignal {
+    pub path: String,
+    pub risk: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PrRanking {
     pub pr_id: String,
     pub repo_name: String,
     pub author: String,
     pub rank_score: f64,
     pub rationale: String,
+    pub highest_risk_file: Option<String>,
+    pub used_fallback_risk: bool,
+    pub circuit_breaker_triggered: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

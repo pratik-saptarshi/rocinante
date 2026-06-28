@@ -1,5 +1,5 @@
 use crate::admin;
-use crate::storage::{BaselineStore, IngestionBackendConfig};
+use crate::storage::IngestionBackendConfig;
 use crate::types::{
     AdminQuery, AnalysisMetric, CommitIngestionEvent, CommitterScore, PrCandidate, PrRanking,
     ScoringWeights, TelemetryPoint,
@@ -45,11 +45,6 @@ pub fn release_baseline_paths(state: &AppState) -> Result<(String, String), Stri
         .map_err(|e| e.to_string())?
         .clone();
     Ok((kv, col))
-}
-
-pub fn release_baseline_store(state: &AppState) -> Result<BaselineStore, String> {
-    let (kv, col) = release_baseline_paths(state)?;
-    BaselineStore::open(&kv, &col).map_err(|e| e.to_string())
 }
 
 pub fn build_app<R: tauri::Runtime>(
@@ -212,8 +207,8 @@ fn query_release_baseline(
     token: String,
     repo_name: String,
 ) -> Result<Option<f64>, String> {
-    let store = release_baseline_store(&state)?;
-    crate::tauri_commands::query_release_baseline_with_store(token, store, repo_name)
+    let (kv, col) = release_baseline_paths(&state)?;
+    crate::tauri_commands::query_release_baseline(token, kv, col, repo_name)
 }
 
 #[tauri::command]
@@ -223,11 +218,6 @@ fn reseed_release_baseline(
     repo_name: String,
     baseline_complexity: f64,
 ) -> Result<f64, String> {
-    let store = release_baseline_store(&state)?;
-    crate::tauri_commands::reseed_release_baseline_with_store(
-        token,
-        store,
-        repo_name,
-        baseline_complexity,
-    )
+    let (kv, col) = release_baseline_paths(&state)?;
+    crate::tauri_commands::reseed_release_baseline(token, kv, col, repo_name, baseline_complexity)
 }

@@ -716,6 +716,10 @@ impl DualLayerStore {
         repo_name: &str,
         baseline_complexity: f64,
     ) -> Result<f64, AnalyzerError> {
+        let _promotion_lock = self
+            .promotion_barrier
+            .write()
+            .unwrap_or_else(|e| e.into_inner());
         let conn =
             Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         conn.execute(
@@ -727,6 +731,10 @@ impl DualLayerStore {
             params![repo_name, baseline_complexity],
         )
         .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let snapshot_id = self.latest_snapshot_id.load(Ordering::Acquire);
+        if snapshot_id != 0 {
+            let _ = self.refresh_analytics_snapshot(snapshot_id)?;
+        }
         Ok(baseline_complexity)
     }
 
@@ -1153,22 +1161,53 @@ impl DualLayerStore {
     ) -> Result<Vec<PrRanking>, AnalyzerError> {
         let mut out = Vec::new();
         for pr in prs {
-            let risk = pr.file_risk.clamp(0.0, 1.0);
+            let (highest_risk_file, risk, used_fallback_risk) = pr
+                .files
+                .iter()
+                .max_by(|a, b| a.risk.total_cmp(&b.risk))
+                .map(|signal| {
+                    (
+                        Some(signal.path.clone()),
+                        signal.risk.clamp(0.0, 1.0),
+                        false,
+                    )
+                })
+                .unwrap_or((None, pr.file_risk.clamp(0.0, 1.0), true));
             let velocity = pr.author_velocity.clamp(0.0, 1.0);
             let approval = pr.approval_fidelity.clamp(0.0, 1.0);
 
             let score = (risk * weights.pr_file_risk_weight)
                 + ((1.0 - velocity) * weights.pr_velocity_weight)
                 + ((1.0 - approval) * weights.pr_approval_weight);
+            let rationale = if used_fallback_risk {
+                format!(
+                    "fallback_risk={:.2} velocity={:.2} approval={:.2} weights={} circuit_breaker={}",
+                    risk,
+                    velocity,
+                    approval,
+                    weights.version,
+                    if pr.circuit_breaker_triggered { "triggered" } else { "clear" }
+                )
+            } else {
+                format!(
+                    "highest_risk_file={} risk={:.2} velocity={:.2} approval={:.2} weights={} circuit_breaker={}",
+                    highest_risk_file.as_deref().unwrap_or(""),
+                    risk,
+                    velocity,
+                    approval,
+                    weights.version,
+                    if pr.circuit_breaker_triggered { "triggered" } else { "clear" }
+                )
+            };
             out.push(PrRanking {
                 pr_id: pr.pr_id.clone(),
                 repo_name: pr.repo_name.clone(),
                 author: pr.author.clone(),
                 rank_score: score,
-                rationale: format!(
-                    "risk={:.2} velocity={:.2} approval={:.2} weights={}",
-                    risk, velocity, approval, weights.version
-                ),
+                rationale,
+                highest_risk_file,
+                used_fallback_risk,
+                circuit_breaker_triggered: pr.circuit_breaker_triggered,
             });
         }
         out.sort_by(|a, b| b.rank_score.total_cmp(&a.rank_score));

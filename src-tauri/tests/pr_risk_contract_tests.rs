@@ -15,6 +15,7 @@ fn sample_candidate(
         file_risk,
         author_velocity,
         approval_fidelity,
+        ..Default::default()
     }
 }
 
@@ -56,4 +57,66 @@ fn low_risk_pr_is_allowed_by_the_contract() {
         .reason_codes
         .iter()
         .all(|reason| reason.contains('=')));
+}
+
+#[test]
+fn out_of_range_pr_risk_inputs_are_clamped_before_scoring() {
+    let schema = PrRiskSchema::default();
+    let evaluation = evaluate_pr_risk(&sample_candidate("pr-19", 1.4, 2.0, -0.2), &schema);
+
+    assert_eq!(evaluation.decision, PrRiskDecision::Block);
+    assert!((evaluation.risk_score - 0.7).abs() < 1e-12);
+    assert_eq!(
+        evaluation.reason_codes,
+        vec![
+            "file_risk=1.00".to_string(),
+            "velocity_penalty=0.00".to_string(),
+            "approval_penalty=1.00".to_string(),
+        ]
+    );
+}
+
+#[test]
+fn pr_risk_contract_is_stable_for_same_input() {
+    let schema = PrRiskSchema::default();
+    let candidate = sample_candidate("pr-20", 0.7, 0.5, 0.6);
+
+    let first = evaluate_pr_risk(&candidate, &schema);
+    let second = evaluate_pr_risk(&candidate, &schema);
+
+    assert_eq!(first.schema_version, second.schema_version);
+    assert_eq!(first.tier, second.tier);
+    assert_eq!(first.review_requirement, second.review_requirement);
+    assert_eq!(first.risk_score, second.risk_score);
+    assert_eq!(first.decision, second.decision);
+    assert_eq!(first.reason_codes, second.reason_codes);
+}
+
+#[test]
+fn pr_risk_contract_maps_thresholds_to_expected_tier_and_review_requirement() {
+    let schema = PrRiskSchema::default();
+
+    let allow = evaluate_pr_risk(&sample_candidate("pr-21", 0.69, 1.0, 1.0), &schema);
+    assert_eq!(allow.tier, "low");
+    assert_eq!(allow.review_requirement, "none");
+
+    let review = evaluate_pr_risk(&sample_candidate("pr-22", 0.70, 1.0, 1.0), &schema);
+    assert_eq!(review.tier, "medium");
+    assert_eq!(review.review_requirement, "human-review");
+
+    let block = evaluate_pr_risk(&sample_candidate("pr-23", 0.60, 1.0, 0.0), &schema);
+    assert_eq!(block.tier, "high");
+    assert_eq!(block.review_requirement, "security-review");
+}
+
+#[test]
+fn pr_risk_contract_round_trips_through_json() {
+    let schema = PrRiskSchema::default();
+    let evaluation = evaluate_pr_risk(&sample_candidate("pr-24", 0.7, 0.5, 0.6), &schema);
+
+    let raw = serde_json::to_string(&evaluation).expect("serialize evaluation");
+    let round_trip: repo_analyzer_core::risk_contract::PrRiskEvaluation =
+        serde_json::from_str(&raw).expect("deserialize evaluation");
+
+    assert_eq!(evaluation, round_trip);
 }

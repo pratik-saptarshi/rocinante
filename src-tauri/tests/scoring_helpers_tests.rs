@@ -35,6 +35,7 @@ fn top_prs_returns_highest_first() {
             author: "a".to_string(),
             rank_score: 0.2,
             rationale: "x".to_string(),
+            ..Default::default()
         },
         PrRanking {
             pr_id: "2".to_string(),
@@ -42,6 +43,7 @@ fn top_prs_returns_highest_first() {
             author: "a".to_string(),
             rank_score: 0.9,
             rationale: "x".to_string(),
+            ..Default::default()
         },
     ];
     let out = top_prs(rows, 1);

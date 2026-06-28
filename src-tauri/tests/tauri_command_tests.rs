@@ -14,6 +14,7 @@ fn tauri_command_evaluate_pr_risk_uses_the_default_schema() {
         file_risk: 0.92,
         author_velocity: 0.35,
         approval_fidelity: 0.45,
+        ..Default::default()
     };
 
     let evaluation =
@@ -22,6 +23,8 @@ fn tauri_command_evaluate_pr_risk_uses_the_default_schema() {
 
     assert_eq!(evaluation.schema_version, "risk-v1");
     assert_eq!(evaluation.pr_id, "pr-21");
+    assert_eq!(evaluation.tier, "high");
+    assert_eq!(evaluation.review_requirement, "security-review");
 }
 
 #[test]
@@ -35,6 +38,7 @@ fn tauri_command_rejects_non_admin_pr_risk_evaluation() {
         file_risk: 0.2,
         author_velocity: 0.2,
         approval_fidelity: 0.2,
+        ..Default::default()
     };
 
     let err = repo_analyzer_core::tauri_commands::evaluate_pr_risk(token.to_string(), candidate)
@@ -57,6 +61,7 @@ fn tauri_command_release_baseline_roundtrips() {
     store
         .reseed_release_baseline("repo-a", 9.75)
         .expect("seed baseline");
+    drop(store);
 
     let seeded = repo_analyzer_core::tauri_commands::query_release_baseline(
         token.to_string(),
@@ -109,11 +114,16 @@ fn tauri_command_release_baseline_store_facade_roundtrips() {
 }
 
 #[test]
-fn tauri_command_release_baseline_rejects_non_admin() {
+fn tauri_command_release_baseline_rejects_non_admin_before_opening_store() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
     let token = issue_test_token("bob", &["reader"], 3600);
+    let _store = BaselineStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
 
     let err = repo_analyzer_core::tauri_commands::reseed_release_baseline(
         token.to_string(),

@@ -4,6 +4,11 @@ use crate::risk_contract::PrRiskEvaluation;
 use crate::storage::BaselineStore;
 use crate::types::PrCandidate;
 
+fn authorize_baseline_access(token: &str) -> Result<(), String> {
+    let principal = decode_principal(token).map_err(|e| e.to_string())?;
+    require_admin(&principal).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub fn evaluate_pr_risk(token: String, candidate: PrCandidate) -> Result<PrRiskEvaluation, String> {
     admin::evaluate_pr_risk(&token, candidate).map_err(|e| e.to_string())
@@ -16,6 +21,7 @@ pub fn query_release_baseline(
     col_path: String,
     repo_name: String,
 ) -> Result<Option<f64>, String> {
+    authorize_baseline_access(&token)?;
     let store = BaselineStore::open(&kv_path, &col_path).map_err(|e| e.to_string())?;
     query_release_baseline_with_store(token, store, repo_name)
 }
@@ -28,6 +34,7 @@ pub fn reseed_release_baseline(
     repo_name: String,
     baseline_complexity: f64,
 ) -> Result<f64, String> {
+    authorize_baseline_access(&token)?;
     let store = BaselineStore::open(&kv_path, &col_path).map_err(|e| e.to_string())?;
     reseed_release_baseline_with_store(token, store, repo_name, baseline_complexity)
 }

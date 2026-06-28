@@ -19,7 +19,8 @@ fn sample_candidate(
         file_risk,
         author_velocity,
         approval_fidelity,
-        ..Default::default()
+        files: vec![],
+        circuit_breaker_triggered: false,
     }
 }
 

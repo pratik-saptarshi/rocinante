@@ -813,3 +813,46 @@ fn committer_score_read_uses_published_snapshot_when_live_db_is_unavailable() {
         .expect("compute from published snapshot");
     assert_eq!(resilient_scores.len(), 1);
 }
+
+#[test]
+fn reseeding_baselines_refreshes_published_snapshot_for_committer_scores() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
+
+    store
+        .ingest_commit_event(&sample_event_for_repo_release(
+            "repo-a",
+            "snapshot-refresh",
+            "v1.0.0",
+        ))
+        .expect("ingest");
+    store.promote_to_columnar().expect("promote");
+
+    let query = AdminQuery {
+        name: Some("repo-a".to_string()),
+        release: Some("v1.0.0".to_string()),
+    };
+    let weights = ScoringWeights::default();
+
+    let initial_scores = store
+        .compute_committer_scores(&query, &weights)
+        .expect("compute before reseed");
+    assert_eq!(initial_scores.len(), 1);
+    let initial_score = initial_scores[0].score;
+
+    store
+        .reseed_release_baseline("repo-a", 6.0)
+        .expect("reseed baseline");
+
+    let refreshed_scores = store
+        .compute_committer_scores(&query, &weights)
+        .expect("compute after reseed");
+    assert_eq!(refreshed_scores.len(), 1);
+    assert!(refreshed_scores[0].score > initial_score);
+}
