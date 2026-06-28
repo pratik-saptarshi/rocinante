@@ -8,8 +8,7 @@
 
 ## Current execution slices
 
-- `F-027` bulk import utility for historical commits and prior telemetry migration.
-- `F-033` reserved for the next ready frontend or backend readiness slice.
+- none
 
 ## Existing Test Coverage
 
@@ -54,8 +53,8 @@
 - `F-039` -> `T-043`
 - `F-040` -> `T-044`
 - `F-025` -> `T-045`
-- `F-027` -> `T-047`
 - `F-034` -> `T-036`
+- `F-033` -> `T-047`
 
 ## In-Progress Test Work
 
@@ -98,10 +97,6 @@
   - Validate sharded key strategy and localized write contention behavior.
   - Validate sustained append throughput under parallel producers.
 
-- `T-047` Bulk import utility tests (`F-027`):
-  - `src-tauri/tests/telemetry_tests.rs`
-  - Historical commit import, prior telemetry migration, duplicate-source-key handling, and summary telemetry coverage.
-
 ## Definition of Done (Testing)
 
 - Unit tests pass locally via:
@@ -118,6 +113,11 @@
   - Highest-risk-file PR tier selection.
   - Missing-file fallback behavior.
 ## Existing Test Coverage Additions
+
+- `T-047` Bulk-import worker evidence and summary telemetry (`F-033`):
+  - Historical commit import coverage target.
+  - Prior telemetry migration coverage target.
+  - Bulk-import summary telemetry, duplicate-source-key handling, and worker evidence are covered by `src-tauri/tests/telemetry_tests.rs`.
 
 - `T-037` PR risk service abstraction tests:
   - `tests/admin_service_tests.rs`

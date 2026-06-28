@@ -8,24 +8,28 @@ use crate::risk_contract::{
 use crate::scoring::{load_or_init_weights, update_weights_with_audit};
 use crate::storage::{BaselineStore, DualLayerStore, LifecycleStats};
 use crate::storage::{IngestionBackendConfig, StorageOperation, StorageRoute};
-use crate::telemetry::TelemetryStore;
+use crate::telemetry::{TelemetryImportSummary, TelemetryStore};
 use crate::types::{
     AdminQuery, AnalysisMetric, CommitIngestionEvent, CommitterScore, PrCandidate, PrRanking,
     ScoringWeights, TelemetryPoint,
 };
 
-pub fn run_scan(root: &str, release: &str, db_path: &str) -> Result<usize, AnalyzerError> {
+pub fn run_scan(
+    root: &str,
+    release: &str,
+    db_path: &str,
+) -> Result<TelemetryImportSummary, AnalyzerError> {
     let repos = discover_repositories(root);
     let pipeline = Pipeline::default();
     let store = TelemetryStore::open(db_path)?;
+    let mut records = Vec::new();
 
-    let mut records = Vec::with_capacity(repos.len());
     for repo in &repos {
-        records.push(pipeline.analyze_repo(repo.clone(), release)?);
+        let record = pipeline.analyze_repo(repo.clone(), release)?;
+        records.push(record);
     }
 
-    store.insert_records(&records)?;
-    Ok(repos.len())
+    store.insert_records(&records, release)
 }
 
 pub fn query_metrics(
@@ -125,6 +129,17 @@ pub fn evaluate_pr_risk_with_schema(
     Ok(evaluate_pr_risk_contract(&candidate, &schema))
 }
 
+pub fn update_scoring_weights(
+    token: &str,
+    weights_path: &str,
+    audit_path: &str,
+    new_weights: ScoringWeights,
+) -> Result<(), AnalyzerError> {
+    let principal = decode_principal(token)?;
+    require_admin(&principal)?;
+    update_weights_with_audit(weights_path, audit_path, &principal.user, new_weights)
+}
+
 pub fn query_release_baseline(
     token: &str,
     kv_path: &str,
@@ -148,15 +163,4 @@ pub fn reseed_release_baseline(
     require_admin(&principal)?;
     let store = BaselineStore::open(kv_path, col_path)?;
     store.reseed_release_baseline(repo_name, baseline_complexity)
-}
-
-pub fn update_scoring_weights(
-    token: &str,
-    weights_path: &str,
-    audit_path: &str,
-    weights: ScoringWeights,
-) -> Result<(), AnalyzerError> {
-    let principal = decode_principal(token)?;
-    require_admin(&principal)?;
-    update_weights_with_audit(weights_path, audit_path, &principal.user, weights)
 }

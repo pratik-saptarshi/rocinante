@@ -55,6 +55,7 @@
   - Directory lookups now use a bounded membership cache with deterministic eviction.
   - Group alias resolution rejects cycles and keeps membership checks stable under repeated access.
 - `F-024` Explainability panel: score decomposition traces per committer and PR, now rendered and tested in the dashboard.
+- `F-027` Bulk import utility for historical commits and prior telemetry migration, with import-summary telemetry and duplicate-source-key handling.
 - `F-011` Baseline complexity seed table and delta-based committer scoring normalization.
 - `F-012` Isolated scoring module with versioned algorithm constant and deterministic weight configuration.
 - `F-013` Audit-logged scoring weight changes with admin-only authorization.
@@ -66,7 +67,6 @@
 - `F-036` Admin PR risk command boundary coverage through the Tauri bridge and command-surface integration tests.
 - `F-038` Admin bridge async settlement hardening for the App slice (timeout, cancellation, and readable errors).
 - `F-039` Deterministic admin bridge mock seam for App tests (stop mutating `globalThis.__TAURI__` directly).
-- `F-027` Bulk import utility for historical commits and prior telemetry migration, including duplicate-source-key handling and import-summary telemetry with a dedicated test mapping.
 
 ## Validated Features
 
@@ -75,10 +75,9 @@
 - `F-016` Rich dashboard visualizations for trend lines and PR risk ranking rationale, including the extracted trend/risk helper module.
 - `F-026` Job observability: queue depth, worker throughput, promotion lag metrics, now surfaced in the dashboard with UI test coverage.
 - `F-017` Expanded sanitizer detection rules and policy packs per compliance domain, including the validated pack-aware redaction helper.
+- `F-033` Bulk-import worker evidence and summary telemetry, including queryable import summaries, duplicate-source-key handling, and backend boundary coverage.
 
 ## New Backlog
-
-- `F-033` Reserved for next ready frontend or backend readiness slice.
 
 ## Cross-Track Planning References
 

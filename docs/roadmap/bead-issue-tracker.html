@@ -4,8 +4,8 @@
 
 ## Active execution slices
 
-- `F-027` bulk import utility for historical commits and prior telemetry migration, with duplicate-source-key handling and summary telemetry.
-- `F-033` reserved for the next ready frontend or backend readiness slice.
+- `F-033` bulk-import worker evidence and summary telemetry is complete.
+- Active acceptance: historical imports return queryable summaries with processed, inserted, and duplicate counts; duplicate source keys do not double-write; and the worker coverage is mapped in the test plan.
 
 | Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
@@ -41,8 +41,8 @@
    - `F-017` expanded sanitizer rules
     - Validated checkpoint: policy-pack scrubber now covers General, Security, Privacy, and Payments domains with regression coverage.
 4. Scale and history
-   - `F-027` bulk import utility
-   - `F-033` reserved for the next ready frontend or backend readiness slice
+   - `F-033` bulk-import worker evidence and summary telemetry
+   - `F-027` bulk import utility is complete
 
 ## TDD Ledger
 
@@ -88,4 +88,5 @@
 | BI-041 | Stage 1 | EP-01 AI quality checking | F-025 Release baseline management UI | C-029 Registered-handler integration | FN-029 Main-handler exerciser | TK-029 Add main-handler integration tests | Red->Green complete | Completed | The release-baseline commands are exercised through the registered Tauri handlers, so `AppState` wiring and `generate_handler!` registration failures are caught end to end. | implementer | Proved by `src-tauri/tests/release_baseline_handler_tests.rs` plus `src-tauri/src/app_support.rs`. |
 | BI-042 | Stage 1 | EP-01 AI quality checking | F-025 Release baseline management UI | C-030 Baseline persistence boundary | FN-030 Baseline repository adapter | TK-030 Extract baseline persistence adapter | Red->Green complete | Completed | Release-baseline reads and writes sit behind a smaller baseline-specific abstraction, so `DualLayerStore` does not absorb unrelated domain policy and future changes stay localized. | implementer | Proved by `src-tauri/src/storage.rs`, `src-tauri/tests/release_baseline_storage_tests.rs`, and `src-tauri/tests/release_baseline_tests.rs`. |
 | BI-043 | Stage 0 | EP-00 Shared planning | F-000 Artifact scaffolding | C-001 Backlog hygiene | FN-001 Roadmap deduper | TK-001 Remove duplicate feature-test mapping | Red->Green complete | Completed | The roadmap and test-plan stay single-source, with no duplicate `F-025 -> T-045` lines and no drift between the feature list, roadmap, and test plan. | implementer | Review follow-up completed by removing the duplicate mapping from the current execution slices. |
-| BI-044 | Stage 4 | EP-04 Scale and history | F-027 Bulk import utility | C-031 Historical import pipeline | FN-031 Batch import helper | TK-031 Add bulk import tests | Planned | In Progress | implementer | Historical commit import, prior telemetry migration, duplicate-source-key handling, and summary telemetry remain open. |
+| BI-044 | Stage 4 | EP-04 Scale and history | F-027 Bulk import utility | C-031 Bulk-import telemetry surface | FN-031 Historical commit and telemetry migrator | TK-031 Add bulk import telemetry mapping placeholder | Green | Completed | Historical commits and prior telemetry import cleanly, duplicate source keys do not double-write, import summaries record counts and failures per batch, and the test-plan entry keeps the worker coverage mapped without claiming completion. | implementer | Bulk import utility landed with import-summary telemetry and duplicate-source-key handling; F-033 now carries the backend worker evidence slice. |
+| BI-045 | Stage 4 | EP-04 Scale and history | F-033 Bulk-import worker evidence and summary telemetry | C-032 Queryable import evidence contract | FN-032 Summary telemetry boundary | TK-032 Add summary telemetry and duplicate-key tests | Red->Green complete | Completed | Historical import batches return queryable summaries with processed, inserted, and duplicate counts; duplicate source keys do not double-write; and the worker-facing summary stays mapped to the backend test-plan entry. | implementer | Bulk-import summary telemetry and duplicate-key handling are complete and validated by `tests/telemetry_tests.rs`. |
