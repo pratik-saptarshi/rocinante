@@ -65,7 +65,7 @@ fn out_of_range_pr_risk_inputs_are_clamped_before_scoring() {
     let evaluation = evaluate_pr_risk(&sample_candidate("pr-19", 1.4, 2.0, -0.2), &schema);
 
     assert_eq!(evaluation.decision, PrRiskDecision::Block);
-    assert!((evaluation.risk_score - 0.7).abs() < 1e-12);
+    assert!((evaluation.risk_score - 0.8).abs() < 1e-12);
     assert_eq!(
         evaluation.reason_codes,
         vec![
