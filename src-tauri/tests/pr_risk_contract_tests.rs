@@ -30,10 +30,7 @@ fn default_pr_risk_schema_is_versioned() {
 #[test]
 fn high_risk_pr_is_blocked_by_the_contract() {
     let schema = PrRiskSchema::default();
-    let evaluation = evaluate_pr_risk(
-        &sample_candidate("pr-17", 0.8, 0.5, 0.6),
-        &schema,
-    );
+    let evaluation = evaluate_pr_risk(&sample_candidate("pr-17", 0.8, 0.5, 0.6), &schema);
 
     assert_eq!(evaluation.schema_version, schema.version);
     assert_eq!(evaluation.decision, PrRiskDecision::Block);
@@ -51,12 +48,12 @@ fn high_risk_pr_is_blocked_by_the_contract() {
 #[test]
 fn low_risk_pr_is_allowed_by_the_contract() {
     let schema = PrRiskSchema::default();
-    let evaluation = evaluate_pr_risk(
-        &sample_candidate("pr-18", 0.1, 0.9, 0.95),
-        &schema,
-    );
+    let evaluation = evaluate_pr_risk(&sample_candidate("pr-18", 0.1, 0.9, 0.95), &schema);
 
     assert_eq!(evaluation.decision, PrRiskDecision::Allow);
     assert!((evaluation.risk_score - 0.085).abs() < 1e-12);
-    assert!(evaluation.reason_codes.iter().all(|reason| reason.contains('=')));
+    assert!(evaluation
+        .reason_codes
+        .iter()
+        .all(|reason| reason.contains('=')));
 }

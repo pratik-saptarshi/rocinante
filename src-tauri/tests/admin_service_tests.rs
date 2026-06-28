@@ -286,5 +286,8 @@ fn admin_services_reject_non_admin_pr_risk_evaluation() {
 
     let err = admin::evaluate_pr_risk(&token, candidate).expect_err("non-admin rejected");
 
-    assert!(matches!(err, repo_analyzer_core::errors::AnalyzerError::PermissionDenied(_)));
+    assert!(matches!(
+        err,
+        repo_analyzer_core::errors::AnalyzerError::PermissionDenied(_)
+    ));
 }

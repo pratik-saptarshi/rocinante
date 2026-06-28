@@ -39,7 +39,11 @@ pub fn app_state() -> AppState {
 
 pub fn release_baseline_paths(state: &AppState) -> Result<(String, String), String> {
     let kv = state.kv_path.lock().map_err(|e| e.to_string())?.clone();
-    let col = state.columnar_path.lock().map_err(|e| e.to_string())?.clone();
+    let col = state
+        .columnar_path
+        .lock()
+        .map_err(|e| e.to_string())?
+        .clone();
     Ok((kv, col))
 }
 

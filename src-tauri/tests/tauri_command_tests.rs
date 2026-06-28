@@ -16,11 +16,9 @@ fn tauri_command_evaluate_pr_risk_uses_the_default_schema() {
         approval_fidelity: 0.45,
     };
 
-    let evaluation = repo_analyzer_core::tauri_commands::evaluate_pr_risk(
-        token.to_string(),
-        candidate,
-    )
-    .expect("evaluate pr risk through command surface");
+    let evaluation =
+        repo_analyzer_core::tauri_commands::evaluate_pr_risk(token.to_string(), candidate)
+            .expect("evaluate pr risk through command surface");
 
     assert_eq!(evaluation.schema_version, "risk-v1");
     assert_eq!(evaluation.pr_id, "pr-21");

@@ -5,10 +5,7 @@ use crate::storage::BaselineStore;
 use crate::types::PrCandidate;
 
 #[tauri::command]
-pub fn evaluate_pr_risk(
-    token: String,
-    candidate: PrCandidate,
-) -> Result<PrRiskEvaluation, String> {
+pub fn evaluate_pr_risk(token: String, candidate: PrCandidate) -> Result<PrRiskEvaluation, String> {
     admin::evaluate_pr_risk(&token, candidate).map_err(|e| e.to_string())
 }
 

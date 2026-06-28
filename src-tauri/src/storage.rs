@@ -696,9 +696,7 @@ impl DualLayerStore {
         let conn =
             Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let mut stmt = conn
-            .prepare(
-                "SELECT baseline_complexity FROM repo_baseline WHERE repo_name = ?1 LIMIT 1",
-            )
+            .prepare("SELECT baseline_complexity FROM repo_baseline WHERE repo_name = ?1 LIMIT 1")
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let mut rows = stmt
             .query(params![repo_name])
