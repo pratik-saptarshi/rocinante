@@ -6,6 +6,7 @@ import { buildExplainabilityTraces } from './dashboard-explainability';
 describe('dashboard explainability', () => {
   it('builds deterministic score decomposition traces from sample insights', () => {
     const pulse = buildQualityPulse(buildDashboardInsights());
+
     expect(buildExplainabilityTraces(pulse)).toEqual([
       {
         id: 'explain-score',
@@ -47,9 +48,7 @@ describe('dashboard explainability', () => {
             { id: 'safe-2', files: 1, changedLines: 12, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }
           ],
           stages: [{ name: 'scan', queueDepth: 1, throughput: 20, avgLatencyMs: 300 }],
-          signals: [
-            { id: 'op-1', area: 'infra', title: 'Reduce release coupling', impact: 5, effort: 3, confidence: 0.8 }
-          ]
+          signals: [{ id: 'op-1', area: 'infra', title: 'Reduce release coupling', impact: 5, effort: 3, confidence: 0.8 }]
         },
         { risks: 1, opportunities: 1, latencyP95Ms: 1000, severityThreshold: 1 }
       )
@@ -66,14 +65,14 @@ describe('dashboard explainability', () => {
       {
         id: 'explain-risk',
         title: 'Top Risk Commit',
-        summary: 'safe-2',
+        summary: 'safe-1',
         detail: 'No high-risk commit currently dominates the pulse.',
         status: 'good'
       },
       {
         id: 'explain-bottleneck',
         title: 'Top Bottleneck',
-        summary: 'No severe bottleneck',
+        summary: 'scan',
         detail: 'No critical stage is currently suppressing flow.',
         status: 'medium'
       },

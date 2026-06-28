@@ -1,22 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { invokeAdminCommand } from './tauri-admin';
-
-const originalTauri = (globalThis as { __TAURI__?: unknown }).__TAURI__;
+import { invokeAdminCommand, setAdminInvokeForTesting } from './tauri-admin';
 
 afterEach(() => {
-  const globalWithTauri = globalThis as { __TAURI__?: unknown };
-  if (originalTauri === undefined) {
-    delete globalWithTauri.__TAURI__;
-  } else {
-    globalWithTauri.__TAURI__ = originalTauri;
-  }
+  setAdminInvokeForTesting(null);
+  vi.useRealTimers();
 });
 
 describe('tauri admin bridge', () => {
   it('returns runtime fallback when Tauri is unavailable', async () => {
-    const globalWithTauri = globalThis as { __TAURI__?: unknown };
-    delete globalWithTauri.__TAURI__;
-
     const result = await invokeAdminCommand('ingest_event', {
       token: 'alice:admin',
       event: {
@@ -35,8 +26,7 @@ describe('tauri admin bridge', () => {
 
   it('returns success when invoke resolves with string payload', async () => {
     const invoke = vi.fn().mockResolvedValue('ok');
-    const globalWithTauri = globalThis as { __TAURI__?: { core?: { invoke?: typeof invoke } } };
-    globalWithTauri.__TAURI__ = { core: { invoke } };
+    setAdminInvokeForTesting(invoke);
 
     const result = await invokeAdminCommand('query_aggregates', {
       token: 'alice:admin',
@@ -55,8 +45,7 @@ describe('tauri admin bridge', () => {
 
   it('stringifies non-string invoke responses', async () => {
     const invoke = vi.fn().mockResolvedValue({ status: 'ok', count: 2 });
-    const globalWithTauri = globalThis as { __TAURI__?: { core?: { invoke?: typeof invoke } } };
-    globalWithTauri.__TAURI__ = { core: { invoke } };
+    setAdminInvokeForTesting(invoke);
 
     const result = await invokeAdminCommand('query_aggregates', {
       token: 'alice:admin',
@@ -70,8 +59,7 @@ describe('tauri admin bridge', () => {
 
   it('returns error message when invoke rejects', async () => {
     const invoke = vi.fn().mockRejectedValue(new Error('boom'));
-    const globalWithTauri = globalThis as { __TAURI__?: { core?: { invoke?: typeof invoke } } };
-    globalWithTauri.__TAURI__ = { core: { invoke } };
+    setAdminInvokeForTesting(invoke);
 
     const result = await invokeAdminCommand('promote_lifecycle', {
       token: 'alice:admin'
@@ -85,8 +73,7 @@ describe('tauri admin bridge', () => {
 
   it('invokes committer scores with representative query payload', async () => {
     const invoke = vi.fn().mockResolvedValue({ ok: true });
-    const globalWithTauri = globalThis as { __TAURI__?: { core?: { invoke?: typeof invoke } } };
-    globalWithTauri.__TAURI__ = { core: { invoke } };
+    setAdminInvokeForTesting(invoke);
 
     const result = await invokeAdminCommand('committer_scores', {
       token: 'alice:admin',
@@ -104,8 +91,7 @@ describe('tauri admin bridge', () => {
 
   it('invokes PR ranking with representative candidates', async () => {
     const invoke = vi.fn().mockResolvedValue({ ok: true });
-    const globalWithTauri = globalThis as { __TAURI__?: { core?: { invoke?: typeof invoke } } };
-    globalWithTauri.__TAURI__ = { core: { invoke } };
+    setAdminInvokeForTesting(invoke);
 
     const result = await invokeAdminCommand('rank_prs', {
       token: 'alice:admin',
@@ -141,8 +127,7 @@ describe('tauri admin bridge', () => {
 
   it('invokes scoring weight updates with representative weights', async () => {
     const invoke = vi.fn().mockResolvedValue('updated');
-    const globalWithTauri = globalThis as { __TAURI__?: { core?: { invoke?: typeof invoke } } };
-    globalWithTauri.__TAURI__ = { core: { invoke } };
+    setAdminInvokeForTesting(invoke);
 
     const result = await invokeAdminCommand('update_scoring_weights', {
       token: 'alice:admin',
@@ -176,8 +161,7 @@ describe('tauri admin bridge', () => {
 
   it('returns generic error message for non-Error throws', async () => {
     const invoke = vi.fn().mockRejectedValue('plain-failure');
-    const globalWithTauri = globalThis as { __TAURI__?: { core?: { invoke?: typeof invoke } } };
-    globalWithTauri.__TAURI__ = { core: { invoke } };
+    setAdminInvokeForTesting(invoke);
 
     const result = await invokeAdminCommand('promote_lifecycle', {
       token: 'alice:admin'
@@ -185,5 +169,63 @@ describe('tauri admin bridge', () => {
 
     expect(result.ok).toBe(false);
     expect(result.message).toBe('Command failed');
+  });
+
+  it('returns a release baseline value when queried through the test seam', async () => {
+    const invoke = vi.fn().mockResolvedValue(9.75);
+    setAdminInvokeForTesting(invoke);
+
+    const result = await invokeAdminCommand('query_release_baseline', {
+      token: 'alice:admin',
+      repo_name: 'repo-a'
+    });
+
+    expect(invoke).toHaveBeenCalledWith('query_release_baseline', {
+      token: 'alice:admin',
+      repo_name: 'repo-a'
+    });
+    expect(result.ok).toBe(true);
+    expect(result.message).toBe('9.75');
+  });
+
+  it('re-seeds a release baseline through the test seam', async () => {
+    const invoke = vi.fn().mockResolvedValue(12.25);
+    setAdminInvokeForTesting(invoke);
+
+    const result = await invokeAdminCommand('reseed_release_baseline', {
+      token: 'alice:admin',
+      repo_name: 'repo-a',
+      baseline_complexity: 12.25
+    });
+
+    expect(invoke).toHaveBeenCalledWith('reseed_release_baseline', {
+      token: 'alice:admin',
+      repo_name: 'repo-a',
+      baseline_complexity: 12.25
+    });
+    expect(result.ok).toBe(true);
+    expect(result.message).toBe('12.25');
+  });
+
+  it('returns a timeout error when invoke does not settle', async () => {
+    vi.useFakeTimers();
+    setAdminInvokeForTesting(() => new Promise(() => {}));
+
+    const resultPromise = invokeAdminCommand(
+      'query_aggregates',
+      {
+        token: 'alice:admin',
+        name: 'sample-repo',
+        release: 'v1.0.0'
+      },
+      { timeoutMs: 10 }
+    );
+
+    await vi.advanceTimersByTimeAsync(10);
+    const result = await resultPromise;
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/timed out/i);
+    expect(result.command).toBe('query_aggregates');
   });
 });

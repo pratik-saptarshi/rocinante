@@ -1,8 +1,9 @@
 use repo_analyzer_core::admin;
 use repo_analyzer_core::auth::issue_test_token;
+use repo_analyzer_core::risk_contract::{PrRiskDecision, PrRiskSchema};
 use repo_analyzer_core::storage::{IngestionBackendConfig, IngestionBackendKind};
 use repo_analyzer_core::types::{
-    AdminQuery, CommitIngestionEvent, PrCandidate, ScoringWeights, TelemetryPoint,
+    AdminQuery, CommitIngestionEvent, PrCandidate, PrFileSignal, ScoringWeights, TelemetryPoint,
 };
 use tempfile::tempdir;
 
@@ -104,6 +105,7 @@ fn admin_services_roundtrip_happy_path() {
         file_risk: 0.8,
         author_velocity: 0.5,
         approval_fidelity: 0.6,
+        ..Default::default()
     }];
     let ranked = admin::rank_prs(
         &issue_test_token("alice", &["admin"], 3600),
@@ -212,9 +214,169 @@ fn admin_services_analytics_commands_require_analytics_route() {
             file_risk: 0.8,
             author_velocity: 0.5,
             approval_fidelity: 0.6,
+            ..Default::default()
         }],
         weights.to_str().expect("weights"),
     )
     .expect("rank prs");
     assert_eq!(ranked.len(), 1);
+}
+
+#[test]
+fn admin_services_evaluate_pr_risk_using_the_default_contract() {
+    let token = issue_test_token("alice", &["admin"], 3600);
+    let candidate = PrCandidate {
+        pr_id: "pr-9".to_string(),
+        repo_name: "repo-a".to_string(),
+        author: "alice".to_string(),
+        release: "v1.0.0".to_string(),
+        file_risk: 0.92,
+        author_velocity: 0.35,
+        approval_fidelity: 0.45,
+        ..Default::default()
+    };
+
+    let evaluation = admin::evaluate_pr_risk(&token, candidate).expect("evaluate pr risk");
+
+    assert_eq!(evaluation.schema_version, "risk-v1");
+    assert_eq!(evaluation.tier, "high");
+    assert_eq!(evaluation.review_requirement, "security-review");
+    assert_eq!(evaluation.decision, PrRiskDecision::Block);
+    assert!(evaluation
+        .reason_codes
+        .iter()
+        .any(|reason| reason.starts_with("file_risk=")));
+}
+
+#[test]
+fn admin_services_evaluate_pr_risk_with_injected_schema() {
+    let token = issue_test_token("alice", &["admin"], 3600);
+    let candidate = PrCandidate {
+        pr_id: "pr-10".to_string(),
+        repo_name: "repo-a".to_string(),
+        author: "alice".to_string(),
+        release: "v1.0.0".to_string(),
+        file_risk: 0.92,
+        author_velocity: 0.35,
+        approval_fidelity: 0.45,
+        ..Default::default()
+    };
+    let schema = PrRiskSchema {
+        version: "risk-custom".to_string(),
+        file_risk_weight: 0.0,
+        velocity_weight: 0.0,
+        approval_weight: 0.0,
+        review_threshold: 0.10,
+        block_threshold: 0.20,
+    };
+
+    let evaluation =
+        admin::evaluate_pr_risk_with_schema(&token, candidate, schema).expect("evaluate pr risk");
+
+    assert_eq!(evaluation.schema_version, "risk-custom");
+    assert_eq!(evaluation.tier, "low");
+    assert_eq!(evaluation.review_requirement, "none");
+    assert_eq!(evaluation.decision, PrRiskDecision::Allow);
+}
+
+#[test]
+fn admin_services_reject_non_admin_pr_risk_evaluation() {
+    let token = issue_test_token("bob", &["reader"], 3600);
+    let candidate = PrCandidate {
+        pr_id: "pr-11".to_string(),
+        repo_name: "repo-a".to_string(),
+        author: "bob".to_string(),
+        release: "v1.0.0".to_string(),
+        file_risk: 0.4,
+        author_velocity: 0.4,
+        approval_fidelity: 0.4,
+        ..Default::default()
+    };
+
+    let err = admin::evaluate_pr_risk(&token, candidate).expect_err("non-admin rejected");
+
+    assert!(matches!(
+        err,
+        repo_analyzer_core::errors::AnalyzerError::PermissionDenied(_)
+    ));
+}
+
+#[test]
+fn admin_services_rank_prs_use_highest_risk_file_when_present() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let weights = dir.path().join("weights.json");
+    let token = issue_test_token("alice", &["admin"], 3600);
+
+    let ranked = admin::rank_prs(
+        &token,
+        kv.to_str().expect("kv"),
+        col.to_str().expect("col"),
+        vec![PrCandidate {
+            pr_id: "pr-12".to_string(),
+            repo_name: "repo-a".to_string(),
+            author: "alice".to_string(),
+            release: "v1.0.0".to_string(),
+            file_risk: 0.10,
+            author_velocity: 0.80,
+            approval_fidelity: 0.90,
+            files: vec![
+                PrFileSignal {
+                    path: "src/low.rs".to_string(),
+                    risk: 0.20,
+                },
+                PrFileSignal {
+                    path: "src/high.rs".to_string(),
+                    risk: 0.95,
+                },
+            ],
+            circuit_breaker_triggered: true,
+        }],
+        weights.to_str().expect("weights"),
+    )
+    .expect("rank prs");
+
+    assert_eq!(ranked.len(), 1);
+    assert_eq!(ranked[0].highest_risk_file.as_deref(), Some("src/high.rs"));
+    assert!(!ranked[0].used_fallback_risk);
+    assert!(ranked[0].circuit_breaker_triggered);
+    assert!(ranked[0]
+        .rationale
+        .contains("highest_risk_file=src/high.rs"));
+    assert!(ranked[0].rationale.contains("circuit_breaker=triggered"));
+    assert!((ranked[0].rank_score - 0.545).abs() < 1e-12);
+}
+
+#[test]
+fn admin_services_rank_prs_fall_back_to_scalar_risk_when_files_are_missing() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let weights = dir.path().join("weights.json");
+    let token = issue_test_token("alice", &["admin"], 3600);
+
+    let ranked = admin::rank_prs(
+        &token,
+        kv.to_str().expect("kv"),
+        col.to_str().expect("col"),
+        vec![PrCandidate {
+            pr_id: "pr-13".to_string(),
+            repo_name: "repo-a".to_string(),
+            author: "alice".to_string(),
+            release: "v1.0.0".to_string(),
+            file_risk: 0.40,
+            author_velocity: 0.80,
+            approval_fidelity: 0.90,
+            ..Default::default()
+        }],
+        weights.to_str().expect("weights"),
+    )
+    .expect("rank prs");
+
+    assert_eq!(ranked.len(), 1);
+    assert_eq!(ranked[0].highest_risk_file, None);
+    assert!(ranked[0].used_fallback_risk);
+    assert!(ranked[0].rationale.contains("fallback_risk=0.40"));
+    assert!((ranked[0].rank_score - 0.27).abs() < 1e-12);
 }

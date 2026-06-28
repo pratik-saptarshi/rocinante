@@ -6,6 +6,13 @@
 - Every backlog item must map to at least one automated test target.
 - Block feature completion unless tests for functional behavior and security controls pass.
 
+## Current execution slices
+
+- `F-031` frontend structural decomposition and dashboard content extraction.
+- `F-016` -> `T-014`
+- `F-026` -> `T-041`
+- `F-017` -> `T-003`
+
 ## Existing Test Coverage
 
 - `T-001` Auth/RBAC enforcement:
@@ -13,7 +20,7 @@
 - `T-002` Bead pipeline execution and plugin coverage:
   - `tests/engine_tests.rs`
 - `T-003` Sanitizer behavior and redaction correctness:
-  - `tests/sanitizer_tests.rs`
+  - `tests/sanitizer_tests.rs` with `F-017` domain policy-pack redaction coverage.
 - `T-004` Telemetry write/query behavior:
   - `tests/telemetry_tests.rs`
 - `T-005` Dual-layer storage lifecycle promotion + aggregate reads:
@@ -22,23 +29,15 @@
   - `tests/scoring_audit_tests.rs`
 - `T-007` Baseline delta scoring normalization:
   - `tests/baseline_delta_tests.rs`
-- `T-010` Signed scoring config verification tests:
-  - `tests/scoring_integrity_tests.rs`
 - `T-011` AD/LDAP provider behavior tests with mocked directory responses:
   - `tests/onprem_and_errors_tests.rs`
-- `T-012` AST plugin determinism tests across supported languages:
-  - `tests/parser_plugin_tests.rs`
-- `T-013` Historical retention/partition correctness tests:
-  - `tests/storage_duallayer_tests.rs`
-- `T-025` Internal Git provider adapter tests:
-  - `tests/git_provider_tests.rs`
-  - `tests/onprem_and_errors_tests.rs`
-- `T-026` Explainability panel and decision trace rendering tests:
-  - `ui/src/dashboard-explainability.test.ts`
-  - `ui/src/App.test.tsx`
 
 ## Feature-to-Test Matrix
 
+- `F-031/FE-009` -> `T-008`
+- `F-016` -> `T-014`
+- `F-026` -> `T-041`
+- `F-017` -> `T-003`
 - `F-001/F-005/F-006` -> `T-002`
 - `F-002` -> `T-003`
 - `F-007/F-013` -> `T-001`, `T-006`
@@ -46,40 +45,142 @@
 - `F-011/F-012` -> `T-007`, `T-006`
 - `F-014` -> add integration tests `T-008` (pending)
 - `F-008A/F-008B/F-008C/F-008D/F-008E/F-008F` -> `T-015`, `T-016`, `T-017`, `T-018`, `T-019`, `T-020`
-- `F-018` -> `T-010`
-- `F-019` -> `T-024`
 - `F-020` -> `T-012`
 - `F-021` -> `T-013`
 - `F-022` -> `T-025`
 - `F-023` -> `T-011`
-- `F-024` -> `T-026`
-- `F-025` -> `T-027`
-- `F-026` -> `T-014`, `T-028`
-- `F-031` / `FE-009` -> `T-FE-011`, `T-023`
-- `FE-009` command failures and parity -> `T-021`, `T-023`
+- `F-030` -> `T-046`
+- `F-036` -> `T-038`
+- `F-037` -> `T-039`
+- `F-038` -> `T-042`
+- `F-039` -> `T-043`
+- `F-040` -> `T-044`
+- `F-025` -> `T-045`
+- `F-034` -> `T-036`
 
 ## In-Progress Test Work
 
 - `T-008` Tauri command integration tests:
-  - Validate command input/output contracts for all admin commands.
-  - Validate command-level RBAC denial/allow flows.
-- `T-009` Async ingestion load tests:
-  - Saturate bounded ring buffer and verify no ingestion deadlocks.
-  - Measure promotion lag under sustained commit bursts.
-- `T-FE-011` Frontend contract safety tests for `F-031` / `FE-009`.
+  - Validate command input/output contracts for the current command-schema slice and command-level RBAC denial/allow flows.
+- `T-003` Sanitizer behavior and redaction correctness:
+  - Extend domain policy-pack coverage for the current sanitizer slice.
+- `T-039` Admin PR risk browser bridge e2e tests:
+  - Authored browser invocation through the Tauri bridge with browser-side allow/deny coverage pending UI toolchain availability.
+- `T-041` Job observability panel tests:
+  - `ui/src/App.test.tsx`
+  - `ui/src/App.tsx`
+  - Dashboard render exposes queue depth, throughput, and promotion lag metrics from shared stage telemetry.
+- `T-045` Release baseline management tests:
+  - `ui/src/App.test.tsx`
+  - `ui/src/tauri-admin.test.ts`
+  - `ui/e2e/app.spec.ts`
+  - `src-tauri/tests/release_baseline_tests.rs`
+  - `src-tauri/tests/release_baseline_handler_tests.rs`
+  - `src-tauri/tests/release_baseline_storage_tests.rs`
+  - Dashboard render exposes current release baseline query/reseed controls from the shared admin bridge, the registered Tauri handler path, and the extracted baseline store boundary.
+
+- `T-031` CI gate and comment contract tests:
+  - `src-tauri/tests/ci_gate_tests.rs`
+  - Stable review requirement summary and merge-block decision stay deterministic for the current PR-risk contract slice.
+
+- `T-032` Incident and annotation feedback tests:
+  - `src-tauri/tests/incident_feedback_tests.rs`
+  - Incident and annotation records raise risk, invalidate cached assessments, and preserve an audit trail in the current feedback ledger slice.
 
 ## Planned New Tests
 
+- `T-010` Signed scoring config verification tests (`F-018`).
+- `T-025` Internal Git provider adapter tests (`F-022`):
+  - `tests/git_provider_tests.rs`
+  - `tests/onprem_and_errors_tests.rs`
+- `T-012` AST plugin determinism tests across supported languages (`F-020`):
+  - `tests/parser_plugin_tests.rs`
+  - `tests/engine_tests.rs`
+- `T-013` Historical retention/partition correctness tests (`F-021`):
+  - `tests/storage_duallayer_tests.rs`
+  - `prunes_old_releases_and_preserves_queryability_by_rollup`
+  - `prunes_release_partitions_per_repo_without_cross_repo_drift`
 - `T-014` End-to-end dashboard query performance regression tests (`F-016`, `F-026`).
-- `T-015` Storage boundary conformance tests.
-- `T-016` Badger sidecar transport conformance tests.
-- `T-017` Snapshot/replica isolation tests.
-- `T-018` Retention pruning tests.
-- `T-019` Storage ownership and path exclusivity tests.
-- `T-020` Promotion visibility tests.
-- `T-021` Command parse/dispatch error envelope tests.
-- `T-022` UTF-safe sanitizer regression corpus.
-- `T-023` Nested payload and fallback contract tests.
-- `T-024` Team policy profile tests (`F-019`).
-- `T-027` Release baseline management UI tests (`F-025`).
-- `T-028` Job observability and queue-depth dashboard tests (`F-026`).
+- `T-015` Storage boundary conformance tests:
+  - Reject analytics queries against ingestion API.
+  - Reject ingestion writes against analytics API.
+  - Validate Badger-only ingest path and DuckDB-only analytic path.
+- `T-016` Retention lifecycle tests:
+  - Verify raw ingestion TTL prune/roll-up execution windows.
+  - Verify long-term compressed release marts remain queryable.
+- `T-017` Snapshot isolation tests for analytics:
+  - Ensure read queries run against immutable snapshot while promotion proceeds.
+  - Ensure no query lock contention during ingestion bursts.
+- `T-018` Ingestion concurrency tests:
+  - Validate sharded key strategy and localized write contention behavior.
+  - Validate sustained append throughput under parallel producers.
+
+## Definition of Done (Testing)
+
+- Unit tests pass locally via:
+  - `cargo test --manifest-path src-tauri/Cargo.toml`
+- New feature includes at least:
+  - One positive-path test.
+  - One failure/authorization or boundary test.
+- Security-sensitive features include explicit RBAC + sanitization assertions.
+
+## Planned New Test Tracks
+
+- `T-030` Risk contract and PR scoring tests:
+  - Versioned risk output schema.
+  - Highest-risk-file PR tier selection.
+  - Missing-file fallback behavior.
+## Existing Test Coverage Additions
+
+- `T-037` PR risk service abstraction tests:
+  - `tests/admin_service_tests.rs`
+  - Injected schema/config overrides default risk-v1 behavior without code changes.
+  - Service-layer injection covers default and custom PR policies without changing the command surface.
+
+- `T-038` Admin PR risk command boundary tests:
+  - `tests/tauri_command_tests.rs`
+  - End-to-end command invocation through the Tauri bridge.
+  - RBAC denial/allow flow for the command facade.
+
+- `T-036` Admin PR risk command tests:
+  - `tests/pr_risk_contract_tests.rs`
+  - `tests/admin_service_tests.rs`
+  - Admin-only access for `evaluate_pr_risk`, `risk-v1` schema defaulting, block/allow decision parity with the contract module, and negative RBAC rejection coverage.
+
+- `T-033` Structured triage and state loop tests:
+  - `src-tauri/tests/triage_tests.rs`
+  - High-Priority, Watch, Noise, and State Updates sections plus report-only and no-invention coverage.
+
+- `T-034` Budget guard and kill switch tests:
+  - `src-tauri/tests/budget_guard_tests.rs`
+  - Report-only at 80 percent, hard exit at 100 percent, and immediate stop on pause flag coverage.
+
+- `T-035` Verifier and minimal-fix tests:
+  - `src-tauri/tests/fix_proposal_tests.rs`
+  - Separate checker defaulting to reject, test evidence required for approve, and one-problem diff plus attempt-cap escalation coverage.
+
+- `T-046` Roadmap coherence tests:
+  - `src-tauri/tests/roadmap_coherence_tests.rs`
+  - BI-029 convergence requires test mapping, phase gate, acceptance criteria, and no unlabeled tasks.
+
+- `T-040` Explainability panel tests:
+  - `ui/src/App.test.tsx`
+  - `ui/src/App.tsx`
+  - Dashboard render exposes the shared quality pulse explainability traces for score decomposition, risk trajectory, top bottleneck, and opportunity lift.
+
+- `T-042` Admin bridge settlement and timeout tests (`F-038`):
+  - `ui/src/tauri-admin.test.ts`
+  - Ensure bridge calls surface bounded timeout or cancellation failures instead of leaving unresolved async work.
+
+- `T-043` Deterministic admin bridge mock seam tests (`F-039`):
+  - `ui/src/tauri-admin.test.ts`
+  - Verify the App test harness uses a local runtime seam and does not mutate `globalThis.__TAURI__` directly.
+
+- `T-039` Admin PR risk browser bridge e2e tests:
+  - `ui/e2e/app.spec.ts`
+  - Browser invocation through the Tauri bridge reports admin allow/deny outcomes and browser-shim payload handling.
+
+- `T-044` Vitest and Playwright runner boundary tests (`F-040`):
+  - `ui/vite.config.ts`
+  - `ui/test:e2e`
+  - Ensure Vitest excludes `e2e/**` and the Playwright runner keeps owning browser coverage.

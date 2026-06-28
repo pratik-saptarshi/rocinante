@@ -2,50 +2,91 @@
 
 ## Active Sprint: Control-plane convergence
 
+## Active execution slices
+
+- `F-031` frontend structural decomposition and dashboard content extraction.
+- `F-016` rich dashboard visualizations for trend lines and PR risk ranking rationale.
+- `F-026` job observability for queue depth, worker throughput, and promotion lag metrics.
+- `F-025` release baseline management for current baseline query/reseed controls.
+- `F-017` expanded sanitizer detection rules and policy packs per compliance domain.
+
 | Issue ID | Bead | Feature | TDD State | Status | Owner | Notes |
 |---|---|---|---|---|---|---|
 | BI-001 | B-04 | `F-008A` BadgerDB conformance profile gates | Red->Green complete | Completed | implementer | Added `StorageProfile` with strict Badger+DuckDB validation; runtime migration and sidecar transport coverage now complete. |
-| BI-002 | B-05 | `F-008D` raw retention TTL prune semantics | Red->Green complete | Completed | implementer | Added short-term TTL retention and long-term release rollup with queryability coverage. |
+| BI-002 | B-05 | `F-008D` raw retention TTL prune semantics | Red->Green complete | Completed | implementer | Added short-term TTL retention and long-term release rollup with queryability coverage (`prunes_old_releases_and_preserves_queryability_by_rollup`). |
 | BI-003 | B-09 | `F-008B` non-bypassable API boundary guards | Red->Green complete | Completed | implementer | Added analytics command-layer coverage in `tests/admin_service_tests.rs`. |
-| BI-004 | B-05 | `F-008C` snapshot/replica read isolation | Red->Green complete | Completed | implementer | Added query-path use of published snapshots for aggregate and committer score reads. |
-| BI-005 | B-04 | `F-008A` Badger sidecar adapter | Red->Green complete | Completed | implementer | Runtime and admin ingestion now enforce strict Badger sidecar config. |
-| BI-011 | B-05 | `F-008E` storage lock ownership + path exclusivity | Red->Green complete | Completed | implementer | Added process-level lock ownership guard and open-path duplicate-open rejection coverage. |
-| BI-012 | B-10 | `F-008F` promotion snapshot visibility | Red->Green complete | Completed | implementer | Added read/write snapshot barriers and query-stability regression coverage. |
-| BI-013 | B-11 | `F-032` Playwright frontend behavioral and functional coverage | Red->Green complete | Completed | implementer | Headless-only browser coverage validates dashboard shell, role switching, payload envelopes, and admin fallback behavior. |
-| BI-014 | B-12 | `F-018` signed scoring-config integrity verification | Red->Green complete | Completed | implementer | Added signed envelope persistence, tamper rejection, and legacy raw JSON compatibility coverage. |
+| BI-004 | B-05 | `F-008C` snapshot/replica read isolation | Red->Green complete | Completed | implementer | Added query-path use of published snapshots for aggregate and committer score reads, plus snapshot-disruption regression test. |
+| BI-005 | B-04 | `F-008A` Badger sidecar adapter | Red->Green complete | Completed | implementer | Runtime and admin ingestion now enforce strict Badger sidecar config; transport normalization and failure-safe coverage are complete. |
+| BI-011 | B-05 | `F-008E` storage lock ownership + path exclusivity | Red->Green complete | Completed | implementer | Added process-level lock ownership guard and open-path duplicate-open rejection coverage (`dual_layer_store_rejects_duplicate_open_for_same_kv_path`). |
+| BI-012 | B-10 | `F-008F` promotion snapshot visibility | Red->Green complete | Completed | implementer | Added read/write snapshot barriers (`promote_to_columnar`, `aggregate_by_query`) and query-stability regression coverage (`aggregate_queries_remain_non_empty_during_promotion_handoff`). |
+| BI-013 | B-11 | `F-032` Playwright frontend behavioral and functional coverage | Red->Green complete | Completed | implementer | Headless-only browser coverage now validates dashboard shell, role switching, payload envelopes, and admin fallback behavior. |
+| BI-014 | B-12 | `F-018` signed scoring-config integrity verification | Red->Green complete | Completed | implementer | Added signed envelope persistence, tamper rejection, and legacy raw JSON compatibility coverage for scoring configuration files. |
 | BI-015 | B-13 | `F-019` per-team policy profiles for scoring/approval weighting | Red->Green complete | Completed | implementer | Added team policy catalog resolution and per-team weight adjustments with fallback profile coverage. |
 | BI-016 | B-14 | `F-020` incremental AST cache and parser plugin | Red->Green complete | Completed | implementer | Added language-aware parser plugin with incremental cache hit/miss accounting and default pipeline registration. |
 | BI-017 | B-15 | `F-021` historical partition pruning and retention policies | Red->Green complete | Completed | implementer | Added per-repo partition pruning coverage that preserves historical releases in rollup form while keeping queries queryable. |
 | BI-018 | B-16 | `F-022` internal Git provider adapters | Red->Green complete | Completed | implementer | Added provider-specific repo, PR, clone, and auth helpers for GHE, GitLab, and Bitbucket Server. |
 | BI-019 | B-17 | `F-023` AD/LDAP group mapping hardening | Red->Green complete | Completed | implementer | Added bounded membership cache eviction and alias-cycle rejection coverage for deterministic directory lookups. |
-| BI-020 | B-18 | `F-024` explainability panel | Red->Green complete | Completed | implementer | Added deterministic score decomposition traces and dashboard rendering for committer and PR decisions. |
-| BI-021 | B-19 | `F-031` frontend structural decomposition | Red->Green active | In Progress | implementer | Keeping dashboard content extraction and contract split aligned while the browser suite validates the live shell. |
 
 ## Phase Priority
 
-
 1. Control-plane convergence
-   - `F-031` frontend structural decomposition
-   - `FE-009` command schema and backend contract convergence
+  - `F-031` frontend structural decomposition
+    - Validated checkpoint: audience-pane decomposition now uses shared insight-engine and quality-pulse helpers.
+  - `FE-009` command schema and backend contract convergence
 2. Dashboard and operational insight
-   - `F-025` release baseline management UI
-   - `F-026` job observability
-3. Scale and history
+  - `F-016` rich dashboard visualizations
+    - Validated checkpoint: trend/risk helper extraction now drives deterministic trajectory and PR risk ranking views.
+  - `F-024` explainability panel
+    - Validated checkpoint: score decomposition, risk trajectory, bottleneck, and opportunity lift traces are rendered from the shared quality pulse and asserted in `ui/src/App.test.tsx`.
+  - `F-025` release baseline management UI
+  - `F-026` job observability
+3. Governance and trust
+   - `F-017` expanded sanitizer rules
+    - Validated checkpoint: policy-pack scrubber now covers General, Security, Privacy, and Payments domains with regression coverage.
+4. Scale and history
    - `F-027` bulk import utility
-4. Untriaged backlog tail
-   - `F-033`
 
 ## TDD Ledger
 
-- Cycle `TDD-C1`: storage profile validation and TTL expiration.
-- Cycle `TDD-C2`: lock ownership and promotion-read consistency.
-- Cycle `TDD-C3`: rollup-aware long-term release retention.
+- Cycle `TDD-C1`:
+  - Wrote failing tests in `tests/storage_policy_tests.rs` for profile validation and TTL expiration.
+  - Verified red failure (missing symbols / unresolved imports).
+  - Implemented minimal production code (`IngestionEngine`, `StorageProfile`, `RetentionPolicy`) in `src/storage.rs`.
+  - Verified green for `storage_policy_tests`.
+- Cycle `TDD-C2`:
+  - Added failing regression scenarios for lock ownership and promotion-read consistency.
+  - Captured failing signals in `tests/storage_duallayer_tests.rs` (`async_ingestion_engine_applies_retention_before_promotion`,
+    `query_aggregates_stable_while_promotion_runs_via_immutable_snapshot`,
+    `promotes_events_and_reads_aggregates`).
+  - Next cycle is remediation design + deterministic lock/visibility controls.
+- Cycle `TDD-C3`:
+  - Added rollup-aware long-term release retention coverage.
 
-## Current Frontend Phase
+## Cross-Track Backlog
 
-- `F-031` frontend structural decomposition: active merge path.
-- `FE-009` command schema and backend contract convergence: active contract parity.
-- `F-016` rich dashboard visualizations: completed.
-- `F-017` expanded sanitizer rules: completed.
-- `F-018` signed scoring-config integrity verification: completed.
-- `F-024` explainability panel: completed.
+| Issue ID | Stage | Epic | Feature | Capability | Function | Task | TDD State | Status | Acceptance Criteria | Owner | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| BI-020 | Stage 0 | EP-00 Shared planning | F-000 Artifact scaffolding | C-000 Single-source roadmap | FN-000 Docs skeleton | TK-000 Create `docs/feature-list.html` and `docs/product-roadmap.html` | Red->Green complete | Completed | Both docs exist, use `.html`, and cross-link the bead tracker, roadmap, and test plan before any code work starts. | implementer | Shared planning artifact for both tracks; validated by the live docs surfaces. |
+| BI-021 | Stage 1 | EP-01 AI quality checking | F-010 Risk contract | C-010 Versioned tier schema | FN-010 Contract serializer | TK-010 Add risk schema and tier tests | Red->Green complete | Completed | Risk output is deterministic, versioned, and includes tier and review requirement fields for the same input every time. | implementer | HighStakes-style output contract; covered by `src-tauri/tests/pr_risk_contract_tests.rs`. |
+| BI-022 | Stage 1 | EP-01 AI quality checking | F-011 File and PR risk scoring | C-011 Static plus history signal model | FN-011 PR risk evaluator | TK-011 Add scoring and fallback tests | Red->Green complete | Completed | Highest-risk file determines the PR tier, missing files fall back safely, and circuit-breaker signals are surfaced. | implementer | Risk routing and tiering; covered by `ui/src/insight-engine.test.ts` and `ui/src/domain-bottleneck.test.ts`. |
+| BI-023 | Stage 1 | EP-01 AI quality checking | F-012 CI gate and comment output | C-012 Workflow and comment contract | FN-012 Gate runner | TK-012 Add workflow contract tests | Red->Green complete | Completed | CI posts a stable risk summary, blocks high and critical merges, and preserves human-readable review requirements. | implementer | Backend comment contract helper, tests, and dedicated workflow integration are in place. |
+| BI-024 | Stage 1 | EP-01 AI quality checking | F-013 Incident and annotation feedback | C-013 Manual overrides and cache | FN-013 Incident store | TK-013 Add override precedence tests | Red->Green complete | Completed | Recorded incidents and annotations can raise risk, invalidate cached assessments, and remain auditable. | implementer | Incident-feedback ledger contract is in place and covered by persistence and cache-invalidation tests. |
+| BI-025 | Stage 2 | EP-02 Loop-engineering controls | F-020 Structured triage output | C-020 Report-only loop input | FN-020 Triage formatter | TK-020 Add triage report tests | Red->Green complete | Completed | Triage output has High-Priority, Watch, Noise, and State Updates sections, with no architectural invention during triage. | implementer | Structured triage contract is in place and covered by `src-tauri/tests/triage_tests.rs`. |
+| BI-026 | Stage 2 | EP-02 Loop-engineering controls | F-021 Budget guard and kill switch | C-021 Cost ceiling enforcement | FN-021 Budget checker | TK-021 Add cap and exit tests | Red->Green complete | Completed | Report-only mode starts at 80 percent of budget, exits at 100 percent, and respects pause flags without spawning work. | implementer | Budget control and kill switch is in place and covered by `src-tauri/tests/budget_guard_tests.rs`. |
+| BI-027 | Stage 2 | EP-02 Loop-engineering controls | F-022 Maker/checker verifier | C-022 Separate approval role | FN-022 Verifier contract | TK-022 Add reject-by-default tests | Red->Green complete | Completed | A distinct verifier runs tests and can only approve with evidence; the implementer cannot self-approve. | implementer | Maker/checker split is in place and covered by `src-tauri/tests/verifier_tests.rs`. |
+| BI-028 | Stage 2 | EP-02 Loop-engineering controls | F-023 Minimal-fix and escalation | C-023 One-problem diffs | FN-023 Fix proposal loop | TK-023 Add attempt-cap tests | Red->Green complete | Completed | Each remediation addresses one issue, retries are capped, and escalation is forced with full context after the cap. | implementer | Minimal-fix discipline and escalation are in place and covered by `src-tauri/tests/fix_proposal_tests.rs`. |
+| BI-029 | Stage 3 | EP-03 Convergence | F-030 Shared release gates | C-030 Unified rollout | FN-030 Phase coordinator | TK-030 Add roadmap coherence tests | Red->Green complete | Completed | Both tracks converge behind a single release gate with explicit exit criteria and no dangling tasks. | implementer | Release hardening and convergence are in place and covered by `src-tauri/tests/roadmap_coherence_tests.rs`. |
+| BI-030 | Stage 1 | EP-01 AI quality checking | F-034 Admin PR risk command | C-014 Backend contract convergence | FN-014 Tauri command surface | TK-014 Add `evaluate_pr_risk` command tests | Red->Green complete | Completed | Admin callers can evaluate PR risk through the command surface with deterministic risk-v1 evaluation and admin-only access. | implementer | New command surface wired from the PR risk contract. |
+| BI-031 | Stage 1 | EP-01 AI quality checking | F-035 PR risk service abstraction | C-015 Configured risk evaluator | FN-015 Injected policy source | TK-015 Add injected-schema tests | Red->Green complete | Completed | PR risk evaluation accepts injected schema/config, the command layer stays thin, and alternate thresholds can be tested without code changes. | implementer | SOLID/DIP follow-up for the admin risk evaluator. |
+| BI-032 | Stage 1 | EP-01 AI quality checking | F-036 Admin PR risk command boundary coverage | C-016 End-to-end command invocation | FN-016 Tauri bridge exerciser | TK-016 Add command-surface integration tests | Red->Green complete | Completed | Admin callers can evaluate PR risk through the command surface with deterministic risk-v1 evaluation and admin-only access. | implementer | Backend command boundary coverage is complete; browser e2e remains the next gap. |
+| BI-033 | Stage 1 | EP-01 AI quality checking | F-037 Admin PR risk browser bridge e2e validation | C-017 Browser bridge contract | FN-017 UI invoke harness | TK-017 Add browser e2e tests | Red->Green complete | Completed | Browser bridge invocation reaches the Tauri command and reports admin allow/deny outcomes once pnpm is available. | implementer | Browser smoke authored in ui/e2e/app.spec.ts and React-level bridge coverage in ui/src/App.test.tsx; validation passed via Playwright. |
+| BI-034 | Stage 1 | EP-01 AI quality checking | F-024 Explainability panel | C-018 Explainability trace renderer | FN-018 Trace decomposition view | TK-018 Add explainability trace assertions | Red->Green complete | Completed | Dashboard render shows score decomposition, risk trajectory, top bottleneck, and opportunity lift traces from the shared quality pulse, and the new App test keeps the section visible. | implementer | Explainability traces now have direct UI coverage in `ui/src/App.test.tsx`. |
+| BI-035 | Stage 1 | EP-01 AI quality checking | F-026 Job observability | C-019 Stage telemetry renderer | FN-019 Queue-lag dashboard | TK-019 Add job observability tests | Red->Green complete | Completed | Dashboard render shows queue depth, worker throughput, and promotion lag metrics from shared stage telemetry, and the App test keeps the observability section visible. | implementer | UI observability slice is covered by `ui/src/App.tsx`, `ui/src/App.test.tsx`, and direct Vitest validation. |
+| BI-039 | Stage 1 | EP-01 AI quality checking | F-025 Release baseline management UI | C-027 Baseline query/reseed controls | FN-027 Baseline selector and reseed bridge | TK-027 Add baseline query/reseed tests | Red->Green complete | Completed | Dashboard render shows the current release baseline, the bridge can query and reseed the value, and the baseline controls stay visible in the UI. | implementer | Baseline controls are covered by `ui/src/App.tsx`, `ui/src/App.test.tsx`, and `ui/src/tauri-admin.test.ts`. |
+| BI-036 | Stage 1 | EP-01 AI quality checking | F-038 Admin bridge async settlement hardening | C-024 Admin bridge settlement contract | FN-024 Bridge timeout and cancellation guard | TK-024 Add bridge settlement tests | Red->Green complete | Completed | `runAdminBridge` returns bounded errors or cancellation, leaves no unresolved async work, and targeted App tests complete without manual interruption. | implementer | Timeout settlement is covered by `ui/src/tauri-admin.test.ts`. |
+| BI-037 | Stage 1 | EP-01 AI quality checking | F-039 Deterministic admin bridge mock seam | C-025 Mockable runtime seam | FN-025 Runtime adapter and mock hook | TK-025 Add deterministic bridge seam tests | Red->Green complete | Completed | App tests run against an injected mock runtime instead of mutating `globalThis.__TAURI__`, and targeted Vitest runs stay deterministic and isolated. | implementer | Deterministic seam coverage is covered by `ui/src/tauri-admin.test.ts`. |
+| BI-038 | Stage 0 | EP-00 Shared planning | F-040 Vitest and Playwright runner boundary | C-026 Test runner separation | FN-026 Unit/e2e config boundary | TK-026 Exclude Playwright specs from Vitest | Red->Green complete | Completed | `pnpm -C ui test` excludes `e2e/**` while `pnpm -C ui run test:e2e` still executes Playwright, so unit and e2e runners no longer collide. | implementer | Validation boundary confirmed by passing Vitest and Playwright runs. |
+| BI-040 | Stage 1 | EP-01 AI quality checking | F-025 Release baseline management UI | C-028 Release-baseline command contract | FN-028 Baseline facade parity | TK-028 Remove duplicated release-baseline glue | Red->Green complete | Completed | The release-baseline behavior is implemented behind one contract instead of three near-identical layers, so the app surface, library surface, and service layer cannot drift independently. | implementer | The handler layer now delegates through the canonical path-based commands, removing the duplicate store-opening glue. |
+| BI-041 | Stage 1 | EP-01 AI quality checking | F-025 Release baseline management UI | C-029 Registered-handler integration | FN-029 Main-handler exerciser | TK-029 Add main-handler integration tests | Red->Green complete | Completed | The release-baseline commands are exercised through the registered Tauri handlers, so `AppState` wiring and `generate_handler!` registration failures are caught end to end. | implementer | Proved by `src-tauri/tests/release_baseline_handler_tests.rs` plus `src-tauri/src/app_support.rs`. |
+| BI-042 | Stage 1 | EP-01 AI quality checking | F-025 Release baseline management UI | C-030 Baseline persistence boundary | FN-030 Baseline repository adapter | TK-030 Extract baseline persistence adapter | Red->Green complete | Completed | Release-baseline reads and writes sit behind a smaller baseline-specific abstraction, so `DualLayerStore` does not absorb unrelated domain policy and future changes stay localized. | implementer | Proved by `src-tauri/src/storage.rs`, `src-tauri/tests/release_baseline_storage_tests.rs`, and `src-tauri/tests/release_baseline_tests.rs`. |
+| BI-043 | Stage 0 | EP-00 Shared planning | F-000 Artifact scaffolding | C-001 Backlog hygiene | FN-001 Roadmap deduper | TK-001 Remove duplicate feature-test mapping | Red->Green complete | Completed | The roadmap and test-plan stay single-source, with no duplicate `F-025 -> T-045` lines and no drift between the feature list, roadmap, and test plan. | implementer | Review follow-up completed by removing the duplicate mapping from the current execution slices. |

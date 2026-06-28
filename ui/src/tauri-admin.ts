@@ -33,6 +33,17 @@ export interface AdminQueryPayload {
   release?: string;
 }
 
+export interface AdminReleaseBaselineQueryPayload {
+  token: string;
+  repo_name: string;
+}
+
+export interface AdminReleaseBaselineReseedPayload {
+  token: string;
+  repo_name: string;
+  baseline_complexity: number;
+}
+
 export interface AdminCommitterScoresPayload {
   token: string;
   name?: string;
@@ -72,6 +83,8 @@ export type AdminBridgeCommand =
   | 'query_aggregates'
   | 'committer_scores'
   | 'rank_prs'
+  | 'query_release_baseline'
+  | 'reseed_release_baseline'
   | 'update_scoring_weights';
 
 type AdminCommandArgs = {
@@ -80,12 +93,34 @@ type AdminCommandArgs = {
   query_aggregates: AdminQueryPayload;
   committer_scores: AdminCommitterScoresPayload;
   rank_prs: AdminRankPrsPayload;
+  query_release_baseline: AdminReleaseBaselineQueryPayload;
+  reseed_release_baseline: AdminReleaseBaselineReseedPayload;
   update_scoring_weights: AdminUpdateWeightsPayload;
 };
 
 type InvokeFn = (command: string, args?: unknown) => Promise<unknown>;
+type InvokeOptions = {
+  invoke?: InvokeFn;
+  timeoutMs?: number;
+};
 
-function resolveInvoke(): InvokeFn | null {
+const DEFAULT_INVOKE_TIMEOUT_MS = 2500;
+
+let testInvoke: InvokeFn | null = null;
+
+export function setAdminInvokeForTesting(invoke: InvokeFn | null) {
+  testInvoke = invoke;
+}
+
+function resolveInvoke(override?: InvokeFn): InvokeFn | null {
+  if (override) {
+    return override;
+  }
+
+  if (testInvoke) {
+    return testInvoke;
+  }
+
   const tauriCore = (globalThis as { __TAURI__?: { core?: { invoke?: InvokeFn } } }).__TAURI__?.core;
   if (tauriCore?.invoke) {
     return tauriCore.invoke;
@@ -93,11 +128,35 @@ function resolveInvoke(): InvokeFn | null {
   return null;
 }
 
+function withTimeout<T>(operation: Promise<T>, timeoutMs: number): Promise<T> {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return operation;
+  }
+
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Admin bridge timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    operation.then(
+      (value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      }
+    );
+  });
+}
+
 export async function invokeAdminCommand(
   command: AdminBridgeCommand,
-  args: AdminCommandArgs[typeof command]
+  args: AdminCommandArgs[typeof command],
+  options: InvokeOptions = {}
 ): Promise<AdminBridgeResult> {
-  const invoke = resolveInvoke();
+  const invoke = resolveInvoke(options.invoke);
   if (!invoke) {
     return {
       ok: false,
@@ -108,7 +167,7 @@ export async function invokeAdminCommand(
   }
 
   try {
-    const response = await invoke(command, args);
+    const response = await withTimeout(invoke(command, args), options.timeoutMs ?? DEFAULT_INVOKE_TIMEOUT_MS);
     return {
       ok: true,
       command,

@@ -223,6 +223,11 @@ pub struct DualLayerStore {
     latest_snapshot_id: Arc<AtomicU64>,
 }
 
+#[derive(Clone)]
+pub struct BaselineStore {
+    store: DualLayerStore,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LifecycleStats {
     pub promoted_events: usize,
@@ -524,10 +529,6 @@ impl DualLayerStore {
             self.snapshot_path(snapshot_id)
         };
 
-        if Path::new(&snapshot_path).exists() && snapshot_id != 0 {
-            return Ok(snapshot_path);
-        }
-
         if snapshot_id == 0 {
             return Ok(snapshot_path);
         }
@@ -685,6 +686,56 @@ impl DualLayerStore {
             .write()
             .unwrap_or_else(|e| e.into_inner());
         self.promote_to_columnar_no_lock()
+    }
+
+    pub fn read_release_baseline(&self, repo_name: &str) -> Result<Option<f64>, AnalyzerError> {
+        let conn =
+            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let mut stmt = conn
+            .prepare("SELECT baseline_complexity FROM repo_baseline WHERE repo_name = ?1 LIMIT 1")
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let mut rows = stmt
+            .query(params![repo_name])
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        if let Some(row) = rows.next().map_err(|e| AnalyzerError::Db(e.to_string()))? {
+            let baseline = row
+                .get::<_, f64>(0)
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            Ok(Some(baseline))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn reseed_release_baseline(
+        &self,
+        repo_name: &str,
+        baseline_complexity: f64,
+    ) -> Result<f64, AnalyzerError> {
+        let _promotion_lock = self
+            .promotion_barrier
+            .write()
+            .unwrap_or_else(|e| e.into_inner());
+        {
+            let conn = Connection::open(&self.columnar_path)
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            conn.execute(
+                "
+                INSERT INTO repo_baseline (repo_name, baseline_complexity)
+                VALUES (?1, ?2)
+                ON CONFLICT(repo_name) DO UPDATE SET baseline_complexity = excluded.baseline_complexity
+                ",
+                params![repo_name, baseline_complexity],
+            )
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            conn.execute("CHECKPOINT", [])
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        }
+        let snapshot_id = self.latest_snapshot_id.load(Ordering::Acquire);
+        if snapshot_id != 0 {
+            let _ = self.refresh_analytics_snapshot(snapshot_id)?;
+        }
+        Ok(baseline_complexity)
     }
 
     fn promote_to_columnar_no_lock(&self) -> Result<LifecycleStats, AnalyzerError> {
@@ -1110,26 +1161,78 @@ impl DualLayerStore {
     ) -> Result<Vec<PrRanking>, AnalyzerError> {
         let mut out = Vec::new();
         for pr in prs {
-            let risk = pr.file_risk.clamp(0.0, 1.0);
+            let (highest_risk_file, risk, used_fallback_risk) = pr
+                .files
+                .iter()
+                .max_by(|a, b| a.risk.total_cmp(&b.risk))
+                .map(|signal| {
+                    (
+                        Some(signal.path.clone()),
+                        signal.risk.clamp(0.0, 1.0),
+                        false,
+                    )
+                })
+                .unwrap_or((None, pr.file_risk.clamp(0.0, 1.0), true));
             let velocity = pr.author_velocity.clamp(0.0, 1.0);
             let approval = pr.approval_fidelity.clamp(0.0, 1.0);
 
             let score = (risk * weights.pr_file_risk_weight)
                 + ((1.0 - velocity) * weights.pr_velocity_weight)
                 + ((1.0 - approval) * weights.pr_approval_weight);
+            let rationale = if used_fallback_risk {
+                format!(
+                    "fallback_risk={:.2} velocity={:.2} approval={:.2} weights={} circuit_breaker={}",
+                    risk,
+                    velocity,
+                    approval,
+                    weights.version,
+                    if pr.circuit_breaker_triggered { "triggered" } else { "clear" }
+                )
+            } else {
+                format!(
+                    "highest_risk_file={} risk={:.2} velocity={:.2} approval={:.2} weights={} circuit_breaker={}",
+                    highest_risk_file.as_deref().unwrap_or(""),
+                    risk,
+                    velocity,
+                    approval,
+                    weights.version,
+                    if pr.circuit_breaker_triggered { "triggered" } else { "clear" }
+                )
+            };
             out.push(PrRanking {
                 pr_id: pr.pr_id.clone(),
                 repo_name: pr.repo_name.clone(),
                 author: pr.author.clone(),
                 rank_score: score,
-                rationale: format!(
-                    "risk={:.2} velocity={:.2} approval={:.2} weights={}",
-                    risk, velocity, approval, weights.version
-                ),
+                rationale,
+                highest_risk_file,
+                used_fallback_risk,
+                circuit_breaker_triggered: pr.circuit_breaker_triggered,
             });
         }
         out.sort_by(|a, b| b.rank_score.total_cmp(&a.rank_score));
         Ok(out)
+    }
+}
+
+impl BaselineStore {
+    pub fn open(kv_path: &str, columnar_path: &str) -> Result<Self, AnalyzerError> {
+        Ok(Self {
+            store: DualLayerStore::open(kv_path, columnar_path)?,
+        })
+    }
+
+    pub fn read_release_baseline(&self, repo_name: &str) -> Result<Option<f64>, AnalyzerError> {
+        self.store.read_release_baseline(repo_name)
+    }
+
+    pub fn reseed_release_baseline(
+        &self,
+        repo_name: &str,
+        baseline_complexity: f64,
+    ) -> Result<f64, AnalyzerError> {
+        self.store
+            .reseed_release_baseline(repo_name, baseline_complexity)
     }
 }
 

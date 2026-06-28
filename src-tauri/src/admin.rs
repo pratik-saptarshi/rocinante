@@ -2,8 +2,11 @@ use crate::auth::{decode_principal, require_admin};
 use crate::engine::Pipeline;
 use crate::errors::AnalyzerError;
 use crate::git::discover_repositories;
+use crate::risk_contract::{
+    evaluate_pr_risk as evaluate_pr_risk_contract, PrRiskEvaluation, PrRiskSchema,
+};
 use crate::scoring::{load_or_init_weights, update_weights_with_audit};
-use crate::storage::{DualLayerStore, LifecycleStats};
+use crate::storage::{BaselineStore, DualLayerStore, LifecycleStats};
 use crate::storage::{IngestionBackendConfig, StorageOperation, StorageRoute};
 use crate::telemetry::TelemetryStore;
 use crate::types::{
@@ -104,6 +107,23 @@ pub fn rank_prs(
     store.rank_open_prs_with_route(StorageRoute::Analytics, &prs, &weights)
 }
 
+pub fn evaluate_pr_risk(
+    token: &str,
+    candidate: PrCandidate,
+) -> Result<PrRiskEvaluation, AnalyzerError> {
+    evaluate_pr_risk_with_schema(token, candidate, PrRiskSchema::default())
+}
+
+pub fn evaluate_pr_risk_with_schema(
+    token: &str,
+    candidate: PrCandidate,
+    schema: PrRiskSchema,
+) -> Result<PrRiskEvaluation, AnalyzerError> {
+    let principal = decode_principal(token)?;
+    require_admin(&principal)?;
+    Ok(evaluate_pr_risk_contract(&candidate, &schema))
+}
+
 pub fn update_scoring_weights(
     token: &str,
     weights_path: &str,
@@ -113,4 +133,29 @@ pub fn update_scoring_weights(
     let principal = decode_principal(token)?;
     require_admin(&principal)?;
     update_weights_with_audit(weights_path, audit_path, &principal.user, new_weights)
+}
+
+pub fn query_release_baseline(
+    token: &str,
+    kv_path: &str,
+    col_path: &str,
+    repo_name: &str,
+) -> Result<Option<f64>, AnalyzerError> {
+    let principal = decode_principal(token)?;
+    require_admin(&principal)?;
+    let store = BaselineStore::open(kv_path, col_path)?;
+    store.read_release_baseline(repo_name)
+}
+
+pub fn reseed_release_baseline(
+    token: &str,
+    kv_path: &str,
+    col_path: &str,
+    repo_name: &str,
+    baseline_complexity: f64,
+) -> Result<f64, AnalyzerError> {
+    let principal = decode_principal(token)?;
+    require_admin(&principal)?;
+    let store = BaselineStore::open(kv_path, col_path)?;
+    store.reseed_release_baseline(repo_name, baseline_complexity)
 }

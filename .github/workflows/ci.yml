@@ -48,3 +48,5 @@ jobs:
         run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
       - name: Test
         run: cargo test --manifest-path src-tauri/Cargo.toml
+      - name: CI gate contract
+        run: cargo test --manifest-path src-tauri/Cargo.toml --test ci_gate_tests

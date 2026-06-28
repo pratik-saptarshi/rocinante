@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { setAdminInvokeForTesting } from './tauri-admin';
+
+afterEach(() => {
+  setAdminInvokeForTesting(null);
+});
 
 describe('dashboard explainability panel', () => {
   it('renders deterministic decomposition traces from sample insights', () => {
@@ -8,7 +13,7 @@ describe('dashboard explainability panel', () => {
 
     const explainabilitySection = screen.getByTestId('explainability-section');
 
-    expect(within(explainabilitySection).getByText(/Explainability Panel/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Explainability Traces/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Score Decomposition/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Risk Commit/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Bottleneck/i)).toBeInTheDocument();
@@ -103,6 +108,27 @@ describe('Optimization sidebar layout', () => {
     expect(within(trendRiskSection).getByText(/A-124 score 100/i)).toBeInTheDocument();
   });
 
+  it('renders explainability traces from the shared quality pulse', () => {
+    render(<App />);
+    const explainabilitySection = screen.getByTestId('explainability-section');
+    expect(screen.getByText(/Explainability Traces/i)).toBeInTheDocument();
+    expect(screen.getByText(/Trace Decomposition/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Score Decomposition/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Top Risk Commit/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Top Bottleneck/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Opportunity Lift/i)).toBeInTheDocument();
+  });
+
+  it('renders job observability metrics from the shared stage telemetry', () => {
+    render(<App />);
+    const jobObservabilitySection = screen.getByTestId('job-observability-section');
+    expect(screen.getByText(/Job Observability/i)).toBeInTheDocument();
+    expect(screen.getByTestId('job-observability-stage-count')).toHaveTextContent('3');
+    expect(within(jobObservabilitySection).getByText(/review: queue 10, throughput 9, lag 1100ms/i)).toBeInTheDocument();
+    expect(within(jobObservabilitySection).getByText(/build: queue 5, throughput 12, lag 850ms/i)).toBeInTheDocument();
+    expect(within(jobObservabilitySection).getByText(/release: queue 4, throughput 18, lag 420ms/i)).toBeInTheDocument();
+  });
+
   it('switches to manager insights when selected', () => {
     render(<App />);
 
@@ -164,7 +190,22 @@ describe('Optimization sidebar layout', () => {
     fireEvent.click(screen.getByRole('button', { name: /Ingest Event/i }));
     await waitFor(() =>
       expect(screen.getByTestId('admin-bridge-result')).toHaveTextContent(/Tauri runtime not detected/i)
-    );
+);
+});
+
+  it('renders admin bridge payload details when a Tauri shim is present', async () => {
+    const invoke = vi.fn().mockImplementation(async (cmd, args) => ({ cmd, args }));
+    setAdminInvokeForTesting(invoke);
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Ingest Event/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('admin-bridge-result')).toHaveTextContent(/OK ingest_event:/i);
+      expect(screen.getByTestId('admin-bridge-result')).toHaveTextContent(/ui-bridge-001/i);
+    });
+    expect(invoke).toHaveBeenCalledWith('ingest_event', expect.any(Object));
   });
 
   it('renders the full admin command bridge surface for Tauri runtime parity', () => {
@@ -176,6 +217,59 @@ describe('Optimization sidebar layout', () => {
     expect(screen.getByRole('button', { name: /Committer Scores/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Rank PRs/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Update Scoring Weights/i })).toBeInTheDocument();
+  });
+
+  it('renders release baseline management controls', () => {
+    render(<App />);
+
+    expect(screen.getByTestId('baseline-management-section')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Baseline repo/i)).toHaveValue('repo-a');
+    expect(screen.getByLabelText(/Baseline complexity/i)).toHaveValue('18.5');
+    expect(screen.getByRole('button', { name: /Load Baseline/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Reseed Baseline/i })).toBeInTheDocument();
+  });
+
+  it('loads and reseeds release baseline values through the admin bridge', async () => {
+    const invoke = vi.fn().mockImplementation(async (cmd, args) => {
+      if (cmd === 'query_release_baseline') {
+        return 9.75;
+      }
+      if (cmd === 'reseed_release_baseline') {
+        return 12.25;
+      }
+      return { cmd, args };
+    });
+    setAdminInvokeForTesting(invoke);
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Load Baseline/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId('baseline-management-result')).toHaveTextContent(
+        /OK query_release_baseline: 9.75/i
+      )
+    );
+
+    fireEvent.change(screen.getByLabelText(/Baseline complexity/i), { target: { value: '12.25' } });
+    fireEvent.click(screen.getByRole('button', { name: /Reseed Baseline/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId('baseline-management-result')).toHaveTextContent(
+        /OK reseed_release_baseline: 12.25/i
+      )
+    );
+
+    expect(invoke).toHaveBeenCalledWith(
+      'query_release_baseline',
+      expect.objectContaining({ repo_name: 'repo-a', token: 'alice:admin' })
+    );
+    expect(invoke).toHaveBeenCalledWith(
+      'reseed_release_baseline',
+      expect.objectContaining({
+        repo_name: 'repo-a',
+        token: 'alice:admin',
+        baseline_complexity: 12.25
+      })
+    );
   });
 
   it('applies custom payload JSON to refresh risk/bottleneck/opportunity outputs', () => {

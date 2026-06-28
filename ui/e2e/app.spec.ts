@@ -51,7 +51,7 @@ test.describe('frontend behavior', () => {
 
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
     await expect(page.getByTestId('snapshot-opportunity-count')).toHaveText('1');
-    await expect(page.getByText(/browser-001 score 3/i)).toBeVisible();
+    await expect(page.getByText('browser-001 score 12 (good)')).toBeVisible();
 
     await page.getByRole('button', { name: 'Reset to Sample' }).click();
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('3');
@@ -63,5 +63,58 @@ test.describe('frontend behavior', () => {
     await page.getByRole('button', { name: 'Ingest Event' }).click();
 
     await expect(page.getByTestId('admin-bridge-result')).toContainText('Tauri runtime not detected');
+  });
+
+  test('surfaces the admin bridge payload when the browser shim is available', async ({ page }) => {
+    await page.addInitScript(() => {
+      (globalThis as typeof globalThis & {
+        __TAURI__?: { core?: { invoke?: (cmd: string, args: unknown) => Promise<unknown> } };
+      }).__TAURI__ = {
+        core: {
+          invoke: async (cmd, args) => ({ cmd, args })
+        }
+      };
+    });
+
+    await page.goto('/');
+
+    await page.getByRole('button', { name: 'Ingest Event' }).click();
+
+    await expect(page.getByTestId('admin-bridge-result')).toContainText('ingest_event');
+    await expect(page.getByTestId('admin-bridge-result')).toContainText('ui-bridge-001');
+  });
+
+  test('loads and reseeds release baselines through the browser shim', async ({ page }) => {
+    await page.addInitScript(() => {
+      (globalThis as typeof globalThis & {
+        __TAURI__?: { core?: { invoke?: (cmd: string, args: unknown) => Promise<unknown> } };
+      }).__TAURI__ = {
+        core: {
+          invoke: async (cmd, args) => {
+            if (cmd === 'query_release_baseline') {
+              return 9.75;
+            }
+            if (cmd === 'reseed_release_baseline') {
+              return 12.25;
+            }
+            return { cmd, args };
+          }
+        }
+      };
+    });
+
+    await page.goto('/');
+
+    await expect(page.getByTestId('baseline-management-section')).toBeVisible();
+    await page.getByRole('button', { name: 'Load Baseline' }).click();
+    await expect(page.getByTestId('baseline-management-result')).toContainText(
+      'OK query_release_baseline: 9.75'
+    );
+
+    await page.getByLabel('Baseline complexity').fill('12.25');
+    await page.getByRole('button', { name: 'Reseed Baseline' }).click();
+    await expect(page.getByTestId('baseline-management-result')).toContainText(
+      'OK reseed_release_baseline: 12.25'
+    );
   });
 });

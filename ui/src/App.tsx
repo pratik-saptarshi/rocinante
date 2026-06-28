@@ -21,8 +21,8 @@ import { useState } from 'react';
 import { readLimits, readPayload } from './dashboard-contract';
 import { buildAdminBridgePayload } from './admin-bridge-contract';
 import { dashboardAudienceHighlights, dashboardFindingGroups, type AuditStatus, type DashboardFinding } from './dashboard-content';
-import { buildExplainabilityTraces } from './dashboard-explainability';
 import { buildDashboardVisuals } from './dashboard-visuals';
+import { buildExplainabilityTraces } from './dashboard-explainability';
 import { buildDashboardInsights, type InsightPayload } from './insight-engine';
 import { buildQualityPulse, type StakeholderAudience } from './domain/quality-pulse';
 import { invokeAdminCommand, type AdminBridgeCommand } from './tauri-admin';
@@ -134,8 +134,11 @@ function App() {
   const [insights, setInsights] = useState(() => buildDashboardInsights());
   const [adminToken, setAdminToken] = useState('alice:admin');
   const [adminResult, setAdminResult] = useState('No admin command executed yet.');
+  const [baselineRepoName, setBaselineRepoName] = useState('repo-a');
+  const [baselineComplexity, setBaselineComplexity] = useState('18.5');
+  const [baselineResult, setBaselineResult] = useState('No release baseline loaded yet.');
 
-  const { commitRiskCards, bottlenecks, opportunities } = insights;
+  const { commitRiskCards, bottlenecks, opportunities, stages } = insights;
   const qualityPulse = buildQualityPulse(insights);
   const explainabilityTraces = buildExplainabilityTraces(qualityPulse);
   const dashboardVisuals = buildDashboardVisuals(insights);
@@ -149,6 +152,11 @@ function App() {
 
   const criticalBottlenecks = qualityPulse.bottleneckBuckets.critical;
   const highBottlenecks = qualityPulse.bottleneckBuckets.high;
+  const jobObservabilityItems = stages.map((stage) => ({
+    id: stage.name,
+    text: `${stage.name}: queue ${stage.queueDepth}, throughput ${stage.throughput}, lag ${stage.avgLatencyMs}ms`,
+    status: stage.queueDepth >= 10 || stage.avgLatencyMs >= 2000 ? 'bad' : stage.queueDepth >= 4 || stage.avgLatencyMs >= 1000 ? 'medium' : 'good'
+  }));
 
   const applyPayload = () => {
     if (!payloadText.trim()) {
@@ -179,6 +187,33 @@ function App() {
     const result = await invokeAdminCommand(command, buildAdminBridgePayload(command, adminToken));
 
     setAdminResult(`${result.ok ? 'OK' : 'ERR'} ${result.command}: ${result.message}`);
+  };
+
+  const loadReleaseBaseline = async () => {
+    const result = await invokeAdminCommand('query_release_baseline', {
+      token: adminToken,
+      repo_name: baselineRepoName
+    });
+    setBaselineResult(
+      `${result.ok ? 'OK' : 'ERR'} query_release_baseline: ${
+        result.ok && result.message === 'null' ? 'no baseline recorded' : result.message
+      }`
+    );
+  };
+
+  const reseedReleaseBaseline = async () => {
+    const parsedBaseline = Number(baselineComplexity);
+    if (!Number.isFinite(parsedBaseline)) {
+      setBaselineResult('ERR reseed_release_baseline: enter a numeric baseline complexity.');
+      return;
+    }
+
+    const result = await invokeAdminCommand('reseed_release_baseline', {
+      token: adminToken,
+      repo_name: baselineRepoName,
+      baseline_complexity: parsedBaseline
+    });
+    setBaselineResult(`${result.ok ? 'OK' : 'ERR'} reseed_release_baseline: ${result.message}`);
   };
 
   return (
@@ -299,26 +334,16 @@ function App() {
 
         <Box sx={{ mb: 1.5 }} data-testid="explainability-section">
           <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
-            Explainability Panel
+            Explainability Traces
           </Typography>
-          <Stack spacing={1}>
-            {explainabilityTraces.map((trace) => (
-              <Paper key={trace.id} variant="outlined" sx={{ p: 1.1, borderRadius: 2 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.75 }}>
-                  <Typography variant="subtitle2" fontWeight={700}>
-                    {trace.title}
-                  </Typography>
-                  <StatusBadge status={trace.status} label={trace.status} />
-                </Stack>
-                <Typography variant="body2" fontWeight={600}>
-                  {trace.summary}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {trace.detail}
-                </Typography>
-              </Paper>
-            ))}
-          </Stack>
+          <FindingSection
+            title="Trace Decomposition"
+            items={explainabilityTraces.map((trace) => ({
+              id: trace.id,
+              text: `${trace.title}: ${trace.summary} — ${trace.detail}`,
+              status: trace.status
+            }))}
+          />
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="trend-risk-section">
@@ -342,6 +367,14 @@ function App() {
               status: item.tone === 'good' ? 'good' : item.tone === 'medium' ? 'medium' : 'bad'
             }))}
           />
+        </Box>
+
+        <Box sx={{ mb: 1.5 }} data-testid="job-observability-section">
+          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+            Job Observability
+          </Typography>
+          <MetricItem label="Observed stages" value={`${stages.length}`} valueTestId="job-observability-stage-count" />
+          <FindingSection title="Stage Metrics" items={jobObservabilityItems} />
         </Box>
 
         <Box sx={{ mb: 1.5 }}>
@@ -413,6 +446,39 @@ function App() {
           </Stack>
           <Typography variant="caption" data-testid="admin-bridge-result">
             {adminResult}
+          </Typography>
+        </Box>
+
+        <Box sx={{ mb: 1.5 }} data-testid="baseline-management-section">
+          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+            Release Baseline Management
+          </Typography>
+          <TextField
+            fullWidth
+            label="Baseline repo"
+            size="small"
+            value={baselineRepoName}
+            onChange={(event) => setBaselineRepoName(event.target.value)}
+            sx={{ mb: 1 }}
+          />
+          <TextField
+            fullWidth
+            label="Baseline complexity"
+            size="small"
+            value={baselineComplexity}
+            onChange={(event) => setBaselineComplexity(event.target.value)}
+            sx={{ mb: 1 }}
+          />
+          <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
+            <Button size="small" variant="outlined" onClick={() => void loadReleaseBaseline()}>
+              Load Baseline
+            </Button>
+            <Button size="small" variant="outlined" onClick={() => void reseedReleaseBaseline()}>
+              Reseed Baseline
+            </Button>
+          </Stack>
+          <Typography variant="caption" data-testid="baseline-management-result">
+            {baselineResult}
           </Typography>
         </Box>
 
