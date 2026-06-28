@@ -8,7 +8,9 @@ Rocinante is a cross-language planning and execution workspace for AI quality ch
 
 - `src-tauri/src/main.rs`: Tauri command registration and application state wiring.
 - `src-tauri/src/lib.rs`: backend crate surface and shared module exports.
+- `src-tauri/src/tauri_commands.rs`: token-checked backend facade for admin, risk, and release-baseline operations.
 - `ui/src/App.tsx`: dashboard shell and admin bridge consumer.
+- `ui/package.json`: `pnpm@11.4.0` UI manifest and test/build entry points.
 - `docs/feature-list.html`: feature backlog with acceptance criteria and bead linkage.
 - `docs/product-roadmap.html`: stage ordering and release-gate sequencing.
 - `docs/roadmap/bead-issue-tracker.html`: execution ledger for active bead issues.

@@ -1,5 +1,5 @@
 use repo_analyzer_core::auth::issue_test_token;
-use repo_analyzer_core::storage::DualLayerStore;
+use repo_analyzer_core::storage::{BaselineStore, DualLayerStore};
 use repo_analyzer_core::types::PrCandidate;
 use tempfile::tempdir;
 
@@ -78,6 +78,36 @@ fn tauri_command_release_baseline_roundtrips() {
     )
     .expect("reseed baseline");
     assert_eq!(reseeded, 11.25);
+}
+
+#[test]
+fn tauri_command_release_baseline_store_facade_roundtrips() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let token = issue_test_token("alice", &["admin"], 3600);
+    let store = BaselineStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
+
+    let seeded = repo_analyzer_core::tauri_commands::reseed_release_baseline_with_store(
+        token.to_string(),
+        store.clone(),
+        "repo-a".to_string(),
+        9.75,
+    )
+    .expect("seed baseline");
+    assert_eq!(seeded, 9.75);
+
+    let queried = repo_analyzer_core::tauri_commands::query_release_baseline_with_store(
+        token.to_string(),
+        store,
+        "repo-a".to_string(),
+    )
+    .expect("query baseline");
+    assert_eq!(queried, Some(9.75));
 }
 
 #[test]
