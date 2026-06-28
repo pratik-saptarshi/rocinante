@@ -13,7 +13,7 @@ describe('dashboard explainability panel', () => {
 
     const explainabilitySection = screen.getByTestId('explainability-section');
 
-    expect(within(explainabilitySection).getByText(/Explainability Panel/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Explainability Traces/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Score Decomposition/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Risk Commit/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Bottleneck/i)).toBeInTheDocument();
