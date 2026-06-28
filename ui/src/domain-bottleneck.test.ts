@@ -17,4 +17,32 @@ describe('bottleneck detection', () => {
     expect(items[0].status).toBe('critical');
     expect(items[1].status).toBe('high');
   });
+
+  it('drops low-pressure stages while preserving medium bottlenecks', () => {
+    const stages: PipelineStage[] = [
+      { name: 'archive', queueDepth: 1, throughput: 20, avgLatencyMs: 300 },
+      { name: 'review', queueDepth: 3, throughput: 4, avgLatencyMs: 1000 }
+    ];
+
+    const items = detectBottlenecks(stages, { severityThreshold: 0.7, latencyP95Ms: 1000 });
+
+    expect(items).toHaveLength(1);
+    expect(items[0].name).toBe('review');
+    expect(items[0].status).toBe('medium');
+    expect(items[0].impact).toBeGreaterThan(0.7);
+    expect(items[0].impact).toBeLessThan(1.0);
+  });
+
+  it('uses the default thresholds when options are omitted', () => {
+    const stages: PipelineStage[] = [
+      { name: 'edge', queueDepth: 6, throughput: 5, avgLatencyMs: 1000 }
+    ];
+
+    const items = detectBottlenecks(stages);
+
+    expect(items).toHaveLength(1);
+    expect(items[0].name).toBe('edge');
+    expect(items[0].impact).toBeGreaterThanOrEqual(1.2);
+    expect(items[0].status).toBe('high');
+  });
 });

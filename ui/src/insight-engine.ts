@@ -146,7 +146,9 @@ function limitList<T>(items: T[], limit?: number): T[] {
 export function buildDashboardInsights(payload: InsightPayload = {}, limits: InsightLimits = {}): DashboardInsights {
   const commits = limitList(payload.commits?.length ? payload.commits : defaultCommitSeed, limits.risks);
   const stages = payload.stages?.length ? payload.stages : defaultStageSeed;
-  const signals = payload.signals?.length ? payload.signals : defaultSignalSeed;
+  const signals = (payload.signals?.length ? payload.signals : defaultSignalSeed)
+    .map(signalToOpportunity)
+    .sort((left, right) => right.priorityScore - left.priorityScore || left.id.localeCompare(right.id));
   const latencyCeiling = limits.latencyP95Ms ?? 1_000;
 
   return {

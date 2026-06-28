@@ -50,6 +50,11 @@ export interface AdminCommitterScoresPayload {
   release?: string;
 }
 
+export interface AdminPrFileSignal {
+  path: string;
+  risk: number;
+}
+
 export interface AdminRankPrsPayload {
   token: string;
   prs: Array<{
@@ -60,6 +65,8 @@ export interface AdminRankPrsPayload {
     file_risk: number;
     author_velocity: number;
     approval_fidelity: number;
+    files?: AdminPrFileSignal[];
+    circuit_breaker_triggered?: boolean;
   }>;
 }
 

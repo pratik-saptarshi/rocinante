@@ -60,7 +60,7 @@ function buildRecommendations(insights: DashboardInsights): Record<StakeholderAu
   const [topRisk] = insights.commitRiskCards;
   const [topOpportunity, secondOpportunity] = insights.opportunities;
   const [criticalStage] = insights.bottlenecks.filter((item) => item.status === 'critical' || item.status === 'high');
-  const securitySignals = insights.commitRiskCards.filter((risk) =>
+  const securitySignals = rankedRiskCards.filter((risk) =>
     risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')
   );
 

@@ -24,6 +24,23 @@ describe('tauri admin bridge', () => {
     expect(result.message).toMatch(/Tauri runtime not detected/i);
   });
 
+  it('does not apply a timeout by default', async () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    const invoke = vi.fn().mockResolvedValue('ok');
+    setAdminInvokeForTesting(invoke);
+
+    try {
+      const result = await invokeAdminCommand('promote_lifecycle', {
+        token: 'alice:admin'
+      });
+
+      expect(result.ok).toBe(true);
+      expect(setTimeoutSpy).not.toHaveBeenCalled();
+    } finally {
+      setTimeoutSpy.mockRestore();
+    }
+  });
+
   it('returns success when invoke resolves with string payload', async () => {
     const invoke = vi.fn().mockResolvedValue('ok');
     setAdminInvokeForTesting(invoke);
