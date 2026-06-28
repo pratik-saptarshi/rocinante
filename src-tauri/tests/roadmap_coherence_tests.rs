@@ -7,8 +7,7 @@ fn stage3_convergence_has_a_single_release_gate_and_test_mapping() {
 
     assert!(
         feature_list.contains("| P2 | EP-03 Convergence | F-030 Shared release gates |")
-            && feature_list.contains("Red->Green partial")
-            && feature_list.contains("In Progress"),
+            && feature_list.contains("| Green | BI-029 | Completed |"),
         "feature list is missing the BI-029 convergence row"
     );
     assert!(
@@ -20,8 +19,8 @@ fn stage3_convergence_has_a_single_release_gate_and_test_mapping() {
     assert!(
         bead_tracker
             .contains("| BI-029 | Stage 3 | EP-03 Convergence | F-030 Shared release gates |")
-            && bead_tracker.contains("Red->Green partial")
-            && bead_tracker.contains("In Progress"),
+            && bead_tracker.contains("Red->Green complete")
+            && bead_tracker.contains("Completed"),
         "bead tracker is missing the BI-029 convergence row"
     );
     assert!(

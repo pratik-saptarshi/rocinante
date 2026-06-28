@@ -18,8 +18,10 @@ This roadmap sequences the two tracks that are being implemented together:
 |---|---|---|---|---|---|
 | Stage 0 | Shared | Create the backlog artifacts, phase order, tracker rows, and validation runner boundary. | None | `docs/feature-list.html`, `docs/product-roadmap.html`, and the bead tracker rows exist and cross-link each other, and the UI unit runner stays separate from the Playwright e2e suite. | BI-020, BI-038, BI-043 |
 | Stage 1 | AI quality checking | Add the versioned risk contract, admin command surface, file and PR scoring, CI gates, incident feedback, release baseline management, job observability, and browser bridge coverage. | Stage 0 | Risk output is deterministic, PR tiering is stable, the admin command surface is wired, browser smoke is authored, release baseline query/reseed controls are visible, job observability metrics are visible, and high/critical merges are blocked with a readable summary. | BI-021..BI-024, BI-030..BI-042 |
-| Stage 2 | Loop-engineering controls | Add triage formatting, budget guardrails, verifier separation, and minimal-fix escalation. | Stage 0, Stage 1 outputs | Report-only mode works, kill switch is enforced, verifier defaults to reject, and run logs are append-only. | BI-025..BI-028 |
-| Stage 3 | Convergence | Merge both tracks into a single release gate and harden the shared workflow. | Stage 1, Stage 2 | All active work has test mapping, phase gates, and acceptance criteria; there are no unlabeled tasks. | BI-029 |
+| Stage 2 | Loop-engineering controls | Add triage formatting, budget guardrails, verifier separation, and minimal-fix escalation. | Stage 0, Stage 1 outputs | Report-only mode works, kill switch is enforced, verifier defaults to reject, fix proposals stay one-problem and cap retries, and run logs are append-only. | BI-025..BI-028 |
+| Stage 3 | Convergence | Merge both tracks into a single release gate and harden the shared workflow. | Stage 1, Stage 2 | All active work has test mapping, phase gates, and acceptance criteria; there are no unlabeled tasks. BI-029 is complete and reflected in the bead tracker. | BI-029 |
+
+Validated Stage 0/1 slices: BI-020 through BI-024 and BI-039 through BI-042 are complete and reflected in the bead tracker. Validated Stage 2/3 slices: BI-025 through BI-029 are complete and reflected in the bead tracker. The roadmap stays open for any remaining Stage 1 AI-quality items that are not yet complete.
 
 ## Why This Order
 
@@ -32,3 +34,4 @@ This roadmap sequences the two tracks that are being implemented together:
 - No stage closes without at least one red test, one green implementation cycle, and a recorded acceptance check.
 - Security-sensitive behavior remains gated by existing `CI` and `Security` requirements on `main`.
 - The roadmap cannot advance past Stage 1 unless the bead tracker has corresponding issue rows for Stage 2 and Stage 3.
+- Stage 3 now carries an explicit roadmap-coherence check for BI-029 so the release gate can be validated before convergence work is collapsed.

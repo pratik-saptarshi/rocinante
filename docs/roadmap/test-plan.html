@@ -49,6 +49,7 @@
 - `F-021` -> `T-013`
 - `F-022` -> `T-025`
 - `F-023` -> `T-011`
+- `F-030` -> `T-046`
 - `F-036` -> `T-038`
 - `F-037` -> `T-039`
 - `F-038` -> `T-042`
@@ -77,6 +78,14 @@
   - `src-tauri/tests/release_baseline_handler_tests.rs`
   - `src-tauri/tests/release_baseline_storage_tests.rs`
   - Dashboard render exposes current release baseline query/reseed controls from the shared admin bridge, the registered Tauri handler path, and the extracted baseline store boundary.
+
+- `T-031` CI gate and comment contract tests:
+  - `src-tauri/tests/ci_gate_tests.rs`
+  - Stable review requirement summary and merge-block decision stay deterministic for the current PR-risk contract slice.
+
+- `T-032` Incident and annotation feedback tests:
+  - `src-tauri/tests/incident_feedback_tests.rs`
+  - Incident and annotation records raise risk, invalidate cached assessments, and preserve an audit trail in the current feedback ledger slice.
 
 ## Planned New Tests
 
@@ -121,27 +130,6 @@
   - Versioned risk output schema.
   - Highest-risk-file PR tier selection.
   - Missing-file fallback behavior.
-- `T-031` CI gate and comment contract tests:
-  - High/critical merge blocking.
-  - Stable review requirement summary.
-  - Comment payload shape and fields.
-- `T-032` Incident and annotation feedback tests:
-  - Manual override precedence over cached assessments.
-  - Cache invalidation when a new incident is recorded.
-  - Auditability of raised risk.
-- `T-033` Structured triage and state loop tests:
-  - High-Priority, Watch, Noise, and State Updates sections.
-  - Report-only output mode.
-  - No architectural invention during triage.
-- `T-034` Budget guard and kill switch tests:
-  - Report-only at 80 percent.
-  - Hard exit at 100 percent.
-  - Immediate stop on pause flag.
-- `T-035` Verifier and minimal-fix tests:
-  - Separate checker defaulting to reject.
-  - Test evidence required for approve.
-  - One-problem diff and attempt-cap escalation.
-
 ## Existing Test Coverage Additions
 
 - `T-037` PR risk service abstraction tests:
@@ -158,6 +146,22 @@
   - `tests/pr_risk_contract_tests.rs`
   - `tests/admin_service_tests.rs`
   - Admin-only access for `evaluate_pr_risk`, `risk-v1` schema defaulting, block/allow decision parity with the contract module, and negative RBAC rejection coverage.
+
+- `T-033` Structured triage and state loop tests:
+  - `src-tauri/tests/triage_tests.rs`
+  - High-Priority, Watch, Noise, and State Updates sections plus report-only and no-invention coverage.
+
+- `T-034` Budget guard and kill switch tests:
+  - `src-tauri/tests/budget_guard_tests.rs`
+  - Report-only at 80 percent, hard exit at 100 percent, and immediate stop on pause flag coverage.
+
+- `T-035` Verifier and minimal-fix tests:
+  - `src-tauri/tests/fix_proposal_tests.rs`
+  - Separate checker defaulting to reject, test evidence required for approve, and one-problem diff plus attempt-cap escalation coverage.
+
+- `T-046` Roadmap coherence tests:
+  - `src-tauri/tests/roadmap_coherence_tests.rs`
+  - BI-029 convergence requires test mapping, phase gate, acceptance criteria, and no unlabeled tasks.
 
 - `T-040` Explainability panel tests:
   - `ui/src/App.test.tsx`
