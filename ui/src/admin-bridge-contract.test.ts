@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { buildAdminBridgeArgs } from './admin-bridge-contract';
+import { ADMIN_BRIDGE_ACTIONS, buildAdminBridgeArgs } from './admin-bridge-contract';
 
 describe('admin bridge contract helpers', () => {
+  it('exposes the command catalog used by the UI shell', () => {
+    expect(ADMIN_BRIDGE_ACTIONS).toEqual([
+      { command: 'ingest_event', label: 'Ingest Event' },
+      { command: 'promote_lifecycle', label: 'Promote Lifecycle' },
+      { command: 'query_aggregates', label: 'Query Aggregates' },
+      { command: 'committer_scores', label: 'Committer Scores' },
+      { command: 'rank_prs', label: 'Rank PRs' },
+      { command: 'update_scoring_weights', label: 'Update Scoring Weights' }
+    ]);
+  });
+
   it('builds the full command payload map from a token', () => {
     const args = buildAdminBridgeArgs('alice:admin');
 

@@ -20,6 +20,7 @@ import {
 import { useState } from 'react';
 import { readLimits, readPayload } from './dashboard-contract';
 import { buildAdminBridgePayload } from './admin-bridge-contract';
+import { AdminBridgePanel } from './admin-bridge-panel';
 import { dashboardAudienceHighlights, dashboardFindingGroups, type AuditStatus, type DashboardFinding } from './dashboard-content';
 import { buildDashboardVisuals } from './dashboard-visuals';
 import { buildExplainabilityTraces } from './dashboard-explainability';
@@ -416,37 +417,12 @@ function App() {
           <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
             Admin Command Bridge
           </Typography>
-          <TextField
-            fullWidth
-            label="Admin token"
-            size="small"
-            value={adminToken}
-            onChange={(event) => setAdminToken(event.target.value)}
-            sx={{ mb: 1 }}
+          <AdminBridgePanel
+            adminToken={adminToken}
+            adminResult={adminResult}
+            onAdminTokenChange={setAdminToken}
+            onRunAdminCommand={(command) => void runAdminBridge(command)}
           />
-          <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
-            <Button size="small" variant="outlined" onClick={() => void runAdminBridge('ingest_event')}>
-              Ingest Event
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => void runAdminBridge('promote_lifecycle')}>
-              Promote Lifecycle
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => void runAdminBridge('query_aggregates')}>
-              Query Aggregates
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => void runAdminBridge('committer_scores')}>
-              Committer Scores
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => void runAdminBridge('rank_prs')}>
-              Rank PRs
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => void runAdminBridge('update_scoring_weights')}>
-              Update Scoring Weights
-            </Button>
-          </Stack>
-          <Typography variant="caption" data-testid="admin-bridge-result">
-            {adminResult}
-          </Typography>
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="baseline-management-section">
