@@ -21,6 +21,20 @@ export type AdminBridgeArgsMap = {
   update_scoring_weights: AdminUpdateWeightsPayload;
 };
 
+export interface AdminBridgeAction {
+  command: AdminBridgeCommand;
+  label: string;
+}
+
+export const ADMIN_BRIDGE_ACTIONS = [
+  { command: 'ingest_event', label: 'Ingest Event' },
+  { command: 'promote_lifecycle', label: 'Promote Lifecycle' },
+  { command: 'query_aggregates', label: 'Query Aggregates' },
+  { command: 'committer_scores', label: 'Committer Scores' },
+  { command: 'rank_prs', label: 'Rank PRs' },
+  { command: 'update_scoring_weights', label: 'Update Scoring Weights' }
+] as const satisfies readonly AdminBridgeAction[];
+
 export function buildAdminBridgeArgs(token: string): AdminBridgeArgsMap {
   return {
     ingest_event: {
