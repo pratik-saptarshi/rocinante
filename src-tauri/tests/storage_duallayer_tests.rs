@@ -265,6 +265,7 @@ fn prunes_expired_raw_events_and_counts_pruned_events() {
         .expect("insert old");
     db.insert(fresh_key.as_bytes(), payload)
         .expect("insert fresh");
+    db.flush().expect("flush raw events");
     drop(db);
 
     let store = DualLayerStore::open(

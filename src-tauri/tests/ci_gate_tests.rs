@@ -71,7 +71,55 @@ fn ci_workflow_includes_the_ci_gate_contract_step() {
     let workflow = fs::read_to_string(workflow_path).expect("read ci workflow");
 
     assert!(workflow.contains("CI gate contract"));
+    assert!(workflow
+        .contains("cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests"));
+}
+
+#[test]
+fn repo_pins_the_rust_toolchain_to_a_specific_stable_release() {
+    let toolchain_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../rust-toolchain.toml");
+    let toolchain = fs::read_to_string(toolchain_path).expect("read rust toolchain");
+    let manifest_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+    let manifest = fs::read_to_string(manifest_path).expect("read cargo manifest");
+
+    assert!(toolchain.contains("channel = \"1.96.1\""));
+    assert!(toolchain.contains("profile = \"minimal\""));
+    assert!(toolchain.contains("\"clippy\""));
+    assert!(toolchain.contains("\"rustfmt\""));
+    assert!(manifest.contains("rust-version = \"1.96.1\""));
+}
+
+#[test]
+fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
+    let workflow_path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.github/workflows/ci.yml");
+    let workflow = fs::read_to_string(workflow_path).expect("read ci workflow");
+    let manifest_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+    let manifest = fs::read_to_string(manifest_path).expect("read cargo manifest");
+
+    assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
+    assert!(workflow.contains("components: clippy, rustfmt"));
+    assert!(workflow.contains("cargo clippy --locked --manifest-path src-tauri/Cargo.toml"));
+    assert!(workflow.contains("cargo check --locked --manifest-path src-tauri/Cargo.toml --bins"));
     assert!(
-        workflow.contains("cargo test --manifest-path src-tauri/Cargo.toml --test ci_gate_tests")
+        workflow.contains("cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests")
     );
+    assert!(manifest.contains("test = false"));
+}
+
+#[test]
+fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
+    let workflow_path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.github/workflows/security.yml");
+    let workflow = fs::read_to_string(workflow_path).expect("read security workflow");
+    let audit_config_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.cargo/audit.toml");
+    let audit_config = fs::read_to_string(audit_config_path).expect("read audit config");
+
+    assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
+    assert!(workflow.contains("components: clippy, rustfmt"));
+    assert!(workflow.contains("taiki-e/install-action@cargo-audit"));
+    assert!(workflow.contains("cargo audit --file src-tauri/Cargo.lock --deny warnings"));
+    assert!(audit_config.contains("RUSTSEC-2024-0411"));
+    assert!(audit_config.contains("RUSTSEC-2024-0429"));
+    assert!(audit_config.contains("RUSTSEC-2025-0100"));
 }

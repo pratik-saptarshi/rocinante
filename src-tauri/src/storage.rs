@@ -326,18 +326,16 @@ impl AsyncIngestionEngine {
                     }
                 }
                 Err(RecvTimeoutError::Timeout) => {
-                    if last_promotion.elapsed() >= promotion_interval {
-                        match &retention_bg {
-                            Some(policy) => {
-                                let _ = store.promote_to_columnar_with_retention(policy, now_ts());
-                            }
-                            None => {
-                                let _ = store.promote_to_columnar();
-                            }
+                    match &retention_bg {
+                        Some(policy) => {
+                            let _ = store.promote_to_columnar_with_retention(policy, now_ts());
                         }
-                        promotion_count_bg.fetch_add(1, Ordering::AcqRel);
-                        last_promotion = Instant::now();
+                        None => {
+                            let _ = store.promote_to_columnar();
+                        }
                     }
+                    promotion_count_bg.fetch_add(1, Ordering::AcqRel);
+                    last_promotion = Instant::now();
                 }
                 Err(RecvTimeoutError::Disconnected) => break,
             }
