@@ -24,6 +24,122 @@ fn sample_candidate(
     }
 }
 
+fn read_repo_file(relative_path: &str) -> String {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(relative_path);
+    fs::read_to_string(path).expect("read repo file")
+}
+
+fn normalize_workflow_shell_text(text: &str) -> String {
+    text.replace('\\', " ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn extract_named_step_run_body(workflow: &str, step_name: &str) -> String {
+    let lines = workflow.lines().collect::<Vec<_>>();
+    let step_header = format!("- name: {step_name}");
+    let step_index = lines
+        .iter()
+        .position(|line| line.trim() == step_header)
+        .unwrap_or_else(|| panic!("workflow missing step `{step_name}`"));
+    let step_indent = lines[step_index]
+        .chars()
+        .take_while(|ch| *ch == ' ')
+        .count();
+
+    let mut index = step_index + 1;
+    while index < lines.len() {
+        let line = lines[index];
+        let trimmed = line.trim();
+        let indent = line.chars().take_while(|ch| *ch == ' ').count();
+
+        if indent == step_indent && trimmed.starts_with("- name: ") {
+            break;
+        }
+
+        if let Some(rest) = trimmed.strip_prefix("run:") {
+            let rest = rest.trim_start();
+            if !rest.is_empty() && rest != "|" && rest != ">" {
+                return rest.to_string();
+            }
+
+            let run_indent = indent;
+            let mut body = Vec::new();
+            index += 1;
+            while index < lines.len() {
+                let body_line = lines[index];
+                let body_trimmed = body_line.trim();
+                let body_indent = body_line.chars().take_while(|ch| *ch == ' ').count();
+
+                if !body_trimmed.is_empty() && body_indent <= run_indent {
+                    break;
+                }
+
+                body.push(body_line.trim_start().to_string());
+                index += 1;
+            }
+
+            return body.join("\n");
+        }
+
+        index += 1;
+    }
+
+    panic!("workflow step `{step_name}` missing run body");
+}
+
+fn extract_named_step_block(workflow: &str, step_name: &str) -> String {
+    let lines = workflow.lines().collect::<Vec<_>>();
+    let step_header = format!("- name: {step_name}");
+    let step_index = lines
+        .iter()
+        .position(|line| line.trim() == step_header)
+        .unwrap_or_else(|| panic!("workflow missing step `{step_name}`"));
+    let step_indent = lines[step_index]
+        .chars()
+        .take_while(|ch| *ch == ' ')
+        .count();
+
+    let mut body = Vec::new();
+    let mut index = step_index;
+    while index < lines.len() {
+        let line = lines[index];
+        let trimmed = line.trim();
+        let indent = line.chars().take_while(|ch| *ch == ' ').count();
+
+        if index > step_index && indent == step_indent && trimmed.starts_with("- name: ") {
+            break;
+        }
+
+        body.push(line.to_string());
+        index += 1;
+    }
+
+    body.join("\n")
+}
+
+fn assert_step_run_contains_all(workflow: &str, step_name: &str, fragments: &[&str]) {
+    let run_body = normalize_workflow_shell_text(&extract_named_step_run_body(workflow, step_name));
+    for fragment in fragments {
+        let normalized_fragment = normalize_workflow_shell_text(fragment);
+        assert!(
+            run_body.contains(&normalized_fragment),
+            "step `{step_name}` run body `{run_body}` missing fragment `{normalized_fragment}`"
+        );
+    }
+}
+
+fn assert_step_block_contains_all(workflow: &str, step_name: &str, fragments: &[&str]) {
+    let step_block = extract_named_step_block(workflow, step_name);
+    for fragment in fragments {
+        assert!(
+            step_block.contains(fragment),
+            "step `{step_name}` block `{step_block}` missing fragment `{fragment}`"
+        );
+    }
+}
+
 #[test]
 fn ci_gate_comment_blocks_high_risk_prs_with_a_stable_summary() {
     let schema = PrRiskSchema::default();
@@ -66,21 +182,25 @@ fn ci_gate_comment_round_trips_through_json() {
 
 #[test]
 fn ci_workflow_includes_the_ci_gate_contract_step() {
-    let workflow_path =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.github/workflows/ci.yml");
-    let workflow = fs::read_to_string(workflow_path).expect("read ci workflow");
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
 
     assert!(workflow.contains("CI gate contract"));
-    assert!(workflow
-        .contains("cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests"));
+    assert_step_run_contains_all(
+        &workflow,
+        "CI gate contract",
+        &[
+            "cargo test",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--test ci_gate_tests",
+        ],
+    );
 }
 
 #[test]
 fn repo_pins_the_rust_toolchain_to_a_specific_stable_release() {
-    let toolchain_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../rust-toolchain.toml");
-    let toolchain = fs::read_to_string(toolchain_path).expect("read rust toolchain");
-    let manifest_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
-    let manifest = fs::read_to_string(manifest_path).expect("read cargo manifest");
+    let toolchain = read_repo_file("../rust-toolchain.toml");
+    let manifest = read_repo_file("Cargo.toml");
 
     assert!(toolchain.contains("channel = \"1.96.1\""));
     assert!(toolchain.contains("profile = \"minimal\""));
@@ -91,35 +211,152 @@ fn repo_pins_the_rust_toolchain_to_a_specific_stable_release() {
 
 #[test]
 fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
-    let workflow_path =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.github/workflows/ci.yml");
-    let workflow = fs::read_to_string(workflow_path).expect("read ci workflow");
-    let manifest_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
-    let manifest = fs::read_to_string(manifest_path).expect("read cargo manifest");
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let manifest = read_repo_file("Cargo.toml");
 
     assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
     assert!(workflow.contains("components: clippy, rustfmt"));
-    assert!(workflow.contains("cargo clippy --locked --manifest-path src-tauri/Cargo.toml"));
-    assert!(workflow.contains("cargo check --locked --manifest-path src-tauri/Cargo.toml --bins"));
-    assert!(
-        workflow.contains("cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests")
+    assert_step_run_contains_all(
+        &workflow,
+        "Lint",
+        &[
+            "cargo clippy",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--all-targets",
+            "-D warnings",
+        ],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Binary check",
+        &[
+            "cargo check",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--bins",
+        ],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Test",
+        &[
+            "cargo test",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--lib",
+            "--tests",
+        ],
     );
     assert!(manifest.contains("test = false"));
 }
 
 #[test]
+fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("rust-coverage:"));
+    assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
+    assert_step_block_contains_all(
+        &workflow,
+        "Install cargo-llvm-cov",
+        &["taiki-e/install-action@v2", "tool: cargo-llvm-cov"],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Rust coverage",
+        &[
+            "mkdir -p target/coverage",
+            "cargo llvm-cov",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--lcov",
+            "--output-path target/coverage/lcov.info",
+        ],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Upload Rust coverage report",
+        &[
+            "actions/upload-artifact@v4",
+            "name: rust-coverage-lcov",
+            "target/coverage/lcov.info",
+        ],
+    );
+    assert!(!workflow.contains("--fail-under-lines"));
+    assert!(!workflow.contains("--fail-under-regions"));
+    assert!(!workflow.contains("--fail-under-functions"));
+}
+
+#[test]
 fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
-    let workflow_path =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.github/workflows/security.yml");
-    let workflow = fs::read_to_string(workflow_path).expect("read security workflow");
-    let audit_config_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.cargo/audit.toml");
-    let audit_config = fs::read_to_string(audit_config_path).expect("read audit config");
+    let workflow = read_repo_file("../.github/workflows/security.yml");
+    let audit_config = read_repo_file("../.cargo/audit.toml");
 
     assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
     assert!(workflow.contains("components: clippy, rustfmt"));
-    assert!(workflow.contains("taiki-e/install-action@cargo-audit"));
-    assert!(workflow.contains("cargo audit --file src-tauri/Cargo.lock --deny warnings"));
+    assert!(workflow.contains("taiki-e/install-action@v2"));
+    assert!(workflow.contains("tool: cargo-audit"));
+    assert_step_run_contains_all(
+        &workflow,
+        "Audit Rust dependencies",
+        &[
+            "cargo audit",
+            "--file src-tauri/Cargo.lock",
+            "--deny warnings",
+        ],
+    );
     assert!(audit_config.contains("RUSTSEC-2024-0411"));
     assert!(audit_config.contains("RUSTSEC-2024-0429"));
     assert!(audit_config.contains("RUSTSEC-2025-0100"));
+}
+
+#[test]
+fn workflow_step_contract_matching_tolerates_reordered_multiline_commands() {
+    let workflow = r#"
+jobs:
+  test:
+    steps:
+      - name: CI gate contract
+        run: |
+          cargo test \
+            --test ci_gate_tests \
+            --manifest-path src-tauri/Cargo.toml \
+            --locked \
+            --nocapture
+"#;
+
+    assert_step_run_contains_all(
+        workflow,
+        "CI gate contract",
+        &[
+            "cargo test",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--test ci_gate_tests",
+        ],
+    );
+}
+
+#[test]
+#[should_panic(expected = "missing fragment `--locked`")]
+fn workflow_step_contract_matching_rejects_missing_required_fragments() {
+    let workflow = r#"
+jobs:
+  test:
+    steps:
+      - name: CI gate contract
+        run: cargo test --manifest-path src-tauri/Cargo.toml --test ci_gate_tests
+"#;
+
+    assert_step_run_contains_all(
+        workflow,
+        "CI gate contract",
+        &[
+            "cargo test",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--test ci_gate_tests",
+        ],
+    );
 }

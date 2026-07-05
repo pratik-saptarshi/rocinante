@@ -166,6 +166,8 @@ cargo run --manifest-path Cargo.toml
 cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path src-tauri/Cargo.toml
+mkdir -p target/coverage
+cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info
 cd ui
 pnpm exec tsc -b
 pnpm exec vitest run

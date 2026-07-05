@@ -38,6 +38,10 @@ function StatusBadge({ status, label }: { status: AuditStatus; label: string }) 
   return <Chip color={palette[status]} size="small" label={label} />;
 }
 
+function toneToStatus(tone: string): AuditStatus {
+  return tone === 'good' ? 'good' : tone === 'medium' ? 'medium' : 'bad';
+}
+
 function ScoreGauge({ value, subtitle, status }: { value: number; subtitle: string; status: AuditStatus }) {
   return (
     <Box
@@ -153,10 +157,16 @@ function App() {
 
   const criticalBottlenecks = qualityPulse.bottleneckBuckets.critical;
   const highBottlenecks = qualityPulse.bottleneckBuckets.high;
-  const jobObservabilityItems = stages.map((stage) => ({
+  const jobObservabilityItems: DashboardFinding[] = stages.map((stage) => ({
     id: stage.name,
     text: `${stage.name}: queue ${stage.queueDepth}, throughput ${stage.throughput}, lag ${stage.avgLatencyMs}ms`,
-    status: stage.queueDepth >= 10 || stage.avgLatencyMs >= 2000 ? 'bad' : stage.queueDepth >= 4 || stage.avgLatencyMs >= 1000 ? 'medium' : 'good'
+    status: toneToStatus(
+      stage.queueDepth >= 10 || stage.avgLatencyMs >= 2000
+        ? 'bad'
+        : stage.queueDepth >= 4 || stage.avgLatencyMs >= 1000
+          ? 'medium'
+          : 'good'
+    )
   }));
 
   const applyPayload = () => {
@@ -342,7 +352,7 @@ function App() {
             items={explainabilityTraces.map((trace) => ({
               id: trace.id,
               text: `${trace.title}: ${trace.summary} — ${trace.detail}`,
-              status: trace.status
+              status: toneToStatus(trace.status)
             }))}
           />
         </Box>
@@ -357,7 +367,7 @@ function App() {
             items={dashboardVisuals.trendLines.map((item) => ({
               id: item.id,
               text: `${item.label}: ${item.value} — ${item.rationale}`,
-              status: item.tone === 'good' ? 'good' : item.tone === 'medium' ? 'medium' : 'bad'
+              status: toneToStatus(item.tone)
             }))}
           />
           <FindingSection
@@ -365,7 +375,7 @@ function App() {
             items={dashboardVisuals.prRiskRankings.map((item) => ({
               id: item.id,
               text: `${item.title} — ${item.rationale}`,
-              status: item.tone === 'good' ? 'good' : item.tone === 'medium' ? 'medium' : 'bad'
+              status: toneToStatus(item.tone)
             }))}
           />
         </Box>
