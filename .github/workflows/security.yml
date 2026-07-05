@@ -69,6 +69,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.96.1
         with:
           components: clippy, rustfmt
-      - uses: taiki-e/install-action@cargo-audit
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
       - name: Audit Rust dependencies
         run: cargo audit --file src-tauri/Cargo.lock --deny warnings
