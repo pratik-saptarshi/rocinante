@@ -1,6 +1,9 @@
 # Build artifacts
 /target
 src-tauri/target
+.target-*/
+.pnpm-store/
+.slim/
 
 # OS/editor
 .DS_Store
@@ -28,6 +31,11 @@ telemetry-kv/
 # Logs/temp
 *.log
 tmp/
+.tmp/
+ui/dist/
+ui/node_modules/
+ui/*.tsbuildinfo
+ui/vite.config.js
 ui/coverage/
 ui/playwright-report/
 ui/test-results/

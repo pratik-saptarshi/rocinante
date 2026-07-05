@@ -39,6 +39,7 @@ Criterion | Status | Evidence
 Secret scan is enabled in GitHub Actions | [x] | `.github/workflows/security.yml` uses TruffleHog with `--only-verified`
 Dependency review is enabled for pull requests | [x] | `.github/workflows/dependency-review.yml`
 CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL analysis
+Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
 Auth/RBAC boundary is covered by tests | [x] | `src-tauri/tests/auth_tests.rs`
 
@@ -58,6 +59,8 @@ Criterion | Status | Evidence
 Rust formatting passes | [ ] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
 Rust lint passes | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
 Rust tests pass | [ ] | `cargo test --manifest-path src-tauri/Cargo.toml`
+Backend Rust coverage report is generated | [ ] | `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
+Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 UI unit tests pass | [ ] | `pnpm exec vitest run` from `ui/`
 UI typecheck passes | [ ] | `pnpm exec tsc -b` from `ui/`
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
@@ -81,6 +84,7 @@ Criterion | Status | Evidence
 CI workflow is monitored until terminal state | [ ] | `gh pr view <pr>` / `gh run view <run>`
 Security workflow is monitored until terminal state | [ ] | `gh pr view <pr>` / `gh run view <run>`
 Dependency review is monitored until terminal state | [ ] | `gh pr view <pr>` / `gh run view <run>`
+Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `rust-coverage-lcov` from CI job `rust-coverage`
 
 ## 7) Publish decision
 
