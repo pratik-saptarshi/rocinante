@@ -166,6 +166,7 @@ cargo run --manifest-path Cargo.toml
 cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path src-tauri/Cargo.toml
+cargo audit --file src-tauri/Cargo.lock --deny warnings
 mkdir -p target/coverage
 cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info
 cd ui
@@ -177,7 +178,7 @@ pnpm exec playwright test
 ### 5) Governance artifacts
 
 - `docs/publish-readiness-checklist.html` (required gates)
-- `docs/bill-of-materials.html` (release inventory)
+- `docs/bill-of-materials.html` (release inventory, security tooling, and coverage artifacts)
 - `docs/roadmap/execution-ticket-artifact.md` (single-source for work status)
 
 ---

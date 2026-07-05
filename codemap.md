@@ -25,21 +25,25 @@ roadmap artifacts.
   decision helper.
 - `src-tauri/src/incident_feedback.rs`: incident and annotation feedback ledger
   with cache invalidation and auditable risk raises.
+- `.github/workflows/ci.yml`: CI contract for Rust formatting, linting,
+  checking, tests, and informational backend Rust coverage via `rust-coverage`.
 - `ui/src/App.tsx`: dashboard shell and admin bridge consumer.
 - `ui/src/admin-bridge-panel.tsx`: extracted command-bridge control block.
 - `ui/package.json`: `pnpm@11.4.0` UI manifest and test/build entry points.
 - `docs/feature-list.html`: feature backlog with acceptance criteria and bead linkage.
 - `docs/product-roadmap.html`: stage ordering and release-gate sequencing.
 - `docs/roadmap/bead-issue-tracker.html`: execution ledger for active bead issues.
-- `docs/bill-of-materials.html`: release inventory and dependency surface.
-- `docs/publish-readiness-checklist.html`: publish gate checklist.
+- `docs/bill-of-materials.html`: release inventory, dependency surface, and
+  backend Rust coverage artifact inventory.
+- `docs/publish-readiness-checklist.html`: publish gate checklist, including
+  security, validation, and coverage artifact criteria.
 
 ## Directory Map
 
 | Directory | Responsibility Summary | Notes |
 |---|---|---|
-| `src-tauri/src/` | Backend service layer, command facade, storage boundaries, auth, scoring, telemetry, risk contracts, budget/fix-proposal/triage/verifier/convergence contracts, app support, baseline adapters, and the bulk-import telemetry surface tracked by the F-033 planning slice. | Tauri commands should stay thin and delegate into service/storage layers. `app_support.rs` owns the shared app builder and state. |
-| `src-tauri/tests/` | Backend regression coverage for PR risk contracts, CI-gate comment contracts, incident-feedback contracts, storage behavior, admin-only flows, and registered-handler integration. | Tests should protect command wiring and storage invariants. |
+| `src-tauri/src/` | Backend service layer, command facade, storage boundaries, auth, scoring, telemetry, risk contracts, budget/fix-proposal/triage/verifier/convergence contracts, app support, baseline adapters, and the bulk-import telemetry surface tracked by the F-033 planning slice. | Tauri commands should stay thin and delegate into service/storage layers. `app_support.rs` owns the shared app builder and state. Storage opens keep the process-level ownership guard and tolerate transient sled close/reopen lock lag. |
+| `src-tauri/tests/` | Backend regression coverage for PR risk contracts, CI-gate comment contracts, publish-gate documentation contracts, incident-feedback contracts, storage behavior, admin-only flows, and registered-handler integration. | Tests should protect command wiring, release-gate docs, and storage invariants. |
 | `ui/src/` | Frontend dashboard, bridge adapters, explainability panels, and quality-pulse rendering. | UI state should flow through the bridge adapters rather than direct runtime assumptions. |
 | `ui/e2e/` | Browser-level smoke coverage for the Tauri bridge and user-visible flows. | Keeps the Playwright surface separate from unit tests. |
 | `docs/` | Feature backlog, roadmap, test plan, publish-readiness checklist, and bead tracker artifacts. | This is the source of truth for phase sequencing and backlog accounting. |

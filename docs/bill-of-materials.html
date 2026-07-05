@@ -1,6 +1,6 @@
 # Bill of Materials - Rocinante Release Gate
 
-_Current as of 2026-06-13_
+_Current as of 2026-07-05_
 
 This document inventories the release-critical components, dependency surface,
 and governance artifacts that must stay aligned before publishing to `origin`.
@@ -29,6 +29,7 @@ then release from the merged tip.
 - `src-tauri/src/scoring.rs`
 - `src-tauri/src/plugins/sanitizer.rs`
 - `src-tauri/src/plugins/parser.rs`
+- `rust-toolchain.toml`
 
 ### Frontend / UI
 
@@ -62,6 +63,7 @@ then release from the merged tip.
 - `.github/workflows/ci.yml`
 - `.github/workflows/security.yml`
 - `.github/workflows/dependency-review.yml`
+- `.cargo/audit.toml`
 - `scripts/harden-github.sh`
 
 ## 3) Dependency surface
@@ -84,6 +86,8 @@ Core runtime and support crates in `src-tauri/Cargo.toml`:
 - `sha2`
 - `tempfile` for tests
 - `tauri-build` for the build step
+- `cargo-llvm-cov` for informational backend Rust coverage reporting
+- `cargo-audit` for RustSec dependency audit checks
 
 ### UI / frontend packages
 
@@ -112,6 +116,8 @@ Packages declared in `ui/package.json`:
 - `actions/checkout`
 - `dtolnay/rust-toolchain`
 - `Swatinem/rust-cache`
+- `taiki-e/install-action`
+- `actions/upload-artifact`
 - `actions/dependency-review-action`
 - `github/codeql-action`
 - `trufflesecurity/trufflehog`
@@ -129,15 +135,27 @@ Packages declared in `ui/package.json`:
 - Secret scanning is enforced in GitHub Actions through TruffleHog
 - Dependency review is enforced on pull requests
 - CodeQL is enabled for the Rust codebase
+- RustSec dependency audit is enforced through `cargo-audit`
+- Backend Rust coverage runs in the informational `rust-coverage` CI job
+  through `cargo-llvm-cov`
 
 ## 5) Release-critical validation entry points
 
 - Rust formatting: `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
 - Rust linting: `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
 - Rust tests: `cargo test --manifest-path src-tauri/Cargo.toml`
+- Rust coverage: `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 - UI typecheck: `pnpm exec tsc -b` from `ui/`
 - UI unit tests: `pnpm exec vitest run` from `ui/`
 - Headless browser tests: `pnpm exec playwright test` from `ui/`
+
+### Coverage artifacts
+
+- Backend Rust LCOV artifact: `target/coverage/lcov.info`
+- CI artifact name: `rust-coverage-lcov`
+- CI job name: `rust-coverage`
+- Current policy: informational baseline reporting only; no
+  `--fail-under-*` threshold is enforced until a measured baseline is adopted.
 
 ## 6) Publish-gate summary
 
@@ -146,8 +164,10 @@ Before any release reaches `origin/main`, the repository should satisfy:
 1. Security controls are present and active.
 2. Documentation points at the current release gate.
 3. Rust and UI validation are green on the release branch.
-4. GitHub Actions checks are green on the PR or release branch.
-5. The final publish uses a protected-branch-safe squash or PR merge.
+4. Backend Rust coverage generates `target/coverage/lcov.info` and publishes
+   the `rust-coverage-lcov` artifact.
+5. GitHub Actions checks are green on the PR or release branch.
+6. The final publish uses a protected-branch-safe squash or PR merge.
 
 This BOM is the release inventory; the checklist in
 `docs/publish-readiness-checklist.html` is the executable gate.
