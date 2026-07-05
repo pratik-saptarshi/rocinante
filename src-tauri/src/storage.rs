@@ -395,7 +395,7 @@ impl AsyncIngestionEngine {
 impl DualLayerStore {
     pub fn open(kv_path: &str, columnar_path: &str) -> Result<Self, AnalyzerError> {
         let kv_lock = Self::acquire_kv_lock(kv_path)?;
-        let kv = sled::open(kv_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let kv = Self::open_kv_with_retry(kv_path)?;
         let this = Self {
             kv: Arc::new(kv),
             columnar_path: columnar_path.to_string(),
@@ -406,6 +406,38 @@ impl DualLayerStore {
         this.init_columnar()?;
         let _ = this.refresh_analytics_snapshot(0)?;
         Ok(this)
+    }
+
+    fn open_kv_with_retry(kv_path: &str) -> Result<Db, AnalyzerError> {
+        let mut last_error = None;
+
+        for attempt in 0..5 {
+            match sled::open(kv_path) {
+                Ok(db) => return Ok(db),
+                Err(err) => {
+                    if !Self::is_transient_kv_lock_error(&err) {
+                        return Err(AnalyzerError::Db(err.to_string()));
+                    }
+                    last_error = Some(err);
+                    if attempt < 4 {
+                        thread::sleep(Duration::from_millis(25));
+                    }
+                }
+            }
+        }
+
+        Err(AnalyzerError::Db(
+            last_error
+                .map(|err| err.to_string())
+                .unwrap_or_else(|| "failed to open sled database".to_string()),
+        ))
+    }
+
+    fn is_transient_kv_lock_error(err: &sled::Error) -> bool {
+        let message = err.to_string();
+        message.contains("could not acquire lock")
+            || message.contains("Resource temporarily unavailable")
+            || message.contains("WouldBlock")
     }
 
     fn kv_lock_file_path(kv_path: &str) -> PathBuf {
