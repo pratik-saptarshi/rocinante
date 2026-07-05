@@ -3,7 +3,8 @@ use std::path::PathBuf;
 
 fn read_repo_file(relative_path: &str) -> String {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(relative_path);
-    fs::read_to_string(path).expect("read repo file")
+    fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("read repo file {}: {err}", path.display()))
 }
 
 #[test]
