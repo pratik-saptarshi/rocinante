@@ -84,7 +84,7 @@ fn gtk_glib_dependency_floor_is_tracked_as_release_blocking() {
         .contains("Release readiness is blocked by the tracked GTK/glib advisory exception."));
     assert!(baseline.contains("docs/roadmap/security-advisory-exceptions.json"));
     assert!(checklist.contains(
-        "dependency audit exceptions are registry-backed, time-boxed, and release-blocking"
+        "Dependency audit exceptions are registry-backed, time-boxed, and release-blocking"
     ));
     assert!(checklist.contains("Release remains blocked until RT-RC-001 is closed"));
     assert!(proof_script.contains("cargo tree --manifest-path \"$repo_root/src-tauri/Cargo.toml\" -i glib --locked --target all"));
@@ -104,7 +104,7 @@ fn roadmap_does_not_claim_complete_backlog_with_active_security_exception() {
     assert!(product_roadmap.contains("Open release/security slice remains: RT-RC-001"));
     assert!(bead_tracker.contains("`RT-RC-001` GTK/glib dependency-floor governance is active"));
     assert!(bead_tracker.contains("BI-046"));
-    assert!(test_plan.contains("RT-RC-001` -> `T-048"));
+    assert!(test_plan.contains("F-046` -> `T-048"));
     assert!(test_plan
         .contains("T-048 Security advisory exception registry and dependency-floor proof tests"));
 }
@@ -132,8 +132,8 @@ fn gtk_free_host_migration_plan_is_stage_gated_and_tdd_driven() {
     assert!(feature_list.contains("EP-06 Host migration planning"));
     assert!(feature_list.contains("F-047 Desktop parity evaluation and host decision"));
     assert!(feature_list.contains("F-051 Remove Tauri/GTK/GLib"));
-    assert!(feature_backlog.contains("F-047 Desktop parity evaluation and host decision"));
-    assert!(feature_backlog.contains("F-051 Remove Tauri/GTK/GLib"));
+    assert!(feature_backlog.contains("Desktop parity evaluation and host decision"));
+    assert!(feature_backlog.contains("Remove Tauri/GTK/GLib"));
     assert!(feature_backlog.contains("docs/roadmap/gtk-free-host-migration-plan.html"));
     assert!(bead_tracker.contains("`RT-RC-002` GTK-free host migration planning is active"));
     assert!(bead_tracker.contains("BI-047"));
