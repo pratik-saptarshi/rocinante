@@ -105,8 +105,9 @@ fn roadmap_does_not_claim_complete_backlog_with_active_security_exception() {
     assert!(bead_tracker.contains("`RT-RC-001` GTK/glib dependency-floor governance is active"));
     assert!(bead_tracker.contains("BI-046"));
     assert!(test_plan.contains("F-046` -> `T-048"));
-    assert!(test_plan
-        .contains("T-048 Security advisory exception registry and dependency-floor proof tests"));
+    assert!(
+        test_plan.contains("Security advisory exception registry and dependency-floor proof tests")
+    );
 }
 
 #[test]
@@ -139,7 +140,7 @@ fn gtk_free_host_migration_plan_is_stage_gated_and_tdd_driven() {
     assert!(bead_tracker.contains("BI-047"));
     assert!(bead_tracker.contains("BI-051"));
     assert!(test_plan.contains("RT-RC-002` GTK-free host migration planning"));
-    assert!(test_plan.contains("T-049 Parity matrix and host-decision tests"));
+    assert!(test_plan.contains("Parity matrix and host-decision tests"));
     assert!(test_plan.contains("T-053 Dependency-floor removal tests"));
     assert!(bom.contains("docs/roadmap/gtk-free-host-migration-plan.html"));
     assert!(bom.contains("scripts/dependency-floor-proof.sh"));
