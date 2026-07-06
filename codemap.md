@@ -37,6 +37,12 @@ roadmap artifacts.
   backend Rust coverage artifact inventory.
 - `docs/publish-readiness-checklist.html`: publish gate checklist, including
   security, validation, and coverage artifact criteria.
+- `docs/roadmap/gtk-free-host-migration-plan.html`: phase-gated GTK-free host
+  migration plan with TDD and parity checkpoints.
+- `docs/roadmap/security-advisory-exceptions.json`: machine-readable registry
+  for time-boxed audit ignores and host-floor governance.
+- `scripts/dependency-floor-proof.sh`: dependency-floor proof command for GTK
+  and GLib transitive-path validation.
 
 ## Directory Map
 
@@ -69,11 +75,14 @@ roadmap artifacts.
    release-gate collapse only happens when test mappings and phase gates are present.
 9. Fix-proposal loops enforce one-problem remediation and retry caps before
    escalation with full context.
-10. The React UI invokes the bridge through `ui/src/tauri-admin.ts`, the
-    extracted command bridge shell in `ui/src/admin-bridge-panel.tsx`, and
-    renders results in `ui/src/App.tsx`.
-11. Unit, integration, and e2e tests validate the command facade, the bridge
-    seam, and the browser-visible behavior.
+10. The GTK-free migration plan adds a phase-gated host path for parity,
+    core extraction, native shell MVP, fallback containment, and dependency
+    removal without reintroducing GTK/GLib.
+11. The React UI invokes the bridge through `ui/src/tauri-admin.ts`, the
+   extracted command bridge shell in `ui/src/admin-bridge-panel.tsx`, and
+   renders results in `ui/src/App.tsx`.
+12. Unit, integration, and e2e tests validate the command facade, the bridge
+   seam, and the browser-visible behavior.
 
 ## Design Patterns
 

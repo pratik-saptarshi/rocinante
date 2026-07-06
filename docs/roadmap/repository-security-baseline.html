@@ -20,3 +20,11 @@
 - Mandatory CI checks: format, clippy, tests.
 - Scheduled security scans with CodeQL.
 - Dependency updates via Dependabot.
+- Dependency audit exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`.
+- `scripts/dependency-floor-proof.sh` records the current GTK/glib dependency floor.
+
+## Release Blockers
+
+- `RT-RC-001` remains open while the GTK/glib dependency floor is present in `src-tauri/Cargo.lock`.
+- Release readiness is blocked by the tracked GTK/glib advisory exception.
+- Release readiness is blocked until the tracked GTK/glib advisory exception is retired or formally accepted.
