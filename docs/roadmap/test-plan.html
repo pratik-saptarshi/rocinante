@@ -8,7 +8,10 @@
 
 ## Current execution slices
 
-- none
+- `RT-RC-001` GTK/glib dependency-floor governance:
+  - Release remains blocked until the exception registry exists and the current floor is retired or formally accepted.
+- `RT-RC-002` GTK-free host migration planning:
+  - Phase 0 through Phase 4 stay test-driven, with parity, core extraction, native shell, fallback containment, and dependency-floor removal each starting from a failing test or contract.
 
 ## Existing Test Coverage
 
@@ -47,6 +50,12 @@
 - `F-022` -> `T-025`
 - `F-023` -> `T-011`
 - `F-030` -> `T-046`
+- `F-046` -> `T-048`
+- `F-047` -> `T-049`
+- `F-048` -> `T-050`
+- `F-049` -> `T-051`
+- `F-050` -> `T-052`
+- `F-051` -> `T-053`
 - `F-036` -> `T-038`
 - `F-037` -> `T-039`
 - `F-038` -> `T-042`
@@ -149,6 +158,33 @@
 - `T-046` Roadmap coherence tests:
   - `src-tauri/tests/roadmap_coherence_tests.rs`
   - BI-029 convergence requires test mapping, phase gate, acceptance criteria, and no unlabeled tasks.
+
+- `T-048` Security advisory exception registry and dependency-floor proof tests:
+  - `src-tauri/tests/security_advisory_exception_tests.rs`
+  - Audit ignores stay mapped one-to-one to the exception registry, the registry stays time-boxed, and the GTK/glib floor remains release-blocking until retired or formally accepted.
+
+- `T-049` Parity matrix and host-decision tests:
+  - `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`
+  - Parity surface coverage must fail until the desktop matrix, host decision, and fallback scope are all recorded.
+
+- `T-050` Core extraction contract tests:
+  - `src-tauri/tests/core_contract_tests.rs`
+  - `src-tauri/tests/host_agnostic_boundary_tests.rs`
+  - Core-domain behavior must be host-agnostic before the GTK-free shell work starts.
+
+- `T-051` Native shell integration tests:
+  - `src-tauri/tests/native_shell_integration_tests.rs`
+  - Native desktop lifecycle, menus, dialogs, tray, deep links, shortcuts, and persistence must pass without GTK/GLib.
+
+- `T-052` Parity closure and fallback containment tests:
+  - `src-tauri/tests/parity_closure_tests.rs`
+  - Any remaining should-have gaps must be explicitly deferred or contained behind a documented browser-sidecar adapter.
+
+- `T-053` Dependency-floor removal tests:
+  - `scripts/dependency-floor-proof.sh`
+  - `.cargo/audit.toml`
+  - `docs/roadmap/repository-security-baseline.html`
+  - Release gates fail if `gtk` or `glib` reappear in the dependency tree or the exception registry remains open after removal.
 
 - `T-040` Explainability panel tests:
   - `ui/src/App.test.tsx`

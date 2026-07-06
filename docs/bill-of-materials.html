@@ -52,6 +52,8 @@ then release from the merged tip.
 - `docs/github-setup.md`
 - `docs/bill-of-materials.html`
 - `docs/publish-readiness-checklist.html`
+- `docs/roadmap/gtk-free-host-migration-plan.html`
+- `docs/roadmap/security-advisory-exceptions.json`
 - `docs/roadmap/feature-backlog.html`
 - `docs/roadmap/bead-issue-tracker.html`
 - `docs/roadmap/test-plan.html`
@@ -121,6 +123,7 @@ Packages declared in `ui/package.json`:
 - `actions/dependency-review-action`
 - `github/codeql-action`
 - `trufflesecurity/trufflehog`
+- `scripts/dependency-floor-proof.sh`
 
 ## 4) Security, privacy, and secret hygiene assets
 
@@ -136,6 +139,8 @@ Packages declared in `ui/package.json`:
 - Dependency review is enforced on pull requests
 - CodeQL is enabled for the Rust codebase
 - RustSec dependency audit is enforced through `cargo-audit`
+- Advisory exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`
+- `scripts/dependency-floor-proof.sh` records the current GTK/GLib floor
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 
@@ -166,8 +171,9 @@ Before any release reaches `origin/main`, the repository should satisfy:
 3. Rust and UI validation are green on the release branch.
 4. Backend Rust coverage generates `target/coverage/lcov.info` and publishes
    the `rust-coverage-lcov` artifact.
-5. GitHub Actions checks are green on the PR or release branch.
-6. The final publish uses a protected-branch-safe squash or PR merge.
+5. GTK-free host migration artifacts stay in sync with the feature list, bead tracker, and test plan.
+6. GitHub Actions checks are green on the PR or release branch.
+7. The final publish uses a protected-branch-safe squash or PR merge.
 
 This BOM is the release inventory; the checklist in
 `docs/publish-readiness-checklist.html` is the executable gate.

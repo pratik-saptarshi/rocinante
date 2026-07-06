@@ -1,0 +1,189 @@
+[
+  {
+    "id": "RUSTSEC-2024-0411",
+    "package": "gtk transitive floor",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "Tauri/Wry still pulls the GTK3-backed Linux runtime stack, so the advisory remains tracked while the host boundary is still being isolated.",
+    "exit_condition": "Remove the GTK stack from the dependency tree or replace the host before the review date.",
+    "tracking_id": "RT-RC-001-01"
+  },
+  {
+    "id": "RUSTSEC-2024-0412",
+    "package": "gtk transitive floor",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The current Tauri/Wry stack still binds to the GTK3 runtime floor on Linux and needs a governed exception until the host boundary is retired or replaced.",
+    "exit_condition": "The GTK floor is removed from the build graph or explicitly accepted by a release decision.",
+    "tracking_id": "RT-RC-001-02"
+  },
+  {
+    "id": "RUSTSEC-2024-0413",
+    "package": "gtk transitive floor",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The GTK runtime floor is still present in the locked dependency graph, so the advisory stays visible until host retirement work lands.",
+    "exit_condition": "The GTK runtime floor is retired or a formal acceptance decision is recorded.",
+    "tracking_id": "RT-RC-001-03"
+  },
+  {
+    "id": "RUSTSEC-2024-0415",
+    "package": "gtk transitive floor",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "GTK-related Linux runtime dependencies remain part of the host surface and require time-boxed exception governance.",
+    "exit_condition": "The GTK host dependencies are removed or the exception is formally accepted for the release.",
+    "tracking_id": "RT-RC-001-04"
+  },
+  {
+    "id": "RUSTSEC-2024-0416",
+    "package": "gtk transitive floor",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The Linux GTK stack still appears in the current Tauri host path and is tracked as a release blocker.",
+    "exit_condition": "The GTK host path is removed from the dependency tree or replaced with a GTK-free host.",
+    "tracking_id": "RT-RC-001-05"
+  },
+  {
+    "id": "RUSTSEC-2024-0418",
+    "package": "gtk transitive floor",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "GTK-backed runtime dependencies remain present in the locked graph and need explicit release governance.",
+    "exit_condition": "The GTK-backed runtime dependencies are no longer present or the risk is accepted in writing.",
+    "tracking_id": "RT-RC-001-06"
+  },
+  {
+    "id": "RUSTSEC-2024-0419",
+    "package": "gtk transitive floor",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The current runtime stack still depends on GTK on Linux, so the advisory remains a time-boxed exception.",
+    "exit_condition": "The GTK dependency floor is retired or the advisory is removed from the ignore list.",
+    "tracking_id": "RT-RC-001-07"
+  },
+  {
+    "id": "RUSTSEC-2024-0420",
+    "package": "gtk transitive floor",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "GTK-backed host dependencies still need to be governed until the backend is isolated from the Tauri runtime.",
+    "exit_condition": "The host is isolated from the GTK runtime floor or a formal acceptance note exists.",
+    "tracking_id": "RT-RC-001-08"
+  },
+  {
+    "id": "RUSTSEC-2024-0429",
+    "package": "glib transitive floor",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The locked graph still resolves glib 0.18.5 through the Tauri/Wry GTK stack, so the floor must stay visible until the host changes.",
+    "exit_condition": "glib 0.18.5 is no longer present in the dependency tree or the release owner formally accepts the floor.",
+    "tracking_id": "RT-RC-001-09"
+  },
+  {
+    "id": "RUSTSEC-2024-0370",
+    "package": "gtk runtime support",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The current host surface still pulls GTK runtime support transitively and needs an explicit release-blocking exception.",
+    "exit_condition": "The GTK runtime support no longer appears in the dependency tree or the exception is retired.",
+    "tracking_id": "RT-RC-001-10"
+  },
+  {
+    "id": "RUSTSEC-2024-0384",
+    "package": "gtk runtime support",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The release currently depends on a GTK-backed host path and needs a time-boxed exception until the host is replaced or isolated.",
+    "exit_condition": "The GTK-backed host path is removed or the release owner formally accepts the dependency floor.",
+    "tracking_id": "RT-RC-001-11"
+  },
+  {
+    "id": "RUSTSEC-2025-0057",
+    "package": "tauri runtime stack",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The Tauri runtime still participates in the current GTK-backed host path and remains release-blocking until the host decision is made.",
+    "exit_condition": "The Tauri runtime no longer depends on the GTK-backed host surface or the risk is formally accepted.",
+    "tracking_id": "RT-RC-001-12"
+  },
+  {
+    "id": "RUSTSEC-2025-0075",
+    "package": "tauri runtime stack",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The release still ships through Tauri/Wry on Linux, so the runtime advisory stays under a tracked exception.",
+    "exit_condition": "The host is migrated away from the current Tauri runtime stack or the exception expires by approval.",
+    "tracking_id": "RT-RC-001-13"
+  },
+  {
+    "id": "RUSTSEC-2025-0080",
+    "package": "tauri runtime stack",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The current backend still routes through the Tauri runtime stack, so release governance must keep the advisory visible.",
+    "exit_condition": "The Tauri runtime stack is removed from the release path or the owner records acceptance.",
+    "tracking_id": "RT-RC-001-14"
+  },
+  {
+    "id": "RUSTSEC-2025-0081",
+    "package": "tauri runtime stack",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The Tauri runtime stack remains part of the release path and is governed until the host is retired or accepted.",
+    "exit_condition": "The release path no longer includes the current Tauri runtime stack or the exception is formally accepted.",
+    "tracking_id": "RT-RC-001-15"
+  },
+  {
+    "id": "RUSTSEC-2025-0098",
+    "package": "webkit2gtk runtime stack",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The GTK-backed webview runtime remains in the dependency tree and must stay governed until the host changes.",
+    "exit_condition": "The webview runtime no longer depends on the GTK stack or the exception is accepted for release.",
+    "tracking_id": "RT-RC-001-16"
+  },
+  {
+    "id": "RUSTSEC-2025-0100",
+    "package": "wry runtime stack",
+    "kind": "audit_ignore",
+    "owner": "implementer",
+    "review_by": "2026-08-06",
+    "affected_path": "src-tauri/Cargo.lock",
+    "reason": "The Wry host still pulls the GTK-backed Linux stack, so the advisory stays in the governed exception registry.",
+    "exit_condition": "Wry no longer pulls the GTK-backed host stack or a formal acceptance decision is recorded.",
+    "tracking_id": "RT-RC-001-17"
+  }
+]

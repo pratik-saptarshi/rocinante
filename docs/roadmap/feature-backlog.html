@@ -79,11 +79,30 @@
 
 ## New Backlog
 
+- `F-047` Desktop parity evaluation and host decision:
+  - Classify the current desktop surface into must-have, should-have, and can-defer groups.
+  - Record the chosen host path and fallback scope before implementation work begins.
+- `F-048` Core extraction and host-agnostic contract:
+  - Move domain behavior into a host-neutral Rust core.
+  - Keep risk scoring, triage, verifier, budget guard, release baseline, and auth-sensitive flows stable under contract tests.
+- `F-049` GTK-free native desktop MVP:
+  - Restore the required desktop lifecycle, menus, dialogs, tray, deep links, shortcuts, and persistence without GTK/GLib.
+  - Preserve user-visible behavior while changing the host implementation.
+- `F-050` Parity closure and fallback containment:
+  - Close remaining parity gaps or explicitly defer them with tracked approval.
+  - Keep any browser-sidecar fallback behind a narrow adapter boundary.
+- `F-051` Remove Tauri/GTK/GLib:
+  - Delete the old host path once parity is proven.
+  - Fail release checks if `gtk` or `glib` reappear in the dependency graph.
+
 ## Cross-Track Planning References
 
 - `docs/feature-list.html` is the task-level backlog for the HighStakes-style and loop-engineering tracks.
 - `docs/product-roadmap.html` is the phase/stage sequencing and release gate document for those tracks.
 - `docs/roadmap/bead-issue-tracker.html` remains the execution ledger for the current implementation queue.
+- `docs/roadmap/gtk-free-host-migration-plan.html` is the staged host-migration plan for the GTK-free desktop replacement.
+- `docs/roadmap/security-advisory-exceptions.json` tracks the active GTK/GLib exception registry.
+- `scripts/dependency-floor-proof.sh` records the current transitive floor proof for release governance.
 - Roundtable follow-up beads `BI-040..BI-043` track the release-baseline command, handler, storage, and roadmap hygiene concerns uncovered during the current slice.
 
 ## Review Integration (plan-review-integrator)

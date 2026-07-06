@@ -1,0 +1,75 @@
+# GTK-Free Host Migration Plan
+
+## Objective
+
+Retire the GTK/GLib-backed desktop host path without losing desktop parity.
+The long-term target is a GTK-free native desktop shell with the same
+user-visible behavior, backed by host-agnostic Rust core logic.
+
+## Execution Model
+
+- Use TDD for every phase: write the failing test or contract first, implement
+  the smallest change needed to pass, then refactor only after green.
+- Use parallel agents for independent workstreams:
+  - one agent maintains backlog and bead tracker consistency,
+  - one agent writes and runs focused tests,
+  - one agent keeps host and security docs synchronized.
+- Keep host adapters thin and keep user-visible behavior stable while the host
+  implementation changes.
+- Treat browser-sidecar only as a scoped fallback for parity gaps, not as the
+  default architecture.
+
+## Phase Plan
+
+| Phase | Goal | Backlog / Beads | Test-first gate | Exit criteria |
+|---|---|---|---|---|
+| Phase 0 | Parity evaluation and host decision | `F-047`, `BI-047` | Desktop parity matrix tests and host-decision coverage fail until the required surface is classified. | Parity matrix signed off, must-have/should-have/can-defer split recorded, and the host path is either native desktop or a documented browser-sidecar fallback. |
+| Phase 1 | Core extraction | `F-048`, `BI-048` | Core contract tests fail until risk scoring, triage, verifier, budget guard, release baseline, and auth-sensitive flows are host-agnostic. | Domain behavior lives in `rocinante-core` with no GUI/runtime dependency and host adapters stay thin. |
+| Phase 2 | GTK-free native desktop MVP | `F-049`, `BI-049` | Native shell integration tests fail until windowing, menus, dialogs, tray, deep links, persistence, and shortcuts work without GTK/GLib. | The native shell runs the current UI and backend flows on supported desktop platforms without Tauri/GTK/GLib. |
+| Phase 3 | Parity closure and fallback containment | `F-050`, `BI-050` | End-to-end desktop tests fail until remaining parity items are either implemented or explicitly deferred. | The parity matrix is green or has an approved defer list, and any browser-sidecar fallback is isolated to documented exceptions. |
+| Phase 4 | Remove Tauri/GTK/GLib | `F-051`, `BI-051` | Dependency-tree tests fail until `gtk` and `glib` are absent from the release graph. | Old host path removed, release docs no longer claim temporary GTK/GLib exceptions, and release gates require zero GTK/GLib transitive dependencies. |
+
+## Phase Details
+
+### Phase 0: Parity Evaluation and Host Decision
+
+- Build a parity matrix for the current desktop surface.
+- Classify each item as must-have, should-have, or can-defer.
+- Compare native desktop, browser-sidecar fallback, and temporary Tauri.
+- Record the chosen target and the explicit fallback scope before code work.
+
+### Phase 1: Core Extraction
+
+- Move domain logic into a host-agnostic Rust core.
+- Keep lifecycle, shell integration, and transport glue in thin adapters.
+- Preserve behavior with core contract tests before the host rewrite.
+
+### Phase 2: GTK-Free Native Desktop MVP
+
+- Implement a native desktop shell using non-GTK platform primitives.
+- Restore the must-have parity items first:
+  - window lifecycle
+  - menus and shortcuts
+  - dialogs and file selection
+  - tray and notification behavior
+  - deep links and app launch flow
+  - persistence and startup restoration
+
+### Phase 3: Parity Closure and Fallback Containment
+
+- Port should-have items or mark them as approved deferrals.
+- Keep any browser-sidecar fallback behind a narrow adapter boundary.
+- Add end-to-end coverage for the desktop flows users actually see.
+
+### Phase 4: Remove Tauri/GTK/GLib
+
+- Delete the old host path after parity is proven.
+- Remove GTK/GLib audit ignores and exception registry entries.
+- Add dependency checks that fail if `gtk` or `glib` reappear.
+
+## Tracking Rules
+
+- `docs/feature-list.html` owns the backlog order.
+- `docs/roadmap/bead-issue-tracker.html` owns the execution ledger.
+- `docs/roadmap/test-plan.html` owns the test mapping and red-green plan.
+- `docs/roadmap/repository-security-baseline.html` owns release gating.
