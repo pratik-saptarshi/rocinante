@@ -141,7 +141,7 @@ fn gtk_free_host_migration_plan_is_stage_gated_and_tdd_driven() {
     assert!(bead_tracker.contains("BI-051"));
     assert!(test_plan.contains("RT-RC-002` GTK-free host migration planning"));
     assert!(test_plan.contains("Parity matrix and host-decision tests"));
-    assert!(test_plan.contains("T-053 Dependency-floor removal tests"));
+    assert!(test_plan.contains("Dependency-floor removal tests"));
     assert!(bom.contains("docs/roadmap/gtk-free-host-migration-plan.html"));
     assert!(bom.contains("scripts/dependency-floor-proof.sh"));
     assert!(checklist.contains("GTK-free host migration plan is documented and phased"));
