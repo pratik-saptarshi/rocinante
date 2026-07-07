@@ -289,6 +289,119 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
 }
 
 #[test]
+fn ci_workflow_has_a_release_only_build_seed_job() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("rust-build-seed:"));
+    assert!(workflow.contains("build-scope"));
+    assert!(workflow.contains("outputs:"));
+    assert_step_run_contains_all(
+        &workflow,
+        "Release build seed",
+        &[
+            "cargo test",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--all-targets",
+            "--no-run",
+        ],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Delta build seed",
+        &[
+            "cargo test",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--lib",
+            "--tests",
+            "--no-run",
+        ],
+    );
+}
+
+#[test]
+fn ci_workflow_differentiates_release_and_delta_lanes() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert_step_block_contains_all(
+        &workflow,
+        "Lint",
+        &[
+            "if [[ \"$CI_RUST_BUILD_SCOPE\" == \"release\" ]]; then",
+            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+            "else",
+            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --lib -- -D warnings",
+            "fi",
+        ],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Test",
+        &[
+            "if [[ \"$CI_RUST_BUILD_SCOPE\" == \"release\" ]]; then",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests",
+            "else",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --lib",
+            "fi",
+        ],
+    );
+    assert!(workflow.contains("if: ${{ env.CI_RUST_BUILD_SCOPE == 'release' }}"));
+    assert!(workflow.contains("if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"));
+}
+
+#[test]
+fn ci_workflow_runs_coverage_only_for_release_lanes() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("rust-coverage:"));
+    assert!(workflow.contains(
+        "if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
+    ));
+}
+
+#[test]
+fn ci_workflow_releases_share_compilation_cache_and_release_seed_runs_in_parallel_with_quality_gate() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("test:"));
+    assert!(!workflow.contains("test:\n    needs: [rust-build-seed]"));
+    assert!(workflow.contains("needs: [test, rust-build-seed]"));
+    assert!(workflow.contains("save-if: false"));
+    assert!(workflow.contains(
+        "save-if: |\n            ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'pull_request' }}"
+    ));
+}
+
+#[test]
+fn ci_workflow_includes_release_and_quality_timing_telemetry() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("::notice title=Release build seed::scope=release"));
+    assert!(workflow.contains("::notice title=Release build seed::scope=delta"));
+    assert!(workflow.contains("::notice title=Rust quality lint::"));
+    assert!(workflow.contains("::notice title=Rust quality test::"));
+    assert!(workflow.contains("::notice title=Rust quality binary-check::"));
+    assert!(workflow.contains("::notice title=Rust coverage::"));
+}
+
+#[test]
+fn ci_workflow_marks_release_build_floor_and_delta_scope() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains(
+        "if [[ \"${{ github.ref }}\" == \"refs/heads/main\" || \"${{ startsWith(github.ref, 'refs/heads/release/') }}\" == \"true\" ]]; then"
+    ));
+    assert!(workflow.contains("scope=release"));
+    assert!(workflow.contains("scope=delta"));
+    let delta_seed = extract_named_step_block(&workflow, "Delta build seed");
+    assert!(!delta_seed.contains("--all-targets"));
+    let release_seed = extract_named_step_block(&workflow, "Release build seed");
+    assert!(release_seed.contains("--all-targets"));
+    assert!(release_seed.contains("--no-run"));
+}
+
+#[test]
 fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
     let workflow = read_repo_file("../.github/workflows/security.yml");
     let audit_config = read_repo_file("../.cargo/audit.toml");

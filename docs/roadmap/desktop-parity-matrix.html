@@ -1,0 +1,51 @@
+# Desktop Parity Matrix and Host-Decision Record
+
+## Scope and Timestamp
+
+- Track date: 2026-07-07
+- Gate: `RT-RC-002` (GTK-free host migration planning)
+- Phase: `F-047` parity evaluation and host decision
+
+## Classification Matrix
+
+Current desktop behaviors are classified as:
+
+### Must-have
+
+- App window lifecycle (open, minimize, close, restore)
+- Installer/runtime startup behavior
+- File open dialog and import selection
+- Deep link launch behavior
+- Main shell persistence and launch restore
+- Notification surface visibility
+
+### Should-have
+
+- Menu command parity for core repo operations
+- Shortcut mapping for power workflows
+- Tray/pinning support where available
+- Secondary diagnostics panel discovery
+
+### Can-defer
+
+- Platform-native color theme parity beyond current theme support
+- Advanced animation and micro-interaction parity
+- Feature flags for undocumented legacy host behavior
+
+## Host-Decision Record (HDR)
+
+- Preferred host path: `native-shell` for long-lived desktop behavior continuity.
+- Approved fallback: `browser-sidecar` for gaps that cannot be reached in native shell
+  during this phase, limited to explicit parity exceptions.
+- Defer criteria: items in **Can-defer** above may stay in fallback only if user-visible
+  impact remains low and are separately approved.
+- Decision owner: `platform-architect`
+- Review-by date: `2026-08-06`
+- Exit condition for fallback expansion: `F-047` artifacts and corresponding
+  `T-049` tests approved by release review.
+
+## Open Tracking
+
+- `BI-047` remains the active parity evaluation gate until artifacts in this file and
+  the corresponding `T-049` tests pass on the release branch.
+- `F-047` status must remain visible in all backlog artifacts while open.
