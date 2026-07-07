@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/pratik-saptarshi/rocinante/compare/v0.1.0...v0.1.1) (2026-07-07)
+
+
+### Bug Fixes
+
+* **deps:** remediate esbuild dependabot alert ([#59](https://github.com/pratik-saptarshi/rocinante/issues/59)) ([ba8969b](https://github.com/pratik-saptarshi/rocinante/commit/ba8969b85cfe2bdbf4e9c7f7ba40606982465bde))
+
 ## 0.1.0 (2026-07-06)
 
 
