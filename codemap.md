@@ -47,6 +47,8 @@ roadmap artifacts.
   for time-boxed audit ignores and host-floor governance.
 - `scripts/dependency-floor-proof.sh`: dependency-floor proof command for GTK
   and GLib transitive-path validation.
+- `scripts/check-esbuild-lock.mjs`: enforces local lockfile dependency-floor for
+  `esbuild >= 0.28.1` in CI and local verification.
 
 ## Directory Map
 
@@ -57,7 +59,7 @@ roadmap artifacts.
 | `ui/src/` | Frontend dashboard, bridge adapters, explainability panels, and quality-pulse rendering. | UI state should flow through the bridge adapters rather than direct runtime assumptions. |
 | `ui/e2e/` | Browser-level smoke coverage for the Tauri bridge and user-visible flows. | Keeps the Playwright surface separate from unit tests. |
 | `docs/` | Feature backlog, roadmap, test plan, publish-readiness checklist, and bead tracker artifacts. | This is the source of truth for phase sequencing and backlog accounting. |
-| `scripts/` | Repo automation and local operational helpers. | Prefer existing scripts over ad hoc shell snippets. |
+| `scripts/` | Repo automation and local operational helpers. | Prefer existing scripts over ad hoc shell snippets; include dependency-floor checks for security posture. |
 
 ## Data and Control Flow
 

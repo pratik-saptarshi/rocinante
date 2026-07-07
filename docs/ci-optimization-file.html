@@ -93,6 +93,14 @@ merge-gate semantics unchanged.
 - Reuse seeded artifacts in coverage by passing `cargo llvm-cov --no-clean`, avoiding extra
   full workspace tear-down/rebuild between quality and coverage lanes.
 
+### Phase 5 (Implemented)
+
+- Make the `test` job consume the seeded frontier by adding `needs: [rust-build-seed]` so
+  quality gates reuse a fully populated seed cache on release lanes instead of duplicating
+  full compile work.
+- Restrict `Swatinem/rust-cache` writeback in `rust-build-seed` to release branches only
+  (`main`, `release/*`) while keeping restore behavior intact for all lanes.
+
 ## Acceptance Criteria
 
 - Release gate and coverage jobs no longer trigger avoidable repeated full compiles after seeding.

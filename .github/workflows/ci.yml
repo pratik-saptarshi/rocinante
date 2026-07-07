@@ -35,6 +35,8 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf
+      - name: Verify UI esbuild floor
+        run: node scripts/check-esbuild-lock.mjs
       - id: build-scope
         shell: bash
         run: |
@@ -50,7 +52,7 @@ jobs:
         with:
           workspaces: src-tauri
           save-if: |
-            ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'pull_request' }}
+            ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}
       - name: Release build seed
         if: ${{ steps.build-scope.outputs.scope == 'release' }}
         run: |
@@ -76,6 +78,7 @@ jobs:
           echo "::notice title=Release build seed::scope=delta duration_sec=${DELTA_SEED_ELAPSED_SECONDS}"
 
   test:
+    needs: [rust-build-seed]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

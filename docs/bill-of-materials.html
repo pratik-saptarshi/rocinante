@@ -61,6 +61,7 @@ then release from the merged tip.
 - `docs/roadmap/test-plan.html`
 - `docs/roadmap/execution-ticket-artifact.md`
 - `docs/roadmap/plan-review-traceability.html`
+- `docs/roadmap/dependabot-esbuild-remediation-plan.html`
 
 ### CI and automation
 
@@ -127,6 +128,7 @@ Packages declared in `ui/package.json`:
 - `github/codeql-action`
 - `trufflesecurity/trufflehog`
 - `scripts/dependency-floor-proof.sh`
+- `scripts/check-esbuild-lock.mjs`
 
 ## 4) Security, privacy, and secret hygiene assets
 
@@ -144,6 +146,7 @@ Packages declared in `ui/package.json`:
 - RustSec dependency audit is enforced through `cargo-audit`
 - Advisory exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`
 - `scripts/dependency-floor-proof.sh` records the current GTK/GLib floor
+- `scripts/check-esbuild-lock.mjs` enforces UI lockfile floor `esbuild >= 0.28.1`
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 

@@ -46,7 +46,7 @@ Dependency review is enabled for pull requests | [x] | `.github/workflows/depend
 CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL analysis
 Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
 Dependency audit exceptions are registry-backed, time-boxed, and release-blocking | [x] | `.cargo/audit.toml`, `docs/roadmap/security-advisory-exceptions.json`, `scripts/dependency-floor-proof.sh`
-Open Dependabot alerts are closed or formally accepted | [ ] | GitHub Dependabot alert list for `pratik-saptarshi/rocinante`
+Open Dependabot alerts are closed or formally accepted | [ ] | `ui/pnpm-lock.yaml` resolves `esbuild` at `0.28.1`; remote verification requires `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"` once network is available.
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
 Auth/RBAC boundary is covered by tests | [x] | `src-tauri/tests/auth_tests.rs`
 

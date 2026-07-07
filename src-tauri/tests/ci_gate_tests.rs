@@ -290,6 +290,22 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
 }
 
 #[test]
+fn ci_workflow_verifies_esbuild_lock_floor_in_release_ci() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let check_script = read_repo_file("../scripts/check-esbuild-lock.mjs");
+
+    assert_step_block_contains_all(
+        &workflow,
+        "Verify UI esbuild floor",
+        &["node scripts/check-esbuild-lock.mjs"],
+    );
+    assert!(check_script.contains("const MIN_MAJOR"));
+    assert!(check_script.contains("MIN_MINOR"));
+    assert!(check_script.contains("MIN_PATCH"));
+    assert!(check_script.contains("esbuild"));
+}
+
+#[test]
 fn ci_workflow_has_a_release_only_build_seed_job() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
@@ -359,6 +375,9 @@ fn ci_workflow_runs_coverage_only_for_release_lanes() {
     assert!(workflow.contains(
         "if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
     ));
+    assert!(workflow.contains(
+        "rust-coverage:\n    if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}\n    needs: [rust-build-seed]"
+    ));
 }
 
 #[test]
@@ -366,11 +385,11 @@ fn ci_workflow_releases_share_compilation_cache_and_release_seed_runs_in_paralle
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
     assert!(workflow.contains("test:"));
-    assert!(!workflow.contains("test:\n    needs: [rust-build-seed]"));
+    assert!(workflow.contains("test:\n    needs: [rust-build-seed]"));
     assert!(workflow.contains("needs: [rust-build-seed]"));
     assert!(workflow.contains("save-if: false"));
     assert!(workflow.contains(
-        "save-if: |\n            ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'pull_request' }}"
+        "save-if: |\n            ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
     ));
 }
 
