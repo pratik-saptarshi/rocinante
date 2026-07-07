@@ -21,6 +21,7 @@
 - Scheduled security scans with CodeQL.
 - Dependency updates via Dependabot.
 - Open Dependabot alerts are tracked as release blockers until remediated or explicitly accepted.
+- Release-critical workflow actions and language toolchains must remain on supported stable releases; CI deprecation warnings on release jobs are treated as blockers until refreshed or formally accepted.
 - Dependency audit exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`.
 - `scripts/dependency-floor-proof.sh` records the current GTK/glib dependency floor.
 
@@ -30,3 +31,4 @@
 - Release readiness is blocked by the tracked GTK/glib advisory exception.
 - Release readiness is blocked until the tracked GTK/glib advisory exception is retired or formally accepted.
 - `R3-F08` remains open until the UI lockfile resolves `esbuild` at `0.28.1` or newer and the remote Dependabot alert closes.
+- `RT-RC-003` remains open until rust-coverage no longer emits the Node.js 20 deprecation warning and the build/release freshness gate is green.

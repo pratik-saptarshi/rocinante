@@ -41,6 +41,8 @@ roadmap artifacts.
   migration plan with TDD and parity checkpoints.
 - `docs/roadmap/dependabot-esbuild-remediation-plan.html`: targeted remediation
   plan for the current remote Dependabot esbuild alert.
+- `docs/roadmap/build-release-toolchain-freshness-plan.html`: build/release
+  freshness plan for Rust and workflow-action stable upgrades.
 - `docs/roadmap/security-advisory-exceptions.json`: machine-readable registry
   for time-boxed audit ignores and host-floor governance.
 - `scripts/dependency-floor-proof.sh`: dependency-floor proof command for GTK
@@ -82,10 +84,12 @@ roadmap artifacts.
     removal without reintroducing GTK/GLib.
 11. The Dependabot remediation plan tracks the live `esbuild` alert, lockfile
     upgrade target, and release gate closure for the UI toolchain.
-12. The React UI invokes the bridge through `ui/src/tauri-admin.ts`, the
+12. The build/release freshness plan tracks Rust and GitHub Actions stable
+    upgrade policy for coverage and release jobs.
+13. The React UI invokes the bridge through `ui/src/tauri-admin.ts`, the
     extracted command bridge shell in `ui/src/admin-bridge-panel.tsx`, and
     renders results in `ui/src/App.tsx`.
-13. Unit, integration, and e2e tests validate the command facade, the bridge
+14. Unit, integration, and e2e tests validate the command facade, the bridge
     seam, and the browser-visible behavior.
 
 ## Design Patterns

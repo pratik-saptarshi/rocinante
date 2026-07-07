@@ -3,73 +3,141 @@
 ## Objective
 
 Retire the GTK/GLib-backed desktop host path without losing desktop parity.
-The long-term target is a GTK-free native desktop shell with the same
-user-visible behavior, backed by host-agnostic Rust core logic.
+The long-term target is a GTK-free native shell with the same
+user-visible behavior, backed by a host-agnostic Rust core.
 
 ## Execution Model
 
 - Use TDD for every phase: write the failing test or contract first, implement
-  the smallest change needed to pass, then refactor only after green.
+  the minimal code required to pass, then refactor only after green.
 - Use parallel agents for independent workstreams:
   - one agent maintains backlog and bead tracker consistency,
   - one agent writes and runs focused tests,
   - one agent keeps host and security docs synchronized.
-- Keep host adapters thin and keep user-visible behavior stable while the host
-  implementation changes.
-- Treat browser-sidecar only as a scoped fallback for parity gaps, not as the
-  default architecture.
+- Keep host adapters thin and preserve user-visible behavior while host internals
+  change.
+- Treat browser-sidecar only as a scoped fallback for unresolved parity gaps, not
+  as the default architecture.
+- Treat any active `gtk` or `glib` release-dependency path as a release-blocking
+  parity failure.
+
+## Replacement Strategy
+
+- Introduce `rocinante-core` as the host-agnostic behavior domain:
+  - risk scoring, triage, verifier, budget guard, release baseline, and auth policy.
+- Introduce `rocinante-desktop-shell` as the host transport:
+  - window lifecycle, shell event routing, tray/menus/shortcuts,
+  - notifications, file pickers/dialogs, deep links, persistence restore,
+  - updates and installation hooks.
+- Keep transport, IPC, and shell events behind thin platform adapters.
+- Keep browser-sidecar behind a separate adapter module so it is never the default
+  host flow.
+- Remove GTK/GLib from first-party host dependencies and gate release on a clean
+  dependency tree.
+
+## Staged Feature Refinement
+
+Each phase is executed with explicit TDD + BDD gates.
+
+| Stage | Epic | Feature | Capability | Function | Task | User Story | BDD Scenario |
+|---|---|---|---|---|---|---|---|
+| P0 | EP-06 | F-047 | C-047A | FN-047A | TK-047A | As a product owner, I can audit every current desktop behavior before host changes begin. | Given a complete behavior inventory exists and all items are tagged must-have/should-have/can-defer, when the matrix schema validation executes, then `T-056` fails on missing tags and passes only when parity coverage is complete. |
+| P0 | EP-06 | F-047 | C-047B | FN-047B | TK-047B | As release governance, I can only authorize implementation after a signed host-decision artifact exists. | Given phase-0 artifacts are complete, when host selection is approved, then `T-056` requires a signed fallback-scope decision with owner and review date before phase-1 starts. |
+| P0 | EP-06 | F-047 | C-047A | FN-047A2 | TK-047A2 | As QA, I can verify parity completeness before phase-1. | Given all behaviors are in the matrix, when matrix completeness checks run, then phase-0 remains blocked if any required flow class is missing. |
+| P1 | EP-06 | F-048 | C-048A | FN-048A | TK-048A | As a user, I can keep behavior consistent when the host runtime changes. | Given core behavior moves into `rocinante-core`, when host-agnostic contracts run across host fixtures, then scoring/triage/verifier/budget/baseline/RBAC outputs are identical. |
+| P1 | EP-06 | F-048 | C-048B | FN-048B | TK-048B | As a maintainer, I can swap host adapters without rewriting policy logic. | Given interface-only domain contracts exist, when we switch adapter implementations, then behavior deltas for host-agnostic paths remain zero. |
+| P1 | EP-06 | F-048 | C-048C | FN-048C | TK-048C2 | As QA, I can compare host variants with reproducible evidence. | Given two host adapters are available, when host-swap contract tests run, then any behavioral drift fails `T-057` with fixture snapshots. |
+| P2 | EP-06 | F-049 | C-049A | FN-049A | TK-049A | As a desktop user, I can continue common shell operations without UX loss. | Given a GTK-free shell MVP exists, when baseline windows/menus/shortcuts/tray flows execute, then `T-058` proves equivalent behavior on supported OSes. |
+| P2 | EP-06 | F-049 | C-049B | FN-049B | TK-049B | As a user, I can use dialogs and deep-link launch paths safely. | Given file and link handlers are wired, when invalid and valid payloads are tested, then transport and payload route assertions enforce expected errors and success results. |
+| P2 | EP-06 | F-049 | C-049C | FN-049C | TK-049C | As an operator, I can restore workspace and preferences after restart. | Given persisted state exists, when relaunch and forced-failure restart paths execute, then state recovery remains deterministic in `T-058`. |
+| P2 | EP-06 | F-049 | C-049C | FN-049C2 | TK-049C2 | As product support, I can observe launch/update behavior with parity to current host. | Given shell update and notification hooks are active, when lifecycle events fire, then events are emitted through the same expected contracts as baseline host. |
+| P3 | EP-06 | F-050 | C-050A | FN-050A | TK-050A | As release governance, I can ship only with explicit closure decisions. | Given should-have behavior is either shipped or deferred, when parity ledger and tests run, then phase-3 remains blocked until every open gap has an approver and ticket. |
+| P3 | EP-06 | F-050 | C-050B | FN-050B | TK-050B | As an operator, I can guarantee fallback is explicitly optional. | Given sidecar and shell adapters are both present, when default routing is tested, then sidecar cannot become primary host without explicit override config. |
+| P4 | EP-06 | F-051 | C-051A | FN-051A | TK-051A | As release engineering, I can prove no GTK/GLib dependency path remains in release graphs. | Given host deletion is requested, when dependency-floor proof runs, then any `gtk`/`glib` transitive path fails the build gate. |
+| P4 | EP-06 | F-051 | C-051B | FN-051B | TK-051B | As compliance, I can retire temporary exceptions before publish. | Given the exception registry and docs are updated, when publish gates run, then publish is blocked only with formal time-boxed exceptions and all records have owner/review/expiry evidence. |
+| P4 | EP-06 | F-051 | C-051C | FN-051C | TK-051C | As CI governance, I can prevent regressions if GTK/GLib reappears. | Given gating scripts include both CI and publish checks, when GTK/GLib reappears, then job status is failed and release does not progress. |
 
 ## Phase Plan
 
-| Phase | Goal | Backlog / Beads | Test-first gate | Exit criteria |
-|---|---|---|---|---|
-| Phase 0 | Parity evaluation and host decision | `F-047`, `BI-047` | Desktop parity matrix tests and host-decision coverage fail until the required surface is classified. | Parity matrix signed off, must-have/should-have/can-defer split recorded, and the host path is either native desktop or a documented browser-sidecar fallback. |
-| Phase 1 | Core extraction | `F-048`, `BI-048` | Core contract tests fail until risk scoring, triage, verifier, budget guard, release baseline, and auth-sensitive flows are host-agnostic. | Domain behavior lives in `rocinante-core` with no GUI/runtime dependency and host adapters stay thin. |
-| Phase 2 | GTK-free native desktop MVP | `F-049`, `BI-049` | Native shell integration tests fail until windowing, menus, dialogs, tray, deep links, persistence, and shortcuts work without GTK/GLib. | The native shell runs the current UI and backend flows on supported desktop platforms without Tauri/GTK/GLib. |
-| Phase 3 | Parity closure and fallback containment | `F-050`, `BI-050` | End-to-end desktop tests fail until remaining parity items are either implemented or explicitly deferred. | The parity matrix is green or has an approved defer list, and any browser-sidecar fallback is isolated to documented exceptions. |
-| Phase 4 | Remove Tauri/GTK/GLib | `F-051`, `BI-051` | Dependency-tree tests fail until `gtk` and `glib` are absent from the release graph. | Old host path removed, release docs no longer claim temporary GTK/GLib exceptions, and release gates require zero GTK/GLib transitive dependencies. |
+| Phase | Epic | Feature | Goal | Backlog / Beads | Test-first gate | Exit criteria |
+|---|---|---|---|---|---|---|
+| Phase 0 | `EP-06` | `F-047` | Desktop parity evaluation and host decision | `F-047` / `BI-054` `BI-055` `BI-056` | `T-056` | Parity matrix is complete (must-have/should-have/can-defer), host decision is approved, and fallback scope is documented before implementation. |
+| Phase 1 | `EP-06` | `F-048` | Core extraction and host-agnostic boundary | `F-048` / `BI-057` `BI-058` `BI-059` `BI-060` | `T-057` | Core behavior is isolated in `rocinante-core`; host adapters remain transport-only and behavior is contract-tested. |
+| Phase 2 | `EP-06` | `F-049` | GTK-free native desktop MVP | `F-049` / `BI-061` `BI-062` `BI-063` `BI-064` | `T-058` | Native shell supports baseline must-have desktop flows without GTK/GLib and preserves user-visible behavior. |
+| Phase 3 | `EP-06` | `F-050` | Parity closure and fallback containment | `F-050` / `BI-065` `BI-066` | `T-059` | Must-have parity is green; any remaining items are explicitly deferred or routed through sidecar adapter with exception policy. |
+| Phase 4 | `EP-06` | `F-051` | Remove Tauri/GTK/GLib | `F-051` / `BI-067` `BI-068` `BI-069` `BI-070` | `T-060` | Legacy host is removed, security/release docs are corrected, and release gates fail on reintroduced `gtk`/`glib`. |
 
 ## Phase Details
 
 ### Phase 0: Parity Evaluation and Host Decision
 
-- Build a parity matrix for the current desktop surface.
+- Build a machine-readable parity matrix for current desktop behavior.
 - Classify each item as must-have, should-have, or can-defer.
-- Compare native desktop, browser-sidecar fallback, and temporary Tauri.
-- Record the chosen target and the explicit fallback scope before code work.
+- Compare native desktop, browser-sidecar, and temporary Tauri candidates.
+- Record signed host decision and fallback scope before any host rewrite.
 
 ### Phase 1: Core Extraction
 
-- Move domain logic into a host-agnostic Rust core.
-- Keep lifecycle, shell integration, and transport glue in thin adapters.
-- Preserve behavior with core contract tests before the host rewrite.
+- Move domain behavior into `rocinante-core` with no GUI/runtime dependencies.
+- Define host-agnostic interfaces for all parity-critical flows.
+- Preserve behavior with red-green contract tests before host implementation begins.
 
 ### Phase 2: GTK-Free Native Desktop MVP
 
-- Implement a native desktop shell using non-GTK platform primitives.
-- Restore the must-have parity items first:
+- Implement baseline host behavior without GTK/GLib:
   - window lifecycle
   - menus and shortcuts
   - dialogs and file selection
   - tray and notification behavior
   - deep links and app launch flow
   - persistence and startup restoration
+- Keep command contracts and UX behavior stable.
 
 ### Phase 3: Parity Closure and Fallback Containment
 
-- Port should-have items or mark them as approved deferrals.
-- Keep any browser-sidecar fallback behind a narrow adapter boundary.
-- Add end-to-end coverage for the desktop flows users actually see.
+- Implement or explicitly defer every non-must-have item.
+- Keep any fallback adapter bounded and auditable.
+- Add closure tests so must-have items cannot regress and sidecar remains non-default.
 
 ### Phase 4: Remove Tauri/GTK/GLib
 
-- Delete the old host path after parity is proven.
-- Remove GTK/GLib audit ignores and exception registry entries.
-- Add dependency checks that fail if `gtk` or `glib` reappear.
+- Remove old host crate/runtime wiring.
+- Remove GTK/GLib ignore coverage and update exception registry semantics.
+- Add dependency-tree + release docs gates that fail if `gtk` or `glib` returns.
+- Remove stale scripts and docs that assume GTK/Wry is the default path.
 
-## Tracking Rules
+## Behavior-Driven Validation Matrix
 
-- `docs/feature-list.html` owns the backlog order.
-- `docs/roadmap/bead-issue-tracker.html` owns the execution ledger.
-- `docs/roadmap/test-plan.html` owns the test mapping and red-green plan.
-- `docs/roadmap/repository-security-baseline.html` owns release gating.
+- `P0` validates parity inventory and host decision artifact.
+- `P1` validates host-agnostic contracts and adapter seam invariance.
+- `P2` validates shell parity for baseline window/menu/tray/deep-link/dialog/persistence flows.
+- `P3` validates parity closure with explicit defer/ship ledger coverage.
+- `P4` validates dependency-floor proof, exception registry removal, and publish/CI non-regression.
+
+### Acceptance Gates by Stage
+
+- `Gate P0`: `T-056` fails until parity matrix has full required classes and host decision is signed.
+- `Gate P1`: `T-057` fails until `rocinante-core` contracts and adapter fixtures are identical.
+- `Gate P2`: `T-058` fails until native MVP must-have parity suite is green on Linux, macOS, and Windows targets.
+- `Gate P3`: `T-059` fails if any should-have is unresolved without signed defer status or sidecar default override.
+- `Gate P4`: `T-060` fails if dependency floor, docs registry, or CI publish checks detect forbidden GTK/GLib traces.
+
+## Epic-Feature-Capability-Function-Task Mapping
+
+| Feature | Capability | Function | Task | User Story | BDD Scenario | Acceptance Gate |
+|---|---|---|---|---|---|---|
+| `F-047` | `C-047A` Desktop behavior inventory | `FN-047A` Matrix data model | `TK-047A` Capture every current desktop flow into canonical parity matrix | As a product owner, I can audit parity before host changes. | Given existing desktop behavior is enumerated, when required behavior classes are missing, then `T-056` fails. | `Gate P0` |
+| `F-047` | `C-047B` Host-selection governance | `FN-047B` Decision rubric and fallback policy | `TK-047B` Publish signed host decision with review owner/date/fallback scope | As release governance, I can only proceed with explicit host approval. | Given a host decision is absent, when phase-1 starts, then progression is blocked and `T-056` remains red. | `Gate P0` |
+| `F-047` | `C-047A` Parity matrix quality harness | `FN-047A2` Matrix completeness checks | `TK-047A2` Validate matrix completeness | As QA, I can treat parity validation as a hard gate. | Given any required flow class is missing, when matrix gate runs, then test suite blocks. | `Gate P0` |
+| `F-048` | `C-048A` Domain contract extraction | `FN-048A` Build core service interfaces | `TK-048A` Add host-agnostic contract tests | As a user, I can rely on unchanged behavior after host extraction. | Given host adapters are swapped, when contract tests run, then outputs match exactly. | `Gate P1` |
+| `F-048` | `C-048B` Adapter seam minimization | `FN-048B` Strip shell-specific assumptions | `TK-048B` Add seam tests for two hosts | As a maintainer, I can keep policy logic in core only. | Given adapter seams are injected, when policies are exercised, then shell differences are limited to transport events. | `Gate P1` |
+| `F-048` | `C-048C` Behavioral continuity proofs | `FN-048C2` Host-neutral adapter fixture | `TK-048C2` Add deterministic host fixture | As QA, I can prove host-swap stability with snapshots. | Given at least two fixture hosts exist, when diff assertions run, then no behavioral drift is accepted. | `Gate P1` |
+| `F-049` | `C-049A` Lifecycle and shell chrome | `FN-049A` Window/menu/tray/shortcut runtime | `TK-049A` Add native shell bootstrap and lifecycle tests | As a desktop user, I can still launch and control windows and menus. | Given shell MVP is available, when lifecycle tests run, then window/menu/tray/shortcut behavior matches baseline. | `Gate P2` |
+| `F-049` | `C-049B` Shell interactions | `FN-049B` Dialog/deep link/transport parity | `TK-049B` Add interaction tests and payload-route assertions | As a user, I can rely on file and deep-link workflows. | Given deep links and dialogs are invoked, when handlers execute, then route and permission outcomes match expectations. | `Gate P2` |
+| `F-049` | `C-049C` Persistence and startup restoration | `FN-049C` Window/session/state restore | `TK-049C` Add state-restore regression tests | As a returning user, I can recover persisted state after restart. | Given persisted state exists, when restart is triggered after failure paths, then restore behavior passes regression checks. | `Gate P2` |
+| `F-049` | `C-049C` Update and notifications parity | `FN-049C2` Notifications and update hooks | `TK-049C2` Add notifications + launch hook tests | As operations, I can observe launch/update events without regressions. | Given OS events emit in shell flow, when parity hooks execute, then event and payload assertions pass. | `Gate P2` |
+| `F-050` | `C-050A` Parity closure governance | `FN-050A` Must-have closure and defer ledger | `TK-050A` Add parity closure and deferred-gap tests | As release governance, I can only proceed with explicit closure decisions. | Given any un-deferred should-have exists, when closure gate runs, then phase-3 remains blocked. | `Gate P3` |
+| `F-050` | `C-050B` Fallback adapter boundary | `FN-050B` Sidecar isolation | `TK-050B` Prove sidecar never becomes default host path | As an operator, I can prevent sidecar from becoming default path. | Given sidecar adapter exists, when default routing is resolved, then shell host must remain primary by default. | `Gate P3` |
+| `F-051` | `C-051A` Host-path removal | `FN-051A` Remove Tauri dependency floor | `TK-051A` Remove old host crate and runtime wiring | As release engineering, I can confirm no forbidden legacy dependency remains. | Given `cargo tree` output includes `gtk`/`glib`, when publish gate executes, then release is blocked. | `Gate P4` |
+| `F-051` | `C-051B` Release governance updates | `FN-051B` Gtk/Glib proof gate | `TK-051B` Run dependency-floor proof and clean exception registry | As security governance, I can publish only with exception discipline. | Given exception registry is incomplete or stale, when publish checks run, then blockers remain until registry is corrected. | `Gate P4` |
+| `F-051` | `C-051C` CI and publishing enforcement | `FN-051C` Regression gate enforcement | `TK-051C` Add release gate and CI assertions | As release manager, I can enforce reappearance blocking with deterministic failure. | Given CI or publish reintroduces `gtk`/`glib`, when gates evaluate, then jobs fail and deployment is halted. | `Gate P4` |

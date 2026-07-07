@@ -1,0 +1,67 @@
+# Build and Release Toolchain Freshness Plan
+
+## Warning Validation
+
+- `rust-coverage` previously emitted a Node.js 20 deprecation warning because
+  `actions/upload-artifact@v4` was being forced to run on Node.js 24.
+- This was remediated by upgrading coverage upload to `actions/upload-artifact@v5`;
+  the plan remains active so new runtime warnings are caught early.
+- The warning is release-gate relevant because any new deprecation signal means a
+  release-critical workflow action has drifted onto an unsupported runtime
+  boundary.
+- The repository also relies on a pinned Rust toolchain; both the Rust pin and
+  workflow action pins need a freshness gate so future stable releases are
+  adopted deliberately instead of after warnings accumulate.
+
+## Remediation Strategy
+
+1. Confirm the minimal supported upgrade path for the release-critical
+   workflow actions and Rust toolchain.
+2. Bump the pinned Rust toolchain to the latest stable release that still
+   passes the backend suite.
+3. Keep release artifact upload and similar release-critical workflow actions
+   pinned to currently supported runtimes.
+4. Add a release-time freshness gate that fails if:
+   - the pinned Rust toolchain lags the latest stable release,
+   - a release-critical workflow action is pinned to a stale major, or
+   - the rust-coverage job emits a deprecation warning.
+5. Keep the upgrade surface narrow and roll forward one stable step at a time.
+
+## TDD Phases
+
+### Phase 0: Baseline the warning
+
+- Add a failing contract that captures the current warning surface in CI logs.
+- Record the current Rust pin and workflow-action pin as the baseline.
+
+### Phase 1: Upgrade stable pins
+
+- Update the Rust toolchain to the latest stable release that passes
+  `cargo test`, `cargo clippy`, and `cargo llvm-cov`.
+- Keep release artifact upload and equivalent release-critical workflow actions on
+  supported runtimes so the coverage job remains warning-free.
+
+### Phase 2: Gate the freshness policy
+
+- Add a build/release gate that compares the tracked pins against the latest
+  stable supported releases.
+- Make publish readiness fail when the freshness gate is red or when a CI run
+  logs a new deprecation warning.
+
+### Phase 3: Keep it current
+
+- Add recurring review and alerting so stable toolchain upgrades become routine
+  maintenance rather than emergency remediation.
+
+## Acceptance Criteria
+
+- The rust-coverage job no longer emits the Node.js 20 deprecation warning.
+- The Rust toolchain is pinned to the latest stable release approved by the
+  backend test suite.
+- Release-critical GitHub Actions are on supported stable majors and do not
+  require forced Node fallback.
+- The freshness gate fails on stale Rust/toolchain pins or new deprecation
+  warnings.
+- Publish readiness blocks until the freshness gate is green.
+- The build/release gate is reflected in the feature list, roadmap, bead
+  tracker, test plan, and publish checklist.

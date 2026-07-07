@@ -136,9 +136,15 @@ fn gtk_free_host_migration_plan_is_stage_gated_and_tdd_driven() {
     assert!(feature_backlog.contains("Desktop parity evaluation and host decision"));
     assert!(feature_backlog.contains("Remove Tauri/GTK/GLib"));
     assert!(feature_backlog.contains("docs/roadmap/gtk-free-host-migration-plan.html"));
+    assert!(bead_tracker.contains("## EP-06 Host Migration Ledger (Refined)"));
     assert!(bead_tracker.contains("`RT-RC-002` GTK-free host migration planning is active"));
-    assert!(bead_tracker.contains("BI-047"));
-    assert!(bead_tracker.contains("BI-051"));
+    assert!(bead_tracker.contains("BI-054"));
+    assert!(bead_tracker.contains("BI-070"));
+    assert!(!bead_tracker.contains("BI-047"));
+    assert!(!bead_tracker.contains("BI-048"));
+    assert!(!bead_tracker.contains("BI-049"));
+    assert!(!bead_tracker.contains("BI-050"));
+    assert!(!bead_tracker.contains("BI-051"));
     assert!(test_plan.contains("RT-RC-002` GTK-free host migration planning"));
     assert!(test_plan.contains("Parity matrix and host-decision tests"));
     assert!(test_plan.contains("Dependency-floor removal tests"));

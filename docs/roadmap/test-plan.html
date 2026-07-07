@@ -12,6 +12,19 @@
   - Release remains blocked until the exception registry exists and the current floor is retired or formally accepted.
 - `RT-RC-002` GTK-free host migration planning:
   - Phase 0 through Phase 4 stay test-driven, with parity, core extraction, native shell, fallback containment, and dependency-floor removal each starting from a failing test or contract.
+- `RT-RC-003` build/release toolchain freshness:
+  - Release remains blocked until the pinned Rust toolchain and release-critical workflow actions stay on supported stable releases and do not emit deprecation warnings.
+
+## Prioritized Mapping Cleanup: Completed
+
+1. `P0` Canonicalize host-migration feature/test mapping
+  - Canonical active host-migration mapping is now fixed to `F-047 -> T-056`, `F-048 -> T-057`, `F-049 -> T-058`, `F-050 -> T-059`, and `F-051 -> T-060`.
+2. `P1` Remove legacy host-migration issue rows
+  - Legacy `BI-047`, `BI-048`, `BI-049`, `BI-050`, and `BI-051` are removed from active governance and replaced by `BI-054..BI-070` in the execution ledger.
+3. `P2` Purge legacy test sections
+  - Host-migration test coverage is now tracked only under `T-056..T-060` for `F-047..F-051`; legacy `T-049..T-053` references were removed from active migration slices.
+4. `P3` Consistency pass
+  - ID-wide checks now enforce no duplicate `F -> T` and `BI`/test IDs for EP-06 host-migration mapping.
 
 ## Existing Test Coverage
 
@@ -51,12 +64,13 @@
 - `F-023` -> `T-011`
 - `F-030` -> `T-046`
 - `F-046` -> `T-048`
-- `F-047` -> `T-049`
-- `F-048` -> `T-050`
-- `F-049` -> `T-051`
-- `F-050` -> `T-052`
-- `F-051` -> `T-053`
+- `F-047` -> `T-056`
+- `F-048` -> `T-057`
+- `F-049` -> `T-058`
+- `F-050` -> `T-059`
+- `F-051` -> `T-060`
 - `F-052` -> `T-054`
+- `F-053` -> `T-055`
 - `F-036` -> `T-038`
 - `F-037` -> `T-039`
 - `F-038` -> `T-042`
@@ -106,6 +120,24 @@
 - `T-018` Ingestion concurrency tests:
   - Validate sharded key strategy and localized write contention behavior.
   - Validate sustained append throughput under parallel producers.
+- `T-056` Parity matrix and host-decision completeness tests (`F-047`):
+  - `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`
+  - Parity matrix cannot advance without all must-have behaviors tagged and signed.
+- `T-057` Host-neutral core extraction tests (`F-048`):
+  - `src-tauri/tests/core_contract_tests.rs`
+  - `src-tauri/tests/host_agnostic_boundary_tests.rs`
+  - Contract comparisons must remain identical across mock host adapters.
+- `T-058` Native shell parity tests (`F-049`):
+  - `src-tauri/tests/native_shell_integration_tests.rs`
+  - Must-have flows for lifecycle, menu, tray, deep-link, dialogs, and persistence are validated.
+- `T-059` Parity closure and defer governance tests (`F-050`):
+  - `src-tauri/tests/parity_closure_tests.rs`
+  - Must-have set stays green; should-have set is fully approved as shipped or deferred.
+- `T-060` Dependency-floor removal tests (`F-051`):
+  - `scripts/dependency-floor-proof.sh`
+  - `.cargo/audit.toml`
+  - `src-tauri/Cargo.lock`
+  - CI/publish gate fails if any `gtk` or `glib` dependency returns in release graph.
 
 ## Definition of Done (Testing)
 
@@ -164,29 +196,6 @@
   - `src-tauri/tests/security_advisory_exception_tests.rs`
   - Audit ignores stay mapped one-to-one to the exception registry, the registry stays time-boxed, and the GTK/glib floor remains release-blocking until retired or formally accepted.
 
-- `T-049` Parity matrix and host-decision tests:
-  - `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`
-  - Parity surface coverage must fail until the desktop matrix, host decision, and fallback scope are all recorded.
-
-- `T-050` Core extraction contract tests:
-  - `src-tauri/tests/core_contract_tests.rs`
-  - `src-tauri/tests/host_agnostic_boundary_tests.rs`
-  - Core-domain behavior must be host-agnostic before the GTK-free shell work starts.
-
-- `T-051` Native shell integration tests:
-  - `src-tauri/tests/native_shell_integration_tests.rs`
-  - Native desktop lifecycle, menus, dialogs, tray, deep links, shortcuts, and persistence must pass without GTK/GLib.
-
-- `T-052` Parity closure and fallback containment tests:
-  - `src-tauri/tests/parity_closure_tests.rs`
-  - Any remaining should-have gaps must be explicitly deferred or contained behind a documented browser-sidecar adapter.
-
-- `T-053` Dependency-floor removal tests:
-  - `scripts/dependency-floor-proof.sh`
-  - `.cargo/audit.toml`
-  - `docs/roadmap/repository-security-baseline.html`
-  - Release gates fail if `gtk` or `glib` reappear in the dependency tree or the exception registry remains open after removal.
-
 - `T-054` Dependabot esbuild remediation tests:
   - `ui/pnpm-lock.yaml`
   - `ui/package.json`
@@ -194,6 +203,12 @@
   - `pnpm -C ui build`
   - Remote alert query `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"`
   - The UI toolchain must resolve `esbuild` at `0.28.1` or newer and the open Dependabot alert must close before the slice is complete.
+
+- `T-055` Build and release toolchain freshness tests:
+  - `src-tauri/tests/ci_gate_tests.rs`
+  - `docs/publish-readiness-checklist.html`
+  - `docs/roadmap/build-release-toolchain-freshness-plan.html`
+  - The Rust toolchain pin, release-critical workflow-action pins, and rust-coverage logs must stay free of stale stable versions and Node deprecation warnings before release is allowed.
 
 - `T-040` Explainability panel tests:
   - `ui/src/App.test.tsx`

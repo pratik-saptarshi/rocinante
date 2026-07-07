@@ -15,6 +15,7 @@ The GTK-free desktop host migration plan lives in
 3. Loop-engineering controls and run discipline.
 4. Convergence and release hardening.
 5. Release/security governance.
+6. Build/release toolchain freshness.
 
 ## Phase Plan
 
@@ -25,8 +26,9 @@ The GTK-free desktop host migration plan lives in
 | Stage 2 | Loop-engineering controls | Add triage formatting, budget guardrails, verifier separation, and minimal-fix escalation. | Stage 0, Stage 1 outputs | Report-only mode works, kill switch is enforced, verifier defaults to reject, fix proposals stay one-problem and cap retries, and run logs are append-only. | BI-025..BI-028 |
 | Stage 3 | Convergence | Merge both tracks into a single release gate and harden the shared workflow. | Stage 1, Stage 2 | All active work has test mapping, phase gates, and acceptance criteria; there are no unlabeled tasks. BI-029 is complete and reflected in the bead tracker. | BI-029 |
 | Stage 4 | Release/security governance | Retire the GTK/glib Tauri dependency floor or record a time-boxed exception before release. | Stage 1, Stage 2, Stage 3 | Security advisory exceptions are tracked in a machine-readable registry, the dependency-floor proof is checked in, backlog and publish docs no longer claim completion while the exception is open, and release remains blocked until the floor is retired or formally accepted. | BI-046 |
+| Stage 5 | Release/security governance | Keep Rust and workflow-tooling pins aligned with supported stable releases and block publish when deprecation warnings appear. | Stage 1, Stage 2, Stage 3, Stage 4 | `rust-coverage` does not emit Node deprecation warnings, release-critical workflow actions stay on supported majors, the Rust toolchain is refreshed on the latest stable line, and a freshness gate blocks release when pins drift. | BI-053 |
 
-Validated Stage 0/1 slices: BI-020 through BI-024 and BI-039 through BI-042 are complete and reflected in the bead tracker. Validated Stage 2/3 slices: BI-025 through BI-029 are complete and reflected in the bead tracker. Open release/security slice remains: RT-RC-001, which keeps release blocked until the GTK/glib floor is retired or formally accepted.
+Validated Stage 0/1 slices: BI-020 through BI-024 and BI-039 through BI-042 are complete and reflected in the bead tracker. Validated Stage 2/3 slices: BI-025 through BI-029 are complete and reflected in the bead tracker. Open release/security slices remain: RT-RC-001, which keeps release blocked until the GTK/glib floor is retired or formally accepted, and RT-RC-003, which keeps the build/release freshness gate open until stale stable pins and deprecation warnings are retired.
 
 ## Why This Order
 

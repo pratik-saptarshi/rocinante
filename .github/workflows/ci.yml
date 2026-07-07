@@ -91,7 +91,7 @@ jobs:
             --lcov \
             --output-path target/coverage/lcov.info
       - name: Upload Rust coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: rust-coverage-lcov
           path: target/coverage/lcov.info
