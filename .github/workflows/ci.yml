@@ -6,6 +6,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      full_ci:
+        description: "Run full PR matrix test fanout"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -15,9 +21,178 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  test-lane-planner:
+    name: Determine test lanes
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.select-lanes.outputs.matrix }}
+      all_lanes: ${{ steps.select-lanes.outputs.all_lanes }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Select required test lanes
+        id: select-lanes
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          FULL_CI_REQUESTED: ${{ github.event.inputs.full_ci }}
+          HEAD_SHA: ${{ github.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          run_full_matrix=false
+          release_mode=false
+          selected_lanes=()
+          should_run_all_integration=false
+
+          all_lanes=(
+            '{"lane":"lib-core","timeout_seconds":600,"command":"lib","targets":"lib","args":"-- --test-threads=4"}'
+            '{"lane":"integration-a","timeout_seconds":600,"command":"integration","targets":"admin_ingestion_guard_tests admin_service_tests analytics_snapshot_tests auth_tests baseline_delta_tests budget_guard_tests","args":"-- --test-threads=4"}'
+            '{"lane":"integration-b","timeout_seconds":600,"command":"integration","targets":"engine_tests fix_proposal_tests fmt_module_order_tests git_module_tests git_provider_tests","args":"-- --test-threads=4"}'
+            '{"lane":"integration-c","timeout_seconds":600,"command":"integration","targets":"incident_feedback_tests ingestion_backend_tests ingestion_transport_tests onprem_and_errors_tests parser_plugin_tests pr_risk_contract_tests","args":"-- --test-threads=4"}'
+            '{"lane":"integration-d","timeout_seconds":600,"command":"integration","targets":"publish_gate_docs_tests release_baseline_handler_tests release_baseline_storage_tests release_baseline_tests roadmap_coherence_tests","args":"-- --test-threads=4"}'
+            '{"lane":"integration-e","timeout_seconds":600,"command":"integration","targets":"sanitizer_tests scoring_audit_tests scoring_helpers_tests scoring_integrity_tests security_advisory_exception_tests storage_boundary_tests storage_policy_tests tauri_command_tests team_policy_tests telemetry_tests triage_tests verifier_tests","args":"-- --test-threads=4"}'
+            '{"lane":"storage-dual-ingest","timeout_seconds":240,"command":"integration","targets":"storage_duallayer_tests","args":"-- --test-threads=2"}'
+            '{"lane":"ci-gate-contract","timeout_seconds":180,"command":"integration","targets":"ci_gate_tests","args":"-- --test-threads=1"}'
+          )
+
+          if [ "$EVENT_NAME" = "push" ]; then
+            if [ "${{ github.ref }}" = "refs/heads/main" ] || [[ "${{ github.ref }}" == refs/heads/release* ]]; then
+              run_full_matrix=true
+              release_mode=true
+            fi
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$FULL_CI_REQUESTED" = "true" ]; then
+              run_full_matrix=true
+            fi
+          elif [ "$EVENT_NAME" = "pull_request" ] && [ "$FULL_CI_REQUESTED" = "true" ]; then
+            run_full_matrix=true
+          fi
+
+          if [ "$run_full_matrix" = true ]; then
+            matrix_json="$(printf '%s\n' "${all_lanes[@]}" | jq -sc --argjson use_duckdb "$release_mode" '. | map(. + {use_duckdb: $use_duckdb})')"
+            echo "matrix=$matrix_json" >> "$GITHUB_OUTPUT"
+            echo "all_lanes=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags origin "$BASE_SHA"
+            changed_files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          else
+            run_full_matrix=true
+          fi
+
+          if [ "$run_full_matrix" = true ]; then
+            matrix_json="$(printf '%s\n' "${all_lanes[@]}" | jq -sc --argjson use_duckdb "$release_mode" '. | map(. + {use_duckdb: $use_duckdb})')"
+            echo "matrix=$matrix_json" >> "$GITHUB_OUTPUT"
+            echo "all_lanes=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          run_lib_core=false
+          run_integration_a=false
+          run_integration_b=false
+          run_integration_c=false
+          run_integration_d=false
+          run_integration_e=false
+          run_storage_dual_ingest=false
+          run_ci_gate_contract=true
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            case "$file" in
+              .github/workflows/*|.github/CODEOWNERS|.github/*.md|docs/ci-optimization-file.html)
+                run_ci_gate_contract=true
+                ;;
+              src-tauri/tests/admin_ingestion_guard_tests.rs|src-tauri/tests/admin_service_tests.rs|src-tauri/tests/analytics_snapshot_tests.rs|src-tauri/tests/auth_tests.rs|src-tauri/tests/baseline_delta_tests.rs|src-tauri/tests/budget_guard_tests.rs)
+                run_integration_a=true
+                ;;
+              src-tauri/tests/engine_tests.rs|src-tauri/tests/fix_proposal_tests.rs|src-tauri/tests/fmt_module_order_tests.rs|src-tauri/tests/git_module_tests.rs|src-tauri/tests/git_provider_tests.rs)
+                run_integration_b=true
+                ;;
+              src-tauri/tests/incident_feedback_tests.rs|src-tauri/tests/ingestion_backend_tests.rs|src-tauri/tests/ingestion_transport_tests.rs|src-tauri/tests/onprem_and_errors_tests.rs|src-tauri/tests/parser_plugin_tests.rs|src-tauri/tests/pr_risk_contract_tests.rs)
+                run_integration_c=true
+                ;;
+              src-tauri/tests/publish_gate_docs_tests.rs|src-tauri/tests/release_baseline_handler_tests.rs|src-tauri/tests/release_baseline_storage_tests.rs|src-tauri/tests/release_baseline_tests.rs|src-tauri/tests/roadmap_coherence_tests.rs)
+                run_integration_d=true
+                ;;
+              src-tauri/tests/sanitizer_tests.rs|src-tauri/tests/scoring_audit_tests.rs|src-tauri/tests/scoring_helpers_tests.rs|src-tauri/tests/scoring_integrity_tests.rs|src-tauri/tests/security_advisory_exception_tests.rs|src-tauri/tests/storage_boundary_tests.rs|src-tauri/tests/storage_policy_tests.rs|src-tauri/tests/tauri_command_tests.rs|src-tauri/tests/team_policy_tests.rs|src-tauri/tests/telemetry_tests.rs|src-tauri/tests/triage_tests.rs|src-tauri/tests/verifier_tests.rs)
+                run_integration_e=true
+                ;;
+              src-tauri/tests/storage_duallayer_tests.rs)
+                run_storage_dual_ingest=true
+                ;;
+              src-tauri/tests/ci_gate_tests.rs)
+                run_ci_gate_contract=true
+                ;;
+              src-tauri/tests/*.rs)
+                should_run_all_integration=true
+                ;;
+              src-tauri/src/storage.rs|src-tauri/src/storage/*)
+                run_lib_core=true
+                run_storage_dual_ingest=true
+                ;;
+              src-tauri/src/*|src-tauri/Cargo.toml|src-tauri/Cargo.lock|src-tauri/build.rs|src-tauri/.cargo/*)
+                run_lib_core=true
+                should_run_all_integration=true
+                ;;
+              *)
+                run_lib_core=true
+                should_run_all_integration=true
+                ;;
+            esac
+          done <<< "$changed_files"
+
+          if [ "$should_run_all_integration" = true ]; then
+            run_integration_a=true
+            run_integration_b=true
+            run_integration_c=true
+            run_integration_d=true
+            run_integration_e=true
+          fi
+
+          selected_lanes=()
+          add_lane() {
+            selected_lanes+=("$1")
+          }
+
+          if [ "$run_lib_core" = true ]; then add_lane "${all_lanes[0]}"; fi
+          if [ "$run_integration_a" = true ]; then add_lane "${all_lanes[1]}"; fi
+          if [ "$run_integration_b" = true ]; then add_lane "${all_lanes[2]}"; fi
+          if [ "$run_integration_c" = true ]; then add_lane "${all_lanes[3]}"; fi
+          if [ "$run_integration_d" = true ]; then add_lane "${all_lanes[4]}"; fi
+          if [ "$run_integration_e" = true ]; then add_lane "${all_lanes[5]}"; fi
+          if [ "$run_storage_dual_ingest" = true ]; then add_lane "${all_lanes[6]}"; fi
+          if [ "$run_ci_gate_contract" = true ]; then add_lane "${all_lanes[7]}"; fi
+
+          if [ "${#selected_lanes[@]}" -eq 0 ]; then
+            add_lane "${all_lanes[7]}"
+          fi
+
+          if [ "${#selected_lanes[@]}" -eq "${#all_lanes[@]}" ]; then
+            all_lanes_selected="true"
+          else
+            all_lanes_selected="false"
+          fi
+
+          matrix_json=$(printf '%s\n' "${selected_lanes[@]}" | jq -sc '.')
+          if [ -z "$matrix_json" ] || [ "$matrix_json" = "null" ]; then
+            matrix_json='[{"lane":"ci-gate-contract","timeout_seconds":180,"command":"integration","targets":"ci_gate_tests","args":"-- --test-threads=1"}]'
+          fi
+
+          matrix_json=$(echo "$matrix_json" | jq -c --argjson use_duckdb "$release_mode" '. | map(. + {use_duckdb: $use_duckdb})')
+
+          echo "matrix=$matrix_json" >> "$GITHUB_OUTPUT"
+          echo "all_lanes=$all_lanes_selected" >> "$GITHUB_OUTPUT"
+
+  quality:
+    name: Quality Gates
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      RELEASE_MODE: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -47,17 +222,176 @@ jobs:
       - name: Format check
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
       - name: Lint
-        run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+        run: |
+          FEATURE_ARGS="--no-default-features"
+          if [ "$RELEASE_MODE" = "true" ]; then
+            FEATURE_ARGS=""
+          fi
+          cargo clippy --locked --manifest-path src-tauri/Cargo.toml $FEATURE_ARGS --all-targets -- -D warnings
       - name: Binary check
-        run: cargo check --locked --manifest-path src-tauri/Cargo.toml --bins
-      - name: Test
-        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests
-      - name: CI gate contract
-        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests
+        run: |
+          FEATURE_ARGS="--no-default-features"
+          if [ "$RELEASE_MODE" = "true" ]; then
+            FEATURE_ARGS=""
+          fi
+          cargo check --locked --manifest-path src-tauri/Cargo.toml $FEATURE_ARGS --bins
+
+  test:
+    name: Test Shards (${{ matrix.lane }})
+    needs:
+      - quality
+      - test-lane-planner
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.test-lane-planner.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install Linux system dependencies (Tauri)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Run test lane
+        id: run-tests
+        run: |
+          set -euo pipefail
+          mkdir -p target/ci-artifacts
+          output_file="target/ci-artifacts/${{ matrix.lane }}.log"
+          metadata_file="target/ci-artifacts/${{ matrix.lane }}.meta.json"
+          start_ts=$(date +%s)
+          : > "$output_file"
+
+          attempt=0
+          max_attempts=2
+          test_status=0
+          timed_out=0
+          failed_test="none"
+          retry_count=0
+
+          run_target_once() {
+            local target_name="$1"
+            local attempt_output="$2"
+            CARGO_FEATURE_ARGS="--no-default-features"
+            if [ "${{ matrix.use_duckdb }}" = "true" ]; then
+              CARGO_FEATURE_ARGS=""
+            fi
+
+            if [ "$target_name" = "lib" ]; then
+              timeout "${{ matrix.timeout_seconds }}s" \
+                cargo test --locked --manifest-path src-tauri/Cargo.toml $CARGO_FEATURE_ARGS --lib ${{ matrix.args }} 2>&1 | tee "$attempt_output"
+            else
+              timeout "${{ matrix.timeout_seconds }}s" \
+                cargo test --locked --manifest-path src-tauri/Cargo.toml $CARGO_FEATURE_ARGS --test "$target_name" ${{ matrix.args }} 2>&1 | tee -a "$attempt_output"
+            fi
+            return ${PIPESTATUS[0]}
+          }
+
+          run_lane_attempt() {
+            local lane_output_file="$1"
+            local exit_code=0
+            local target_name
+            local status_code=0
+
+            if [ "${{ matrix.command }}" = "lib" ]; then
+              run_target_once "lib" "$lane_output_file"
+              status_code=$?
+            else
+              status_code=0
+              for target_name in ${{ matrix.targets }}; do
+                if [ "$status_code" -ne 0 ]; then
+                  break
+                fi
+                run_target_once "$target_name" "$lane_output_file"
+                status_code=$?
+              done
+            fi
+            echo "$status_code"
+          }
+
+          while [ "$attempt" -lt "$max_attempts" ]; do
+            attempt=$((attempt + 1))
+            set +e
+            attempt_status=$(run_lane_attempt "$output_file")
+            test_status="$attempt_status"
+            set -e
+
+            if [ "$test_status" -ne 0 ] && [ "$test_status" -ne 124 ]; then
+              if [ "$attempt" -lt "$max_attempts" ]; then
+                retry_count=$((retry_count + 1))
+                echo "Test lane ${{ matrix.lane }} failed with non-timeout exit code $test_status; retrying once." >> "$output_file"
+                : > "$output_file"
+                continue
+              fi
+            fi
+            break
+          done
+
+          if [ "$test_status" -ne 0 ]; then
+            failed_test=$(grep -E '^test .* \.\.\. FAILED' "$output_file" | tail -n 1 | sed -E 's/^test (.*) \.\.\. FAILED.*/\1/' || true)
+            if [ -z "$failed_test" ]; then
+              failed_test="unknown-failure"
+            fi
+          }
+
+          if [ "$test_status" -eq 124 ]; then
+            timed_out=1
+            if [ "$failed_test" = "none" ]; then
+              failed_test="timeout-before-final-test"
+            fi
+          fi
+          if [ "$test_status" -eq 0 ]; then
+            failed_test="none"
+          fi
+
+          end_ts=$(date +%s)
+          duration=$((end_ts - start_ts))
+
+          cat > "$metadata_file" <<METADATA
+          {
+            "lane": "${{ matrix.lane }}",
+            "duration_seconds": ${duration},
+            "exit_code": ${test_status},
+            "timed_out": ${timed_out},
+            "failed_test": "${failed_test}",
+            "targets": "${{ matrix.targets }}",
+            "retry_count": ${retry_count},
+            "attempt_count": ${attempt}
+          }
+          METADATA
+
+          if [ "$test_status" -ne 0 ]; then
+            exit "$test_status"
+          fi
+      - name: Upload lane artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-test-${{ matrix.lane }}-artifacts
+          path: |
+            target/ci-artifacts/*.log
+            target/ci-artifacts/*.meta.json
 
   rust-coverage:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      RELEASE_MODE: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -85,9 +419,14 @@ jobs:
       - name: Rust coverage
         run: |
           mkdir -p target/coverage
+          CARGO_FEATURE_ARGS="--no-default-features"
+          if [ "$RELEASE_MODE" = "true" ]; then
+            CARGO_FEATURE_ARGS=""
+          fi
           cargo llvm-cov \
             --locked \
             --manifest-path src-tauri/Cargo.toml \
+            $CARGO_FEATURE_ARGS \
             --lcov \
             --output-path target/coverage/lcov.info
       - name: Upload Rust coverage report

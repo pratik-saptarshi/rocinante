@@ -184,17 +184,29 @@ fn ci_gate_comment_round_trips_through_json() {
 fn ci_workflow_includes_the_ci_gate_contract_step() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
-    assert!(workflow.contains("CI gate contract"));
+    assert!(workflow.contains("ci-gate-contract"));
+    assert!(workflow.contains("\"targets\":\"ci_gate_tests\""));
     assert_step_run_contains_all(
         &workflow,
-        "CI gate contract",
+        "Run test lane",
         &[
             "cargo test",
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
-            "--test ci_gate_tests",
         ],
     );
+}
+
+#[test]
+fn ci_workflow_uses_dynamic_diff_driven_lanes_with_replay_plan() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("test-lane-planner"));
+    assert!(workflow.contains("outputs:"));
+    assert!(workflow.contains("matrix: ${{ steps.select-lanes.outputs.matrix }}"));
+    assert!(workflow.contains("include: ${{ fromJson(needs.test-lane-planner.outputs.matrix) }}"));
+    assert!(workflow.contains("run_full_matrix=true"));
+    assert!(workflow.contains("should_run_all_integration"));
 }
 
 #[test]
@@ -239,15 +251,19 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
     );
     assert_step_run_contains_all(
         &workflow,
-        "Test",
+        "Run test lane",
         &[
             "cargo test",
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
-            "--lib",
-            "--tests",
         ],
     );
+    assert!(workflow.contains("Test Shards"));
+    assert!(workflow.contains("fail-fast: false"));
+    assert!(workflow.contains("\"retry_count\""));
+    assert!(workflow.contains("max_attempts=2"));
+    assert!(workflow.contains("Test lane ${{ matrix.lane }} failed with non-timeout exit code"));
+    assert!(workflow.contains("timeout-before-final-test"));
     assert!(manifest.contains("test = false"));
 }
 

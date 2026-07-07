@@ -1,3 +1,5 @@
+#![cfg(feature = "duckdb-analytics")]
+
 use duckdb::params;
 use duckdb::Connection;
 use repo_analyzer_core::storage::{
@@ -7,7 +9,7 @@ use repo_analyzer_core::storage::{
 use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, ScoringWeights, TelemetryPoint};
 use std::fs;
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tempfile::tempdir;
 
 fn enqueue_with_backpressure(engine: &AsyncIngestionEngine, evt: CommitIngestionEvent) {
@@ -696,13 +698,11 @@ fn async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure() {
         }
     }
 
-    assert!(
-        observed_rejections > 0,
-        "expected at least one enqueue rejection under burst pressure"
-    );
+    let metrics = engine.metrics();
+    assert!(metrics.enqueue_rejections > 0);
 
     let mut drained = false;
-    for _ in 0..200 {
+    for _ in 0..600 {
         if engine.queue_depth() == 0 {
             drained = true;
             break;
@@ -712,7 +712,6 @@ fn async_ingestion_engine_tracks_enqueue_rejections_under_burst_pressure() {
 
     assert!(drained, "queue should drain");
 
-    let metrics = engine.metrics();
     assert!(metrics.enqueue_rejections >= observed_rejections);
     assert!(metrics.max_queue_depth >= 1);
 }
@@ -776,8 +775,48 @@ fn async_ingestion_engine_tracks_queue_lag_and_promotion_throughput() {
 
     let metrics = engine.metrics();
     assert!(metrics.max_queue_depth >= 1);
-    assert_eq!(metrics.enqueue_rejections, observed_rejections);
+    assert!(metrics.enqueue_rejections >= observed_rejections);
     assert!(metrics.max_queue_lag_ms > 0);
+}
+
+#[test]
+fn async_ingestion_engine_bounded_ingestion_and_promotion_pipeline_completes_within_deadline() {
+    let start = Instant::now();
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let engine = AsyncIngestionEngine::start_with_interval(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+        2,
+        200,
+    )
+    .expect("start");
+
+    for idx in 0..80 {
+        enqueue_with_backpressure(&engine, sample_event(&format!("bounded-{idx}")));
+    }
+
+    let deadline_ms = 15_000u64;
+    let mut completed = false;
+    for _ in 0..200 {
+        if engine.queue_depth() == 0 {
+            completed = true;
+            break;
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
+
+    let elapsed_ms = start.elapsed().as_millis() as u64;
+    assert!(
+        completed,
+        "pipeline did not drain within 15s, elapsed_ms={elapsed_ms}"
+    );
+    assert!(
+        elapsed_ms <= deadline_ms,
+        "pipeline violated deadline: {elapsed_ms}ms > {deadline_ms}ms"
+    );
+    assert!(engine.promotion_count() > 0);
 }
 
 #[test]

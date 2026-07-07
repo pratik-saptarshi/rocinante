@@ -1,3 +1,5 @@
+#![cfg(feature = "duckdb-analytics")]
+
 use repo_analyzer_core::admin;
 use repo_analyzer_core::auth::issue_test_token;
 use repo_analyzer_core::storage::DualLayerStore;

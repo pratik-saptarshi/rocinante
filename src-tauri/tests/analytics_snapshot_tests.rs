@@ -1,3 +1,5 @@
+#![cfg(feature = "duckdb-analytics")]
+
 use repo_analyzer_core::storage::{AnalyticsQueryMode, AnalyticsSnapshot};
 
 #[test]

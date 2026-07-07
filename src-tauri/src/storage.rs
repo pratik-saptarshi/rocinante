@@ -4,6 +4,7 @@ use crate::types::{
     AdminQuery, CommitIngestionEvent, CommitterScore, PrCandidate, PrRanking, ScoringWeights,
     TelemetryPoint,
 };
+#[cfg(feature = "duckdb-analytics")]
 use duckdb::{params, Connection};
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
@@ -13,7 +14,7 @@ use std::fs::OpenOptions;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use std::sync::mpsc::{sync_channel, Receiver, RecvTimeoutError, SyncSender};
+use std::sync::mpsc::{sync_channel, Receiver, RecvTimeoutError, SyncSender, TrySendError};
 use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -21,6 +22,11 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::{io::Write, os::unix::net::UnixStream};
 
 type QueuedIngestionEvent = (CommitIngestionEvent, Instant);
+
+#[cfg(not(feature = "duckdb-analytics"))]
+fn analytics_backend_unavailable() -> AnalyzerError {
+    AnalyzerError::Db("DuckDB analytics backend is disabled in non-release builds".to_string())
+}
 
 fn update_max_u64(metric: &AtomicU64, value: u64) {
     let mut observed = metric.load(Ordering::Acquire);
@@ -305,7 +311,11 @@ impl AsyncIngestionEngine {
         thread::spawn(move || loop {
             match rx.recv_timeout(promotion_interval) {
                 Ok((evt, queued_at)) => {
-                    queue_depth_bg.fetch_sub(1, Ordering::AcqRel);
+                    queue_depth_bg
+                        .fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
+                            Some(current.saturating_sub(1))
+                        })
+                        .ok();
                     let _ = store_for_worker.ingest_commit_event(&evt);
                     update_max_u64(
                         &max_queue_lag_bg,
@@ -352,17 +362,38 @@ impl AsyncIngestionEngine {
     }
 
     pub fn enqueue(&self, evt: CommitIngestionEvent) -> Result<(), AnalyzerError> {
-        self.queue_depth.fetch_add(1, Ordering::AcqRel);
-        let queued_depth = self.queue_depth.load(Ordering::Acquire);
-        update_max_usize(&self.max_queue_depth, queued_depth);
+        let start = Instant::now();
+        let max_wait = Duration::from_millis(2_500);
+        let mut event = evt;
+        let mut backoff_ms = 5u64;
 
-        self.tx.try_send((evt, Instant::now())).map_err(|e| {
-            self.enqueue_rejections.fetch_add(1, Ordering::AcqRel);
-            self.queue_depth.fetch_sub(1, Ordering::AcqRel);
-            AnalyzerError::Io(format!("buffer enqueue failed: {e}"))
-        })?;
-
-        Ok(())
+        loop {
+            let queued_at = Instant::now();
+            match self.tx.try_send((event, queued_at)) {
+                Ok(_) => {
+                    let queued_depth = self.queue_depth.fetch_add(1, Ordering::AcqRel) + 1;
+                    update_max_usize(&self.max_queue_depth, queued_depth);
+                    return Ok(());
+                }
+                Err(TrySendError::Full((next_event, _))) => {
+                    event = next_event;
+                    self.enqueue_rejections.fetch_add(1, Ordering::AcqRel);
+                    if start.elapsed() >= max_wait {
+                        return Err(AnalyzerError::Io(
+                            "buffer enqueue failed: channel full (retry budget exhausted)"
+                                .to_string(),
+                        ));
+                    }
+                    std::thread::sleep(Duration::from_millis(backoff_ms));
+                    backoff_ms = (backoff_ms.saturating_mul(2)).min(100);
+                }
+                Err(TrySendError::Disconnected((_, _))) => {
+                    return Err(AnalyzerError::Io(
+                        "buffer enqueue failed: channel disconnected".to_string(),
+                    ));
+                }
+            }
+        }
     }
 
     pub fn metrics(&self) -> AsyncIngestionMetrics {
@@ -403,8 +434,13 @@ impl DualLayerStore {
             promotion_barrier: Arc::new(RwLock::new(())),
             latest_snapshot_id: Arc::new(AtomicU64::new(0)),
         };
+
+        #[cfg(feature = "duckdb-analytics")]
         this.init_columnar()?;
+
+        #[cfg(feature = "duckdb-analytics")]
         let _ = this.refresh_analytics_snapshot(0)?;
+
         Ok(this)
     }
 
@@ -495,49 +531,52 @@ impl DualLayerStore {
     }
 
     fn init_columnar(&self) -> Result<(), AnalyzerError> {
-        let conn =
-            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        conn.execute_batch(
-            "
-            CREATE TABLE IF NOT EXISTS telemetry_history (
-              ts BIGINT,
-              repo_name TEXT,
-              release TEXT,
-              committer TEXT,
-              plugin TEXT,
-              metric_key TEXT,
-              metric_value DOUBLE,
-              details TEXT
-            );
-            CREATE TABLE IF NOT EXISTS repo_baseline (
-              repo_name TEXT PRIMARY KEY,
-              baseline_complexity DOUBLE
-            );
-            CREATE TABLE IF NOT EXISTS telemetry_history_rollup (
-              repo_name TEXT,
-              release TEXT,
-              committer TEXT,
-              plugin TEXT,
-              metric_key TEXT,
-              metric_sum DOUBLE,
-              sample_count BIGINT,
-              details TEXT,
-              PRIMARY KEY (repo_name, release, committer, plugin, metric_key)
-            );
-            CREATE TABLE IF NOT EXISTS pr_history (
-              ts BIGINT,
-              pr_id TEXT,
-              repo_name TEXT,
-              author TEXT,
-              release TEXT,
-              file_risk DOUBLE,
-              author_velocity DOUBLE,
-              approval_fidelity DOUBLE,
-              rank_score DOUBLE
-            );
-            ",
-        )
-        .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            let conn = Connection::open(&self.columnar_path)
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            conn.execute_batch(
+                "
+                CREATE TABLE IF NOT EXISTS telemetry_history (
+                  ts BIGINT,
+                  repo_name TEXT,
+                  release TEXT,
+                  committer TEXT,
+                  plugin TEXT,
+                  metric_key TEXT,
+                  metric_value DOUBLE,
+                  details TEXT
+                );
+                CREATE TABLE IF NOT EXISTS repo_baseline (
+                  repo_name TEXT PRIMARY KEY,
+                  baseline_complexity DOUBLE
+                );
+                CREATE TABLE IF NOT EXISTS telemetry_history_rollup (
+                  repo_name TEXT,
+                  release TEXT,
+                  committer TEXT,
+                  plugin TEXT,
+                  metric_key TEXT,
+                  metric_sum DOUBLE,
+                  sample_count BIGINT,
+                  details TEXT,
+                  PRIMARY KEY (repo_name, release, committer, plugin, metric_key)
+                );
+                CREATE TABLE IF NOT EXISTS pr_history (
+                  ts BIGINT,
+                  pr_id TEXT,
+                  repo_name TEXT,
+                  author TEXT,
+                  release TEXT,
+                  file_risk DOUBLE,
+                  author_velocity DOUBLE,
+                  approval_fidelity DOUBLE,
+                  rank_score DOUBLE
+                );
+                ",
+            )
+            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        }
         Ok(())
     }
 
@@ -559,16 +598,19 @@ impl DualLayerStore {
             self.snapshot_path(snapshot_id)
         };
 
-        if snapshot_id == 0 {
-            return Ok(snapshot_path);
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            if snapshot_id != 0 {
+                let tmp_path = format!("{}.tmp", snapshot_path);
+                let _ = fs::remove_file(&tmp_path);
+                fs::copy(&self.columnar_path, &tmp_path).map_err(|e| {
+                    AnalyzerError::Io(format!("analytics snapshot copy failed: {e}"))
+                })?;
+                fs::rename(&tmp_path, &snapshot_path).map_err(|e| {
+                    AnalyzerError::Io(format!("analytics snapshot publish failed: {e}"))
+                })?;
+            }
         }
-
-        let tmp_path = format!("{}.tmp", snapshot_path);
-        let _ = fs::remove_file(&tmp_path);
-        fs::copy(&self.columnar_path, &tmp_path)
-            .map_err(|e| AnalyzerError::Io(format!("analytics snapshot copy failed: {e}")))?;
-        fs::rename(&tmp_path, &snapshot_path)
-            .map_err(|e| AnalyzerError::Io(format!("analytics snapshot publish failed: {e}")))?;
         Ok(snapshot_path)
     }
 
@@ -699,40 +741,66 @@ impl DualLayerStore {
         policy: &RetentionPolicy,
         now_ts: i64,
     ) -> Result<LifecycleStats, AnalyzerError> {
-        let _promotion_lock = self
-            .promotion_barrier
-            .write()
-            .unwrap_or_else(|e| e.into_inner());
-        let pruned = self.prune_raw_events(policy, now_ts)?;
-        let mut stats = self.promote_to_columnar_no_lock()?;
-        stats.pruned_events = pruned;
-        self.prune_analytics_releases_with_retention(policy)?;
-        Ok(stats)
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            let _promotion_lock = self
+                .promotion_barrier
+                .write()
+                .unwrap_or_else(|e| e.into_inner());
+            let pruned = self.prune_raw_events(policy, now_ts)?;
+            let mut stats = self.promote_to_columnar_no_lock()?;
+            stats.pruned_events = pruned;
+            self.prune_analytics_releases_with_retention(policy)?;
+            Ok(stats)
+        }
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = policy;
+            let _ = now_ts;
+            Err(analytics_backend_unavailable())
+        }
     }
 
     pub fn promote_to_columnar(&self) -> Result<LifecycleStats, AnalyzerError> {
-        let _promotion_lock = self
-            .promotion_barrier
-            .write()
-            .unwrap_or_else(|e| e.into_inner());
-        self.promote_to_columnar_no_lock()
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            let _promotion_lock = self
+                .promotion_barrier
+                .write()
+                .unwrap_or_else(|e| e.into_inner());
+            self.promote_to_columnar_no_lock()
+        }
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            Err(analytics_backend_unavailable())
+        }
     }
 
     pub fn read_release_baseline(&self, repo_name: &str) -> Result<Option<f64>, AnalyzerError> {
-        let conn =
-            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let mut stmt = conn
-            .prepare("SELECT baseline_complexity FROM repo_baseline WHERE repo_name = ?1 LIMIT 1")
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let mut rows = stmt
-            .query(params![repo_name])
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        if let Some(row) = rows.next().map_err(|e| AnalyzerError::Db(e.to_string()))? {
-            let baseline = row
-                .get::<_, f64>(0)
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            let conn = Connection::open(&self.columnar_path)
                 .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            Ok(Some(baseline))
-        } else {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT baseline_complexity FROM repo_baseline WHERE repo_name = ?1 LIMIT 1",
+                )
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let mut rows = stmt
+                .query(params![repo_name])
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            if let Some(row) = rows.next().map_err(|e| AnalyzerError::Db(e.to_string()))? {
+                let baseline = row
+                    .get::<_, f64>(0)
+                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                Ok(Some(baseline))
+            } else {
+                Ok(None)
+            }
+        }
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = repo_name;
             Ok(None)
         }
     }
@@ -742,202 +810,229 @@ impl DualLayerStore {
         repo_name: &str,
         baseline_complexity: f64,
     ) -> Result<f64, AnalyzerError> {
-        let _promotion_lock = self
-            .promotion_barrier
-            .write()
-            .unwrap_or_else(|e| e.into_inner());
+        #[cfg(feature = "duckdb-analytics")]
         {
-            let conn = Connection::open(&self.columnar_path)
-                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            conn.execute(
-                "
+            let _promotion_lock = self
+                .promotion_barrier
+                .write()
+                .unwrap_or_else(|e| e.into_inner());
+            {
+                let conn = Connection::open(&self.columnar_path)
+                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                conn.execute(
+                    "
                 INSERT INTO repo_baseline (repo_name, baseline_complexity)
                 VALUES (?1, ?2)
                 ON CONFLICT(repo_name) DO UPDATE SET baseline_complexity = excluded.baseline_complexity
                 ",
-                params![repo_name, baseline_complexity],
-            )
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            conn.execute("CHECKPOINT", [])
+                    params![repo_name, baseline_complexity],
+                )
                 .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                conn.execute("CHECKPOINT", [])
+                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            }
+            let snapshot_id = self.latest_snapshot_id.load(Ordering::Acquire);
+            if snapshot_id != 0 {
+                let _ = self.refresh_analytics_snapshot(snapshot_id)?;
+            }
+            Ok(baseline_complexity)
         }
-        let snapshot_id = self.latest_snapshot_id.load(Ordering::Acquire);
-        if snapshot_id != 0 {
-            let _ = self.refresh_analytics_snapshot(snapshot_id)?;
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = repo_name;
+            let _ = baseline_complexity;
+            Err(analytics_backend_unavailable())
         }
-        Ok(baseline_complexity)
     }
 
     fn promote_to_columnar_no_lock(&self) -> Result<LifecycleStats, AnalyzerError> {
-        let promoted = {
-            let conn = Connection::open(&self.columnar_path)
-                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            let mut promoted = 0usize;
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            let promoted = {
+                let conn = Connection::open(&self.columnar_path)
+                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                let mut promoted = 0usize;
 
-            for row in self.kv.scan_prefix("evt:") {
-                let (k, v) = row.map_err(|e| AnalyzerError::Db(e.to_string()))?;
-                let key = String::from_utf8_lossy(&k).to_string();
-                let ts = Self::parse_event_timestamp(&key).unwrap_or_else(now_ts);
-                let event: CommitIngestionEvent =
-                    serde_json::from_slice(&v).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                for row in self.kv.scan_prefix("evt:") {
+                    let (k, v) = row.map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                    let key = String::from_utf8_lossy(&k).to_string();
+                    let ts = Self::parse_event_timestamp(&key).unwrap_or_else(now_ts);
+                    let event: CommitIngestionEvent =
+                        serde_json::from_slice(&v).map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
-                for point in &event.telemetry {
-                    conn.execute(
-                        "INSERT INTO telemetry_history
+                    for point in &event.telemetry {
+                        conn.execute(
+                            "INSERT INTO telemetry_history
                     (ts, repo_name, release, committer, plugin, metric_key, metric_value, details)
                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                        params![
-                            ts,
-                            event.repo_name,
-                            event.release,
-                            event.committer,
-                            point.plugin,
-                            point.metric_key,
-                            point.metric_value,
-                            point.details
-                        ],
-                    )
-                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-                }
+                            params![
+                                ts,
+                                event.repo_name,
+                                event.release,
+                                event.committer,
+                                point.plugin,
+                                point.metric_key,
+                                point.metric_value,
+                                point.details
+                            ],
+                        )
+                        .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                    }
 
-                // Seed baseline complexity for fair delta-based scoring.
-                let baseline_exists: i64 = conn
-                    .query_row(
-                        "SELECT COUNT(*) FROM repo_baseline WHERE repo_name = ?1",
-                        params![event.repo_name],
-                        |r| r.get(0),
-                    )
-                    .unwrap_or(0);
-                if baseline_exists == 0 {
-                    let initial_complexity = event
-                        .telemetry
-                        .iter()
-                        .find(|t| t.metric_key == "estimated_cyclomatic_complexity")
-                        .map(|t| t.metric_value)
-                        .unwrap_or(0.0);
-                    conn.execute(
-                        "INSERT INTO repo_baseline (repo_name, baseline_complexity) VALUES (?1, ?2)",
-                        params![event.repo_name, initial_complexity],
-                    )
-                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                    // Seed baseline complexity for fair delta-based scoring.
+                    let baseline_exists: i64 = conn
+                        .query_row(
+                            "SELECT COUNT(*) FROM repo_baseline WHERE repo_name = ?1",
+                            params![event.repo_name],
+                            |r| r.get(0),
+                        )
+                        .unwrap_or(0);
+                    if baseline_exists == 0 {
+                        let initial_complexity = event
+                            .telemetry
+                            .iter()
+                            .find(|t| t.metric_key == "estimated_cyclomatic_complexity")
+                            .map(|t| t.metric_value)
+                            .unwrap_or(0.0);
+                        conn.execute(
+                            "INSERT INTO repo_baseline (repo_name, baseline_complexity) VALUES (?1, ?2)",
+                            params![event.repo_name, initial_complexity],
+                        )
+                        .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                    }
+
+                    self.kv
+                        .remove(k)
+                        .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                    promoted += 1;
                 }
 
                 self.kv
-                    .remove(k)
+                    .flush()
                     .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-                promoted += 1;
+                promoted
+            };
+
+            let snapshot_id = Self::next_snapshot_id();
+            if self.validate_and_publish_snapshot(snapshot_id, promoted)? {
+                self.latest_snapshot_id
+                    .store(snapshot_id, Ordering::Release);
+            } else {
+                self.latest_snapshot_id.store(0, Ordering::Release);
             }
 
-            self.kv
-                .flush()
-                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            promoted
-        };
-
-        let snapshot_id = Self::next_snapshot_id();
-        if self.validate_and_publish_snapshot(snapshot_id, promoted)? {
-            self.latest_snapshot_id
-                .store(snapshot_id, Ordering::Release);
-        } else {
-            self.latest_snapshot_id.store(0, Ordering::Release);
+            Ok(LifecycleStats {
+                promoted_events: promoted,
+                pruned_events: 0,
+            })
         }
-
-        Ok(LifecycleStats {
-            promoted_events: promoted,
-            pruned_events: 0,
-        })
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            Ok(LifecycleStats {
+                promoted_events: 0,
+                pruned_events: 0,
+            })
+        }
     }
 
     fn prune_analytics_releases_with_retention(
         &self,
         policy: &RetentionPolicy,
     ) -> Result<(), AnalyzerError> {
-        let keep_releases = match policy.max_release_partitions_to_keep() {
-            Some(keep) => keep,
-            None => return Ok(()),
-        };
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            let keep_releases = match policy.max_release_partitions_to_keep() {
+                Some(keep) => keep,
+                None => return Ok(()),
+            };
 
-        let conn =
-            Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let conn = Connection::open(&self.columnar_path)
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
-        let purge_rollup_sql = "
-            WITH ranked AS (
+            let purge_rollup_sql = "
+                WITH ranked AS (
+                    SELECT
+                        repo_name,
+                        release,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY repo_name
+                            ORDER BY MAX(ts) DESC, MAX(release) DESC
+                        ) AS rn
+                    FROM telemetry_history
+                    GROUP BY repo_name, release
+                )
+                DELETE FROM telemetry_history_rollup
+                WHERE (repo_name, release) IN (
+                    SELECT repo_name, release FROM ranked WHERE rn > ?1
+                )
+            ";
+            conn.execute(purge_rollup_sql, params![keep_releases])
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+
+            let rollup_sql = "
+                WITH ranked AS (
+                    SELECT
+                        repo_name,
+                        release,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY repo_name
+                            ORDER BY MAX(ts) DESC, MAX(release) DESC
+                        ) AS rn
+                    FROM telemetry_history
+                    GROUP BY repo_name, release
+                ),
+                stale_releases AS (
+                    SELECT repo_name, release FROM ranked WHERE rn > ?1
+                )
+                INSERT INTO telemetry_history_rollup
+                    (repo_name, release, committer, plugin, metric_key, metric_sum, sample_count, details)
                 SELECT
-                    repo_name,
-                    release,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY repo_name
-                        ORDER BY MAX(ts) DESC, MAX(release) DESC
-                    ) AS rn
-                FROM telemetry_history
-                GROUP BY repo_name, release
-            )
-            DELETE FROM telemetry_history_rollup
-            WHERE (repo_name, release) IN (
-                SELECT repo_name, release FROM ranked WHERE rn > ?1
-            )
-        ";
-        conn.execute(purge_rollup_sql, params![keep_releases])
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                    h.repo_name,
+                    h.release,
+                    h.committer,
+                    h.plugin,
+                    h.metric_key,
+                    SUM(h.metric_value),
+                    COUNT(*),
+                    MIN(h.details)
+                FROM telemetry_history h
+                INNER JOIN stale_releases r
+                    ON r.repo_name = h.repo_name
+                   AND r.release = h.release
+                GROUP BY
+                    h.repo_name, h.release, h.committer, h.plugin, h.metric_key
+            ";
 
-        let rollup_sql = "
-            WITH ranked AS (
-                SELECT
-                    repo_name,
-                    release,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY repo_name
-                        ORDER BY MAX(ts) DESC, MAX(release) DESC
-                    ) AS rn
-                FROM telemetry_history
-                GROUP BY repo_name, release
-            ),
-            stale_releases AS (
-                SELECT repo_name, release FROM ranked WHERE rn > ?1
-            )
-            INSERT INTO telemetry_history_rollup
-                (repo_name, release, committer, plugin, metric_key, metric_sum, sample_count, details)
-            SELECT
-                h.repo_name,
-                h.release,
-                h.committer,
-                h.plugin,
-                h.metric_key,
-                SUM(h.metric_value),
-                COUNT(*),
-                MIN(h.details)
-            FROM telemetry_history h
-            INNER JOIN stale_releases r
-                ON r.repo_name = h.repo_name
-               AND r.release = h.release
-            GROUP BY
-                h.repo_name, h.release, h.committer, h.plugin, h.metric_key
-        ";
+            conn.execute(rollup_sql, params![keep_releases])
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
-        conn.execute(rollup_sql, params![keep_releases])
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let purge_sql = "
+                WITH ranked AS (
+                    SELECT
+                        repo_name,
+                        release,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY repo_name
+                            ORDER BY MAX(ts) DESC, MAX(release) DESC
+                        ) AS rn
+                    FROM telemetry_history
+                    GROUP BY repo_name, release
+                )
+                DELETE FROM telemetry_history
+                WHERE (repo_name, release) IN (
+                    SELECT repo_name, release FROM ranked WHERE rn > ?1
+                )
+            ";
 
-        let purge_sql = "
-            WITH ranked AS (
-                SELECT
-                    repo_name,
-                    release,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY repo_name
-                        ORDER BY MAX(ts) DESC, MAX(release) DESC
-                    ) AS rn
-                FROM telemetry_history
-                GROUP BY repo_name, release
-            )
-            DELETE FROM telemetry_history
-            WHERE (repo_name, release) IN (
-                SELECT repo_name, release FROM ranked WHERE rn > ?1
-            )
-        ";
-
-        conn.execute(purge_sql, params![keep_releases])
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        Ok(())
+            conn.execute(purge_sql, params![keep_releases])
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            Ok(())
+        }
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = policy;
+            Ok(())
+        }
     }
 
     fn validate_and_publish_snapshot(
@@ -945,20 +1040,37 @@ impl DualLayerStore {
         snapshot_id: u64,
         min_rows: usize,
     ) -> Result<bool, AnalyzerError> {
-        let snapshot_path = self.refresh_analytics_snapshot(snapshot_id)?;
-        let conn =
-            Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM telemetry_history", [], |r| r.get(0))
-            .unwrap_or(0);
-        Ok(count >= min_rows as i64)
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            let snapshot_path = self.refresh_analytics_snapshot(snapshot_id)?;
+            let conn =
+                Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let count: i64 = conn
+                .query_row("SELECT COUNT(*) FROM telemetry_history", [], |r| r.get(0))
+                .unwrap_or(0);
+            Ok(count >= min_rows as i64)
+        }
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = snapshot_id;
+            let _ = min_rows;
+            Ok(false)
+        }
     }
 
     pub fn aggregate_by_query(
         &self,
         query: &AdminQuery,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
-        self.aggregate_by_query_on_route(StorageRoute::Analytics, query)
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            self.aggregate_by_query_on_route(StorageRoute::Analytics, query)
+        }
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = query;
+            Err(analytics_backend_unavailable())
+        }
     }
 
     pub fn aggregate_by_query_on_route(
@@ -966,18 +1078,27 @@ impl DualLayerStore {
         route: StorageRoute,
         query: &AdminQuery,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
-        Self::enforce_analytics_route(route)?;
-        let _query_lock = self
-            .promotion_barrier
-            .read()
-            .unwrap_or_else(|e| e.into_inner());
-        let snapshot = self.read_snapshot_for_query();
-        self.aggregate_by_query_with_snapshot_on_route(
-            query,
-            &snapshot,
-            AnalyticsQueryMode::ReadOnly,
-            route,
-        )
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            Self::enforce_analytics_route(route)?;
+            let _query_lock = self
+                .promotion_barrier
+                .read()
+                .unwrap_or_else(|e| e.into_inner());
+            let snapshot = self.read_snapshot_for_query();
+            self.aggregate_by_query_with_snapshot_on_route(
+                query,
+                &snapshot,
+                AnalyticsQueryMode::ReadOnly,
+                route,
+            )
+        }
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = route;
+            let _ = query;
+            Err(analytics_backend_unavailable())
+        }
     }
 
     pub fn aggregate_by_query_with_snapshot_on_route(
@@ -987,8 +1108,19 @@ impl DualLayerStore {
         mode: AnalyticsQueryMode,
         route: StorageRoute,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
-        Self::enforce_analytics_route(route)?;
-        self.aggregate_by_query_with_snapshot(query, snapshot, mode)
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            Self::enforce_analytics_route(route)?;
+            self.aggregate_by_query_with_snapshot(query, snapshot, mode)
+        }
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = query;
+            let _ = snapshot;
+            let _ = mode;
+            let _ = route;
+            Err(analytics_backend_unavailable())
+        }
     }
 
     pub fn compute_committer_scores_with_route(
@@ -997,8 +1129,18 @@ impl DualLayerStore {
         query: &AdminQuery,
         weights: &ScoringWeights,
     ) -> Result<Vec<CommitterScore>, AnalyzerError> {
-        Self::enforce_analytics_route(route)?;
-        self.compute_committer_scores(query, weights)
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            Self::enforce_analytics_route(route)?;
+            self.compute_committer_scores(query, weights)
+        }
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = route;
+            let _ = query;
+            let _ = weights;
+            Err(analytics_backend_unavailable())
+        }
     }
 
     pub fn rank_open_prs_with_route(
@@ -1017,19 +1159,21 @@ impl DualLayerStore {
         snapshot: &AnalyticsSnapshot,
         mode: AnalyticsQueryMode,
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
-        snapshot.enforce_mode(mode)?;
-        let _query_lock = self
-            .promotion_barrier
-            .read()
-            .unwrap_or_else(|e| e.into_inner());
-        let snapshot_path = self.analytics_read_path(snapshot);
-        let conn =
-            Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let name = scrub_text(&query.name.clone().unwrap_or_default());
-        let release = scrub_text(&query.release.clone().unwrap_or_default());
-        let mut stmt = conn
-            .prepare(
-                "SELECT plugin, metric_key, AVG(metric_value) AS avg_value, MIN(details) AS details
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            snapshot.enforce_mode(mode)?;
+            let _query_lock = self
+                .promotion_barrier
+                .read()
+                .unwrap_or_else(|e| e.into_inner());
+            let snapshot_path = self.analytics_read_path(snapshot);
+            let conn =
+                Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let name = scrub_text(&query.name.clone().unwrap_or_default());
+            let release = scrub_text(&query.release.clone().unwrap_or_default());
+            let mut stmt = conn
+                .prepare(
+                    "SELECT plugin, metric_key, AVG(metric_value) AS avg_value, MIN(details) AS details
                  FROM (
                    SELECT
                      plugin,
@@ -1056,22 +1200,30 @@ impl DualLayerStore {
                    AND release LIKE '%' || ?2 || '%'
                  GROUP BY plugin, metric_key
                  ORDER BY plugin, metric_key",
-            )
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                )
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
-        let mut rows = stmt
-            .query(params![name, release])
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let mut out = Vec::new();
-        while let Some(row) = rows.next().map_err(|e| AnalyzerError::Db(e.to_string()))? {
-            out.push(TelemetryPoint {
-                plugin: row.get(0).map_err(|e| AnalyzerError::Db(e.to_string()))?,
-                metric_key: row.get(1).map_err(|e| AnalyzerError::Db(e.to_string()))?,
-                metric_value: row.get(2).map_err(|e| AnalyzerError::Db(e.to_string()))?,
-                details: row.get(3).map_err(|e| AnalyzerError::Db(e.to_string()))?,
-            });
+            let mut rows = stmt
+                .query(params![name, release])
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let mut out = Vec::new();
+            while let Some(row) = rows.next().map_err(|e| AnalyzerError::Db(e.to_string()))? {
+                out.push(TelemetryPoint {
+                    plugin: row.get(0).map_err(|e| AnalyzerError::Db(e.to_string()))?,
+                    metric_key: row.get(1).map_err(|e| AnalyzerError::Db(e.to_string()))?,
+                    metric_value: row.get(2).map_err(|e| AnalyzerError::Db(e.to_string()))?,
+                    details: row.get(3).map_err(|e| AnalyzerError::Db(e.to_string()))?,
+                });
+            }
+            Ok(out)
         }
-        Ok(out)
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = query;
+            let _ = snapshot;
+            let _ = mode;
+            Err(analytics_backend_unavailable())
+        }
     }
 
     fn analytics_read_path(&self, snapshot: &AnalyticsSnapshot) -> String {
@@ -1094,18 +1246,20 @@ impl DualLayerStore {
         query: &AdminQuery,
         weights: &ScoringWeights,
     ) -> Result<Vec<CommitterScore>, AnalyzerError> {
-        let _query_lock = self
-            .promotion_barrier
-            .read()
-            .unwrap_or_else(|e| e.into_inner());
-        let snapshot = self.read_snapshot_for_query();
-        let snapshot_path = self.analytics_read_path(&snapshot);
-        let conn =
-            Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let name = scrub_text(&query.name.clone().unwrap_or_default());
-        let release = scrub_text(&query.release.clone().unwrap_or_default());
+        #[cfg(feature = "duckdb-analytics")]
+        {
+            let _query_lock = self
+                .promotion_barrier
+                .read()
+                .unwrap_or_else(|e| e.into_inner());
+            let snapshot = self.read_snapshot_for_query();
+            let snapshot_path = self.analytics_read_path(&snapshot);
+            let conn =
+                Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let name = scrub_text(&query.name.clone().unwrap_or_default());
+            let release = scrub_text(&query.release.clone().unwrap_or_default());
 
-        let sql = "
+            let sql = "
             WITH effective_metrics AS (
               SELECT
                 h.committer,
@@ -1137,51 +1291,58 @@ impl DualLayerStore {
               AND h.release LIKE '%' || ?2 || '%'
             GROUP BY h.committer, h.repo_name, b.baseline_complexity
             ORDER BY h.committer
-        ";
+            ";
 
-        let mut stmt = conn
-            .prepare(sql)
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let mut rows = stmt
-            .query(params![name, release])
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let mut stmt = conn
+                .prepare(sql)
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+            let mut rows = stmt
+                .query(params![name, release])
+                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
-        let mut out = Vec::new();
-        while let Some(row) = rows.next().map_err(|e| AnalyzerError::Db(e.to_string()))? {
-            let committer: String = row.get(0).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            let complexity: Option<f64> = row.get(2).ok();
-            let coverage_delta: Option<f64> = row.get(3).ok();
-            let churn_efficiency: Option<f64> = row.get(4).ok();
-            let pipeline_success: Option<f64> = row.get(5).ok();
-            let baseline: Option<f64> = row.get(6).ok();
+            let mut out = Vec::new();
+            while let Some(row) = rows.next().map_err(|e| AnalyzerError::Db(e.to_string()))? {
+                let committer: String = row.get(0).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+                let complexity: Option<f64> = row.get(2).ok();
+                let coverage_delta: Option<f64> = row.get(3).ok();
+                let churn_efficiency: Option<f64> = row.get(4).ok();
+                let pipeline_success: Option<f64> = row.get(5).ok();
+                let baseline: Option<f64> = row.get(6).ok();
 
-            // Deterministic baseline normalization: delta complexity vs initial state.
-            let delta_c = complexity.unwrap_or(0.0) - baseline.unwrap_or(0.0);
-            let cplx_component =
-                (1.0 / (1.0 + delta_c.max(0.0))) * (weights.complexity_weight * 100.0);
-            let cov_component = coverage_delta
-                .map(|v| (v.max(-20.0) + 20.0) / 40.0 * (weights.coverage_weight * 100.0))
-                .unwrap_or(weights.coverage_weight * 50.0);
-            let churn_component = churn_efficiency
-                .map(|v| v.clamp(0.0, 1.0) * (weights.churn_weight * 100.0))
-                .unwrap_or(weights.churn_weight * 50.0);
-            let pipeline_component = pipeline_success
-                .map(|v| v.clamp(0.0, 1.0) * (weights.pipeline_weight * 100.0))
-                .unwrap_or(weights.pipeline_weight * 50.0);
-            let score = cplx_component + cov_component + churn_component + pipeline_component;
+                // Deterministic baseline normalization: delta complexity vs initial state.
+                let delta_c = complexity.unwrap_or(0.0) - baseline.unwrap_or(0.0);
+                let cplx_component =
+                    (1.0 / (1.0 + delta_c.max(0.0))) * (weights.complexity_weight * 100.0);
+                let cov_component = coverage_delta
+                    .map(|v| (v.max(-20.0) + 20.0) / 40.0 * (weights.coverage_weight * 100.0))
+                    .unwrap_or(weights.coverage_weight * 50.0);
+                let churn_component = churn_efficiency
+                    .map(|v| v.clamp(0.0, 1.0) * (weights.churn_weight * 100.0))
+                    .unwrap_or(weights.churn_weight * 50.0);
+                let pipeline_component = pipeline_success
+                    .map(|v| v.clamp(0.0, 1.0) * (weights.pipeline_weight * 100.0))
+                    .unwrap_or(weights.pipeline_weight * 50.0);
+                let score = cplx_component + cov_component + churn_component + pipeline_component;
 
-            out.push(CommitterScore {
-                committer,
-                score,
-                complexity_component: cplx_component,
-                coverage_component: cov_component,
-                churn_component,
-                pipeline_component,
-            });
+                out.push(CommitterScore {
+                    committer,
+                    score,
+                    complexity_component: cplx_component,
+                    coverage_component: cov_component,
+                    churn_component,
+                    pipeline_component,
+                });
+            }
+
+            out.sort_by(|a, b| b.score.total_cmp(&a.score));
+            Ok(out)
         }
-
-        out.sort_by(|a, b| b.score.total_cmp(&a.score));
-        Ok(out)
+        #[cfg(not(feature = "duckdb-analytics"))]
+        {
+            let _ = query;
+            let _ = weights;
+            Err(analytics_backend_unavailable())
+        }
     }
 
     pub fn rank_open_prs(
