@@ -1,0 +1,86 @@
+# CI Build Optimization Plan
+
+## Scope
+
+This document is the CI performance control for backend builds and release workflows.
+It applies to `src-tauri` Rust lanes, including:
+
+- lint/check gates
+- test shards
+- rust coverage builds
+- release-path execution on `main` and `release*` branches
+
+The plan must keep behavior unchanged while reducing redundant compilation in repeated
+release runs.
+
+## Performance Criteria
+
+1. **Feature-stable cache reuse**
+   - release and non-release lanes must restore caches for the same compiler/toolchain
+     and feature set.
+   - a seeded artifact set is preferred over per-lane cold compile.
+
+2. **Delta-style execution**
+   - default-feature work remains delta on non-release lanes (already implemented with
+     `--no-default-features`).
+   - release lanes may use default features but should avoid duplicate
+     full-target compilation across each lane.
+
+3. **Single release prebuild boundary**
+   - each release run must execute one full `--all-targets --no-run` preparation step once.
+   - test and coverage lanes run after that step and should reuse cached artifacts.
+
+4. **Non-regression for correctness**
+   - no behavior change in test selection, coverage artifact generation, or merge-gate
+     expectations.
+   - warnings and runtime logs must remain parseable by existing CI gates.
+
+5. **Documented evidence**
+   - any optimization change must be reflected in CI workflow contracts and this plan,
+     and validated by CI gate tests.
+
+6. **Release-branch cache persistence**
+   - release build caching should persist on `main` and `release*` branches to keep
+     release compile warmups useful across runs.
+
+## Phases
+
+### Phase 0 (Current)
+
+- Baseline: lane planner remains diff-driven for non-release paths.
+- Release mode continues to run the full matrix and full-feature set.
+- `duckdb` remains enabled only on release-mode lanes.
+
+### Phase 1 (Release cache seed)
+
+- Add a release-only warmup lane that runs:
+  - `cargo test --locked --manifest-path src-tauri/Cargo.toml --all-targets --no-run`
+- Persist/restore artifacts through the existing `Swatinem/rust-cache` policy.
+- Gate remains the same for correctness; only compilation ordering changes.
+
+### Phase 1b (Release cache persistence)
+
+- Save caches only on release execution branches (`main` and `release*`) so seeded
+  artifacts survive for hot paths.
+- Scope the seed job with a hard release job-level gate so non-release jobs do not
+  run release prebuild work.
+- Keep non-release behavior unchanged.
+
+### Phase 2 (Contract lock-in)
+
+- Extend CI contract tests to assert the new prebuild seed is present and wired before
+  sharded tests and coverage jobs.
+- Extend CI contract tests to assert the release-only cache persistence and job-gate
+  expressions are present on Rust cache and seed steps.
+- Keep non-release behavior unchanged.
+- Keep the lane planner trigger path to this doc so changes re-evaluate CI gates.
+
+## Acceptance Criteria
+
+- Release sharded tests and coverage no longer trigger avoidable repeated compiles after
+  the seed step.
+- `docs/ci-optimization-file.html` remains the single source for CI optimization
+  acceptance gates.
+- CI gate tests prove the seed job exists, uses one release-wide `--no-run` compilation,
+  and remains conditional on release-mode execution.
+- No functional regression in test coverage generation or merge-gate assertions.

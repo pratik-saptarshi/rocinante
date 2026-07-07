@@ -305,6 +305,28 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
 }
 
 #[test]
+fn ci_workflow_reuses_a_release_target_seed_before_release_shards_and_coverage() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("release-build-seed"));
+    assert!(workflow.contains(
+        "if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release')"
+    ));
+    assert!(workflow.contains("    needs:"));
+    assert!(workflow.contains("      - quality"));
+    assert!(workflow.contains("      - test-lane-planner"));
+    assert!(workflow.contains("      - release-build-seed"));
+    assert!(workflow.contains("cargo test"));
+    assert!(workflow.contains("--locked"));
+    assert!(workflow.contains("--manifest-path src-tauri/Cargo.toml"));
+    assert!(workflow.contains("--all-targets"));
+    assert!(workflow.contains("--no-run"));
+    assert!(workflow.contains(
+        "save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}"
+    ));
+}
+
+#[test]
 fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
     let workflow = read_repo_file("../.github/workflows/security.yml");
     let audit_config = read_repo_file("../.cargo/audit.toml");
