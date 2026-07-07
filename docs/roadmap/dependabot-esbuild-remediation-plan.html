@@ -11,6 +11,8 @@
   - first patched version: `0.28.1`
 - The remote confirmatory query is blocked in environments without GitHub API access;
   close status remains pending until `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"` returns no matching `esbuild` item.
+- Release pipeline now runs `scripts/check-dependabot-esbuild-alert.sh` against the same alert endpoint
+  on `main` pushes before accepting the slice as complete.
 
 ## Remediation Strategy
 
@@ -45,6 +47,9 @@
 - Command: `node scripts/check-esbuild-lock.mjs`
 - Required result: exit code `0` and output containing:
   - `esbuild lockfile floor check passed: 0.28.1 >= 0.28.1`
+- Alert check command: `./scripts/check-dependabot-esbuild-alert.sh`
+- Required result: exit code `0` with no open-match advisory output for
+  `GHSA-g7r4-m6w7-qqqr`.
 
 ## Acceptance Criteria
 

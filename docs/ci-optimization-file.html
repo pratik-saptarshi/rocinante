@@ -101,6 +101,20 @@ merge-gate semantics unchanged.
 - Restrict `Swatinem/rust-cache` writeback in `rust-build-seed` to release branches only
   (`main`, `release/*`) while keeping restore behavior intact for all lanes.
 
+### Phase 6 (Implemented)
+
+- Introduce analytics feature split in Rust manifest:
+  - mark `duckdb` optional and bind it behind an `analytics` feature
+  - keep release default features including `analytics` for full-feature workflows
+  - require `--no-default-features` in non-release lanes to avoid DuckDB compile work
+- Update CI lane commands for split execution:
+  - release seed: `cargo test --features analytics --locked --manifest-path src-tauri/Cargo.toml --all-targets --no-run`
+  - delta seed: `cargo test --locked --no-default-features --lib --tests --no-run`
+- Gate DuckDB-heavy test modules under `#[cfg(feature = "analytics")]`:
+  `baseline_delta`, `release_baseline_handler`, `release_baseline_storage`, `release_baseline`,
+  `admin_service`, `admin_ingestion_guard`, `analytics_snapshot`, `ingestion_transport`,
+  `storage_duallayer`, `tauri_command`.
+
 ## Acceptance Criteria
 
 - Release gate and coverage jobs no longer trigger avoidable repeated full compiles after seeding.
@@ -117,3 +131,4 @@ merge-gate semantics unchanged.
   - release-only coverage gating
   - lane-specific command shapes for clippy and tests
   - cache key persistence in seed and gate jobs
+  - release vs delta feature selection (`--features analytics` vs `--no-default-features`)

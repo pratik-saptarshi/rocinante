@@ -223,6 +223,7 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
             "cargo clippy",
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
+            "--features analytics",
             "--all-targets",
             "-D warnings",
         ],
@@ -271,6 +272,7 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
             "--no-clean",
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
+            "--features analytics",
             "--lcov",
             "--output-path target/coverage/lcov.info",
         ],
@@ -306,6 +308,27 @@ fn ci_workflow_verifies_esbuild_lock_floor_in_release_ci() {
 }
 
 #[test]
+fn ci_workflow_verifies_esbuild_dependabot_alert_status_in_release_ci() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let dependabot_gate = read_repo_file("../scripts/check-dependabot-esbuild-alert.sh");
+    let plan = read_repo_file("../docs/roadmap/dependabot-esbuild-remediation-plan.html");
+
+    assert!(plan.contains("GHSA-g7r4-m6w7-qqqr"));
+    assert!(plan.contains("Release pipeline now runs `scripts/check-dependabot-esbuild-alert.sh`"));
+    assert_step_block_contains_all(
+        &workflow,
+        "Verify open esbuild Dependabot alert is closed",
+        &[
+            "scripts/check-dependabot-esbuild-alert.sh",
+            "GH_TOKEN: ${{ github.token }}",
+        ],
+    );
+    assert!(dependabot_gate.contains("dependabot/alerts"));
+    assert!(dependabot_gate.contains("GHSA-g7r4-m6w7-qqqr"));
+    assert!(dependabot_gate.contains("ALERTHITS"));
+}
+
+#[test]
 fn ci_workflow_has_a_release_only_build_seed_job() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
@@ -319,6 +342,7 @@ fn ci_workflow_has_a_release_only_build_seed_job() {
             "cargo test",
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
+            "--features analytics",
             "--all-targets",
             "--no-run",
         ],
@@ -330,6 +354,7 @@ fn ci_workflow_has_a_release_only_build_seed_job() {
             "cargo test",
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
+            "--no-default-features",
             "--lib",
             "--tests",
             "--no-run",
@@ -346,9 +371,14 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
         "Lint",
         &[
             "if [[ \"$CI_RUST_BUILD_SCOPE\" == \"release\" ]]; then",
-            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+            "cargo clippy \\",
+            "--locked \\",
+            "--manifest-path src-tauri/Cargo.toml \\",
+            "--features analytics \\",
+            "--all-targets \\",
+            "-- -D warnings",
             "else",
-            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --lib -- -D warnings",
+            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -D warnings",
             "fi",
         ],
     );
@@ -359,7 +389,7 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
             "if [[ \"$CI_RUST_BUILD_SCOPE\" == \"release\" ]]; then",
             "cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests",
             "else",
-            "cargo test --locked --manifest-path src-tauri/Cargo.toml --lib",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib",
             "fi",
         ],
     );
@@ -381,7 +411,8 @@ fn ci_workflow_runs_coverage_only_for_release_lanes() {
 }
 
 #[test]
-fn ci_workflow_releases_share_compilation_cache_and_release_seed_runs_in_parallel_with_quality_gate() {
+fn ci_workflow_releases_share_compilation_cache_and_release_seed_runs_in_parallel_with_quality_gate(
+) {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
     assert!(workflow.contains("test:"));

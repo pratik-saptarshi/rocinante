@@ -1,3 +1,5 @@
+#![cfg(feature = "analytics")]
+
 use repo_analyzer_core::scoring::load_or_init_weights;
 use repo_analyzer_core::storage::DualLayerStore;
 use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, TelemetryPoint};
