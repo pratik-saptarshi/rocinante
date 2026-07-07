@@ -84,12 +84,25 @@ release runs.
 - Keep non-release behavior unchanged and keep `release-build-seed` hard-gated to
   `main` and `release*`.
 
+### Phase 3 (Release cache-write minimization)
+
+- Keep `release-build-seed` as the single upstream cache-writer for release test/coverage
+  reruns so shard jobs reuse a single compile frontier.
+- Run cache restore/write policy so shard-level `test` and `rust-coverage` jobs restore
+  from pre-warmed cache and do not emit a cache write on every shard.
+- Remove unnecessary `release-build-seed` dependency on the lane planner so the seed
+  can begin immediately after the branch gate without waiting for planner completion.
+- Keep behavior unchanged for non-release lanes and preserve correctness dependencies for
+  existing release gating contracts.
+
 ## Acceptance Criteria
 
 - Release sharded tests and coverage no longer trigger avoidable repeated compiles after
   the seed step.
 - Release wall-clock runtime improves on release branches because the seed and quality compile
   phases overlap.
+- Release cache-write overhead drops because shard jobs do not persist duplicate cache writes.
+- `release-build-seed` now starts from branch gate without waiting for planner generation.
 - `docs/ci-optimization-file.html` remains the single source for CI optimization
   acceptance gates.
 - CI gate tests prove the seed job exists, uses one release-wide `--no-run` compilation,

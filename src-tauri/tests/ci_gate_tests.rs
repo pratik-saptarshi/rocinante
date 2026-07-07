@@ -342,22 +342,26 @@ fn ci_workflow_reuses_a_release_target_seed_before_release_shards_and_coverage()
     assert!(seed_block.contains(
         "if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release')"
     ));
-    assert!(seed_block.contains("needs:"));
-    assert!(seed_block.contains("- test-lane-planner"));
+    assert!(!seed_block.contains("needs:"));
     assert!(!seed_block.contains("- quality"));
     assert!(test_block.contains("needs:"));
     assert!(test_block.contains("- quality"));
     assert!(test_block.contains("- test-lane-planner"));
     assert!(test_block.contains("- release-build-seed"));
+    assert!(test_block.contains("shared-key: rocinante-${{ runner.os }}-rust-release-${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}"));
+    assert!(test_block.contains("save-if: false"));
     assert!(coverage_block.contains("needs:"));
     assert!(coverage_block.contains("- quality"));
     assert!(coverage_block.contains("- test-lane-planner"));
     assert!(coverage_block.contains("- release-build-seed"));
+    assert!(coverage_block.contains("shared-key: rocinante-${{ runner.os }}-rust-release-${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}"));
+    assert!(coverage_block.contains("save-if: false"));
     assert!(workflow.contains("cargo test"));
     assert!(workflow.contains("--locked"));
     assert!(workflow.contains("--manifest-path src-tauri/Cargo.toml"));
     assert!(workflow.contains("--all-targets"));
     assert!(workflow.contains("--no-run"));
+    assert!(workflow.contains("shared-key: rocinante-${{ runner.os }}-rust-release-${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}"));
     assert!(workflow.contains(
         "save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}"
     ));

@@ -218,6 +218,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          shared-key: rocinante-${{ runner.os }}-rust-release-${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}
           save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}
       - name: Format check
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
@@ -267,7 +268,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}
+          shared-key: rocinante-${{ runner.os }}-rust-release-${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}
+          save-if: false
       - name: Run test lane
         id: run-tests
         run: |
@@ -416,7 +418,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}
+          shared-key: rocinante-${{ runner.os }}-rust-release-${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}
+          save-if: false
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2
         with:
@@ -445,8 +448,6 @@ jobs:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release')
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs:
-      - test-lane-planner
     steps:
       - uses: actions/checkout@v7
         with:
@@ -466,6 +467,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          shared-key: rocinante-${{ runner.os }}-rust-release-${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}
           save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release') }}
       - name: Seed release targets
         run: |
