@@ -115,6 +115,14 @@ merge-gate semantics unchanged.
   `admin_service`, `admin_ingestion_guard`, `analytics_snapshot`, `ingestion_transport`,
   `storage_duallayer`, `tauri_command`.
 
+### Phase 7 (Implemented)
+
+- Scope non-release CI gate-contract execution to delta feature floor:
+  - on release lanes, run contract tests with default features (analytics)
+  - on delta lanes, run contract tests with --no-default-features
+- Add lane-specific CI contract coverage for the CI gate step command shape so delta lanes cannot
+  accidentally pull DuckDB in non-release workflows.
+
 ## Acceptance Criteria
 
 - Release gate and coverage jobs no longer trigger avoidable repeated full compiles after seeding.
@@ -130,5 +138,6 @@ merge-gate semantics unchanged.
   - release-only vs delta seed behavior
   - release-only coverage gating
   - lane-specific command shapes for clippy and tests
+  - lane-specific command shape for CI gate contract execution
   - cache key persistence in seed and gate jobs
   - release vs delta feature selection (`--features analytics` vs `--no-default-features`)

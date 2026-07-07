@@ -411,6 +411,23 @@ fn ci_workflow_runs_coverage_only_for_release_lanes() {
 }
 
 #[test]
+fn ci_workflow_ci_gate_contract_respects_release_and_delta_scope() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert_step_block_contains_all(
+        &workflow,
+        "CI gate contract",
+        &[
+            "if [[",
+            "== \"release\" ]]; then",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --test ci_gate_tests",
+            "fi",
+        ],
+    );
+}
+
+#[test]
 fn ci_workflow_releases_share_compilation_cache_and_release_seed_runs_in_parallel_with_quality_gate(
 ) {
     let workflow = read_repo_file("../.github/workflows/ci.yml");

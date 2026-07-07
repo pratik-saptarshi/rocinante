@@ -159,7 +159,12 @@ jobs:
           TEST_ELAPSED_SECONDS=$(( $(date +%s) - TEST_START_TS ))
           echo "::notice title=Rust quality test::scope=${CI_RUST_BUILD_SCOPE} duration_sec=${TEST_ELAPSED_SECONDS}"
       - name: CI gate contract
-        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests
+        run: |
+          if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
+            cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests
+          else
+            cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --test ci_gate_tests
+          fi
 
   rust-coverage:
     if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}
