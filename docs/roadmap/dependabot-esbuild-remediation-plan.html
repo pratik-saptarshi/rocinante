@@ -1,0 +1,51 @@
+# Dependabot esbuild Remediation Plan
+
+## Alert Validation
+
+- Remote origin currently reports one open Dependabot alert:
+  - `GHSA-g7r4-m6w7-qqqr`
+  - package: `esbuild`
+  - location: `ui/pnpm-lock.yaml`
+  - resolved version: `0.27.7`
+  - first patched version: `0.28.1`
+- The alert affects the UI toolchain path and is currently tracked as a remote
+  security finding, not a dismissed or closed advisory.
+
+## Remediation Strategy
+
+1. Refresh the UI dependency graph with the smallest version bump that removes
+   the advisory.
+2. If a direct lockfile refresh cannot reach `esbuild >= 0.28.1`, bump the
+   parent toolchain dependency that pins the vulnerable resolver path.
+3. Keep the change constrained to the UI dependency surface unless the lockfile
+   proves the parent toolchain must move first.
+
+## TDD Phases
+
+### Phase 0: Failing Check
+
+- Add a dependency-floor guard that fails if the UI lockfile still resolves
+  `esbuild` below `0.28.1`.
+- Capture the current remote alert as the baseline failure state.
+
+### Phase 1: Minimal Upgrade
+
+- Update the UI dependency graph and lockfile.
+- Re-run UI unit, build, and browser checks after the lockfile refresh.
+
+### Phase 2: Alert Closure
+
+- Re-query the remote Dependabot alert list until the open `esbuild` alert is
+  gone.
+- Confirm the release and dependency-review gates stay green after the update.
+
+## Acceptance Criteria
+
+- `ui/pnpm-lock.yaml` resolves `esbuild` at `0.28.1` or newer.
+- `pnpm -C ui test` passes.
+- `pnpm -C ui build` passes.
+- `pnpm -C ui run test:e2e` passes.
+- `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"` no
+  longer reports the `esbuild` alert.
+- The remediation slice is recorded in the backlog, bead tracker, test plan, and
+  release readiness checklist.

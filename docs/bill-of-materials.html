@@ -53,6 +53,7 @@ then release from the merged tip.
 - `docs/bill-of-materials.html`
 - `docs/publish-readiness-checklist.html`
 - `docs/roadmap/gtk-free-host-migration-plan.html`
+- `docs/roadmap/dependabot-esbuild-remediation-plan.html`
 - `docs/roadmap/security-advisory-exceptions.json`
 - `docs/roadmap/feature-backlog.html`
 - `docs/roadmap/bead-issue-tracker.html`
@@ -90,6 +91,7 @@ Core runtime and support crates in `src-tauri/Cargo.toml`:
 - `tauri-build` for the build step
 - `cargo-llvm-cov` for informational backend Rust coverage reporting
 - `cargo-audit` for RustSec dependency audit checks
+- `esbuild` in the UI lockfile is tracked through the Dependabot remediation slice until the alert is closed
 
 ### UI / frontend packages
 
