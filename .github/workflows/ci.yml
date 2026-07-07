@@ -56,6 +56,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2
           save-if: |
             ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}
       - name: Release build seed
@@ -125,6 +126,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2
           save-if: false
       - name: Format check
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
@@ -184,6 +186,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          prefix-key: rust-cache-release-v2
           save-if: false
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2

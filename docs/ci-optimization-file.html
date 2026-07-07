@@ -136,6 +136,18 @@ merge-gate semantics unchanged.
   - `cargo test --lib --tests`
 - Update release acceptance evidence to require no duplicate post-seed bin-only gate.
 
+### Phase 8 (Implemented)
+
+- Add scope-specific Rust cache names so release and delta lanes do not share cache keys.
+- Keep one release cache key namespace for all release lanes so release seed and follow-on jobs reuse
+  the same compile frontier on reruns.
+- Keep one delta cache key namespace for delta lanes so PR deltas share their non-default-feature
+  frontier without contaminating release cache signatures.
+- Use cache prefixes:
+  - `rust-cache-release-v2`
+  - `rust-cache-delta-v2`
+- Keep release cache persistence enabled only on `main` and `release/*`, with restore behavior on all lanes.
+
 ## Acceptance Criteria
 
 - Release gate and coverage jobs no longer trigger avoidable repeated full compiles after seeding.
@@ -153,5 +165,6 @@ merge-gate semantics unchanged.
   - lane-specific command shapes for clippy and tests
   - lane-specific command shape for CI gate contract execution
   - cache key persistence in seed and gate jobs
+  - scope-specific cache namespace in release and delta lanes
   - release vs delta feature selection (`--features analytics` vs `--no-default-features`)
   - removal of duplicate release bin-only check

@@ -354,6 +354,15 @@ fn ci_workflow_has_a_release_only_build_seed_job() {
 }
 
 #[test]
+fn ci_workflow_uses_scope_specific_release_cache_prefixes() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("workspaces: src-tauri"));
+    assert!(workflow.contains("prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2"));
+    assert!(workflow.contains("prefix-key: rust-cache-release-v2"));
+}
+
+#[test]
 fn ci_workflow_differentiates_release_and_delta_lanes() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
