@@ -39,6 +39,8 @@ roadmap artifacts.
   security, validation, and coverage artifact criteria.
 - `docs/roadmap/gtk-free-host-migration-plan.html`: phase-gated GTK-free host
   migration plan with TDD and parity checkpoints.
+- `docs/roadmap/dependabot-esbuild-remediation-plan.html`: targeted remediation
+  plan for the current remote Dependabot esbuild alert.
 - `docs/roadmap/security-advisory-exceptions.json`: machine-readable registry
   for time-boxed audit ignores and host-floor governance.
 - `scripts/dependency-floor-proof.sh`: dependency-floor proof command for GTK
@@ -78,11 +80,13 @@ roadmap artifacts.
 10. The GTK-free migration plan adds a phase-gated host path for parity,
     core extraction, native shell MVP, fallback containment, and dependency
     removal without reintroducing GTK/GLib.
-11. The React UI invokes the bridge through `ui/src/tauri-admin.ts`, the
-   extracted command bridge shell in `ui/src/admin-bridge-panel.tsx`, and
-   renders results in `ui/src/App.tsx`.
-12. Unit, integration, and e2e tests validate the command facade, the bridge
-   seam, and the browser-visible behavior.
+11. The Dependabot remediation plan tracks the live `esbuild` alert, lockfile
+    upgrade target, and release gate closure for the UI toolchain.
+12. The React UI invokes the bridge through `ui/src/tauri-admin.ts`, the
+    extracted command bridge shell in `ui/src/admin-bridge-panel.tsx`, and
+    renders results in `ui/src/App.tsx`.
+13. Unit, integration, and e2e tests validate the command facade, the bridge
+    seam, and the browser-visible behavior.
 
 ## Design Patterns
 

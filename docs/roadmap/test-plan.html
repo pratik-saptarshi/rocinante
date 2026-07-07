@@ -56,6 +56,7 @@
 - `F-049` -> `T-051`
 - `F-050` -> `T-052`
 - `F-051` -> `T-053`
+- `F-052` -> `T-054`
 - `F-036` -> `T-038`
 - `F-037` -> `T-039`
 - `F-038` -> `T-042`
@@ -185,6 +186,14 @@
   - `.cargo/audit.toml`
   - `docs/roadmap/repository-security-baseline.html`
   - Release gates fail if `gtk` or `glib` reappear in the dependency tree or the exception registry remains open after removal.
+
+- `T-054` Dependabot esbuild remediation tests:
+  - `ui/pnpm-lock.yaml`
+  - `ui/package.json`
+  - `pnpm -C ui test`
+  - `pnpm -C ui build`
+  - Remote alert query `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"`
+  - The UI toolchain must resolve `esbuild` at `0.28.1` or newer and the open Dependabot alert must close before the slice is complete.
 
 - `T-040` Explainability panel tests:
   - `ui/src/App.test.tsx`

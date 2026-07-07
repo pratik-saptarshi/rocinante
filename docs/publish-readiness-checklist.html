@@ -44,6 +44,7 @@ Dependency review is enabled for pull requests | [x] | `.github/workflows/depend
 CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL analysis
 Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
 Dependency audit exceptions are registry-backed, time-boxed, and release-blocking | [ ] | `.cargo/audit.toml`, `docs/roadmap/security-advisory-exceptions.json`, `scripts/dependency-floor-proof.sh`
+Open Dependabot alerts are closed or formally accepted | [ ] | GitHub Dependabot alert list for `pratik-saptarshi/rocinante`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
 Auth/RBAC boundary is covered by tests | [x] | `src-tauri/tests/auth_tests.rs`
 
@@ -97,5 +98,6 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 - RT-RC-001 is currently open, so publish is blocked until the advisory exception is retired or formally accepted.
 - RT-RC-002 is active, so the GTK-free host migration plan must stay synchronized with the bead tracker and test plan before release.
 - Release remains blocked until RT-RC-001 is closed.
+- Open Dependabot alerts should be closed or explicitly accepted before publish.
 - If any CI job fails, fix the branch and rerun the gate before merging.
 - If the branch contains docs-only changes, the same gating still applies.
