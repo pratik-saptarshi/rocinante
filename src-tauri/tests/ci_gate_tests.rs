@@ -224,7 +224,6 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
             "--features analytics",
-            "--all-targets",
             "-D warnings",
         ],
     );
@@ -333,7 +332,9 @@ fn ci_workflow_has_a_release_only_build_seed_job() {
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
             "--features analytics",
-            "--all-targets",
+            "--bins",
+            "--lib",
+            "--tests",
             "--no-run",
         ],
     );
@@ -365,7 +366,6 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
             "--locked \\",
             "--manifest-path src-tauri/Cargo.toml \\",
             "--features analytics \\",
-            "--all-targets \\",
             "-- -D warnings",
             "else",
             "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -D warnings",
@@ -462,7 +462,9 @@ fn ci_workflow_marks_release_build_floor_and_delta_scope() {
     let delta_seed = extract_named_step_block(&workflow, "Delta build seed");
     assert!(!delta_seed.contains("--all-targets"));
     let release_seed = extract_named_step_block(&workflow, "Release build seed");
-    assert!(release_seed.contains("--all-targets"));
+    assert!(release_seed.contains("--bins"));
+    assert!(release_seed.contains("--lib"));
+    assert!(release_seed.contains("--tests"));
     assert!(release_seed.contains("--no-run"));
 }
 

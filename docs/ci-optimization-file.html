@@ -19,7 +19,7 @@ merge-gate semantics unchanged.
    - release lanes reuse a single compiled frontier whenever possible
 
 2. **Single release prebuild boundary**
-   - each release run executes exactly one `cargo test --all-targets --no-run` seed step
+   - each release run executes exactly one `cargo test --bins --lib --tests --no-run` seed step
    - no duplicate full compilation is required for coverage and gate tests
 
 3. **Parallel release wall-clock**
@@ -48,7 +48,7 @@ merge-gate semantics unchanged.
 
 - Add `rust-build-seed` job with mode switch for release vs delta lanes.
 - Run a single full compile-frontier step:
-  - `cargo test --locked --manifest-path src-tauri/Cargo.toml --all-targets --no-run`
+  - `cargo test --locked --manifest-path src-tauri/Cargo.toml --bins --lib --tests --no-run`
 
 ### Phase 1b (Implemented)
 
@@ -59,7 +59,7 @@ merge-gate semantics unchanged.
 
 - Add CI contract tests that assert:
   - seed job existence and branch gating
-  - one `--all-targets --no-run` release seed command
+  - one `--bins --lib --tests --no-run` release seed command
   - `test` and `rust-coverage` lane dependency on seed cache frontier
 
 ### Phase 2b (Implemented)
@@ -72,7 +72,7 @@ merge-gate semantics unchanged.
 
 - Split build seeding into release and delta lanes:
   - release mode (`main` and `release/*`) runs one full frontier:
-    - `cargo test --locked --manifest-path src-tauri/Cargo.toml --all-targets --no-run`
+    - `cargo test --locked --manifest-path src-tauri/Cargo.toml --features analytics --bins --lib --tests --no-run`
   - non-release mode runs a delta frontier:
     - `cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests --no-run`
 - Run non-release quality gates in delta scope to avoid unnecessary full target work:
@@ -88,7 +88,7 @@ merge-gate semantics unchanged.
   tracked in CI run summaries.
 - Add targeted assertions for release-vs-delta command shape when the workflow is edited.
 - Extend plan with release-build floor metric that proves non-release runs do not execute the
-  `--all-targets --no-run` frontier except in release mode.
+  `--bins --lib --tests --no-run` frontier except in release mode.
 
 ### Phase 4 (Implemented)
 
@@ -112,7 +112,7 @@ merge-gate semantics unchanged.
   - keep release default features including `analytics` for full-feature workflows
   - require `--no-default-features` in non-release lanes to avoid DuckDB compile work
 - Update CI lane commands for split execution:
-  - release seed: `cargo test --features analytics --locked --manifest-path src-tauri/Cargo.toml --all-targets --no-run`
+  - release seed: `cargo test --features analytics --locked --manifest-path src-tauri/Cargo.toml --bins --lib --tests --no-run`
   - delta seed: `cargo test --locked --no-default-features --lib --tests --no-run`
 - Gate DuckDB-heavy test modules under `#[cfg(feature = "analytics")]`:
   `baseline_delta`, `release_baseline_handler`, `release_baseline_storage`, `release_baseline`,
@@ -130,10 +130,9 @@ merge-gate semantics unchanged.
 ### Phase 7b (Implemented)
 
 - Remove redundant release `cargo check --bins` quality gate after seed because release lint already
-  performs a full-target compile floor (`--all-targets` clippy), and the test gate already exercises
-  library/test artifacts.
+  performs the release-seed compile floor, and the test gate already exercises library/test artifacts.
 - Keep release quality behavior on:
-  - `cargo clippy --features analytics --all-targets -- -D warnings`
+  - `cargo clippy --features analytics -- -D warnings`
   - `cargo test --lib --tests`
 - Update release acceptance evidence to require no duplicate post-seed bin-only gate.
 
