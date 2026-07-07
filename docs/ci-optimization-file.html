@@ -1,0 +1,79 @@
+# CI Build Optimization Plan
+
+## Scope
+
+This document governs Rust backend CI optimization for:
+
+- lint/check/test gates
+- Rust coverage gates
+- release-path execution on `main` and `release/*` branches
+
+The goal is to reduce redundant compilation in repeated release runs while keeping
+merge-gate semantics unchanged.
+
+## Performance Criteria
+
+1. **Feature-stable cache reuse**
+   - release and non-release lanes must restore caches for the same compiler/toolchain
+     and feature set
+   - release lanes reuse a single compiled frontier whenever possible
+
+2. **Single release prebuild boundary**
+   - each release run executes exactly one `cargo test --all-targets --no-run` seed step
+   - no duplicate full compilation is required for coverage and gate tests
+
+3. **Parallel release wall-clock**
+   - release build seed may run in parallel with quality gates (`cargo clippy`, `cargo check`,
+     unit tests)
+
+4. **Non-regression for correctness**
+   - test selection, coverage artifact generation, and merge-gate expectations remain unchanged
+   - behavior of the existing `CI gate contract` step is preserved
+
+5. **Documented evidence and lock-in**
+   - workflow changes are mirrored in this plan
+   - CI contract tests assert the seed lane and cache behavior
+
+6. **Release-only cache persistence**
+   - `Swatinem/rust-cache` writes release artifacts only on `main` and `release/*`
+   - non-release lanes reuse cache but do not rewrite release-state snapshots
+
+## Phases
+
+### Phase 1 (Implemented)
+
+- Add `release-build-seed` job gated to `main` and `release/*`.
+- Run a single full compile-frontier step:
+  - `cargo test --locked --manifest-path src-tauri/Cargo.toml --all-targets --no-run`
+
+### Phase 1b (Implemented)
+
+- Enable seed job cache persistence only on release branches.
+- Keep non-release lanes using restore-only cache behavior.
+
+### Phase 2 (Implemented)
+
+- Add CI contract tests that assert:
+  - seed job existence and branch gating
+  - one `--all-targets --no-run` release seed command
+  - `test` and `rust-coverage` lane dependency on seed cache frontier
+
+### Phase 2b (Implemented)
+
+- Maintain overlap by running seed and quality gates without hard sequencing.
+- Gate `rust-coverage` on completion of both quality gate and seed lanes.
+
+### Phase 3 (Planned)
+
+- Add explicit per-job duration telemetry in logs so release-branch wall-clock deltas are
+  tracked.
+- Add long-tail coverage for seed cache hit/no-run behavior in additional workflow-shape tests
+  if this workflow changes again.
+
+## Acceptance Criteria
+
+- Release gate and coverage jobs no longer trigger avoidable repeated full compiles after seeding.
+- Release wall-clock improves where compilers overlap with seed and quality work.
+- Cache writes remain release-scoped and duplicate write work is reduced.
+- CI contract tests cover seed lane and dependency graph.
+- No functional regression in lint/check/test/coverage outputs.

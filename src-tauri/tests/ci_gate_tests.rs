@@ -289,6 +289,40 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
 }
 
 #[test]
+fn ci_workflow_has_a_release_only_build_seed_job() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("release-build-seed:"));
+    assert!(workflow.contains(
+        "if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
+    ));
+    assert!(workflow.contains("Release build seed"));
+    assert_step_run_contains_all(
+        &workflow,
+        "Release build seed",
+        &[
+            "cargo test",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--all-targets",
+            "--no-run",
+        ],
+    );
+}
+
+#[test]
+fn ci_workflow_releases_share_compilation_cache_and_reuse_it_in_gates() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("needs: [release-build-seed]"));
+    assert!(workflow.contains("needs: [test, release-build-seed]"));
+    assert!(workflow.contains("save-if: false"));
+    assert!(workflow.contains(
+        "save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
+    ));
+}
+
+#[test]
 fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
     let workflow = read_repo_file("../.github/workflows/security.yml");
     let audit_config = read_repo_file("../.cargo/audit.toml");
