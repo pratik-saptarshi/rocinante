@@ -278,7 +278,7 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
         &workflow,
         "Upload Rust coverage report",
         &[
-            "actions/upload-artifact@v5",
+            "actions/upload-artifact@v7",
             "name: rust-coverage-lcov",
             "target/coverage/lcov.info",
         ],
