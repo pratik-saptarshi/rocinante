@@ -92,6 +92,15 @@ roadmap artifacts.
 13. Unit, integration, and e2e tests validate the command facade, the bridge
     seam, and the browser-visible behavior.
 
+## Governance and Execution Snapshot
+
+- Active bead slice: `BI-047` (in progress, host decision and parity matrix).
+- Active security slice: `BI-052` (in progress, Dependabot/esbuild remediation).
+- Current local signal: UI `esbuild` lock floor checks pass at `0.28.1`, while the
+  remote `GHSA-g7r4-m6w7-qqqr` alert is still reported open in this environment.
+- Publish status: blocked by open security advisory exceptions and unresolved host-migration
+  parity gates.
+
 ## Design Patterns
 
 - Command facade for Tauri invocation.

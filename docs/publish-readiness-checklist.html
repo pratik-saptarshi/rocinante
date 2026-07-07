@@ -48,6 +48,10 @@ CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL 
 Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
 Dependency audit exceptions are registry-backed, time-boxed, and release-blocking | [x] | `.cargo/audit.toml`, `docs/roadmap/security-advisory-exceptions.json`, `scripts/dependency-floor-proof.sh`
 Open Dependabot alerts are closed or formally accepted | [ ] | `ui/pnpm-lock.yaml` resolves `esbuild` at `0.28.1`; remote verification requires `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"` once network is available.
+Latest local evidence (2026-07-07):
+
+- `node scripts/check-esbuild-lock.mjs` reports pass (`esbuild lockfile floor check passed: 0.28.1 >= 0.28.1`).
+- `./scripts/check-dependabot-esbuild-alert.sh` currently reports open alert `GHSA-g7r4-m6w7-qqqr` in this environment.
 Open Dependabot alerts are verified in CI on release lane | [ ] | `scripts/check-dependabot-esbuild-alert.sh` executes on `main` pushes in `.github/workflows/ci.yml`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
 Auth/RBAC boundary is covered by tests | [x] | `src-tauri/tests/auth_tests.rs`
