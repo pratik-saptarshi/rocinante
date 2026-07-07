@@ -321,6 +321,83 @@ fn ci_workflow_has_a_release_only_build_seed_job() {
 }
 
 #[test]
+fn ci_workflow_enforces_lane_specific_frontier_scope() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let release_seed = extract_named_step_run_body(&workflow, "Release build seed");
+    let delta_seed = extract_named_step_run_body(&workflow, "Delta build seed");
+
+    assert!(release_seed.contains("--all-targets"));
+    assert!(release_seed.contains("--no-run"));
+    assert!(!release_seed.contains("--lib"));
+    assert!(delta_seed.contains("--lib"));
+    assert!(delta_seed.contains("--tests"));
+    assert!(delta_seed.contains("--no-run"));
+    assert!(!delta_seed.contains("--all-targets"));
+}
+
+#[test]
+fn ci_workflow_records_build_seed_telemetry() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert_step_run_contains_all(
+        &workflow,
+        "Seed job timing baseline",
+        &["GITHUB_ENV"],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Release build seed",
+        &[
+            "command_duration_seconds",
+            "job_duration_seconds",
+            "GITHUB_STEP_SUMMARY",
+            "::notice title=Rust Build Seed",
+        ],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Delta build seed",
+        &[
+            "command_duration_seconds",
+            "job_duration_seconds",
+            "GITHUB_STEP_SUMMARY",
+            "::notice title=Rust Build Seed",
+        ],
+    );
+}
+
+#[test]
+fn ci_workflow_records_test_and_coverage_duration_in_step_summaries() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert_step_run_contains_all(
+        &workflow,
+        "Format check",
+        &["GITHUB_STEP_SUMMARY", "format_check_duration_seconds", "## Rust Test Job Telemetry"],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Lint",
+        &["GITHUB_STEP_SUMMARY", "lint_duration_seconds", "CI_RUST_BUILD_SCOPE"],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Test",
+        &["GITHUB_STEP_SUMMARY", "test_duration_seconds", "test_job_total_duration_seconds"],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Rust coverage",
+        &["GITHUB_STEP_SUMMARY", "duration_seconds", "job_total_duration_seconds"],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Report test job totals",
+        &["test_job_total_wall_clock_seconds"],
+    );
+}
+
+#[test]
 fn ci_workflow_differentiates_release_and_delta_lanes() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 

@@ -77,19 +77,23 @@ merge-gate semantics unchanged.
 - Run coverage only on release lanes:
   - coverage remains available for release verification and avoids forcing full compile on each PR lane.
 
-### Phase 3b (Planned)
+### Phase 3b (Implemented)
 
 - Add explicit per-job duration telemetry in logs so release- and delta-mode wall-clock deltas are
   tracked in CI run summaries.
 - Add targeted assertions for release-vs-delta command shape when the workflow is edited.
-- Extend plan with release-build floor metric that proves non-release runs do not execute the
+- Add release-build floor metric that proves non-release runs do not execute the
   `--all-targets --no-run` frontier except in release mode.
+- Add job summary telemetry for the test and coverage lanes to capture wall-clock deltas and
+  command-level frontier timings.
 
 ## Acceptance Criteria
 
 - Release gate and coverage jobs no longer trigger avoidable repeated full compiles after seeding.
 - Non-release lanes use release-mode delta seeds and delta-quality scopes and do not invoke
   release-only frontier compilation.
+- Release and delta telemetry is emitted into GitHub step summaries for each CI run.
+- Release builds do not execute delta-only frontier commands.
 - Release wall-clock improves where compilers overlap with seed and quality work.
 - Cache writes remain release-sensitive and can still be reused across non-release runs for delta
   builds.

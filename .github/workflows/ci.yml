@@ -25,6 +25,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+      - name: Seed job timing baseline
+        run: |
+          echo "SEED_START_TS=$(date +%s)" >> "$GITHUB_ENV"
       - name: Install Linux system dependencies (Tauri)
         run: |
           sudo apt-get update
@@ -54,20 +57,42 @@ jobs:
       - name: Release build seed
         if: ${{ steps.build-scope.outputs.scope == 'release' }}
         run: |
+          command_start_ts=$(date +%s)
           cargo test \
             --locked \
             --manifest-path src-tauri/Cargo.toml \
             --all-targets \
             --no-run
+          command_seconds=$(( $(date +%s) - command_start_ts ))
+          seed_total_seconds=$(( $(date +%s) - SEED_START_TS ))
+          {
+            echo "## Rust Build Seed Telemetry"
+            echo "- mode: release"
+            echo "- command: cargo test --all-targets --no-run"
+            echo "- command_duration_seconds: ${command_seconds}"
+            echo "- job_duration_seconds: ${seed_total_seconds}"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Rust Build Seed::release frontier=${command_seconds}s job=${seed_total_seconds}s"
       - name: Delta build seed
         if: ${{ steps.build-scope.outputs.scope == 'delta' }}
         run: |
+          command_start_ts=$(date +%s)
           cargo test \
             --locked \
             --manifest-path src-tauri/Cargo.toml \
             --lib \
             --tests \
             --no-run
+          command_seconds=$(( $(date +%s) - command_start_ts ))
+          seed_total_seconds=$(( $(date +%s) - SEED_START_TS ))
+          {
+            echo "## Rust Build Seed Telemetry"
+            echo "- mode: delta"
+            echo "- command: cargo test --lib --tests --no-run"
+            echo "- command_duration_seconds: ${command_seconds}"
+            echo "- job_duration_seconds: ${seed_total_seconds}"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Rust Build Seed::delta frontier=${command_seconds}s job=${seed_total_seconds}s"
 
   test:
     needs: [rust-build-seed]
@@ -80,6 +105,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+      - name: Test job timing baseline
+        run: |
+          echo "TEST_START_TS=$(date +%s)" >> "$GITHUB_ENV"
       - name: Install Linux system dependencies (Tauri)
         run: |
           sudo apt-get update
@@ -102,26 +130,49 @@ jobs:
           workspaces: src-tauri
           save-if: false
       - name: Format check
-        run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+        run: |
+          step_start_ts=$(date +%s)
+          cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+          step_duration_seconds=$(( $(date +%s) - step_start_ts ))
+          {
+            echo "## Rust Test Job Telemetry"
+            echo "- scope: ${CI_RUST_BUILD_SCOPE}"
+            echo "- format_check_duration_seconds: ${step_duration_seconds}"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Lint
         run: |
+          step_start_ts=$(date +%s)
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
             cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
           else
             cargo clippy --locked --manifest-path src-tauri/Cargo.toml --lib -- -D warnings
           fi
+          step_duration_seconds=$(( $(date +%s) - step_start_ts ))
+          echo "- lint_duration_seconds: ${step_duration_seconds}" >> "$GITHUB_STEP_SUMMARY"
       - name: Binary check
         if: ${{ env.CI_RUST_BUILD_SCOPE == 'release' }}
         run: cargo check --locked --manifest-path src-tauri/Cargo.toml --bins
       - name: Test
         run: |
+          step_start_ts=$(date +%s)
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
             cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests
           else
             cargo test --locked --manifest-path src-tauri/Cargo.toml --lib
           fi
+          step_duration_seconds=$(( $(date +%s) - step_start_ts ))
+          {
+            echo "- test_duration_seconds: ${step_duration_seconds}"
+            echo "- test_job_total_duration_seconds: $(( $(date +%s) - TEST_START_TS ))"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: CI gate contract
         run: cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests
+      - name: Report test job totals
+        if: always()
+        run: |
+          {
+            echo "- test_job_total_wall_clock_seconds: $(( $(date +%s) - TEST_START_TS ))"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   rust-coverage:
     if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}
@@ -133,6 +184,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+      - name: Coverage job timing baseline
+        run: |
+          echo "COVERAGE_START_TS=$(date +%s)" >> "$GITHUB_ENV"
       - name: Install Linux system dependencies (Tauri)
         run: |
           sudo apt-get update
@@ -154,12 +208,20 @@ jobs:
           tool: cargo-llvm-cov
       - name: Rust coverage
         run: |
+          step_start_ts=$(date +%s)
           mkdir -p target/coverage
           cargo llvm-cov \
             --locked \
             --manifest-path src-tauri/Cargo.toml \
             --lcov \
             --output-path target/coverage/lcov.info
+          step_duration_seconds=$(( $(date +%s) - step_start_ts ))
+          {
+            echo "## Rust Coverage Telemetry"
+            echo "- command: cargo llvm-cov --lcov --output-path target/coverage/lcov.info"
+            echo "- duration_seconds: ${step_duration_seconds}"
+            echo "- job_total_duration_seconds: $(( $(date +%s) - COVERAGE_START_TS ))"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Rust coverage report
         uses: actions/upload-artifact@v4
         with:
