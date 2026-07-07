@@ -292,11 +292,9 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
 fn ci_workflow_has_a_release_only_build_seed_job() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
-    assert!(workflow.contains("release-build-seed:"));
-    assert!(workflow.contains(
-        "if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
-    ));
-    assert!(workflow.contains("Release build seed"));
+    assert!(workflow.contains("rust-build-seed:"));
+    assert!(workflow.contains("build-scope"));
+    assert!(workflow.contains("outputs:"));
     assert_step_run_contains_all(
         &workflow,
         "Release build seed",
@@ -308,17 +306,68 @@ fn ci_workflow_has_a_release_only_build_seed_job() {
             "--no-run",
         ],
     );
+    assert_step_run_contains_all(
+        &workflow,
+        "Delta build seed",
+        &[
+            "cargo test",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--lib",
+            "--tests",
+            "--no-run",
+        ],
+    );
+}
+
+#[test]
+fn ci_workflow_differentiates_release_and_delta_lanes() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert_step_block_contains_all(
+        &workflow,
+        "Lint",
+        &[
+            "if [[ \"$CI_RUST_BUILD_SCOPE\" == \"release\" ]]; then",
+            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+            "else",
+            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --lib -- -D warnings",
+            "fi",
+        ],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Test",
+        &[
+            "if [[ \"$CI_RUST_BUILD_SCOPE\" == \"release\" ]]; then",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests",
+            "else",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --lib",
+            "fi",
+        ],
+    );
+    assert!(workflow.contains("if: ${{ env.CI_RUST_BUILD_SCOPE == 'release' }}"));
+}
+
+#[test]
+fn ci_workflow_runs_coverage_only_for_release_lanes() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("rust-coverage:"));
+    assert!(workflow.contains(
+        "if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
+    ));
 }
 
 #[test]
 fn ci_workflow_releases_share_compilation_cache_and_reuse_it_in_gates() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
-    assert!(workflow.contains("needs: [release-build-seed]"));
-    assert!(workflow.contains("needs: [test, release-build-seed]"));
+    assert!(workflow.contains("needs: [rust-build-seed]"));
+    assert!(workflow.contains("needs: [test, rust-build-seed]"));
     assert!(workflow.contains("save-if: false"));
     assert!(workflow.contains(
-        "save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
+        "save-if: |\n            ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'pull_request' }}"
     ));
 }
 

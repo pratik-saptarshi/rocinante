@@ -42,7 +42,7 @@ merge-gate semantics unchanged.
 
 ### Phase 1 (Implemented)
 
-- Add `release-build-seed` job gated to `main` and `release/*`.
+- Add `rust-build-seed` job with mode switch for release vs delta lanes.
 - Run a single full compile-frontier step:
   - `cargo test --locked --manifest-path src-tauri/Cargo.toml --all-targets --no-run`
 
@@ -63,17 +63,39 @@ merge-gate semantics unchanged.
 - Maintain overlap by running seed and quality gates without hard sequencing.
 - Gate `rust-coverage` on completion of both quality gate and seed lanes.
 
-### Phase 3 (Planned)
+### Phase 3 (Implemented)
 
-- Add explicit per-job duration telemetry in logs so release-branch wall-clock deltas are
-  tracked.
-- Add long-tail coverage for seed cache hit/no-run behavior in additional workflow-shape tests
-  if this workflow changes again.
+- Split build seeding into release and delta lanes:
+  - release mode (`main` and `release/*`) runs one full frontier:
+    - `cargo test --locked --manifest-path src-tauri/Cargo.toml --all-targets --no-run`
+  - non-release mode runs a delta frontier:
+    - `cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests --no-run`
+- Run non-release quality gates in delta scope to avoid unnecessary full target work:
+  - `cargo clippy --lib -- -D warnings`
+  - `cargo test --lib`
+  - skip `cargo check --bins` on non-release lanes
+- Run coverage only on release lanes:
+  - coverage remains available for release verification and avoids forcing full compile on each PR lane.
+
+### Phase 3b (Planned)
+
+- Add explicit per-job duration telemetry in logs so release- and delta-mode wall-clock deltas are
+  tracked in CI run summaries.
+- Add targeted assertions for release-vs-delta command shape when the workflow is edited.
+- Extend plan with release-build floor metric that proves non-release runs do not execute the
+  `--all-targets --no-run` frontier except in release mode.
 
 ## Acceptance Criteria
 
 - Release gate and coverage jobs no longer trigger avoidable repeated full compiles after seeding.
+- Non-release lanes use release-mode delta seeds and delta-quality scopes and do not invoke
+  release-only frontier compilation.
 - Release wall-clock improves where compilers overlap with seed and quality work.
-- Cache writes remain release-scoped and duplicate write work is reduced.
-- CI contract tests cover seed lane and dependency graph.
-- No functional regression in lint/check/test/coverage outputs.
+- Cache writes remain release-sensitive and can still be reused across non-release runs for delta
+  builds.
+- Coverage remains available on release lanes without adding non-release full rebuild burden.
+- CI contract tests cover:
+  - release-only vs delta seed behavior
+  - release-only coverage gating
+  - lane-specific command shapes for clippy and tests
+  - cache key persistence in seed and gate jobs

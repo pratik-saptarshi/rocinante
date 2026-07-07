@@ -39,6 +39,8 @@ roadmap artifacts.
   security, validation, and coverage artifact criteria.
 - `docs/roadmap/gtk-free-host-migration-plan.html`: phase-gated GTK-free host
   migration plan with TDD and parity checkpoints.
+- `docs/roadmap/desktop-parity-matrix.html`: phase-0 parity matrix and host
+  decision record with must-have/should-have/can-defer classification.
 - `docs/roadmap/dependabot-esbuild-remediation-plan.html`: targeted remediation
   plan for the current remote Dependabot esbuild alert.
 - `docs/roadmap/security-advisory-exceptions.json`: machine-readable registry
