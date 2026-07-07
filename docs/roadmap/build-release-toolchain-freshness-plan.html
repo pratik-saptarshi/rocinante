@@ -2,10 +2,12 @@
 
 ## Warning Validation
 
-- `rust-coverage` previously emitted a Node.js 20 deprecation warning because
-  `actions/upload-artifact@v4` was being forced to run on Node.js 24.
-- This was remediated by upgrading coverage upload to `actions/upload-artifact@v5`;
-  the plan remains active so new runtime warnings are caught early.
+- `rust-coverage` previously emitted a Node.js 20 deprecation warning while
+  forced to use `actions/upload-artifact@v4`.
+- The warning is now remediated after moving coverage artifacts to supported runtime
+  action pins.
+- The open risk now tracks the freshness policy itself: the plan remains active
+  until stale Rust pins and stale action majors are mechanically blocked.
 - The warning is release-gate relevant because any new deprecation signal means a
   release-critical workflow action has drifted onto an unsupported runtime
   boundary.
@@ -17,8 +19,8 @@
 
 1. Confirm the minimal supported upgrade path for the release-critical
    workflow actions and Rust toolchain.
-2. Bump the pinned Rust toolchain to the latest stable release that still
-   passes the backend suite.
+2. Keep the Rust pin at the latest stable release approved by the backend suite
+   and transition as soon as staleness is detected.
 3. Keep release artifact upload and similar release-critical workflow actions
    pinned to currently supported runtimes.
 4. Add a release-time freshness gate that fails if:

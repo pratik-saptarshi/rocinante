@@ -29,6 +29,33 @@ fn read_repo_file(relative_path: &str) -> String {
     fs::read_to_string(path).expect("read repo file")
 }
 
+fn extract_job_block(workflow: &str, job_id: &str) -> String {
+    let lines = workflow.lines().collect::<Vec<_>>();
+    let start = lines
+        .iter()
+        .position(|line| line.trim() == format!("{job_id}:"))
+        .unwrap_or_else(|| panic!("workflow missing job `{job_id}`"));
+    let job_indent = lines[start].chars().take_while(|ch| *ch == ' ').count();
+
+    let mut body = Vec::new();
+    let mut index = start;
+    while index < lines.len() {
+        let line = lines[index];
+        let trim = line.trim();
+        if index > start && !trim.is_empty() {
+            let indent = line.chars().take_while(|ch| *ch == ' ').count();
+            if indent <= job_indent {
+                break;
+            }
+        }
+
+        body.push(line.to_string());
+        index += 1;
+    }
+
+    body.join("\n")
+}
+
 fn normalize_workflow_shell_text(text: &str) -> String {
     text.replace('\\', " ")
         .split_whitespace()
@@ -307,15 +334,25 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
 #[test]
 fn ci_workflow_reuses_a_release_target_seed_before_release_shards_and_coverage() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let seed_block = extract_job_block(&workflow, "release-build-seed");
+    let test_block = extract_job_block(&workflow, "test");
+    let coverage_block = extract_job_block(&workflow, "rust-coverage");
 
     assert!(workflow.contains("release-build-seed"));
-    assert!(workflow.contains(
+    assert!(seed_block.contains(
         "if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release')"
     ));
-    assert!(workflow.contains("    needs:"));
-    assert!(workflow.contains("      - quality"));
-    assert!(workflow.contains("      - test-lane-planner"));
-    assert!(workflow.contains("      - release-build-seed"));
+    assert!(seed_block.contains("needs:"));
+    assert!(seed_block.contains("- test-lane-planner"));
+    assert!(!seed_block.contains("- quality"));
+    assert!(test_block.contains("needs:"));
+    assert!(test_block.contains("- quality"));
+    assert!(test_block.contains("- test-lane-planner"));
+    assert!(test_block.contains("- release-build-seed"));
+    assert!(coverage_block.contains("needs:"));
+    assert!(coverage_block.contains("- quality"));
+    assert!(coverage_block.contains("- test-lane-planner"));
+    assert!(coverage_block.contains("- release-build-seed"));
     assert!(workflow.contains("cargo test"));
     assert!(workflow.contains("--locked"));
     assert!(workflow.contains("--manifest-path src-tauri/Cargo.toml"));
@@ -397,4 +434,35 @@ jobs:
             "--test ci_gate_tests",
         ],
     );
+}
+
+#[test]
+fn ci_build_freshness_plan_is_reflecting_current_state_and_pins() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let plan = read_repo_file("../docs/roadmap/build-release-toolchain-freshness-plan.html");
+
+    assert!(workflow.contains("actions/upload-artifact@v7"));
+    assert!(!workflow.contains("actions/upload-artifact@v4"));
+    assert!(plan.contains("open risk now tracks the freshness policy"));
+    assert!(plan.contains("release-time freshness gate"));
+}
+
+#[test]
+fn esbuild_remediation_plan_and_lockfile_evidence_is_current() {
+    let plan = read_repo_file("../docs/roadmap/dependabot-esbuild-remediation-plan.html");
+    let lockfile = read_repo_file("../ui/pnpm-lock.yaml");
+    let roadmap = read_repo_file("../docs/feature-list.html");
+    let tracker = read_repo_file("../docs/roadmap/bead-issue-tracker.html");
+
+    assert!(plan.contains("`GHSA-g7r4-m6w7-qqqr`"));
+    assert!(plan.contains("now closed"));
+    assert!(plan.contains("`GHSA-wrw7-89jp-8q8g`"));
+    assert!(lockfile.contains("esbuild: 0.28.1"));
+    assert!(roadmap.contains(
+        "| P2 | EP-05 Release/security governance | F-052 Dependabot esbuild remediation"
+    ));
+    assert!(roadmap.contains("| Green | BI-052 | Completed |"));
+    assert!(tracker.contains("| BI-052 | Stage 4 | EP-05 Release/security governance"));
+    assert!(tracker.contains("Red->Green complete"));
+    assert!(tracker.contains("now-closed"));
 }

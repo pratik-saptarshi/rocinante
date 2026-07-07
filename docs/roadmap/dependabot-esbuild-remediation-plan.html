@@ -2,14 +2,16 @@
 
 ## Alert Validation
 
-- Remote origin currently reports one open Dependabot alert:
+- The prior `esbuild` alert is now closed:
   - `GHSA-g7r4-m6w7-qqqr`
   - package: `esbuild`
   - location: `ui/pnpm-lock.yaml`
-  - resolved version: `0.27.7`
-  - first patched version: `0.28.1`
-- The alert affects the UI toolchain path and is currently tracked as a remote
-  security finding, not a dismissed or closed advisory.
+  - fixed at: `0.28.1` (first patched version).
+- `ui/pnpm-lock.yaml` now resolves `esbuild@0.28.1` or newer.
+- A current open alert remains for GTK-floor governance:
+  - `GHSA-wrw7-89jp-8q8g`
+  - package: `glib`
+  - location: `src-tauri/Cargo.lock`
 
 ## Remediation Strategy
 

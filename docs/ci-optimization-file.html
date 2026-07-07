@@ -75,10 +75,21 @@ release runs.
 - Keep non-release behavior unchanged.
 - Keep the lane planner trigger path to this doc so changes re-evaluate CI gates.
 
+### Phase 2b (Release-wall-clock overlap)
+
+- Run the release seed in parallel with `quality` on release branches so quality lint/check
+  and the cache seed do not serialize full compile startup.
+- Preserve the correctness gates: test and coverage jobs still wait for both quality and the
+  seeded release artifact job.
+- Keep non-release behavior unchanged and keep `release-build-seed` hard-gated to
+  `main` and `release*`.
+
 ## Acceptance Criteria
 
 - Release sharded tests and coverage no longer trigger avoidable repeated compiles after
   the seed step.
+- Release wall-clock runtime improves on release branches because the seed and quality compile
+  phases overlap.
 - `docs/ci-optimization-file.html` remains the single source for CI optimization
   acceptance gates.
 - CI gate tests prove the seed job exists, uses one release-wide `--no-run` compilation,
