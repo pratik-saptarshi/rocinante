@@ -382,6 +382,11 @@ fn ci_workflow_records_test_and_coverage_duration_in_step_summaries() {
     );
     assert_step_run_contains_all(
         &workflow,
+        "Binary check",
+        &["GITHUB_STEP_SUMMARY", "binary_check_duration_seconds"],
+    );
+    assert_step_run_contains_all(
+        &workflow,
         "Test",
         &["GITHUB_STEP_SUMMARY", "test_duration_seconds", "test_job_total_duration_seconds"],
     );

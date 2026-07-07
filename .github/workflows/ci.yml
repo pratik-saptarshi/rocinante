@@ -151,7 +151,11 @@ jobs:
           echo "- lint_duration_seconds: ${step_duration_seconds}" >> "$GITHUB_STEP_SUMMARY"
       - name: Binary check
         if: ${{ env.CI_RUST_BUILD_SCOPE == 'release' }}
-        run: cargo check --locked --manifest-path src-tauri/Cargo.toml --bins
+        run: |
+          step_start_ts=$(date +%s)
+          cargo check --locked --manifest-path src-tauri/Cargo.toml --bins
+          step_duration_seconds=$(( $(date +%s) - step_start_ts ))
+          echo "- binary_check_duration_seconds: ${step_duration_seconds}" >> "$GITHUB_STEP_SUMMARY"
       - name: Test
         run: |
           step_start_ts=$(date +%s)
