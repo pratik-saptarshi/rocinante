@@ -141,13 +141,6 @@ jobs:
           fi
           LINT_ELAPSED_SECONDS=$(( $(date +%s) - LINT_START_TS ))
           echo "::notice title=Rust quality lint::scope=${CI_RUST_BUILD_SCOPE} duration_sec=${LINT_ELAPSED_SECONDS}"
-      - name: Binary check
-        if: ${{ env.CI_RUST_BUILD_SCOPE == 'release' }}
-        run: |
-          CHECK_START_TS=$(date +%s)
-          cargo check --locked --manifest-path src-tauri/Cargo.toml --bins
-          CHECK_ELAPSED_SECONDS=$(( $(date +%s) - CHECK_START_TS ))
-          echo "::notice title=Rust quality binary-check::scope=${CI_RUST_BUILD_SCOPE} duration_sec=${CHECK_ELAPSED_SECONDS}"
       - name: Test
         run: |
           TEST_START_TS=$(date +%s)

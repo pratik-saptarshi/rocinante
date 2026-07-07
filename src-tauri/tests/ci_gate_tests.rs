@@ -230,16 +230,6 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
     );
     assert_step_run_contains_all(
         &workflow,
-        "Binary check",
-        &[
-            "cargo check",
-            "--locked",
-            "--manifest-path src-tauri/Cargo.toml",
-            "--bins",
-        ],
-    );
-    assert_step_run_contains_all(
-        &workflow,
         "Test",
         &[
             "cargo test",
@@ -449,8 +439,15 @@ fn ci_workflow_includes_release_and_quality_timing_telemetry() {
     assert!(workflow.contains("::notice title=Release build seed::scope=delta"));
     assert!(workflow.contains("::notice title=Rust quality lint::"));
     assert!(workflow.contains("::notice title=Rust quality test::"));
-    assert!(workflow.contains("::notice title=Rust quality binary-check::"));
     assert!(workflow.contains("::notice title=Rust coverage::"));
+}
+
+#[test]
+fn ci_workflow_does_not_redundantly_run_release_bin_only_check() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(!workflow.contains("- name: Binary check"));
+    assert!(!workflow.contains("cargo check --locked --manifest-path src-tauri/Cargo.toml --bins"));
 }
 
 #[test]

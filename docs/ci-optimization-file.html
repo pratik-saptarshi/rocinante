@@ -38,6 +38,10 @@ merge-gate semantics unchanged.
    - `Swatinem/rust-cache` writes release artifacts only on `main` and `release/*`
    - non-release lanes reuse cache but do not rewrite release-state snapshots
 
+7. **Release-floor de-duplication**
+   - release jobs should consume the seeded frontier without extra full-target validation gates.
+   - redundant post-seed compile steps are removed unless they change observable quality signal.
+
 ## Phases
 
 ### Phase 1 (Implemented)
@@ -123,6 +127,16 @@ merge-gate semantics unchanged.
 - Add lane-specific CI contract coverage for the CI gate step command shape so delta lanes cannot
   accidentally pull DuckDB in non-release workflows.
 
+### Phase 7b (Implemented)
+
+- Remove redundant release `cargo check --bins` quality gate after seed because release lint already
+  performs a full-target compile floor (`--all-targets` clippy), and the test gate already exercises
+  library/test artifacts.
+- Keep release quality behavior on:
+  - `cargo clippy --features analytics --all-targets -- -D warnings`
+  - `cargo test --lib --tests`
+- Update release acceptance evidence to require no duplicate post-seed bin-only gate.
+
 ## Acceptance Criteria
 
 - Release gate and coverage jobs no longer trigger avoidable repeated full compiles after seeding.
@@ -141,3 +155,4 @@ merge-gate semantics unchanged.
   - lane-specific command shape for CI gate contract execution
   - cache key persistence in seed and gate jobs
   - release vs delta feature selection (`--features analytics` vs `--no-default-features`)
+  - removal of duplicate release bin-only check
