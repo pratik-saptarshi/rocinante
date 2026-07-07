@@ -87,6 +87,18 @@ merge-gate semantics unchanged.
 - Add job summary telemetry for the test and coverage lanes to capture wall-clock deltas and
   command-level frontier timings.
 
+### Phase 4 (Implemented)
+
+- Reduce release critical-path latency by decoupling coverage from quality-gate completion:
+  - `rust-coverage` now depends only on `rust-build-seed`, not on the `test` job.
+  - coverage can start as soon as the seeded frontier is restored and available.
+  - `test` and coverage now overlap in wall-clock, reducing release branch gate tail latency.
+- Preserve merge semantics:
+  - release-only gating for coverage remains unchanged.
+  - cache scope remains release-sensitive and non-release behavior unchanged.
+- Add CI contract coverage for the new dependency shape, ensuring `needs` no longer
+  creates unnecessary sequencing.
+
 ## Acceptance Criteria
 
 - Release gate and coverage jobs no longer trigger avoidable repeated full compiles after seeding.
@@ -98,6 +110,7 @@ merge-gate semantics unchanged.
 - Cache writes remain release-sensitive and can still be reused across non-release runs for delta
   builds.
 - Coverage remains available on release lanes without adding non-release full rebuild burden.
+- Release lane wall-clock is improved by removing unnecessary `test -> rust-coverage` sequencing.
 - CI contract tests cover:
   - release-only vs delta seed behavior
   - release-only coverage gating

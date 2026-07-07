@@ -339,11 +339,7 @@ fn ci_workflow_enforces_lane_specific_frontier_scope() {
 fn ci_workflow_records_build_seed_telemetry() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
-    assert_step_run_contains_all(
-        &workflow,
-        "Seed job timing baseline",
-        &["GITHUB_ENV"],
-    );
+    assert_step_run_contains_all(&workflow, "Seed job timing baseline", &["GITHUB_ENV"]);
     assert_step_run_contains_all(
         &workflow,
         "Release build seed",
@@ -373,12 +369,20 @@ fn ci_workflow_records_test_and_coverage_duration_in_step_summaries() {
     assert_step_run_contains_all(
         &workflow,
         "Format check",
-        &["GITHUB_STEP_SUMMARY", "format_check_duration_seconds", "## Rust Test Job Telemetry"],
+        &[
+            "GITHUB_STEP_SUMMARY",
+            "format_check_duration_seconds",
+            "## Rust Test Job Telemetry",
+        ],
     );
     assert_step_run_contains_all(
         &workflow,
         "Lint",
-        &["GITHUB_STEP_SUMMARY", "lint_duration_seconds", "CI_RUST_BUILD_SCOPE"],
+        &[
+            "GITHUB_STEP_SUMMARY",
+            "lint_duration_seconds",
+            "CI_RUST_BUILD_SCOPE",
+        ],
     );
     assert_step_run_contains_all(
         &workflow,
@@ -388,12 +392,20 @@ fn ci_workflow_records_test_and_coverage_duration_in_step_summaries() {
     assert_step_run_contains_all(
         &workflow,
         "Test",
-        &["GITHUB_STEP_SUMMARY", "test_duration_seconds", "test_job_total_duration_seconds"],
+        &[
+            "GITHUB_STEP_SUMMARY",
+            "test_duration_seconds",
+            "test_job_total_duration_seconds",
+        ],
     );
     assert_step_run_contains_all(
         &workflow,
         "Rust coverage",
-        &["GITHUB_STEP_SUMMARY", "duration_seconds", "job_total_duration_seconds"],
+        &[
+            "GITHUB_STEP_SUMMARY",
+            "duration_seconds",
+            "job_total_duration_seconds",
+        ],
     );
     assert_step_run_contains_all(
         &workflow,
@@ -442,11 +454,11 @@ fn ci_workflow_runs_coverage_only_for_release_lanes() {
 }
 
 #[test]
-fn ci_workflow_releases_share_compilation_cache_and_reuse_it_in_gates() {
+fn ci_workflow_releases_share_compilation_cache_and_run_coverage_from_seed_frontier() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
     assert!(workflow.contains("needs: [rust-build-seed]"));
-    assert!(workflow.contains("needs: [test, rust-build-seed]"));
+    assert!(!workflow.contains("needs: [test, rust-build-seed]"));
     assert!(workflow.contains("save-if: false"));
     assert!(workflow.contains(
         "save-if: |\n            ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'pull_request' }}"
