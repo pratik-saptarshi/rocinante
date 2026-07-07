@@ -268,6 +268,7 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
         &[
             "mkdir -p target/coverage",
             "cargo llvm-cov",
+            "--no-clean",
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
             "--lcov",
@@ -366,7 +367,7 @@ fn ci_workflow_releases_share_compilation_cache_and_release_seed_runs_in_paralle
 
     assert!(workflow.contains("test:"));
     assert!(!workflow.contains("test:\n    needs: [rust-build-seed]"));
-    assert!(workflow.contains("needs: [test, rust-build-seed]"));
+    assert!(workflow.contains("needs: [rust-build-seed]"));
     assert!(workflow.contains("save-if: false"));
     assert!(workflow.contains(
         "save-if: |\n            ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || github.event_name == 'pull_request' }}"

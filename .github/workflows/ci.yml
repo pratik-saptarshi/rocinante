@@ -148,7 +148,7 @@ jobs:
 
   rust-coverage:
     if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}
-    needs: [test, rust-build-seed]
+    needs: [rust-build-seed]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -182,6 +182,7 @@ jobs:
           cargo llvm-cov \
             --locked \
             --manifest-path src-tauri/Cargo.toml \
+            --no-clean \
             --lcov \
             --output-path target/coverage/lcov.info
           COVERAGE_ELAPSED_SECONDS=$(( $(date +%s) - COVERAGE_START_TS ))

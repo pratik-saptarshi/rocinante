@@ -61,7 +61,8 @@ merge-gate semantics unchanged.
 ### Phase 2b (Implemented)
 
 - Maintain overlap by running seed and quality gates without hard sequencing.
-- Gate `rust-coverage` on completion of both quality gate and seed lanes.
+- Coverage and quality are independent of each other once release seeding exists; each lane starts from
+  the seeded frontier in the release branch.
 
 ### Phase 3 (Implemented)
 
@@ -77,7 +78,7 @@ merge-gate semantics unchanged.
 - Run coverage only on release lanes:
   - coverage remains available for release verification and avoids forcing full compile on each PR lane.
 
-### Phase 3b (Planned)
+### Phase 3b (Implemented)
 
 - Add explicit per-job duration telemetry in logs so release- and delta-mode wall-clock deltas are
   tracked in CI run summaries.
@@ -85,12 +86,21 @@ merge-gate semantics unchanged.
 - Extend plan with release-build floor metric that proves non-release runs do not execute the
   `--all-targets --no-run` frontier except in release mode.
 
+### Phase 4 (Implemented)
+
+- Run release coverage without waiting on quality test completion so it overlaps with the `test` job
+  on gated release pipelines.
+- Reuse seeded artifacts in coverage by passing `cargo llvm-cov --no-clean`, avoiding extra
+  full workspace tear-down/rebuild between quality and coverage lanes.
+
 ## Acceptance Criteria
 
 - Release gate and coverage jobs no longer trigger avoidable repeated full compiles after seeding.
 - Non-release lanes use release-mode delta seeds and delta-quality scopes and do not invoke
   release-only frontier compilation.
 - Release wall-clock improves where compilers overlap with seed and quality work.
+- Release wall-clock improves further by running coverage in seed-overlapped release path
+  (`rust-coverage` depends on `rust-build-seed` and not on `test`).
 - Cache writes remain release-sensitive and can still be reused across non-release runs for delta
   builds.
 - Coverage remains available on release lanes without adding non-release full rebuild burden.
