@@ -51,7 +51,7 @@ Open Dependabot alerts are closed or formally accepted | [ ] | `ui/pnpm-lock.yam
 Latest local evidence (2026-07-08):
 
 - `node scripts/check-esbuild-lock.mjs` reports pass (`esbuild lockfile floor check passed: 0.28.1 >= 0.28.1`).
-- `./scripts/check-dependabot-esbuild-alert.sh` currently reports open alert `GHSA-g7r4-m6w7-qqqr` in this environment.
+- `./scripts/check-dependabot-esbuild-alert.sh` currently reports open alert `GHSA-g7r4-m6w7-qqqr` in this environment and remains the current publish blocker.
 Open Dependabot alerts are verified in CI on release lane | [ ] | `scripts/check-dependabot-esbuild-alert.sh` executes on `main` pushes in `.github/workflows/ci.yml`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
 Auth/RBAC boundary is covered by tests | [x] | `src-tauri/tests/auth_tests.rs`
@@ -99,10 +99,10 @@ Sync local `main` to merged remote tip | [ ] | `git merge --no-edit origin/main`
 
 Criterion | Status | Evidence
 ---|---|---
-CI workflow is monitored until terminal state | [ ] | `gh pr view <pr>` / `gh run view <run>`
-Security workflow is monitored until terminal state | [ ] | `gh pr view <pr>` / `gh run view <run>`
-Dependency review is monitored until terminal state | [ ] | `gh pr view <pr>` / `gh run view <run>`
-Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `rust-coverage-lcov` from CI job `rust-coverage`
+CI workflow is monitored until terminal state | [x] | `gh run view 28921887717 --json status,conclusion,jobs`
+Security workflow is monitored until terminal state | [x] | `gh run view 28921887703 --json status,conclusion`
+Dependency review is monitored until terminal state | [x] | `gh run list --branch sync/main-sync-20260708-9679508 --workflow dependency-review.yml`
+Rust coverage artifact is retained for review | [ ] | PR scope skips `rust-coverage`; release merge path requires coverage retention on release pushes
 
 ## 7) Publish decision
 
@@ -113,11 +113,12 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 - Open Dependabot alerts should be closed or explicitly accepted before publish.
 - If any CI job fails, fix the branch and rerun the gate before merging.
 - If the branch contains docs-only changes, the same gating still applies.
-- If `main` is not fast-forward aligned to `origin/main`, halt publish workflow until a sync checkpoint PR is merged.
+- If `main` is not fast-forward aligned to `origin/main`, merge is held until sync PR policy conditions are satisfied and the merge gate is unblocked.
+- Active PR `63` (`sync/main-sync-20260708-9679508`) is currently merge-blocked by repository policy (`mergeStateStatus: BLOCKED`) despite a green CI validation run.
 
 ## 8) Branch governance and merge checkpoints
 
-- Local branch `main` is currently behind remote `origin/main` ancestry in one commit and contains local-only commits; publish actions should use protected PR flow only.
+- Local `main` is currently ahead of remote `origin/main` by `18` commits; publish actions should use protected PR flow only.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`

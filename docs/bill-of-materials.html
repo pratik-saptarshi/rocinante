@@ -1,6 +1,6 @@
 # Bill of Materials - Rocinante Release Gate
 
-_Current as of 2026-07-07_
+_Current as of 2026-07-08_
 
 This document inventories the release-critical components, dependency surface,
 and governance artifacts that must stay aligned before publishing to `origin`.
@@ -16,6 +16,14 @@ then release from the merged tip.
   execution model and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
   the default branch
+
+### Live sync snapshot
+
+- `origin/main` currently resolves to `e339963`.
+- Local `main` is at `9679508` and is `18` commits ahead of `origin/main`.
+- Protected merge posture: PR flow is required; a sync PR (`#63`) remains open and
+  merge-blocked for policy reasons until maintainer review policy conditions are
+  satisfied.
 
 ## 2) Build, runtime, and release surface
 
@@ -157,7 +165,7 @@ Packages declared in `ui/package.json`:
 ## 5) Release-critical validation entry points
 
 - Rust formatting: `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
-- Rust linting: `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
+- Rust linting: `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code -D warnings` (release lanes add `--features analytics`)
 - Rust tests: `cargo test --manifest-path src-tauri/Cargo.toml`
 - Rust coverage: `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 - UI typecheck: `pnpm exec tsc -b` from `ui/`
@@ -171,6 +179,18 @@ Packages declared in `ui/package.json`:
 - CI job name: `rust-coverage`
 - Current policy: informational baseline reporting only; no
   `--fail-under-*` threshold is enforced until a measured baseline is adopted.
+
+### Coverage and compliance targets (hardening lane)
+
+- Informational coverage baseline:
+  - Branch: 85%
+  - Backend unit: 85%
+  - Backend integration: 85%
+  - UI unit: 85%
+  - Browser E2E: 85%
+- This policy is currently tracked as a next-stage hardening objective in
+  `docs/publish-readiness-checklist.html` section 9 and is not yet
+  enforced as hard CI breakpoints.
 
 ## 6) Publish-gate summary
 

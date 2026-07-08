@@ -7,18 +7,16 @@ _Captured: 2026-07-08_
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Active branch for current slice: `feat/ci-path-scope-and-bom-hardening`
+- Active branch for current slice: `feat/docs-ci-readiness-sync-20260708`
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
 - `origin/main` currently points to commit `e339963`.
-- `main` currently contains `53` unique local commits and is not a fast-forward descendant of `origin/main`.
-- This feature branch includes `origin/main` in ancestry, and local branch progression is currently checkpointed on
-  `feat/ci-path-scope-and-bom-hardening`.
-- Merge strategy for next checkpoint: preserve a local backup of any `main`-only commits, align local `main`
-  by fast-forwarding to `origin/main`, then merge feature slices via PR gates with explicit evidence.
-- Branch checkpoint status: all ready work this slice is isolated on `feat/ci-path-scope-and-bom-hardening` and is ready for PR-based merge once CI gate evidence is refreshed.
+- Local `main` is currently at `9679508`, ahead of `origin/main` by `18` commits.
+- Branch checkpoint status: this slice is currently isolated on `feat/docs-ci-readiness-sync-20260708`
+  and held at the same ancestry as local `main`.
+- Merge strategy remains PR-first and policy-compliant: reopen/update PR flow for a protected merge target only.
 
 ## Runtime Surface
 
@@ -47,6 +45,7 @@ _Captured: 2026-07-08_
 - `scripts/check-dependabot-esbuild-alert.sh` still reports open `GHSA-g7r4-m6w7-qqqr` and blocks publish until closed or accepted.
 - `publish-readiness-checklist.html` remains open because clippy, full Rust tests, and UI typecheck/unit suites are not yet fully re-run in this environment.
 - Duplicate feature mapping cleanup completed by removing legacy duplicate `F-027` row from `docs/feature-list.html` (test traceability consolidation pass complete).
+- PR `63` (`sync/main-sync-20260708-9679508`) remains open and merge-blocked (`mergeStateStatus: BLOCKED`), with CI run `28921887717` fully successful but waiting on repository merge policy.
 
 ## Dependency Controls and Security Gate Stack
 
