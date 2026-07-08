@@ -7,17 +7,15 @@ _Captured: 2026-07-08_
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Active branch for current slice: `main` (synchronized to `origin/main`)
+- Active branch for current slice: `chore/ci-hardening-mainline-sync` (PR-focused PR-70, not yet merged to `origin/main`)
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
-- `origin/main` currently points to commit `0e2d165`.
-- `main` is currently aligned to `origin/main` with `0` local-only commits.
-- This repository state is aligned on `main`, and prior feature checkpoints are merged via PR checkpoints on `origin/main`.
-- Merge strategy for next checkpoint: align local `main`
-  by fast-forwarding to `origin/main`, then merge feature slices via PR gates with explicit evidence.
-- Branch checkpoint status: repository-wide gates are current on `main`; remaining open slices continue via PR checkpoints before merge.
+- `origin/main` currently points to commit `6a15f09` and local `main` is ahead by one merge-ready feature slice.
+- `origin/main` and `main` are intentionally not yet merged for this slice because `main` is protected.
+- Current checkpoint strategy is now PR-first: local `main` is synchronized to a merged PR branch (`chore/ci-hardening-mainline-sync` via PR #70) and then should merge through branch protection.
+- Remaining open slices continue via PR checkpoints with explicit `roadmap/checklist/README` evidence.
 
 ## Runtime Surface
 
@@ -31,7 +29,7 @@ _Captured: 2026-07-08_
 
 - `BI-047` — F-047 Desktop parity evaluation and host decision (in progress)
 - `BI-052` — F-052 Dependabot esbuild remediation (in progress)
-- `BI-053` — F-053 CI bootstrap and workflow parseability (in progress)
+- `BI-053` — F-053 CI bootstrap and workflow parseability (completed with PR gate recovery + merge checkpoint)
 - `BI-054` — F-054 CI lane orchestration and gating (in progress)
 - `BI-056` — F-055 Release-path performance optimization (in progress)
 - `BI-057` — CI bootstrap + workflow parseability recovery (Red->Green complete)
@@ -43,7 +41,7 @@ _Captured: 2026-07-08_
 - `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` passes.
 - Targeted test compile (`cargo test --locked ... --test ci_gate_tests --no-run`) succeeds with existing non-fatal dead-code warnings.
 - `node scripts/check-esbuild-lock.mjs` passes and confirms `esbuild >= 0.28.1` floor.
-- `scripts/check-dependabot-esbuild-alert.sh` still reports open `GHSA-g7r4-m6w7-qqqr` and blocks publish until closed or accepted.
+- `scripts/check-dependabot-esbuild-alert.sh` is being corrected to query advisory IDs explicitly; remote Dependabot state now shows open alert `GHSA-wrw7-89jp-8q8g` for `glib`.
 - `publish-readiness-checklist.html` remains open because clippy, full Rust tests, and UI typecheck/unit suites are not yet fully re-run in this environment.
 - Duplicate feature mapping cleanup completed by removing legacy duplicate `F-027` row from `docs/feature-list.html` (test traceability consolidation pass complete).
 
@@ -74,10 +72,8 @@ _Captured: 2026-07-08_
 
 ## Current Remediation State Notes
 
-- `ui/pnpm-lock.yaml` lockfile currently resolves `esbuild@0.28.1` and
-  `scripts/check-esbuild-lock.mjs` passes locally.
-- Remote Dependabot alert gate check still reports open `GHSA-g7r4-m6w7-qqqr` via
-  `scripts/check-dependabot-esbuild-alert.sh` and must be re-checked in network-available CI.
+- `ui/pnpm-lock.yaml` lockfile currently resolves `esbuild@0.28.1` and `scripts/check-esbuild-lock.mjs` passes locally.
+- Remote Dependabot state currently exposes `GHSA-wrw7-89jp-8q8g` on `glib` (`open`) and is tracked by RT-RC-001 as a release-blocking item.
 
 ## Release Artifacts
 

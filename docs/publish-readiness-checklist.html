@@ -39,7 +39,7 @@ Security policy exists | [x] | `SECURITY.md`
 Repository operating rules documented | [x] | `docs/project-rules.html`
 Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
-Latest local branch sync snapshot: `main` is aligned to `origin/main` at `0e2d165`.
+Latest local branch snapshot: `main` is ahead of `origin/main` by 20 commits in local PR checkpoint branch state, with active integration pending PR #70.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -54,7 +54,9 @@ Open Dependabot alerts are closed or formally accepted | [ ] | `ui/pnpm-lock.yam
 Latest local evidence (2026-07-08):
 
 - `node scripts/check-esbuild-lock.mjs` reports pass (`esbuild lockfile floor check passed: 0.28.1 >= 0.28.1`).
-- `./scripts/check-dependabot-esbuild-alert.sh` currently reports open alert `GHSA-g7r4-m6w7-qqqr` in this environment.
+- `./scripts/check-dependabot-esbuild-alert.sh` now explicitly filters GHSA IDs in script; esbuild advisory `GHSA-g7r4-m6w7-qqqr` is not currently reported open.
+- Separate open alert remains on `glib` with `GHSA-wrw7-89jp-8q8g`.
+
 Open Dependabot alerts are verified in CI on release lane | [ ] | `scripts/check-dependabot-esbuild-alert.sh` executes on `main` pushes in `.github/workflows/ci.yml`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
 Auth/RBAC boundary is covered by tests | [x] | `src-tauri/tests/auth_tests.rs`
@@ -121,7 +123,7 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 
 ## 8) Branch governance and merge checkpoints
 
-- Local branch `main` is currently aligned to `origin/main` with no local-only commits; publish actions continue via protected PR flow only.
+- Local branch `main` is currently ahead of `origin/main` with no uncommitted local changes; publish actions continue via protected PR flow only.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`
