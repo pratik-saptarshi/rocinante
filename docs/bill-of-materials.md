@@ -29,8 +29,9 @@ _Captured: 2026-07-08_
 
 - `BI-047` — F-047 Desktop parity evaluation and host decision (in progress)
 - `BI-052` — F-052 Dependabot esbuild remediation (in progress)
-- `BI-053` — F-053 CI bootstrap and workflow parseability (completed with PR gate recovery + merge checkpoint)
-- `BI-054` — F-054 CI lane orchestration and gating (lane profiles now implemented in `chore/ci-scope-lane-hardening`).
+- `BI-053` — F-053 CI bootstrap and workflow parseability (completed; validated on PR run `28983234703`)
+- `BI-054` — F-054 CI lane orchestration and gating (completed; validated on PR run `28983234703`)
+- `BI-055` — F-054 CI lane orchestration and gating (in progress)
 - `BI-056` — F-055 Release-path performance optimization (in progress)
 - `BI-057` — CI bootstrap + workflow parseability recovery (Red->Green complete)
 - `RT-RC-001` — GTK/glib dependency-floor governance (active)
@@ -42,8 +43,9 @@ _Captured: 2026-07-08_
 - Targeted CI-gate contract check (`cargo test ... --test ci_gate_tests --no-run`) compiles successfully with non-fatal dead-code warnings from existing storage contract coverage.
 - `node scripts/check-esbuild-lock.mjs` passes and confirms `esbuild >= 0.28.1` floor.
 - `scripts/check-dependabot-esbuild-alert.sh` is being corrected to query advisory IDs explicitly; remote Dependabot state now shows open alert `GHSA-wrw7-89jp-8q8g` for `glib`.
-- `publish-readiness-checklist.html` remains open because clippy, full Rust tests, and UI typecheck/unit suites are not yet fully re-run in this environment.
+- `publish-readiness-checklist.html` remains open because RT-RC-001 is still active and publish still requires a formal release branch / merge checkpoint, even though the CI recovery branch passed its latest remote checks.
 - Duplicate feature mapping cleanup completed by removing legacy duplicate `F-027` row from `docs/feature-list.html` (test traceability consolidation pass complete).
+- Remote PR run `28983234703` is green for `ci-health`, `ci-workflow-parse`, `rust-quality-gates`, `rust-tests`, `rust-lint`, and the aggregate `test` gate.
 
 ## Dependency Controls and Security Gate Stack
 

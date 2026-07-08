@@ -13,9 +13,9 @@
 - `RT-RC-002` GTK-free host migration planning:
   - Phase 0 through Phase 4 stay test-driven, with parity, core extraction, native shell, fallback containment, and dependency-floor removal each starting from a failing test or contract.
 - `RT-CI-004` Run 28912108975 CI recovery slice:
-  - `T-055` CI bootstrap + workflow parseability.
-  - `T-056` CI lane scope and orchestration contract.
-  - `T-057` Release-lane timeout and coverage-isolation contract.
+  - `T-055` CI bootstrap + workflow parseability is green on PR run `28983234703`.
+  - `T-056` CI lane scope and orchestration contract is green on PR run `28983234703`.
+  - `T-057` Release-lane timeout and coverage-isolation contract is green on PR run `28983234703`.
 
 ## Existing Test Coverage
 
@@ -209,17 +209,17 @@
 - `T-055` CI bootstrap and workflow parseability tests (`F-053`):
   - `src-tauri/tests/ci_gate_tests.rs`
   - `ci-workflow-health` contract: `ci-health` marker exists and workflow parseability job exists.
-  - New syntax check path in CI must fail fast when workflow expressions are malformed.
+  - New syntax check path in CI fails fast when workflow expressions are malformed; validated on PR run `28983234703`.
 
 - `T-056` CI lane orchestration and non-release gating tests (`F-054`):
   - `src-tauri/tests/ci_gate_tests.rs`
   - `rust-lint` and `rust-tests` keep matrix conditions step-scoped.
-  - Non-release PR lanes skip release-only `storage` and coverage lanes unless explicitly required.
+  - Non-release PR lanes skip release-only `storage` and coverage lanes unless explicitly required; validated on PR run `28983234703`.
 
 - `T-057` Release-path performance and timeout isolation tests (`F-055`):
   - `src-tauri/tests/ci_gate_tests.rs`
   - `rust-coverage` and heavy storage integration run only on release scope.
-  - Lane-specific timeout and release/delta cache scope are asserted in workflow contract tests.
+  - Lane-specific timeout and release/delta cache scope are asserted in workflow contract tests; the PR run `28983234703` stayed green with release coverage skipped on non-release scope.
 
 - `T-040` Explainability panel tests:
   - `ui/src/App.test.tsx`
