@@ -70,8 +70,10 @@ jobs:
           fi
 
           if [[ -z "$BASE_SHA" || -z "$HEAD_SHA" ]] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
-            echo "needs_rust=true" >> "$GITHUB_OUTPUT"
-            echo "scope_reason=baseline-fallback" >> "$GITHUB_OUTPUT"
+            {
+              echo "needs_rust=true"
+              echo "scope_reason=baseline-fallback"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -119,10 +121,12 @@ jobs:
             RUN_RUST_COVERAGE_LANES=false
           fi
 
-          echo "needs_rust=$NEEDS_RUST" >> "$GITHUB_OUTPUT"
-          echo "scope_profile=$SCOPE_PROFILE" >> "$GITHUB_OUTPUT"
-          echo "run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES" >> "$GITHUB_OUTPUT"
-          echo "run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES" >> "$GITHUB_OUTPUT"
+          {
+            echo "needs_rust=$NEEDS_RUST"
+            echo "scope_profile=$SCOPE_PROFILE"
+            echo "run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES"
+            echo "run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES"
+          } >> "$GITHUB_OUTPUT"
 
   rust-build-seed:
     needs: [ci-workflow-parse, ci-scope]
