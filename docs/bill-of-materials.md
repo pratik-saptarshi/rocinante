@@ -1,21 +1,22 @@
 # Bill of Materials - Markdown Snapshot
 
-_Captured: 2026-07-07_
+_Captured: 2026-07-08_
 
 ## Repository and Source Control
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Active branch for current slice: `feat/bi-047-bom-readiness-sync-slice`
+- Active branch for current slice: `feat/ci-path-scope-and-bom-hardening`
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
 - `origin/main` currently points to commit `e339963`.
-- `main` contains legacy local history and is not a fast-forward descendant of `origin/main`.
-- Current work should proceed through feature branches and explicit checkpoint merges.
+- `main` contains `53` unique local commits and is not a fast-forward descendant of `origin/main`.
+- This feature branch includes `origin/main` in ancestry, and can merge cleanly into a checkpointed `main` rebase if policy requires linear updates.
 - Merge strategy for next checkpoint: align main to `origin/main`, then merge feature slices with explicit evidence and PR gates.
+- Branch checkpoint status: all ready work this slice is isolated on `feat/ci-path-scope-and-bom-hardening` and is ready for PR-based merge once CI gate evidence is refreshed.
 
 ## Runtime Surface
 
@@ -29,14 +30,19 @@ _Captured: 2026-07-07_
 
 - `BI-047` — F-047 Desktop parity evaluation and host decision (in progress)
 - `BI-052` — F-052 Dependabot esbuild remediation (in progress)
+- `BI-053` — F-053 CI bootstrap and workflow parseability (in progress)
+- `BI-054` — F-054 CI lane orchestration and gating (in progress)
+- `BI-056` — F-055 Release-path performance optimization (in progress)
 - `RT-RC-001` — GTK/glib dependency-floor governance (active)
 - `RT-RC-002` — GTK-free host migration planning (active)
 
 ## Validation Snapshot (Latest Local Run)
 
-- `cargo test --locked --manifest-path src-tauri/Cargo.toml --test roadmap_coherence_tests` passes for the active host-migration coherence contract.
-- `cargo test --locked --manifest-path src-tauri/Cargo.toml --test security_advisory_exception_tests -- --nocapture` can currently be built and is part of the slice validation surface.
-- `publish-readiness-checklist.html` still treats the remote Dependabot alert and some release validation steps as open and blocked until CI confirms closure.
+- `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` passes.
+- Targeted test compile (`cargo test --locked ... --test ci_gate_tests --no-run`) succeeds with existing non-fatal dead-code warnings.
+- `node scripts/check-esbuild-lock.mjs` passes and confirms `esbuild >= 0.28.1` floor.
+- `scripts/check-dependabot-esbuild-alert.sh` still reports open `GHSA-g7r4-m6w7-qqqr` and blocks publish until closed or accepted.
+- `publish-readiness-checklist.html` remains partially open because clippy, full Rust tests, and UI typecheck/unit suites are not yet fully re-run in this environment.
 
 ## Dependency Controls and Security Gate Stack
 

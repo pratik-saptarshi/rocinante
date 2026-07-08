@@ -94,12 +94,13 @@ roadmap artifacts.
 
 ## Governance and Execution Snapshot
 
-- Active bead slice: `BI-047` (in progress, host decision and parity matrix).
-- Active security slice: `BI-052` (in progress, Dependabot/esbuild remediation).
+- Active bead slices: `BI-047`, `BI-052`, and CI reliability `BI-053`/`BI-054`/`BI-056`.
+- Active security slice: `BI-052` (Dependabot/esbuild remediation) + `RT-RC-001` (GTK/GLib
+  dependency floor control).
 - Current local signal: UI `esbuild` lock floor checks pass at `0.28.1`, while the
-  remote `GHSA-g7r4-m6w7-qqqr` alert is still reported open in this environment.
-- Publish status: blocked by open security advisory exceptions and unresolved host-migration
-  parity gates.
+  remote `GHSA-g7r4-m6w7-qqqr` alert is still open locally verified.
+- Publish status: blocked by open security advisory exceptions and unresolved host-
+  migration + release-gating parity tasks.
 
 ## Design Patterns
 
