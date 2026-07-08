@@ -335,8 +335,7 @@ jobs:
                 --locked \
                 --manifest-path src-tauri/Cargo.toml \
                 --features analytics \
-                --test storage_duallayer_tests \
-                -- --timeout 180
+                --test storage_duallayer_tests
             else
               timeout 900s cargo test \
                 --locked \
