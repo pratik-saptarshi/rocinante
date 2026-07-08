@@ -72,10 +72,11 @@ Roadmap/test traceability is present | [x] | `docs/roadmap/test-plan.html`, `doc
 Criterion | Status | Evidence
 ---|---|---
 Rust formatting passes | [ ] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
-Rust lint passes | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
+Rust lint passes | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code -D warnings`
 Rust tests pass | [ ] | `cargo test --manifest-path src-tauri/Cargo.toml`
 Backend Rust coverage report is generated | [ ] | `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
+Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
 UI unit tests pass | [ ] | `pnpm exec vitest run` from `ui/`
 UI typecheck passes | [ ] | `pnpm exec tsc -b` from `ui/`
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`

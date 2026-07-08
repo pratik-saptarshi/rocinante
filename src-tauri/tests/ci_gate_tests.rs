@@ -366,12 +366,13 @@ fn ci_workflow_uses_scope_specific_release_cache_prefixes() {
 fn ci_workflow_differentiates_release_and_delta_lanes() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
+    assert!(workflow.contains("rust-quality-gates:"));
+    assert!(workflow.contains("rust-tests:"));
     assert!(workflow.contains("strategy:"));
     assert!(workflow.contains("lane: [core, storage]"));
     assert!(workflow.contains(
         "if: ${{ matrix.lane == 'core' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
     ));
-    assert!(workflow.contains("if: ${{ matrix.lane == 'core' }}"));
     assert_step_block_contains_all(
         &workflow,
         "Lint",
@@ -403,7 +404,6 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
             "fi",
         ],
     );
-    assert!(workflow.contains("if: ${{ matrix.lane == 'core' }}"));
     assert!(workflow.contains("lane=storage"));
     assert!(workflow.contains("if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"));
 }
@@ -443,8 +443,8 @@ fn ci_workflow_releases_share_compilation_cache_and_release_seed_runs_in_paralle
 ) {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
-    assert!(workflow.contains("test:"));
-    assert!(workflow.contains("test:\n    needs: [rust-build-seed]"));
+    assert!(workflow.contains("rust-quality-gates:\n    needs: [rust-build-seed]"));
+    assert!(workflow.contains("rust-tests:\n    if: ${{ matrix.lane == 'core' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}\n    needs: [rust-build-seed]"));
     assert!(workflow.contains("needs: [rust-build-seed]"));
     assert!(workflow.contains("save-if: false"));
     assert!(workflow.contains(
