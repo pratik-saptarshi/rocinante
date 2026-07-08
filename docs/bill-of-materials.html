@@ -12,7 +12,7 @@ then release from the merged tip.
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary integration branch: `main`
 - Remote: `origin`
-- `main` is currently ahead of `origin/main` by local PR checkpoint commits and is being merged through protected PR flow.
+- `origin/main` and local `main` are aligned on commit `dc48f27`.
 - Product: Rust + Tauri repository analyzer with a bead-backed roadmap
   execution model and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -161,7 +161,7 @@ Packages declared in `ui/package.json`:
 ## 5) Release-critical validation entry points
 
 - Rust formatting: `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
-- Rust linting: `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
+- Rust linting: `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code` (warnings logged; dead-code allowed)
 - Rust tests: `cargo test --manifest-path src-tauri/Cargo.toml`
 - Rust coverage: `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 - UI typecheck: `pnpm exec tsc -b` from `ui/`

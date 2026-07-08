@@ -66,30 +66,33 @@ roadmap artifacts.
 1. Roadmap docs define the active phase and bead backlog.
 2. The Tauri backend exposes admin commands through `src-tauri/src/main.rs`
    and the service helpers in `src-tauri/src/admin.rs`.
-3. The Tauri app builder in `src-tauri/src/app_support.rs` owns the registered
+3. CI uses a deterministic scope gate in `.github/workflows/ci.yml` to skip
+   Rust-heavy test and lint lanes when only docs/metadata/non-Rust paths are
+   changed.
+4. The Tauri app builder in `src-tauri/src/app_support.rs` owns the registered
    handler table and shared `AppState` wiring.
-4. Storage and auth layers validate access before mutating persistence or
+5. Storage and auth layers validate access before mutating persistence or
    reading protected state; release baseline operations flow through the
    baseline adapter rather than directly through the broader store.
-5. Budget guard loops enforce report-only and kill-switch behavior before
+6. Budget guard loops enforce report-only and kill-switch behavior before
    broader automation continues.
-6. Triage loops enforce report-only formatting with high-priority, watch, noise,
+7. Triage loops enforce report-only formatting with high-priority, watch, noise,
    and state-updates sections.
-7. Verifier loops enforce reject-by-default behavior and require evidence before
+8. Verifier loops enforce reject-by-default behavior and require evidence before
    approval.
-8. Stage 3 convergence now has an explicit roadmap-coherence validator so
+9. Stage 3 convergence now has an explicit roadmap-coherence validator so
    release-gate collapse only happens when test mappings and phase gates are present.
-9. Fix-proposal loops enforce one-problem remediation and retry caps before
+10. Fix-proposal loops enforce one-problem remediation and retry caps before
    escalation with full context.
-10. The GTK-free migration plan adds a phase-gated host path for parity,
+11. The GTK-free migration plan adds a phase-gated host path for parity,
     core extraction, native shell MVP, fallback containment, and dependency
     removal without reintroducing GTK/GLib.
-11. The Dependabot remediation plan tracks the live `esbuild` alert, lockfile
+12. The Dependabot remediation plan tracks the live `esbuild` alert, lockfile
     upgrade target, and release gate closure for the UI toolchain.
-12. The React UI invokes the bridge through `ui/src/tauri-admin.ts`, the
+13. The React UI invokes the bridge through `ui/src/tauri-admin.ts`, the
     extracted command bridge shell in `ui/src/admin-bridge-panel.tsx`, and
     renders results in `ui/src/App.tsx`.
-13. Unit, integration, and e2e tests validate the command facade, the bridge
+14. Unit, integration, and e2e tests validate the command facade, the bridge
     seam, and the browser-visible behavior.
 
 ## Governance and Execution Snapshot
@@ -100,8 +103,8 @@ roadmap artifacts.
 - Active security slice: `BI-052` (Dependabot/esbuild remediation) + `RT-RC-001` (GTK/GLib
   dependency floor control).
 - Current local signal: CI includes a top-level `test` aggregate gate for branch
-  protection, UI `esbuild` lock checks pass at `0.28.1`, while the remote
-  `GHSA-g7r4-m6w7-qqqr` alert remains open locally verified.
+  protection, UI `esbuild` lock checks pass at `0.28.1`, while `GHSA-wrw7-89jp-8q8g`
+  remains open and is tracked by `RT-RC-001`.
 - Sync signal: local `main` is aligned to `origin/main` (no local-only commits);
   publish flow is proceeding via checkpointed PRs rather than direct push.
 - Publish status: blocked by open security advisory exceptions and unresolved host-

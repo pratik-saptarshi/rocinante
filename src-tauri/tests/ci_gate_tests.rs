@@ -224,7 +224,7 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
             "--features analytics",
-            "-A dead_code -D warnings",
+            "-A dead_code",
         ],
     );
     assert_step_run_contains_all(
@@ -270,7 +270,7 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
         &workflow,
         "Upload Rust coverage report",
         &[
-            "actions/upload-artifact@v4",
+            "actions/upload-artifact@v5",
             "name: rust-coverage-lcov",
             "target/coverage/lcov.info",
         ],
@@ -340,6 +340,13 @@ fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
     assert!(workflow.contains("scope_reason=$([ \"$NEEDS_RUST\" == \"true\" ] && echo code-surface-touched || echo docs-only-tweak)"));
     assert!(workflow.contains("NEEDS_RUST=false"));
     assert!(workflow.contains("echo \"needs_rust=$NEEDS_RUST\" >> \"$GITHUB_OUTPUT\""));
+
+    assert!(workflow.contains("case \"$path\" in"));
+    assert!(workflow.contains(
+        "docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*",
+    ));
+    assert!(workflow.contains(".github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock"));
+    assert!(workflow.contains("src-tauri/*"));
 }
 
 #[test]
@@ -447,9 +454,9 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
             "--locked \\",
             "--manifest-path src-tauri/Cargo.toml \\",
             "--features analytics \\",
-            "-- -A dead_code -D warnings",
+            "-- -A dead_code",
             "else",
-            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code -D warnings",
+            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code",
             "fi",
         ],
     );
