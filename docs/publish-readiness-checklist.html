@@ -37,6 +37,9 @@ Primary branch is `main` | [x] | Branch policy and GitHub default branch
 Protected-branch publish flow documented | [x] | `README.md`, `docs/github-setup.md`, and repo branch behavior
 Security policy exists | [x] | `SECURITY.md`
 Repository operating rules documented | [x] | `docs/project-rules.html`
+Main-branch sync precondition for publish | [ ] | `git rev-list --left-right --count origin/main...main`
+
+Latest local branch sync snapshot: `main` is ahead of `origin/main` by 20 commits.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -75,9 +78,10 @@ Criterion | Status | Evidence
 Rust formatting passes | [x] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
 Rust lint passes | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code -D warnings`
 Rust tests pass | [ ] | `cargo test --manifest-path src-tauri/Cargo.toml`
-Backend Rust coverage report is generated | [ ] | `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
+Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
+Merge gate (`test`) exists and depends on required CI lanes | [x] | `.github/workflows/ci.yml` `test` job and `src-tauri/tests/ci_gate_tests.rs` contract
 UI unit tests pass | [ ] | `pnpm exec vitest run` from `ui/`
 UI typecheck passes | [ ] | `pnpm exec tsc -b` from `ui/`
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
@@ -113,11 +117,11 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 - Open Dependabot alerts should be closed or explicitly accepted before publish.
 - If any CI job fails, fix the branch and rerun the gate before merging.
 - If the branch contains docs-only changes, the same gating still applies.
-- If `main` is not fast-forward aligned to `origin/main`, halt publish workflow until a sync checkpoint PR is merged.
+- If `main` is not aligned to `origin/main` ancestry, halt publish workflow until a sync checkpoint PR is merged.
 
 ## 8) Branch governance and merge checkpoints
 
-- Local branch `main` is currently behind remote `origin/main` ancestry in one commit and contains local-only commits; publish actions should use protected PR flow only.
+- Local branch `main` is currently ahead of `origin/main` by 18 commits and contains local-only commits; publish actions should use protected PR flow only until sync checkpoint is merged.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`
