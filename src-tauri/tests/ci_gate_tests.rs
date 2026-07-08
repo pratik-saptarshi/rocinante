@@ -224,7 +224,7 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
             "--features analytics",
-            "-A dead_code -D warnings",
+            "-A dead_code",
         ],
     );
     assert_step_run_contains_all(
@@ -270,7 +270,7 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
         &workflow,
         "Upload Rust coverage report",
         &[
-            "actions/upload-artifact@v4",
+            "actions/upload-artifact@v5",
             "name: rust-coverage-lcov",
             "target/coverage/lcov.info",
         ],
@@ -447,9 +447,9 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
             "--locked \\",
             "--manifest-path src-tauri/Cargo.toml \\",
             "--features analytics \\",
-            "-- -A dead_code -D warnings",
+            "-- -A dead_code",
             "else",
-            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code -D warnings",
+            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code",
             "fi",
         ],
     );

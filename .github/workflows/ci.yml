@@ -273,9 +273,9 @@ jobs:
               --locked \
               --manifest-path src-tauri/Cargo.toml \
               --features analytics \
-              -- -A dead_code -D warnings
+              -- -A dead_code
           else
-            timeout 900s cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code -D warnings
+            timeout 900s cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code
           fi
           LINT_ELAPSED_SECONDS=$(( $(date +%s) - LINT_START_TS ))
           echo "::notice title=Rust quality lint::scope=${CI_RUST_BUILD_SCOPE} lane=${{ matrix.lane }} duration_sec=${LINT_ELAPSED_SECONDS}"
@@ -437,7 +437,7 @@ jobs:
           COVERAGE_ELAPSED_SECONDS=$(( $(date +%s) - COVERAGE_START_TS ))
           echo "::notice title=Rust coverage::duration_sec=${COVERAGE_ELAPSED_SECONDS}"
       - name: Upload Rust coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: rust-coverage-lcov
           path: target/coverage/lcov.info

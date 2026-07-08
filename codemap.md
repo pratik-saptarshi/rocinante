@@ -100,8 +100,8 @@ roadmap artifacts.
 - Active security slice: `BI-052` (Dependabot/esbuild remediation) + `RT-RC-001` (GTK/GLib
   dependency floor control).
 - Current local signal: CI includes a top-level `test` aggregate gate for branch
-  protection, UI `esbuild` lock checks pass at `0.28.1`, while the remote
-  `GHSA-g7r4-m6w7-qqqr` alert remains open locally verified.
+  protection, UI `esbuild` lock checks pass at `0.28.1`, while `GHSA-wrw7-89jp-8q8g`
+  remains open and is tracked by `RT-RC-001`.
 - Sync signal: local `main` is aligned to `origin/main` (no local-only commits);
   publish flow is proceeding via checkpointed PRs rather than direct push.
 - Publish status: blocked by open security advisory exceptions and unresolved host-

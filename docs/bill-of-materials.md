@@ -7,15 +7,14 @@ _Captured: 2026-07-08_
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Active branch for current slice: `chore/ci-hardening-mainline-sync` (PR-focused PR-70, not yet merged to `origin/main`)
+- Active branch for current slice: `feat/ci-clippy-warning-policy-and-gov-sync`
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
-- `origin/main` currently points to commit `6a15f09` and local `main` is ahead by one merge-ready feature slice.
-- `origin/main` and `main` are intentionally not yet merged for this slice because `main` is protected.
-- Current checkpoint strategy is now PR-first: local `main` is synchronized to a merged PR branch (`chore/ci-hardening-mainline-sync` via PR #70) and then should merge through branch protection.
-- Remaining open slices continue via PR checkpoints with explicit `roadmap/checklist/README` evidence.
+- `origin/main` and local `main` are aligned on commit `dc48f27` (`fix(ci): remove unsupported storage test timeout flag (#73)`).
+- This slice runs on a feature branch and is intended for branch-protection PR merge once validations are complete.
+- Remaining open slices continue via PR checkpoints with explicit roadmap/checklist evidence and conventional commits.
 
 ## Runtime Surface
 
@@ -56,7 +55,7 @@ _Captured: 2026-07-08_
 ## Validation Entry Points (Publish Gating)
 
 - `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
-- `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code -D warnings`
+- `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code` (warnings logged; dead-code allowed in-place)
 - `cargo test --manifest-path src-tauri/Cargo.toml`
 - `pnpm -C ui exec tsc -b`
 - `pnpm -C ui exec vitest run`

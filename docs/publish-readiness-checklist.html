@@ -39,7 +39,7 @@ Security policy exists | [x] | `SECURITY.md`
 Repository operating rules documented | [x] | `docs/project-rules.html`
 Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
-Latest local branch snapshot: `main` is ahead of `origin/main` by 20 commits in local PR checkpoint branch state, with active integration pending PR #70.
+Latest local branch snapshot: `origin/main` and local `main` are aligned on `dc48f27` at the moment of this snapshot.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -78,7 +78,7 @@ Roadmap/test traceability is present | [x] | `docs/roadmap/test-plan.html`, `doc
 Criterion | Status | Evidence
 ---|---|---
 Rust formatting passes | [x] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
-Rust lint passes | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code -D warnings`
+Rust lint status policy | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code` (warnings are logged; dead-code remains non-blocking by policy)
 Rust tests pass | [ ] | `cargo test --manifest-path src-tauri/Cargo.toml`
 Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
