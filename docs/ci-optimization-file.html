@@ -47,7 +47,9 @@
     <div class="panel">
       <h3>Panel 3 — Performance & Throughput</h3>
       <ul>
-        <li>Head workflow has been split so quality gates and release/storage test shards are separate matrix jobs, increasing stage-parallel visibility while preserving release-only coverage policy.</li>
+        <li>Head workflow now keeps <code>rust-quality-gates</code> first, then runs heavy lanes as independent
+          matrix jobs for lint (<code>fmt</code>/<code>clippy</code>), storage/core tests, and release coverage,
+          preserving coverage-only policy while maximizing diagnostic signal.</li>
         <li>Historical run shape at <code>e6ca6df5...</code> shows explicit lane planning + matrix jobs (<code>Test Shards (${{ matrix.lane }})</code>) with <code>fail-fast: false</code>; this is the right direction for throughput but still leaves one long-running integration lane.</li>
         <li>Key timing sample set (UTC):
           <ul>
@@ -101,7 +103,7 @@
     <ul>
       <li><strong>Restore diff/delta-driven fanout:</strong> For non-main/non-release branches, run only required lanes based on changed paths.</li>
       <li><strong>Fine-grain long lanes:</strong> isolate <code>storage_duallayer_tests</code> into its own release lane with explicit timeout budget.</li>
-      <li><strong>Parallelize release + delta gates:</strong> split workflow into dedicated <code>rust-quality-gates</code> and <code>rust-tests</code> jobs with release/storage matrix on the test job and <code>fail-fast: false</code>.</li>
+        <li><strong>Parallelize release + delta gates:</strong> split workflow so <code>rust-quality-gates</code> runs first and heavy lanes run independently with <code>fail-fast: false</code> (lint shards and test shards).</li>
       <li><strong>Constrain blast radius:</strong> only run <code>cargo llvm-cov</code> for release path; do not force coverage on delta/PR lanes.</li>
       <li><strong>Cache efficiency:</strong> keep release cache key writes constrained to release branches; non-release should restore-only in scoped lanes to avoid stale contamination.</li>
       <li><strong>Fail-fast policy:</strong> maintain <code>fail-fast: false</code> for test shards to maximize signal and reduce rerun waste.</li>
