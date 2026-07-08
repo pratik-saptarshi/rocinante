@@ -339,7 +339,8 @@ jobs:
                 --locked \
                 --manifest-path src-tauri/Cargo.toml \
                 --features analytics \
-                --test storage_duallayer_tests
+                --test storage_duallayer_tests \
+                -- --timeout 180
             else
               timeout 900s cargo test \
                 --locked \
@@ -382,13 +383,14 @@ jobs:
                 --test telemetry_tests \
                 --test triage_tests \
                 --test verifier_tests
+                -- --timeout 180
             fi
           else
             if [[ "${{ matrix.lane }}" != "core" ]]; then
               echo "Skipping non-core lane '${{ matrix.lane }}' on delta scope"
               exit 0
             fi
-            timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests
+            timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests -- --timeout 180
           fi
           TEST_ELAPSED_SECONDS=$(( $(date +%s) - TEST_START_TS ))
           echo "::notice title=Rust quality test::scope=${CI_RUST_BUILD_SCOPE} lane=${{ matrix.lane }} duration_sec=${TEST_ELAPSED_SECONDS}"
