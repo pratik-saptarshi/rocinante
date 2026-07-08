@@ -7,18 +7,18 @@ _Captured: 2026-07-08_
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Active branch for current slice: `feat/ci-path-scope-and-bom-hardening`
+- Active branch for current slice: `feat/bi-053-058-bead-doc-readiness-sync`
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
-- `origin/main` currently points to commit `e339963`.
-- `main` currently contains `53` unique local commits and is not a fast-forward descendant of `origin/main`.
+- `origin/main` currently points to commit `5db5275`.
+- `main` currently contains `20` unique local commits ahead of `origin/main`.
 - This feature branch includes `origin/main` in ancestry, and local branch progression is currently checkpointed on
-  `feat/ci-path-scope-and-bom-hardening`.
+  `feat/bi-053-058-bead-doc-readiness-sync`.
 - Merge strategy for next checkpoint: preserve a local backup of any `main`-only commits, align local `main`
   by fast-forwarding to `origin/main`, then merge feature slices via PR gates with explicit evidence.
-- Branch checkpoint status: all ready work this slice is isolated on `feat/ci-path-scope-and-bom-hardening` and is ready for PR-based merge once CI gate evidence is refreshed.
+- Branch checkpoint status: all ready work this slice is isolated on `feat/bi-053-058-bead-doc-readiness-sync` and is ready for PR-based merge once CI contract and lint evidence are refreshed.
 
 ## Runtime Surface
 
@@ -35,7 +35,7 @@ _Captured: 2026-07-08_
 - `BI-053` — F-053 CI bootstrap and workflow parseability (in progress)
 - `BI-054` — F-054 CI lane orchestration and gating (in progress)
 - `BI-056` — F-055 Release-path performance optimization (in progress)
-- `BI-057` — CI bootstrap + workflow parseability recovery (in progress)
+- `BI-057` — CI bootstrap + workflow parseability recovery (Red->Green complete)
 - `RT-RC-001` — GTK/glib dependency-floor governance (active)
 - `RT-RC-002` — GTK-free host migration planning (active)
 
