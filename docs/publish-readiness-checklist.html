@@ -39,7 +39,7 @@ Security policy exists | [x] | `SECURITY.md`
 Repository operating rules documented | [x] | `docs/project-rules.html`
 Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
-Latest local branch snapshot: `main` is ahead of `origin/main` by 20 commits in local PR checkpoint branch state, with active integration pending PR #70.
+Latest local branch snapshot: `main` is aligned with `origin/main` (`dc48f273d7ff08d80ad78d241dbbdbe290b1876d`) with no uncommitted changes.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -80,7 +80,7 @@ Criterion | Status | Evidence
 Rust formatting passes | [x] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
 Rust lint passes | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code -D warnings`
 Rust tests pass | [ ] | `cargo test --manifest-path src-tauri/Cargo.toml`
-Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
+Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info` and publishes via `actions/upload-artifact@v5`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
 Merge gate (`test`) exists and depends on required CI lanes | [x] | `.github/workflows/ci.yml` `test` job and `src-tauri/tests/ci_gate_tests.rs` contract
@@ -123,7 +123,7 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 
 ## 8) Branch governance and merge checkpoints
 
-- Local branch `main` is currently ahead of `origin/main` with no uncommitted local changes; publish actions continue via protected PR flow only.
+- Local branch `main` is currently aligned to `origin/main` with no uncommitted local changes; publish actions continue via protected PR flow only.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`

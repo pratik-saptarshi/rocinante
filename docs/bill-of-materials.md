@@ -7,15 +7,14 @@ _Captured: 2026-07-08_
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Active branch for current slice: `chore/ci-hardening-mainline-sync` (PR-focused PR-70, not yet merged to `origin/main`)
+- Active branch for current slice: `feat/ci-bim-055-timeout-artifact-hardening`
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
-- `origin/main` currently points to commit `6a15f09` and local `main` is ahead by one merge-ready feature slice.
-- `origin/main` and `main` are intentionally not yet merged for this slice because `main` is protected.
-- Current checkpoint strategy is now PR-first: local `main` is synchronized to a merged PR branch (`chore/ci-hardening-mainline-sync` via PR #70) and then should merge through branch protection.
-- Remaining open slices continue via PR checkpoints with explicit `roadmap/checklist/README` evidence.
+- `origin/main` currently points to `dc48f273d7ff08d80ad78d241dbbdbe290b1876d` and local `main` is synchronized (`main` tracks `origin/main`).
+- Mainline protection remains in place, so changes proceed through checkpointed branches and are merged by PR after contract checks.
+- Remaining open slices continue via branch checkpoints with explicit `roadmap/checklist` evidence.
 
 ## Runtime Surface
 
@@ -39,11 +38,12 @@ _Captured: 2026-07-08_
 ## Validation Snapshot (Latest Local Run)
 
 - `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` passes.
-- Targeted test compile (`cargo test --locked ... --test ci_gate_tests --no-run`) succeeds with existing non-fatal dead-code warnings.
+- Targeted contract compile (`cargo test --manifest-path src-tauri/Cargo.toml --locked --test ci_gate_tests --no-run`) was previously validated in earlier slices and is re-checked as part of this slice changes.
 - `node scripts/check-esbuild-lock.mjs` passes and confirms `esbuild >= 0.28.1` floor.
-- `scripts/check-dependabot-esbuild-alert.sh` is being corrected to query advisory IDs explicitly; remote Dependabot state now shows open alert `GHSA-wrw7-89jp-8q8g` for `glib`.
-- `publish-readiness-checklist.html` remains open because clippy, full Rust tests, and UI typecheck/unit suites are not yet fully re-run in this environment.
-- Duplicate feature mapping cleanup completed by removing legacy duplicate `F-027` row from `docs/feature-list.html` (test traceability consolidation pass complete).
+- `scripts/check-dependabot-esbuild-alert.sh` remains part of the release-only scope and explicitly tracks `GHSA-g7r4-m6w7-qqqr`.
+- `scripts/check-dependabot-esbuild-alert.sh` still reports the open GTK/glib advisory `GHSA-wrw7-89jp-8q8g` in live CI checks.
+- `publish-readiness-checklist.html` remains open because clippy, full Rust tests, and UI suites are still pending full re-run after this gate slice.
+- CI coverage tooling was updated in this slice to `actions/upload-artifact@v5` to address Node runtime warning pressure while preserving artifact path and retention.
 
 ## Dependency Controls and Security Gate Stack
 

@@ -270,7 +270,7 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
         &workflow,
         "Upload Rust coverage report",
         &[
-            "actions/upload-artifact@v4",
+            "actions/upload-artifact@v5",
             "name: rust-coverage-lcov",
             "target/coverage/lcov.info",
         ],
@@ -278,6 +278,25 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
     assert!(!workflow.contains("--fail-under-lines"));
     assert!(!workflow.contains("--fail-under-regions"));
     assert!(!workflow.contains("--fail-under-functions"));
+}
+
+#[test]
+fn ci_workflow_enforces_lane_specific_rust_timeouts() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("CI_GATE_TIMEOUT_SECONDS=900"));
+    assert!(workflow.contains("FMT_TIMEOUT_SECONDS=900"));
+    assert!(workflow.contains("CLIPPY_TIMEOUT_SECONDS=900"));
+    assert!(workflow.contains("CORE_TEST_TIMEOUT_SECONDS=900"));
+    assert!(workflow.contains("STORAGE_TEST_TIMEOUT_SECONDS=900"));
+    assert!(workflow.contains("COVERAGE_TIMEOUT_SECONDS=900"));
+    assert!(workflow.contains("TEST_TIMEOUT_SECONDS=\"${CORE_TEST_TIMEOUT_SECONDS}\""));
+    assert!(workflow.contains("TEST_TIMEOUT_SECONDS=\"${STORAGE_TEST_TIMEOUT_SECONDS}\""));
+    assert!(workflow.contains("timeout \"${TEST_TIMEOUT_SECONDS}\"s cargo test"));
+    assert!(workflow.contains("timeout \"${CLIPPY_TIMEOUT_SECONDS}\"s cargo clippy"));
+    assert!(workflow.contains("timeout \"${COVERAGE_TIMEOUT_SECONDS}\"s cargo llvm-cov"));
+    assert!(workflow.contains("timeout \"${FMT_TIMEOUT_SECONDS}\"s cargo fmt"));
+    assert!(workflow.contains("timeout \"${CI_GATE_TIMEOUT_SECONDS}\"s cargo test --locked"));
 }
 
 #[test]

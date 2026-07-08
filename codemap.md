@@ -97,13 +97,14 @@ roadmap artifacts.
 - Active bead slices: `BI-047`, `BI-052`, CI reliability `BI-053`/`BI-054`/`BI-056`/`BI-057`,
   and governance doc updates in `docs/feature-list.html`, `docs/bill-of-materials.html`,
   and `docs/publish-readiness-checklist.html`.
-- Active security slice: `BI-052` (Dependabot/esbuild remediation) + `RT-RC-001` (GTK/GLib
-  dependency floor control).
-- Current local signal: CI includes a top-level `test` aggregate gate for branch
-  protection, UI `esbuild` lock checks pass at `0.28.1`, while the remote
-  `GHSA-g7r4-m6w7-qqqr` alert remains open locally verified.
-- Sync signal: local `main` is aligned to `origin/main` (no local-only commits);
-  publish flow is proceeding via checkpointed PRs rather than direct push.
+- Active security slice: `BI-052` (Dependabot/esbuild remediation) + `RT-RC-001`
+  (GTK/GLib dependency floor control).
+- Current local signal: CI remains hard-gated with top-level `ci-health`, `ci-workflow-parse`,
+  and `test` aggregate gate; `rust-tests` now logs lane-specific timeout budgets and
+  coverage upload uses `actions/upload-artifact@v5`. UI `esbuild` lock checks still pass at
+  `0.28.1`, while remote `GHSA-wrw7-89jp-8q8g` on `glib` remains open.
+- Sync signal: local `main` is aligned to `origin/main` (no local-only commits); publish
+  flow proceeds through checkpointed PRs and branch-protection requirements.
 - Publish status: blocked by open security advisory exceptions and unresolved host-
   migration + release-gating parity tasks.
 

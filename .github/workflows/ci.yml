@@ -209,10 +209,11 @@ jobs:
           save-if: false
       - name: CI gate contract
         run: |
+          CI_GATE_TIMEOUT_SECONDS=900
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
-            timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests
+            timeout "${CI_GATE_TIMEOUT_SECONDS}"s cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests
           else
-            timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --test ci_gate_tests
+            timeout "${CI_GATE_TIMEOUT_SECONDS}"s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --test ci_gate_tests
           fi
 
   rust-lint:
@@ -263,22 +264,25 @@ jobs:
           save-if: false
       - name: Format check
         if: matrix.lane == 'fmt'
-        run: timeout 900s cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+        run: |
+          FMT_TIMEOUT_SECONDS=900
+          timeout "${FMT_TIMEOUT_SECONDS}"s cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
       - name: Lint
         if: matrix.lane == 'clippy'
         run: |
+          CLIPPY_TIMEOUT_SECONDS=900
           LINT_START_TS=$(date +%s)
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
-            timeout 900s cargo clippy \
+            timeout "${CLIPPY_TIMEOUT_SECONDS}"s cargo clippy \
               --locked \
               --manifest-path src-tauri/Cargo.toml \
               --features analytics \
               -- -A dead_code -D warnings
           else
-            timeout 900s cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code -D warnings
+            timeout "${CLIPPY_TIMEOUT_SECONDS}"s cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code -D warnings
           fi
           LINT_ELAPSED_SECONDS=$(( $(date +%s) - LINT_START_TS ))
-          echo "::notice title=Rust quality lint::scope=${CI_RUST_BUILD_SCOPE} lane=${{ matrix.lane }} duration_sec=${LINT_ELAPSED_SECONDS}"
+          echo "::notice title=Rust quality lint::scope=${CI_RUST_BUILD_SCOPE} lane=${{ matrix.lane }} timeout_sec=${CLIPPY_TIMEOUT_SECONDS} duration_sec=${LINT_ELAPSED_SECONDS}"
 
   rust-tests:
     needs: [rust-quality-gates, ci-scope]
@@ -328,16 +332,20 @@ jobs:
           save-if: false
       - name: Test
         run: |
+          CORE_TEST_TIMEOUT_SECONDS=900
+          STORAGE_TEST_TIMEOUT_SECONDS=900
           TEST_START_TS=$(date +%s)
             if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
               if [[ "${{ matrix.lane }}" == "storage" ]]; then
-              timeout 900s cargo test \
+              TEST_TIMEOUT_SECONDS="${STORAGE_TEST_TIMEOUT_SECONDS}"
+              timeout "${TEST_TIMEOUT_SECONDS}"s cargo test \
                 --locked \
                 --manifest-path src-tauri/Cargo.toml \
                 --features analytics \
                 --test storage_duallayer_tests
             else
-              timeout 900s cargo test \
+              TEST_TIMEOUT_SECONDS="${CORE_TEST_TIMEOUT_SECONDS}"
+              timeout "${TEST_TIMEOUT_SECONDS}"s cargo test \
                 --locked \
                 --manifest-path src-tauri/Cargo.toml \
                 --features analytics \
@@ -384,10 +392,11 @@ jobs:
               echo "Skipping non-core lane '${{ matrix.lane }}' on delta scope"
               exit 0
             fi
-            timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests
+            TEST_TIMEOUT_SECONDS="${CORE_TEST_TIMEOUT_SECONDS}"
+            timeout "${TEST_TIMEOUT_SECONDS}"s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests
           fi
           TEST_ELAPSED_SECONDS=$(( $(date +%s) - TEST_START_TS ))
-          echo "::notice title=Rust quality test::scope=${CI_RUST_BUILD_SCOPE} lane=${{ matrix.lane }} duration_sec=${TEST_ELAPSED_SECONDS}"
+          echo "::notice title=Rust quality test::scope=${CI_RUST_BUILD_SCOPE} lane=${{ matrix.lane }} timeout_sec=${TEST_TIMEOUT_SECONDS} duration_sec=${TEST_ELAPSED_SECONDS}"
 
   rust-coverage:
     if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}
@@ -425,9 +434,10 @@ jobs:
           tool: cargo-llvm-cov
       - name: Rust coverage
         run: |
+          COVERAGE_TIMEOUT_SECONDS=900
           COVERAGE_START_TS=$(date +%s)
           mkdir -p target/coverage
-          timeout 900s cargo llvm-cov \
+          timeout "${COVERAGE_TIMEOUT_SECONDS}"s cargo llvm-cov \
             --locked \
             --features analytics \
             --manifest-path src-tauri/Cargo.toml \
@@ -435,9 +445,9 @@ jobs:
             --lcov \
             --output-path target/coverage/lcov.info
           COVERAGE_ELAPSED_SECONDS=$(( $(date +%s) - COVERAGE_START_TS ))
-          echo "::notice title=Rust coverage::duration_sec=${COVERAGE_ELAPSED_SECONDS}"
+          echo "::notice title=Rust coverage::timeout_sec=${COVERAGE_TIMEOUT_SECONDS} duration_sec=${COVERAGE_ELAPSED_SECONDS}"
       - name: Upload Rust coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: rust-coverage-lcov
           path: target/coverage/lcov.info
