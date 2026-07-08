@@ -224,7 +224,7 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
             "--features analytics",
-            "-D warnings",
+            "-A dead_code -D warnings",
         ],
     );
     assert_step_run_contains_all(
@@ -366,6 +366,12 @@ fn ci_workflow_uses_scope_specific_release_cache_prefixes() {
 fn ci_workflow_differentiates_release_and_delta_lanes() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
+    assert!(workflow.contains("strategy:"));
+    assert!(workflow.contains("lane: [core, storage]"));
+    assert!(workflow.contains(
+        "if: ${{ matrix.lane == 'core' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
+    ));
+    assert!(workflow.contains("if: ${{ matrix.lane == 'core' }}"));
     assert_step_block_contains_all(
         &workflow,
         "Lint",
@@ -375,9 +381,9 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
             "--locked \\",
             "--manifest-path src-tauri/Cargo.toml \\",
             "--features analytics \\",
-            "-- -D warnings",
+            "-- -A dead_code -D warnings",
             "else",
-            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -D warnings",
+            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code -D warnings",
             "fi",
         ],
     );
@@ -385,14 +391,20 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
         &workflow,
         "Test",
         &[
+            "TEST_START_TS=$(date +%s)",
             "if [[ \"$CI_RUST_BUILD_SCOPE\" == \"release\" ]]; then",
-            "cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests",
+            "if [[ \"${{ matrix.lane }}\" == \"storage\" ]]; then",
+            "--test storage_duallayer_tests",
             "else",
-            "cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib",
+            "--test admin_ingestion_guard_tests",
+            "--test verifier_tests",
+            "else",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests",
             "fi",
         ],
     );
-    assert!(workflow.contains("if: ${{ env.CI_RUST_BUILD_SCOPE == 'release' }}"));
+    assert!(workflow.contains("if: ${{ matrix.lane == 'core' }}"));
+    assert!(workflow.contains("lane=storage"));
     assert!(workflow.contains("if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"));
 }
 

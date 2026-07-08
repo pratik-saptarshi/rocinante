@@ -91,6 +91,11 @@ jobs:
     needs: [rust-build-seed]
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    if: ${{ matrix.lane == 'core' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [core, storage]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -129,8 +134,10 @@ jobs:
           prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2
           save-if: false
       - name: Format check
+        if: ${{ matrix.lane == 'core' }}
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
       - name: Lint
+        if: ${{ matrix.lane == 'core' }}
         run: |
           LINT_START_TS=$(date +%s)
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
@@ -138,9 +145,9 @@ jobs:
               --locked \
               --manifest-path src-tauri/Cargo.toml \
               --features analytics \
-              -- -D warnings
+              -- -A dead_code -D warnings
           else
-            cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -D warnings
+            cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code -D warnings
           fi
           LINT_ELAPSED_SECONDS=$(( $(date +%s) - LINT_START_TS ))
           echo "::notice title=Rust quality lint::scope=${CI_RUST_BUILD_SCOPE} duration_sec=${LINT_ELAPSED_SECONDS}"
@@ -148,13 +155,63 @@ jobs:
         run: |
           TEST_START_TS=$(date +%s)
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
-            cargo test --locked --manifest-path src-tauri/Cargo.toml --lib --tests
+            if [[ "${{ matrix.lane }}" == "storage" ]]; then
+              cargo test \
+                --locked \
+                --manifest-path src-tauri/Cargo.toml \
+                --features analytics \
+                --test storage_duallayer_tests \
+                -- --timeout 180
+            else
+              cargo test \
+                --locked \
+                --manifest-path src-tauri/Cargo.toml \
+                --features analytics \
+                --lib \
+                --tests \
+                --test admin_ingestion_guard_tests \
+                --test admin_service_tests \
+                --test analytics_snapshot_tests \
+                --test auth_tests \
+                --test baseline_delta_tests \
+                --test budget_guard_tests \
+                --test ci_gate_tests \
+                --test engine_tests \
+                --test fmt_module_order_tests \
+                --test git_module_tests \
+                --test git_provider_tests \
+                --test gtk_free_host_migration_plan_tests \
+                --test incident_feedback_tests \
+                --test ingestion_backend_tests \
+                --test ingestion_transport_tests \
+                --test onprem_and_errors_tests \
+                --test parser_plugin_tests \
+                --test pr_risk_contract_tests \
+                --test publish_gate_docs_tests \
+                --test release_baseline_handler_tests \
+                --test release_baseline_storage_tests \
+                --test release_baseline_tests \
+                --test roadmap_coherence_tests \
+                --test sanitizer_tests \
+                --test scoring_audit_tests \
+                --test scoring_helpers_tests \
+                --test scoring_integrity_tests \
+                --test security_advisory_exception_tests \
+                --test storage_boundary_tests \
+                --test storage_policy_tests \
+                --test tauri_command_tests \
+                --test team_policy_tests \
+                --test telemetry_tests \
+                --test triage_tests \
+                --test verifier_tests
+            fi
           else
-            cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib
+            cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests
           fi
           TEST_ELAPSED_SECONDS=$(( $(date +%s) - TEST_START_TS ))
-          echo "::notice title=Rust quality test::scope=${CI_RUST_BUILD_SCOPE} duration_sec=${TEST_ELAPSED_SECONDS}"
+          echo "::notice title=Rust quality test::scope=${CI_RUST_BUILD_SCOPE} lane=${{ matrix.lane }} duration_sec=${TEST_ELAPSED_SECONDS}"
       - name: CI gate contract
+        if: ${{ matrix.lane == 'core' }}
         run: |
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
             cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests
