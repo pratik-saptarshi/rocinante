@@ -16,9 +16,22 @@ if ! ALERTHITS="$(gh api "repos/$REPO/dependabot/alerts?state=$STATE" --jq "if t
   exit 0
 fi
 
+if ! [[ "$ALERTHITS" =~ ^[0-9]+$ ]]; then
+  echo "skip: malformed Dependabot API response; cannot evaluate advisory state"
+  exit 0
+fi
+
 if [[ "${ALERTHITS:-0}" != "0" ]]; then
   echo "fail: open Dependabot alert $ADVISORY is still present"
-  gh api "repos/$REPO/dependabot/alerts?state=$STATE" --jq "if type==\"array\" then map(select((.security_advisory.ghsa_id // \"\") == \"$ADVISORY\" and .state == \"$STATE\"))[] | \"#\(.number) \(.dependency.package.name) \(.state)\" else empty end"
+  if ALERT_ROWS="$(gh api "repos/$REPO/dependabot/alerts?state=$STATE" --jq "if type==\"array\" then map(select((.security_advisory.ghsa_id // \"\") == \"$ADVISORY\" and .state == \"$STATE\"))[] | \"#\(.number) \(.dependency.package.name) \(.state)\" else empty end" 2>/dev/null || true)"; then
+    if [[ -n "$ALERT_ROWS" ]]; then
+      echo "$ALERT_ROWS"
+    else
+      echo "skip: unable to format Dependabot alert details"
+    fi
+  else
+    echo "skip: unable to fetch Dependabot alert details"
+  fi
   exit 1
 fi
 
