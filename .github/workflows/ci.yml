@@ -442,3 +442,58 @@ jobs:
         with:
           name: rust-coverage-lcov
           path: target/coverage/lcov.info
+
+  test:
+    needs:
+      - ci-workflow-parse
+      - ci-scope
+      - rust-build-seed
+      - rust-quality-gates
+      - rust-lint
+      - rust-tests
+      - rust-coverage
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    timeout-minutes: 5
+    steps:
+      - name: Gate summary
+        shell: bash
+        run: |
+          if [[ "${{ needs.ci-workflow-parse.result }}" != "success" ]]; then
+            echo "workflow parse failed or was skipped unexpectedly"
+            exit 1
+          fi
+
+          if [[ "${{ needs.ci-scope.result }}" == "failure" ]]; then
+            echo "scope detection failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.rust-build-seed.result }}" == "failure" || "${{ needs.rust-build-seed.result }}" == "cancelled" ]]; then
+            echo "rust build seed failed or was cancelled"
+            exit 1
+          fi
+
+          if [[ "${{ needs.rust-quality-gates.result }}" == "failure" || "${{ needs.rust-quality-gates.result }}" == "cancelled" ]]; then
+            echo "rust quality gates failed or were cancelled"
+            exit 1
+          fi
+
+          if [[ "${{ needs.rust-lint.result }}" == "failure" || "${{ needs.rust-lint.result }}" == "cancelled" ]]; then
+            echo "rust lint failed or was cancelled"
+            exit 1
+          fi
+
+          if [[ "${{ needs.rust-tests.result }}" == "failure" || "${{ needs.rust-tests.result }}" == "cancelled" ]]; then
+            echo "rust tests failed or were cancelled"
+            exit 1
+          fi
+
+          if [[ "${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}" == "true" && "${{ needs.rust-coverage.result }}" != "skipped" ]]; then
+            if [[ "${{ needs.rust-coverage.result }}" == "failure" || "${{ needs.rust-coverage.result }}" == "cancelled" ]]; then
+              echo "rust coverage failed or was cancelled"
+              exit 1
+            fi
+          fi
+
+          echo "All required CI stages completed"
