@@ -300,7 +300,7 @@ fn ci_workflow_has_aggregate_test_gate() {
     assert!(workflow.contains("test:"));
     assert!(workflow.contains("if: ${{ always() }}"));
     assert!(workflow.contains(
-        "needs: [\n      - ci-workflow-parse\n      - ci-scope\n      - rust-build-seed\n      - rust-quality-gates\n      - rust-lint\n      - rust-tests\n      - rust-coverage\n    ]",
+        "needs:\n      - ci-workflow-parse\n      - ci-scope\n      - rust-build-seed\n      - rust-quality-gates\n      - rust-lint\n      - rust-tests\n      - rust-coverage\n",
     ));
     assert_step_block_contains_all(
         &workflow,
