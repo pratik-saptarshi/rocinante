@@ -7,18 +7,17 @@ _Captured: 2026-07-08_
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Active branch for current slice: `feat/bi-053-058-bead-doc-readiness-sync`
+- Active branch for current slice: `main` (synchronized to `origin/main`)
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
-- `origin/main` currently points to commit `5db5275`.
-- `main` currently contains `20` unique local commits ahead of `origin/main`.
-- This feature branch includes `origin/main` in ancestry, and local branch progression is currently checkpointed on
-  `feat/bi-053-058-bead-doc-readiness-sync`.
-- Merge strategy for next checkpoint: preserve a local backup of any `main`-only commits, align local `main`
+- `origin/main` currently points to commit `0e2d165`.
+- `main` is currently aligned to `origin/main` with `0` local-only commits.
+- This repository state is aligned on `main`, and prior feature checkpoints are merged via PR checkpoints on `origin/main`.
+- Merge strategy for next checkpoint: align local `main`
   by fast-forwarding to `origin/main`, then merge feature slices via PR gates with explicit evidence.
-- Branch checkpoint status: all ready work this slice is isolated on `feat/bi-053-058-bead-doc-readiness-sync` and is ready for PR-based merge once CI contract and lint evidence are refreshed.
+- Branch checkpoint status: repository-wide gates are current on `main`; remaining open slices continue via PR checkpoints before merge.
 
 ## Runtime Surface
 

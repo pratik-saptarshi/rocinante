@@ -37,9 +37,9 @@ Primary branch is `main` | [x] | Branch policy and GitHub default branch
 Protected-branch publish flow documented | [x] | `README.md`, `docs/github-setup.md`, and repo branch behavior
 Security policy exists | [x] | `SECURITY.md`
 Repository operating rules documented | [x] | `docs/project-rules.html`
-Main-branch sync precondition for publish | [ ] | `git rev-list --left-right --count origin/main...main`
+Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
-Latest local branch sync snapshot: `main` is ahead of `origin/main` by 20 commits.
+Latest local branch sync snapshot: `main` is aligned to `origin/main` at `0e2d165`.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -121,7 +121,7 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 
 ## 8) Branch governance and merge checkpoints
 
-- Local branch `main` is currently ahead of `origin/main` by 18 commits and contains local-only commits; publish actions should use protected PR flow only until sync checkpoint is merged.
+- Local branch `main` is currently aligned to `origin/main` with no local-only commits; publish actions continue via protected PR flow only.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`

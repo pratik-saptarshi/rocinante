@@ -102,8 +102,8 @@ roadmap artifacts.
 - Current local signal: CI includes a top-level `test` aggregate gate for branch
   protection, UI `esbuild` lock checks pass at `0.28.1`, while the remote
   `GHSA-g7r4-m6w7-qqqr` alert remains open locally verified.
-- Sync signal: local `main` is ahead of `origin/main` by 20 commits; publish flow is proceeding via
-  checkpointed PRs rather than direct push.
+- Sync signal: local `main` is aligned to `origin/main` (no local-only commits);
+  publish flow is proceeding via checkpointed PRs rather than direct push.
 - Publish status: blocked by open security advisory exceptions and unresolved host-
   migration + release-gating parity tasks.
 
