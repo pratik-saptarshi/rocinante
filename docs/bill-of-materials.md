@@ -15,6 +15,8 @@ _Captured: 2026-07-08_
 - `origin/main` and local `main` are aligned on commit `dc48f27` (`fix(ci): remove unsupported storage test timeout flag (#73)`).
 - This slice runs on a feature branch and is intended for branch-protection PR merge once validations are complete.
 - Remaining open slices continue via PR checkpoints with explicit roadmap/checklist evidence and conventional commits.
+- `feat/ci-054-scope-refinement` now owns the lane-scope fast-path refinement for CI and keeps
+  non-Rust changes from triggering full Rust build/lint/test lanes.
 
 ## Runtime Surface
 
@@ -29,7 +31,7 @@ _Captured: 2026-07-08_
 - `BI-047` — F-047 Desktop parity evaluation and host decision (in progress)
 - `BI-052` — F-052 Dependabot esbuild remediation (in progress)
 - `BI-053` — F-053 CI bootstrap and workflow parseability (completed with PR gate recovery + merge checkpoint)
-- `BI-054` — F-054 CI lane orchestration and gating (in progress)
+- `BI-054` — F-054 CI lane orchestration and gating (scope fast-path refinement in progress on `feat/ci-054-scope-refinement`).
 - `BI-056` — F-055 Release-path performance optimization (in progress)
 - `BI-057` — CI bootstrap + workflow parseability recovery (Red->Green complete)
 - `RT-RC-001` — GTK/glib dependency-floor governance (active)
@@ -38,7 +40,7 @@ _Captured: 2026-07-08_
 ## Validation Snapshot (Latest Local Run)
 
 - `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` passes.
-- Targeted test compile (`cargo test --locked ... --test ci_gate_tests --no-run`) succeeds with existing non-fatal dead-code warnings.
+- Targeted CI-gate contract check (`cargo test ... --test ci_gate_tests --no-run`) compiles successfully with non-fatal dead-code warnings from existing storage contract coverage.
 - `node scripts/check-esbuild-lock.mjs` passes and confirms `esbuild >= 0.28.1` floor.
 - `scripts/check-dependabot-esbuild-alert.sh` is being corrected to query advisory IDs explicitly; remote Dependabot state now shows open alert `GHSA-wrw7-89jp-8q8g` for `glib`.
 - `publish-readiness-checklist.html` remains open because clippy, full Rust tests, and UI typecheck/unit suites are not yet fully re-run in this environment.

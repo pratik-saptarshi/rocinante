@@ -78,8 +78,12 @@ jobs:
           while IFS= read -r path; do
             [[ -z "$path" ]] && continue
             case "$path" in
-              docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*)
+              docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*|.github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock|*.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico)
                 continue
+                ;;
+              src-tauri/*)
+                NEEDS_RUST=true
+                break
                 ;;
               *)
                 NEEDS_RUST=true

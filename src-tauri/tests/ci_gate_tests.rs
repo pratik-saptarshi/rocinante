@@ -340,6 +340,13 @@ fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
     assert!(workflow.contains("scope_reason=$([ \"$NEEDS_RUST\" == \"true\" ] && echo code-surface-touched || echo docs-only-tweak)"));
     assert!(workflow.contains("NEEDS_RUST=false"));
     assert!(workflow.contains("echo \"needs_rust=$NEEDS_RUST\" >> \"$GITHUB_OUTPUT\""));
+
+    assert!(workflow.contains("case \"$path\" in"));
+    assert!(workflow.contains(
+        "docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*",
+    ));
+    assert!(workflow.contains(".github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock"));
+    assert!(workflow.contains("src-tauri/*"));
 }
 
 #[test]
