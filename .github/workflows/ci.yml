@@ -55,8 +55,8 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 2
-      - id: detect
-        name: Detect CI scope
+      - name: Detect CI scope
+        id: detect
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
