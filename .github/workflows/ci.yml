@@ -36,7 +36,7 @@ jobs:
       - name: Validate workflow parseability
         run: |
           go install github.com/rhysd/actionlint/cmd/actionlint@latest
-          actionlint -oneline .github/workflows/ci.yml .github/workflows/security.yml
+          "$(go env GOPATH)/bin/actionlint" -oneline .github/workflows/ci.yml .github/workflows/security.yml
 
   ci-scope:
     needs: [ci-workflow-parse]
