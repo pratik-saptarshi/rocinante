@@ -4,6 +4,7 @@ use crate::types::{
     AdminQuery, CommitIngestionEvent, CommitterScore, PrCandidate, PrRanking, ScoringWeights,
     TelemetryPoint,
 };
+#[cfg(feature = "analytics")]
 use duckdb::{params, Connection};
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
@@ -40,6 +41,11 @@ fn update_max_usize(metric: &AtomicUsize, value: usize) {
             Err(current) => observed = current,
         }
     }
+}
+
+#[cfg(not(feature = "analytics"))]
+fn analytics_feature_unavailable() -> AnalyzerError {
+    AnalyzerError::Db("analytics feature is disabled for delta CI build".to_string())
 }
 
 #[derive(Debug, Clone, Default)]
@@ -494,6 +500,7 @@ impl DualLayerStore {
         route.enforce(StorageOperation::AnalyticsQuery)
     }
 
+    #[cfg(feature = "analytics")]
     fn init_columnar(&self) -> Result<(), AnalyzerError> {
         let conn =
             Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
@@ -538,6 +545,11 @@ impl DualLayerStore {
             ",
         )
         .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        Ok(())
+    }
+
+    #[cfg(not(feature = "analytics"))]
+    fn init_columnar(&self) -> Result<(), AnalyzerError> {
         Ok(())
     }
 
@@ -694,6 +706,7 @@ impl DualLayerStore {
         self.prune_raw_events(policy, now_ts())
     }
 
+    #[cfg(feature = "analytics")]
     pub fn promote_to_columnar_with_retention(
         &self,
         policy: &RetentionPolicy,
@@ -710,6 +723,16 @@ impl DualLayerStore {
         Ok(stats)
     }
 
+    #[cfg(not(feature = "analytics"))]
+    pub fn promote_to_columnar_with_retention(
+        &self,
+        _policy: &RetentionPolicy,
+        _now_ts: i64,
+    ) -> Result<LifecycleStats, AnalyzerError> {
+        Err(analytics_feature_unavailable())
+    }
+
+    #[cfg(feature = "analytics")]
     pub fn promote_to_columnar(&self) -> Result<LifecycleStats, AnalyzerError> {
         let _promotion_lock = self
             .promotion_barrier
@@ -718,6 +741,12 @@ impl DualLayerStore {
         self.promote_to_columnar_no_lock()
     }
 
+    #[cfg(not(feature = "analytics"))]
+    pub fn promote_to_columnar(&self) -> Result<LifecycleStats, AnalyzerError> {
+        Err(analytics_feature_unavailable())
+    }
+
+    #[cfg(feature = "analytics")]
     pub fn read_release_baseline(&self, repo_name: &str) -> Result<Option<f64>, AnalyzerError> {
         let conn =
             Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
@@ -737,6 +766,12 @@ impl DualLayerStore {
         }
     }
 
+    #[cfg(not(feature = "analytics"))]
+    pub fn read_release_baseline(&self, _repo_name: &str) -> Result<Option<f64>, AnalyzerError> {
+        Err(analytics_feature_unavailable())
+    }
+
+    #[cfg(feature = "analytics")]
     pub fn reseed_release_baseline(
         &self,
         repo_name: &str,
@@ -768,6 +803,16 @@ impl DualLayerStore {
         Ok(baseline_complexity)
     }
 
+    #[cfg(not(feature = "analytics"))]
+    pub fn reseed_release_baseline(
+        &self,
+        _repo_name: &str,
+        _baseline_complexity: f64,
+    ) -> Result<f64, AnalyzerError> {
+        Err(analytics_feature_unavailable())
+    }
+
+    #[cfg(feature = "analytics")]
     fn promote_to_columnar_no_lock(&self) -> Result<LifecycleStats, AnalyzerError> {
         let promoted = {
             let conn = Connection::open(&self.columnar_path)
@@ -848,6 +893,12 @@ impl DualLayerStore {
         })
     }
 
+    #[cfg(not(feature = "analytics"))]
+    fn promote_to_columnar_no_lock(&self) -> Result<LifecycleStats, AnalyzerError> {
+        Err(analytics_feature_unavailable())
+    }
+
+    #[cfg(feature = "analytics")]
     fn prune_analytics_releases_with_retention(
         &self,
         policy: &RetentionPolicy,
@@ -940,6 +991,15 @@ impl DualLayerStore {
         Ok(())
     }
 
+    #[cfg(not(feature = "analytics"))]
+    fn prune_analytics_releases_with_retention(
+        &self,
+        _policy: &RetentionPolicy,
+    ) -> Result<(), AnalyzerError> {
+        Err(analytics_feature_unavailable())
+    }
+
+    #[cfg(feature = "analytics")]
     fn validate_and_publish_snapshot(
         &self,
         snapshot_id: u64,
@@ -954,6 +1014,16 @@ impl DualLayerStore {
         Ok(count >= min_rows as i64)
     }
 
+    #[cfg(not(feature = "analytics"))]
+    fn validate_and_publish_snapshot(
+        &self,
+        _snapshot_id: u64,
+        _min_rows: usize,
+    ) -> Result<bool, AnalyzerError> {
+        Err(analytics_feature_unavailable())
+    }
+
+    #[cfg(feature = "analytics")]
     pub fn aggregate_by_query(
         &self,
         query: &AdminQuery,
@@ -961,6 +1031,15 @@ impl DualLayerStore {
         self.aggregate_by_query_on_route(StorageRoute::Analytics, query)
     }
 
+    #[cfg(not(feature = "analytics"))]
+    pub fn aggregate_by_query(
+        &self,
+        _query: &AdminQuery,
+    ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        Err(analytics_feature_unavailable())
+    }
+
+    #[cfg(feature = "analytics")]
     pub fn aggregate_by_query_on_route(
         &self,
         route: StorageRoute,
@@ -980,6 +1059,16 @@ impl DualLayerStore {
         )
     }
 
+    #[cfg(not(feature = "analytics"))]
+    pub fn aggregate_by_query_on_route(
+        &self,
+        _route: StorageRoute,
+        _query: &AdminQuery,
+    ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        Err(analytics_feature_unavailable())
+    }
+
+    #[cfg(feature = "analytics")]
     pub fn aggregate_by_query_with_snapshot_on_route(
         &self,
         query: &AdminQuery,
@@ -989,6 +1078,17 @@ impl DualLayerStore {
     ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
         Self::enforce_analytics_route(route)?;
         self.aggregate_by_query_with_snapshot(query, snapshot, mode)
+    }
+
+    #[cfg(not(feature = "analytics"))]
+    pub fn aggregate_by_query_with_snapshot_on_route(
+        &self,
+        _query: &AdminQuery,
+        _snapshot: &AnalyticsSnapshot,
+        _mode: AnalyticsQueryMode,
+        _route: StorageRoute,
+    ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        Err(analytics_feature_unavailable())
     }
 
     pub fn compute_committer_scores_with_route(
@@ -1011,6 +1111,7 @@ impl DualLayerStore {
         self.rank_open_prs(prs, weights)
     }
 
+    #[cfg(feature = "analytics")]
     pub fn aggregate_by_query_with_snapshot(
         &self,
         query: &AdminQuery,
@@ -1074,6 +1175,16 @@ impl DualLayerStore {
         Ok(out)
     }
 
+    #[cfg(not(feature = "analytics"))]
+    pub fn aggregate_by_query_with_snapshot(
+        &self,
+        _query: &AdminQuery,
+        _snapshot: &AnalyticsSnapshot,
+        _mode: AnalyticsQueryMode,
+    ) -> Result<Vec<TelemetryPoint>, AnalyzerError> {
+        Err(analytics_feature_unavailable())
+    }
+
     fn analytics_read_path(&self, snapshot: &AnalyticsSnapshot) -> String {
         if snapshot.snapshot_id > 0 {
             let replica_path = self.snapshot_path(snapshot.snapshot_id);
@@ -1089,6 +1200,7 @@ impl DualLayerStore {
         }
     }
 
+    #[cfg(feature = "analytics")]
     pub fn compute_committer_scores(
         &self,
         query: &AdminQuery,
@@ -1182,6 +1294,15 @@ impl DualLayerStore {
 
         out.sort_by(|a, b| b.score.total_cmp(&a.score));
         Ok(out)
+    }
+
+    #[cfg(not(feature = "analytics"))]
+    pub fn compute_committer_scores(
+        &self,
+        _query: &AdminQuery,
+        _weights: &ScoringWeights,
+    ) -> Result<Vec<CommitterScore>, AnalyzerError> {
+        Err(analytics_feature_unavailable())
     }
 
     pub fn rank_open_prs(

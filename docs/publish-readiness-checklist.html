@@ -12,12 +12,15 @@ Current planning artifacts that must stay in sync:
 - `docs/roadmap/gtk-free-host-migration-plan.html`
 - `docs/roadmap/security-advisory-exceptions.json`
 - `docs/roadmap/test-plan.html`
+- `docs/roadmap/desktop-parity-matrix.html`
 - `scripts/dependency-floor-proof.sh`
+- `scripts/check-dependabot-esbuild-alert.sh`
 - `codemap.md`
 
 It is grounded in:
 
 - `docs/roadmap/feature-backlog.html`
+- `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`
 - `docs/roadmap/bead-issue-tracker.html`
 - `docs/roadmap/test-plan.html`
 - `docs/roadmap/plan-review-traceability.html`
@@ -43,10 +46,16 @@ Secret scan is enabled in GitHub Actions | [x] | `.github/workflows/security.yml
 Dependency review is enabled for pull requests | [x] | `.github/workflows/dependency-review.yml`
 CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL analysis
 Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
-Dependency audit exceptions are registry-backed, time-boxed, and release-blocking | [ ] | `.cargo/audit.toml`, `docs/roadmap/security-advisory-exceptions.json`, `scripts/dependency-floor-proof.sh`
-Open Dependabot alerts are closed or formally accepted | [ ] | GitHub Dependabot alert list for `pratik-saptarshi/rocinante`
+Dependency audit exceptions are registry-backed, time-boxed, and release-blocking | [x] | `.cargo/audit.toml`, `docs/roadmap/security-advisory-exceptions.json`, `scripts/dependency-floor-proof.sh`
+Open Dependabot alerts are closed or formally accepted | [ ] | `ui/pnpm-lock.yaml` resolves `esbuild` at `0.28.1`; remote verification requires `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"` once network is available.
+Latest local evidence (2026-07-08):
+
+- `node scripts/check-esbuild-lock.mjs` reports pass (`esbuild lockfile floor check passed: 0.28.1 >= 0.28.1`).
+- `./scripts/check-dependabot-esbuild-alert.sh` currently reports open alert `GHSA-g7r4-m6w7-qqqr` in this environment.
+Open Dependabot alerts are verified in CI on release lane | [ ] | `scripts/check-dependabot-esbuild-alert.sh` executes on `main` pushes in `.github/workflows/ci.yml`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
 Auth/RBAC boundary is covered by tests | [x] | `src-tauri/tests/auth_tests.rs`
+Privacy policy and secret-hygiene controls are documented | [x] | `SECURITY.md`, `.gitignore`, TruffleHog verified-scan policy
 
 ## 3) Documentation gate
 
@@ -54,6 +63,7 @@ Criterion | Status | Evidence
 ---|---|---
 Bill of materials is current | [x] | `docs/bill-of-materials.html`
 GTK-free host migration plan is documented and phased | [x] | `docs/roadmap/gtk-free-host-migration-plan.html`, `docs/feature-list.html`, `docs/roadmap/bead-issue-tracker.html`, `docs/roadmap/test-plan.html`
+Parity matrix and host-decision record are current for RT-RC-002 | [x] | `docs/roadmap/desktop-parity-matrix.html`, `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`, `docs/roadmap/gtk-free-host-migration-plan.html`
 README links publish gate docs | [x] | `README.md`
 Roadmap execution source remains authoritative | [x] | `docs/roadmap/execution-ticket-artifact.md`
 Roadmap/test traceability is present | [x] | `docs/roadmap/test-plan.html`, `docs/roadmap/plan-review-traceability.html`
@@ -62,14 +72,16 @@ Roadmap/test traceability is present | [x] | `docs/roadmap/test-plan.html`, `doc
 
 Criterion | Status | Evidence
 ---|---|---
-Rust formatting passes | [ ] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
-Rust lint passes | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
+Rust formatting passes | [x] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
+Rust lint passes | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code -D warnings`
 Rust tests pass | [ ] | `cargo test --manifest-path src-tauri/Cargo.toml`
 Backend Rust coverage report is generated | [ ] | `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
+Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
 UI unit tests pass | [ ] | `pnpm exec vitest run` from `ui/`
 UI typecheck passes | [ ] | `pnpm exec tsc -b` from `ui/`
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
+Coverage floor target (informational, enforce in next release) | [ ] | Branch: 85%; Unit: 85%; Integration: 85%; E2E: 85%; target to be promoted to hard fail on a stable CI release lane
 
 ## 5) Release execution gate
 
@@ -101,3 +113,25 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 - Open Dependabot alerts should be closed or explicitly accepted before publish.
 - If any CI job fails, fix the branch and rerun the gate before merging.
 - If the branch contains docs-only changes, the same gating still applies.
+- If `main` is not fast-forward aligned to `origin/main`, halt publish workflow until a sync checkpoint PR is merged.
+
+## 8) Branch governance and merge checkpoints
+
+- Local branch `main` is currently behind remote `origin/main` ancestry in one commit and contains local-only commits; publish actions should use protected PR flow only.
+- Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
+  - `docs/bill-of-materials.md`
+  - `docs/publish-readiness-checklist.html`
+  - `docs/roadmap/bead-issue-tracker.html`
+  - `codemap.md`
+- Any final merge attempt into `main` should include terminal check visibility via `gh pr view <pr>` and `gh run view <run>`.
+
+## 9) Coverage hardening plan
+
+- Baseline coverage targets are part of the publish hardening ladder (informational today):
+  - Branch: 85%
+  - Backend unit: 85%
+  - Backend integration: 85%
+  - UI unit: 85%
+  - E2E: 85%
+- Promotion rule: after three consecutive release runs that satisfy current gates,
+  enforce the above thresholds as hard checks in the next dedicated CI hardening slice.

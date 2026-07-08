@@ -1,3 +1,5 @@
+#![cfg(feature = "analytics")]
+
 use duckdb::params;
 use duckdb::Connection;
 use repo_analyzer_core::storage::{

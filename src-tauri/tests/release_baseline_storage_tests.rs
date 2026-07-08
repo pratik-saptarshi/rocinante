@@ -1,3 +1,5 @@
+#![cfg(feature = "analytics")]
+
 use repo_analyzer_core::storage::BaselineStore;
 use tempfile::tempdir;
 

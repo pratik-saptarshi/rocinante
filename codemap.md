@@ -39,12 +39,16 @@ roadmap artifacts.
   security, validation, and coverage artifact criteria.
 - `docs/roadmap/gtk-free-host-migration-plan.html`: phase-gated GTK-free host
   migration plan with TDD and parity checkpoints.
+- `docs/roadmap/desktop-parity-matrix.html`: phase-0 parity matrix and host
+  decision record with must-have/should-have/can-defer classification.
 - `docs/roadmap/dependabot-esbuild-remediation-plan.html`: targeted remediation
   plan for the current remote Dependabot esbuild alert.
 - `docs/roadmap/security-advisory-exceptions.json`: machine-readable registry
   for time-boxed audit ignores and host-floor governance.
 - `scripts/dependency-floor-proof.sh`: dependency-floor proof command for GTK
   and GLib transitive-path validation.
+- `scripts/check-esbuild-lock.mjs`: enforces local lockfile dependency-floor for
+  `esbuild >= 0.28.1` in CI and local verification.
 
 ## Directory Map
 
@@ -55,7 +59,7 @@ roadmap artifacts.
 | `ui/src/` | Frontend dashboard, bridge adapters, explainability panels, and quality-pulse rendering. | UI state should flow through the bridge adapters rather than direct runtime assumptions. |
 | `ui/e2e/` | Browser-level smoke coverage for the Tauri bridge and user-visible flows. | Keeps the Playwright surface separate from unit tests. |
 | `docs/` | Feature backlog, roadmap, test plan, publish-readiness checklist, and bead tracker artifacts. | This is the source of truth for phase sequencing and backlog accounting. |
-| `scripts/` | Repo automation and local operational helpers. | Prefer existing scripts over ad hoc shell snippets. |
+| `scripts/` | Repo automation and local operational helpers. | Prefer existing scripts over ad hoc shell snippets; include dependency-floor checks for security posture. |
 
 ## Data and Control Flow
 
@@ -87,6 +91,17 @@ roadmap artifacts.
     renders results in `ui/src/App.tsx`.
 13. Unit, integration, and e2e tests validate the command facade, the bridge
     seam, and the browser-visible behavior.
+
+## Governance and Execution Snapshot
+
+- Active bead slices: `BI-047`, `BI-052`, CI reliability `BI-053`/`BI-054`/`BI-056`/`BI-057`,
+  and governance doc dedupe cleanups in `docs/feature-list.html`.
+- Active security slice: `BI-052` (Dependabot/esbuild remediation) + `RT-RC-001` (GTK/GLib
+  dependency floor control).
+- Current local signal: UI `esbuild` lock floor checks pass at `0.28.1`, while the
+  remote `GHSA-g7r4-m6w7-qqqr` alert is still open locally verified.
+- Publish status: blocked by open security advisory exceptions and unresolved host-
+  migration + release-gating parity tasks.
 
 ## Design Patterns
 

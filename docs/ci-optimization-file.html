@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rocinante CI Failure Diagnosis and Optimization Plan</title>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; max-width: 960px; margin: 24px; line-height: 1.45; }
+    code { background: #f2f2f2; padding: 0 4px; border-radius: 4px; }
+    .risk-high { color: #991b1b; font-weight: 700; }
+    .risk-mid { color: #92400e; font-weight: 700; }
+    .ok { color: #166534; font-weight: 700; }
+    h1,h2,h3 { margin-bottom: .25rem; }
+    section { margin: 1.2rem 0; }
+    ul { margin-top: .25rem; }
+    .panel { border-left: 4px solid #0f172a; padding-left: 10px; margin: .8rem 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: #f8fafc; }
+  </style>
+</head>
+<body>
+  <h1>Rocinante CI Failure Diagnosis + Optimization Plan</h1>
+  <p><strong>Date range analyzed:</strong> 2026-07-07 (live runs sampled from GitHub Actions API).</p>
+  <p><strong>Scope:</strong> Diagnose current CI failures, propose CI reliability and performance remediation, and provide a TDD + S.M.A.R.T execution plan. </p>
+
+  <section>
+    <h2>Expert-Panel Findings</h2>
+
+    <div class="panel">
+      <h3>Panel 1 — Release Stability</h3>
+      <ul>
+        <li>Run <code>28879792086</code> failed in <span class="risk-high">Format check</span>: <code>cargo fmt</code> reported diffs in <code>src-tauri/tests/ci_gate_tests.rs</code> and <code>src-tauri/tests/gtk_free_host_migration_plan_tests.rs</code>. Exit code: <code>1</code>.</li>
+        <li>Run <code>28845752900</code> was canceled at 06:45:47Z after <code>test</code> had run for ~29m; failure point shows warning at <code>storage_duallayer_tests</code>: <code>test async_ingestion_engine_applies_retention_before_promotion has been running for over 60 seconds</code>.</li>
+        <li>At least two earlier run families on feature branches show identical gate fragility: <code>28870687608</code> and <code>28869515080</code> fail in <span class="risk-high">Lint</span> with <code>-D warnings</code> dead-code errors.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h3>Panel 2 — Quality Gate Semantics</h3>
+      <ul>
+        <li><span class="risk-high">Lint failures are actionable policy violations</span> not infra instability.</li>
+        <li>Observed errors include unused function/fields (example from run <code>28869515080</code>): <code>max_release_partitions_to_keep</code> never used; fields <code>columnar_path</code>, <code>promotion_barrier</code>, <code>latest_snapshot_id</code> never read.</li>
+        <li>Because gate uses <code>cargo clippy ... -- -D warnings</code>, these warnings are hard-failers on PR lanes.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h3>Panel 3 — Performance & Throughput</h3>
+      <ul>
+        <li>Head workflow now keeps <code>rust-quality-gates</code> first, then runs heavy lanes as independent
+          matrix jobs for lint (<code>fmt</code>/<code>clippy</code>), storage/core tests, and release coverage,
+          preserving coverage-only policy while maximizing diagnostic signal.</li>
+        <li>Historical run shape at <code>e6ca6df5...</code> shows explicit lane planning + matrix jobs (<code>Test Shards (${{ matrix.lane }})</code>) with <code>fail-fast: false</code>; this is the right direction for throughput but still leaves one long-running integration lane.</li>
+        <li>Key timing sample set (UTC):
+          <ul>
+            <li><code>28845752900</code> test duration: <strong>29m03s</strong> before cancellation.</li>
+            <li><code>28870687608</code> quality-lint duration: <strong>~1m58s</strong>, test lanes skipped on failure so no lane completion insight.</li>
+            <li><code>28879792086</code> test job: <strong>68s</strong>, failed quickly on formatting, no meaningful runtime signal.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Root-Cause Diagnosis</h2>
+    <table>
+      <tr><th>Failure</th><th>Evidence</th><th>Primary Cause</th><th>Severity</th></tr>
+      <tr>
+        <td>Format Check</td>
+        <td>run <code>28879792086</code> log lines: Diff in <code>ci_gate_tests.rs</code> and <code>gtk_free_host_migration_plan_tests.rs</code></td>
+        <td>Unformatted/unstaged Rust test file drift</td>
+        <td><span class="risk-high">High</span></td>
+      </tr>
+      <tr>
+        <td>Lint</td>
+        <td>run <code>28870687608</code> and <code>28869515080</code> logs show 3 clippy dead-code errors</td>
+        <td>Rust warnings promoted to errors by <code>-D warnings</code>, likely feature-path drift or incomplete cleanup</td>
+        <td><span class="risk-high">High</span></td>
+      </tr>
+      <tr>
+        <td>Timeout/Cancel</td>
+        <td>run <code>28845752900</code> log shows storage_duallayer long-running test, then cancellation</td>
+        <td>Single lane monopolizes time budget; no stronger per-target timeout for the slowest module and serialized PR test execution in current branch</td>
+        <td><span class="risk-mid">Medium</span></td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Remediation Plan (Panel Recommendation)</h2>
+    <h3>Immediate Fix (P0, next commit)</h3>
+    <ul>
+      <li>Apply formatting fix in touched files and enforce <code>cargo fmt --all</code> locally before push.</li>
+      <li>Resolve lint issues in failing structs/functions from <code>rocinante-repo-analyzer</code> test/build paths:</li>
+      <ul>
+        <li>Either use fields/functions flagged by clippy, or remove them with safe refactors and contract tests updates.</li>
+      </ul>
+      <li>Keep release branch behavior unchanged while fixing non-release delta paths first.</li>
+    </ul>
+
+    <h3>Optimization Plan (release-aware)</h3>
+    <ul>
+      <li><strong>Restore diff/delta-driven fanout:</strong> For non-main/non-release branches, run only required lanes based on changed paths.</li>
+      <li><strong>Fine-grain long lanes:</strong> isolate <code>storage_duallayer_tests</code> into its own release lane with explicit timeout budget.</li>
+        <li><strong>Parallelize release + delta gates:</strong> split workflow so <code>rust-quality-gates</code> runs first and heavy lanes run independently with <code>fail-fast: false</code> (lint shards and test shards).</li>
+      <li><strong>Constrain blast radius:</strong> only run <code>cargo llvm-cov</code> for release path; do not force coverage on delta/PR lanes.</li>
+      <li><strong>Cache efficiency:</strong> keep release cache key writes constrained to release branches; non-release should restore-only in scoped lanes to avoid stale contamination.</li>
+      <li><strong>Fail-fast policy:</strong> maintain <code>fail-fast: false</code> for test shards to maximize signal and reduce rerun waste.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>TDD-Driven Remediation Roadmap</h2>
+
+    <h3>Phase 1 — Deterministic Repro & Safety Net (1 day)</h3>
+    <ul>
+      <li>Red: add a preflight checklist in CI docs: <code>cargo fmt --check</code>, <code>cargo clippy -- -D warnings</code>.</li>
+      <li>Green: add/extend a tiny test contract in <code>src-tauri/tests/ci_gate_tests.rs</code> to verify lane/mode behavior and guard accidental changes to non-release scope.</li>
+      <li>Refactor: keep all existing release contracts intact.</li>
+    </ul>
+
+    <h3>Phase 2 — Lane Planner + Delta Selection (2–3 days)</h3>
+    <ul>
+      <li>Red: create/restore a matrix generator test (local script-level test or script assertions) that maps changed paths to a bounded lane set.</li>
+      <li>Green: run reduced lane set for PR-only changes by default; include <code>ci-gate-contract</code> when workflow/test files change.</li>
+      <li>Refactor: preserve full coverage + all lanes only for release branches/inputs.</li>
+    </ul>
+
+    <h3>Phase 3 — Parallel Execution + Slow-Path Isolation (2–3 days)</h3>
+    <ul>
+      <li>Red: split <code>storage_duallayer_tests</code> into a dedicated matrix lane with stricter test timeout and dedicated runner budget.</li>
+      <li>Green: execute release storage and core lanes with <code>lane</code>-specific metadata, timeout telemetry, and isolated command scopes.</li>
+      <li>Refactor: keep existing `--all-targets`/release behavior untouched.</li>
+    </ul>
+
+    <h3>Phase 4 — Regression Hardening (1–2 days)</h3>
+    <ul>
+      <li>Red: add synthetic CI fixture proving that format or lint regressions produce actionable failure artifacts.</li>
+      <li>Green: publish a nightly baseline dashboard (CI duration + lane-by-lane duration, timeout reasons, dead-code drift).</li>
+      <li>Refactor: rollback guardrails if release path performance or correctness regresses.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>S.M.A.R.T Acceptance Criteria</h2>
+    <ol>
+      <li><strong>Specific:</strong> Before merge gate, all non-release PR commits that touch only documentation or test files under <code>src-tauri/tests</code> must complete in at most the currently required relevant lanes plus gate-contract, with no full release seed.</li>
+      <li><strong>Measurable:</strong> Reduce non-release PR wall-clock from 30m cancel failure behavior to &lt;20 minutes at 95th percentile over next 10 successful runs; capture per-lane durations as artifacts.</li>
+      <li><strong>Measurable:</strong> Reduce release wall-clock tail for full run by at least 25% after storage-dual lane isolation by comparing lane-level duration telemetry across 5 successful release runs.</li>
+      <li><strong>Achievable:</strong> Preserve release job policy (<code>main</code> and <code>release/*</code>) while adding lane-specific command scopes and timeout budgets.</li>
+      <li><strong>Relevant:</strong> Preserve full release gating, coverage, and dependency floor behavior while minimizing unnecessary analytics/duckdb compile time on non-release lanes.</li>
+      <li><strong>Time-bound:</strong> complete remediation + validation within 7 calendar days from handoff, with review gate at Day 3 and Day 6.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>What I Recommend You Execute Next</h2>
+    <ul>
+      <li>Pick one run ID from your target branch and confirm via <code>gh run view &lt;ID&gt; --json jobs</code> after the branch fix lands.</li>
+      <li>If you want, I can also add a path-based lane planner script so non-release changes automatically narrow delta lane coverage in this workflow.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Plan Review Integrator Mapping</h2>
+
+    <h3>Mapped Governance Slice</h3>
+    <ul>
+      <li><strong>Epic</strong>: EP-07 CI reliability hardening</li>
+      <li><strong>Feature</strong>: F-053/F-054/F-055 (bootstrap, lane orchestration, and release-path performance)</li>
+      <li><strong>Bead tickets</strong>: BI-053, BI-054, BI-055, BI-056</li>
+      <li><strong>Test track</strong>: T-055, T-056, T-057</li>
+      <li><strong>Priority</strong>: P0 for bootstrap/parseability, P0 for lane-orchestration, P1 for release-path optimization</li>
+    </ul>
+
+    <h3>Phase 0 — Workflow Bootstrap and Contract Guard (P0)</h3>
+    <ul>
+      <li>Add `ci-health` job as a guaranteed first-run signal.</li>
+      <li>Add required parseability job that validates workflow syntax and expression grammar.</li>
+      <li>Wire all heavy jobs behind the health+parseability gates.</li>
+      <li>Acceptance:
+        <ul>
+          <li>Any CI dispatch emits a check-run for bootstrap before lint/test jobs appear.</li>
+          <li>Malformed workflow expressions fail as a parseability fault in under 60 seconds.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Phase 1 — Orchestration and Lane Governance (P0/P1)</h3>
+    <ul>
+      <li>Keep orchestration and lane dispatch separate from quality execution jobs.</li>
+      <li>Move unstable `matrix`-scoped guards to step-level conditionals where safe.</li>
+      <li>Default non-release paths to `ci-workflow` contract + `rust-quality-gates` + `rust-lint` + `rust-tests` core lane only.</li>
+      <li>Acceptance:
+        <ul>
+          <li>Zero-check-run failures are no longer used as the default failure mode for workflow dispatch.</li>
+          <li>Non-release `storage` and `coverage` lanes are either skipped explicitly or never invoked.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Phase 2 — Release-Path Optimization and Telemetry (P1)</h3>
+    <ul>
+      <li>Keep `storage` heavy lanes and coverage as release-only execution paths.</li>
+      <li>Keep timeout and duration telemetry on each lane boundary.</li>
+      <li>Preserve failure visibility with `fail-fast: false` where independent diagnostics are required.</li>
+      <li>Acceptance:
+        <ul>
+          <li>Release-only heavy lanes run with dedicated timeout budgets and per-lane elapsed notices.</li>
+          <li>Non-release PR wall-clock drops because no duckdb full-coverage or long storage lane is forced by default.</li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Run 28912108975 Remediation Plan</h2>
+
+    <h3>Failure confirmation</h3>
+    <ul>
+      <li>run: <code>28912108975</code></li>
+      <li>failing jobs:
+        <ul>
+          <li><code>rust-lint</code> / step <code>Format check</code></li>
+          <li><code>rust-tests (core)</code> / test <code>gtk_free_host_migration_plan_tests.rs</code> failed on contract drift</li>
+        </ul>
+      </li>
+      <li>affected files:
+        <ul>
+          <li><code>src-tauri/tests/ci_gate_tests.rs</code> (format drift)</li>
+          <li><code>docs/roadmap/test-plan.html</code> (missing <code>`F-047` -> `T-049`</code> entry used by contract test)</li>
+        </ul>
+      </li>
+      <li>root cause: source drift in CI governance contracts, not runtime/toolchain instability.</li>
+    </ul>
+
+    <h3>Priority 0 (Immediate — unblock CI)</h3>
+    <ul>
+      <li>Apply formatting to <code>src-tauri/tests/ci_gate_tests.rs</code> and keep bootstrap+parse gates intact.</li>
+      <li>Restore or add <code>`F-047` -> `T-049`</code> in <code>docs/roadmap/test-plan.html</code> so <code>gtk_free_host_migration_plan_tests</code> remains green.</li>
+      <li>Run and record:</li>
+      <ul>
+        <li><code>cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check</code></li>
+        <li><code>rustup run 1.96.1 cargo test --manifest-path src-tauri/Cargo.toml --test ci_gate_tests --no-default-features --no-run</code></li>
+        <li><code>rustup run 1.96.1 cargo test --manifest-path src-tauri/Cargo.toml --test gtk_free_host_migration_plan_tests</code></li>
+        <li>Push and rerun CI on the same branch; verify <code>ci-health</code> and <code>ci-workflow-parse</code> appear before <code>rust-lint</code>.</li>
+      </ul>
+      <li>Acceptance:</li>
+      <ul>
+        <li>Format step passes with no diff.</li>
+        <li><code>rust-lint</code> fmt matrix job is green on next push.</li>
+        <li><code>gtk_free_host_migration_plan_tests</code> no longer fails on <code>F-047/T-049</code>.</li>
+        <li>ci-gate bootstrap path appears before any heavy job in workflow run details.</li>
+      </ul>
+    </ul>
+
+    <h3>Priority 1 (Stability)</h3>
+    <ul>
+      <li>Preserve deterministic CI bootstrap and make lane guards explicit for step-level matrix execution.</li>
+      <li>Keep <code>ci-scope</code> output as the single source of non-release lane eligibility.</li>
+      <li>Extend scope detection to skip rust-heavy lanes for docs-only, markdown-only, and lockfile-only edits.</li>
+      <li><strong>Acceptance:</strong> for non-code or docs-only PRs, rust-heavy and storage/coverage lanes remain skipped unless forced by scope.</li>
+    </ul>
+
+    <h3>Priority 2 (Performance and Safety)</h3>
+    <ul>
+      <li>Apply explicit timeout wrappers to all long-lived release commands and make timeout duration telemetry visible as notices.</li>
+      <li>Split storage-heavy suites into isolated release buckets if a repeat regression appears after the next 10 successful release runs.</li>
+      <li><strong>Acceptance:</strong> no release command runs past timeout policy without structured timeout evidence and no skipped lane loses diagnostic visibility.</li>
+    </ul>
+
+    <h3>Mapping</h3>
+    <h4>Epic/Feature/Capability/Function/Task Alignment</h4>
+    <ul>
+      <li><strong>Epic</strong>: EP-07 CI reliability hardening</li>
+      <li><strong>Feature</strong>: F-053 CI bootstrap and workflow parseability</li>
+      <ul>
+        <li><strong>Capability</strong>: C-053 launch-time contract guard</li>
+        <li><strong>Function</strong>: FN-053 ci-health marker and workflow parseability gate</li>
+        <li><strong>Task</strong>: never hide workflow parse errors behind zero-check-run bootstrap behavior.</li>
+      </ul>
+      <li><strong>Feature</strong>: F-054 CI lane orchestration and gating</li>
+      <ul>
+        <li><strong>Capability</strong>: C-054 deterministic lane planning</li>
+        <li><strong>Function</strong>: FN-054 scope-aware matrix dispatch</li>
+        <li><strong>Task</strong>: protect step-level matrix lanes from unstable top-level suppression.</li>
+      </ul>
+      <li><strong>Feature</strong>: F-055 Release-path performance optimization</li>
+      <ul>
+        <li><strong>Capability</strong>: C-056 release-only execution isolation</li>
+        <li><strong>Function</strong>: FN-056 timeout controls, storage split, and coverage isolation</li>
+        <li><strong>Task</strong>: preserve release confidence while shrinking delta path wall-time.</li>
+      </ul>
+      <li><strong>Bead tickets</strong>: BI-053, BI-054, BI-056</li>
+      <li><strong>Tests</strong>: T-055, T-056, T-057</li>
+      <li><strong>Release target</strong>: zero bootstrap parse failures, deterministic delta path, and no style-induced gate collapse.</li>
+    </ul>
+
+    <h4>Acceptance and Evidence Requirements</h4>
+    <ul>
+      <li><strong>P0:</strong> <code>cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check</code> returns clean.</li>
+      <li><strong>P0:</strong> <code>ci-health</code> and <code>ci-workflow-parse</code> are materialized before heavy jobs in every dispatch.</li>
+      <li><strong>P1:</strong> <code>ci-scope</code> output is used to skip rust-heavy matrix lanes for docs-only/markdown-only changes.</li>
+      <li><strong>P1:</strong> <code>rust-lint</code> and <code>rust-tests</code> remain step-scoped and continue to report skipped lanes explicitly.</li>
+      <li><strong>P2:</strong> no release command exceeds timeout policy without visible timeout notice and exit reason.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Run 28912108975 Remediation Matrix (Prioritized)</h2>
+
+    <h3>Phase 0 — unblock immediate gate (P0)</h3>
+    <ul>
+      <li>Fix the formatting regression in <code>src-tauri/tests/ci_gate_tests.rs</code> and re-run the CI check suite for that file.</li>
+      <li>Re-queue <code>rust-lint</code> on the same branch and verify all fmt/clippy matrix lanes finish or report explicit skip states.</li>
+      <li>Acceptance:
+        <ul>
+          <li><code>cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check</code> passes.</li>
+          <li><code>src-tauri/tests/ci_gate_tests.rs</code> is formatted and committed.</li>
+          <li>remote run shows both <code>ci-health</code> and <code>ci-workflow-parse</code> before <code>rust-lint</code>.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Phase 1 — restore deterministic orchestration (P0/P1)</h3>
+    <ul>
+      <li>Keep all orchestration decisions at <code>ci-scope</code> and parser-preflight level; keep matrix execution step-scoped.</li>
+      <li>Preserve bootstrap and parse gates as hard preconditions for all heavy jobs.</li>
+      <li>Acceptance:
+        <ul>
+          <li>No dispatch returns zero check-runs before job materialization.</li>
+          <li><code>ci-lint</code> and <code>ci-tests</code> lanes are visible even when skipped.</li>
+          <li>No workflow-level matrix <code>if:</code> suppresses all downstream jobs without a visible parse/bootstrap result.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Phase 2 — scope and performance hardening (P1/P2)</h3>
+    <ul>
+      <li>Extend docs-only scope filter for markdown and non-functional edits across README, SECURITY, and policy/plan docs.</li>
+      <li>Add explicit per-command timeout evidence across all storage and coverage-related paths.</li>
+      <li>Split long storage test path into an isolated release-only lane if it still exceeds timeout budgets.</li>
+      <li>Acceptance:
+        <ul>
+          <li>Non-release docs-only edits skip <code>storage</code> and <code>coverage</code> lanes unless workflow files force Rust scope.</li>
+          <li>All long-lived commands emit duration notices using the lane+scope labels.</li>
+          <li>Post-fix trend: non-release runs no longer queue any forced duckdb/coverage lane by default.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Governance Mapping (Epic → Feature → Capability → Function → Task)</h3>
+    <table>
+      <tr><th>Epic</th><th>Feature</th><th>Capability</th><th>Function</th><th>Task</th><th>Acceptance</th><th>Bead</th><th>Status</th><th>Test</th></tr>
+      <tr><td>EP-07</td><td>F-053</td><td>C-053</td><td>FN-053</td><td>Bootstrap marker + workflow parser gate before heavy jobs.</td><td><code>ci-health</code> and <code>ci-workflow-parse</code> always run first.</td><td>BI-053</td><td>In Progress</td><td>T-055</td></tr>
+      <tr><td>EP-07</td><td>F-054</td><td>C-054</td><td>FN-054</td><td>Deterministic lane scope/skip contract and step-level conditions.</td><td>No zero-check-run and no unstable matrix-scope suppression.</td><td>BI-054</td><td>In Progress</td><td>T-056</td></tr>
+      <tr><td>EP-07</td><td>F-055</td><td>C-056</td><td>FN-056</td><td>Release-lane timeout/isolation and no default coverage in delta lanes.</td><td>Non-release PR wall clock remains bounded; release-only lanes have explicit timeout evidence.</td><td>BI-055</td><td>In Progress</td><td>T-057</td></tr>
+    </table>
+  </section>
+</body>
+</html>

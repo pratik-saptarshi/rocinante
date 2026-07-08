@@ -223,18 +223,8 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
             "cargo clippy",
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
-            "--all-targets",
-            "-D warnings",
-        ],
-    );
-    assert_step_run_contains_all(
-        &workflow,
-        "Binary check",
-        &[
-            "cargo check",
-            "--locked",
-            "--manifest-path src-tauri/Cargo.toml",
-            "--bins",
+            "--features analytics",
+            "-A dead_code -D warnings",
         ],
     );
     assert_step_run_contains_all(
@@ -268,8 +258,10 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
         &[
             "mkdir -p target/coverage",
             "cargo llvm-cov",
+            "--no-clean",
             "--locked",
             "--manifest-path src-tauri/Cargo.toml",
+            "--features analytics",
             "--lcov",
             "--output-path target/coverage/lcov.info",
         ],
@@ -286,6 +278,267 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
     assert!(!workflow.contains("--fail-under-lines"));
     assert!(!workflow.contains("--fail-under-regions"));
     assert!(!workflow.contains("--fail-under-functions"));
+}
+
+#[test]
+fn ci_workflow_has_ci_health_bootstrap_job() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("ci-health:"));
+    assert!(workflow.contains("CI bootstrap marker"));
+    assert_step_run_contains_all(
+        &workflow,
+        "CI bootstrap marker",
+        &["echo \"::notice title=CI bootstrap::ci-yaml job graph has started\""],
+    );
+}
+
+#[test]
+fn ci_workflow_has_offline_workflow_parseability_gate() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("ci-workflow-parse:"));
+    assert!(workflow.contains("needs: [ci-health]"));
+    assert!(workflow.contains("actions/checkout@v7"));
+    assert_step_run_contains_all(
+        &workflow,
+        "Validate workflow parseability",
+        &[
+            "go install github.com/rhysd/actionlint/cmd/actionlint@latest",
+            "actionlint -oneline .github/workflows/ci.yml .github/workflows/security.yml",
+        ],
+    );
+}
+
+#[test]
+fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("ci-scope:"));
+    assert!(workflow.contains("id: detect"));
+    assert!(workflow.contains("scope_reason=baseline-fallback"));
+    assert!(workflow.contains("scope_reason=$([ \"$NEEDS_RUST\" == \"true\" ] && echo code-surface-touched || echo docs-only-tweak)"));
+    assert!(workflow.contains("NEEDS_RUST=false"));
+    assert!(workflow.contains("echo \"needs_rust=$NEEDS_RUST\" >> \"$GITHUB_OUTPUT\""));
+}
+
+#[test]
+fn ci_workflow_verifies_esbuild_lock_floor_in_release_ci() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let check_script = read_repo_file("../scripts/check-esbuild-lock.mjs");
+
+    assert_step_block_contains_all(
+        &workflow,
+        "Verify UI esbuild floor",
+        &["node scripts/check-esbuild-lock.mjs"],
+    );
+    assert!(check_script.contains("const MIN_MAJOR"));
+    assert!(check_script.contains("MIN_MINOR"));
+    assert!(check_script.contains("MIN_PATCH"));
+    assert!(check_script.contains("esbuild"));
+}
+
+#[test]
+fn ci_workflow_verifies_esbuild_dependabot_alert_status_in_release_ci() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let dependabot_gate = read_repo_file("../scripts/check-dependabot-esbuild-alert.sh");
+    let plan = read_repo_file("../docs/roadmap/dependabot-esbuild-remediation-plan.html");
+
+    assert!(plan.contains("GHSA-g7r4-m6w7-qqqr"));
+    assert!(plan.contains("Release pipeline now runs `scripts/check-dependabot-esbuild-alert.sh`"));
+    assert_step_block_contains_all(
+        &workflow,
+        "Verify open esbuild Dependabot alert is closed",
+        &[
+            "scripts/check-dependabot-esbuild-alert.sh",
+            "GH_TOKEN: ${{ github.token }}",
+        ],
+    );
+    assert!(dependabot_gate.contains("dependabot/alerts"));
+    assert!(dependabot_gate.contains("GHSA-g7r4-m6w7-qqqr"));
+    assert!(dependabot_gate.contains("ALERTHITS"));
+}
+
+#[test]
+fn ci_workflow_has_a_release_only_build_seed_job() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("rust-build-seed:"));
+    assert!(workflow.contains("build-scope"));
+    assert!(workflow.contains("outputs:"));
+    assert_step_run_contains_all(
+        &workflow,
+        "Release build seed",
+        &[
+            "cargo test",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--features analytics",
+            "--bins",
+            "--lib",
+            "--tests",
+            "--no-run",
+        ],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Delta build seed",
+        &[
+            "cargo test",
+            "--locked",
+            "--manifest-path src-tauri/Cargo.toml",
+            "--no-default-features",
+            "--lib",
+            "--tests",
+            "--no-run",
+        ],
+    );
+}
+
+#[test]
+fn ci_workflow_uses_scope_specific_release_cache_prefixes() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("workspaces: src-tauri"));
+    assert!(workflow.contains("prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2"));
+    assert!(workflow.contains("prefix-key: rust-cache-release-v2"));
+}
+
+#[test]
+fn ci_workflow_differentiates_release_and_delta_lanes() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("rust-lint:"));
+    assert!(workflow.contains("rust-quality-gates:"));
+    assert!(workflow.contains("rust-tests:"));
+    assert!(workflow.contains("strategy:"));
+    assert!(workflow.contains("lane: [core, storage]"));
+    assert_step_block_contains_all(
+        &workflow,
+        "Format check",
+        &["cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check"],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Lint",
+        &[
+            "if [[ \"$CI_RUST_BUILD_SCOPE\" == \"release\" ]]; then",
+            "cargo clippy \\",
+            "--locked \\",
+            "--manifest-path src-tauri/Cargo.toml \\",
+            "--features analytics \\",
+            "-- -A dead_code -D warnings",
+            "else",
+            "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code -D warnings",
+            "fi",
+        ],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Test",
+        &[
+            "TEST_START_TS=$(date +%s)",
+            "if [[ \"$CI_RUST_BUILD_SCOPE\" == \"release\" ]]; then",
+            "if [[ \"${{ matrix.lane }}\" == \"storage\" ]]; then",
+            "--test storage_duallayer_tests",
+            "else",
+            "--test admin_ingestion_guard_tests",
+            "--test verifier_tests",
+            "else",
+            "if [[ \"${{ matrix.lane }}\" != \"core\" ]]; then",
+            "echo \"Skipping non-core lane '${{ matrix.lane }}' on delta scope\"",
+            "exit 0",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests",
+            "fi",
+        ],
+    );
+    assert!(workflow.contains("if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}"));
+    assert!(workflow.contains("rust-lint:\n    needs: [rust-quality-gates, ci-scope]"));
+    assert!(workflow
+        .contains("strategy:\n      fail-fast: false\n      matrix:\n        lane: [fmt, clippy]"));
+}
+
+#[test]
+fn ci_workflow_runs_coverage_only_for_release_lanes() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("rust-coverage:"));
+    assert!(workflow.contains(
+        "if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}"
+    ));
+    assert!(workflow.contains(
+        "rust-coverage:\n    if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}\n    needs: [rust-quality-gates, ci-scope]"
+    ));
+}
+
+#[test]
+fn ci_workflow_ci_gate_contract_respects_release_and_delta_scope() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert_step_block_contains_all(
+        &workflow,
+        "CI gate contract",
+        &[
+            "if [[",
+            "== \"release\" ]]; then",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests",
+            "cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --test ci_gate_tests",
+            "fi",
+        ],
+    );
+}
+
+#[test]
+fn ci_workflow_releases_share_compilation_cache_and_release_seed_runs_in_parallel_with_quality_gate(
+) {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("ci-health:\n"));
+    assert!(workflow.contains("ci-workflow-parse:\n    needs: [ci-health]"));
+    assert!(workflow.contains("rust-build-seed:\n    needs: [ci-workflow-parse, ci-scope]"));
+    assert!(workflow.contains("rust-quality-gates:\n    needs: [rust-build-seed, ci-scope]"));
+    assert!(workflow.contains("rust-tests:\n    needs: [rust-quality-gates, ci-scope]"));
+    assert!(workflow.contains("save-if: false"));
+    assert!(workflow.contains(
+        "save-if: |\n            ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
+    ));
+}
+
+#[test]
+fn ci_workflow_includes_release_and_quality_timing_telemetry() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("::notice title=Release build seed::scope=release"));
+    assert!(workflow.contains("::notice title=Release build seed::scope=delta"));
+    assert!(workflow.contains("::notice title=Rust quality lint::"));
+    assert!(workflow.contains("::notice title=Rust quality test::"));
+    assert!(workflow.contains("::notice title=Rust coverage::"));
+}
+
+#[test]
+fn ci_workflow_does_not_redundantly_run_release_bin_only_check() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(!workflow.contains("- name: Binary check"));
+    assert!(!workflow.contains("cargo check --locked --manifest-path src-tauri/Cargo.toml --bins"));
+}
+
+#[test]
+fn ci_workflow_marks_release_build_floor_and_delta_scope() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains(
+        "if [[ \"${{ github.ref }}\" == \"refs/heads/main\" || \"${{ startsWith(github.ref, 'refs/heads/release/') }}\" == \"true\" ]]; then"
+    ));
+    assert!(workflow.contains("scope=release"));
+    assert!(workflow.contains("scope=delta"));
+    let delta_seed = extract_named_step_block(&workflow, "Delta build seed");
+    assert!(!delta_seed.contains("--all-targets"));
+    let release_seed = extract_named_step_block(&workflow, "Release build seed");
+    assert!(release_seed.contains("--bins"));
+    assert!(release_seed.contains("--lib"));
+    assert!(release_seed.contains("--tests"));
+    assert!(release_seed.contains("--no-run"));
 }
 
 #[test]

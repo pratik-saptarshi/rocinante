@@ -2,14 +2,17 @@
 
 ## Alert Validation
 
-- Remote origin currently reports one open Dependabot alert:
-  - `GHSA-g7r4-m6w7-qqqr`
+- Local dependency-floor check confirms `ui/pnpm-lock.yaml` resolves `esbuild@0.28.1`.
+- `scripts/check-esbuild-lock.mjs` enforces `esbuild >= 0.28.1` in CI and local runs.
+- Remote GHSA alert state requires network verification:
+  - expected advisory: `GHSA-g7r4-m6w7-qqqr`
   - package: `esbuild`
   - location: `ui/pnpm-lock.yaml`
-  - resolved version: `0.27.7`
   - first patched version: `0.28.1`
-- The alert affects the UI toolchain path and is currently tracked as a remote
-  security finding, not a dismissed or closed advisory.
+- The remote confirmatory query is blocked in environments without GitHub API access;
+  close status remains pending until `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"` returns no matching `esbuild` item.
+- Release pipeline now runs `scripts/check-dependabot-esbuild-alert.sh` against the same alert endpoint
+  on `main` pushes before accepting the slice as complete.
 
 ## Remediation Strategy
 
@@ -38,6 +41,15 @@
 - Re-query the remote Dependabot alert list until the open `esbuild` alert is
   gone.
 - Confirm the release and dependency-review gates stay green after the update.
+
+## Floor Check
+
+- Command: `node scripts/check-esbuild-lock.mjs`
+- Required result: exit code `0` and output containing:
+  - `esbuild lockfile floor check passed: 0.28.1 >= 0.28.1`
+- Alert check command: `./scripts/check-dependabot-esbuild-alert.sh`
+- Required result: exit code `0` with no open-match advisory output for
+  `GHSA-g7r4-m6w7-qqqr`.
 
 ## Acceptance Criteria
 
