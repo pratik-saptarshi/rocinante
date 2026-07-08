@@ -7,14 +7,15 @@ _Captured: 2026-07-08_
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Active branch for current slice: `feat/ci-clippy-warning-policy-and-gov-sync`
+- No active feature branch is pinned in this snapshot; PR checkpoints for the next
+  CI hardening slice remain split by mergeable commits on `main`.
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
-- `origin/main` and local `main` are aligned on commit `dc48f27` (`fix(ci): remove unsupported storage test timeout flag (#73)`).
-- This slice runs on a feature branch and is intended for branch-protection PR merge once validations are complete.
-- Remaining open slices continue via PR checkpoints with explicit roadmap/checklist evidence and conventional commits.
+- `origin/main` and local `main` are aligned on commit `1ea5548` (`feat(ci): refine scope gate for rust lane skips (#75)`).
+- Remaining open slices continue via PR checkpoints with explicit roadmap/checklist
+  evidence and conventional commits.
 - `feat/ci-054-scope-refinement` now owns the lane-scope fast-path refinement for CI and keeps
   non-Rust changes from triggering full Rust build/lint/test lanes.
 
