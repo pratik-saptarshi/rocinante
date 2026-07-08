@@ -1,6 +1,6 @@
 # Bill of Materials - Rocinante Release Gate
 
-_Current as of 2026-07-07_
+_Current as of 2026-07-08_
 
 This document inventories the release-critical components, dependency surface,
 and governance artifacts that must stay aligned before publishing to `origin`.
@@ -12,6 +12,7 @@ then release from the merged tip.
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary integration branch: `main`
 - Remote: `origin`
+- Local `main` is currently ahead of `origin/main` by 18 commits (manual PR sync path required before remote publication).
 - Product: Rust + Tauri repository analyzer with a bead-backed roadmap
   execution model and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -62,7 +63,6 @@ then release from the merged tip.
 - `docs/roadmap/test-plan.html`
 - `docs/roadmap/execution-ticket-artifact.md`
 - `docs/roadmap/plan-review-traceability.html`
-- `docs/roadmap/dependabot-esbuild-remediation-plan.html`
 
 ### CI and automation
 
@@ -132,6 +132,7 @@ Packages declared in `ui/package.json`:
 - `scripts/dependency-floor-proof.sh`
 - `scripts/check-esbuild-lock.mjs`
 - `scripts/check-dependabot-esbuild-alert.sh`
+- `.github/workflows/ci.yml` aggregate `test` gate (CI branch-protection compatibility)
 
 ## 4) Security, privacy, and secret hygiene assets
 
@@ -153,6 +154,7 @@ Packages declared in `ui/package.json`:
 - `scripts/check-dependabot-esbuild-alert.sh` enforces release-only `esbuild` advisory closure for `GHSA-g7r4-m6w7-qqqr`
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
+- `test` aggregate job in `.github/workflows/ci.yml` is the merge gate for protected-branch checks and depends on parse/scope/lint/test/coverage jobs.
 
 ## 5) Release-critical validation entry points
 
@@ -184,6 +186,7 @@ Before any release reaches `origin/main`, the repository should satisfy:
 5. GTK-free host migration artifacts stay in sync with the feature list, bead tracker, and test plan.
 6. GitHub Actions checks are green on the PR or release branch.
 7. The final publish uses a protected-branch-safe squash or PR merge.
+8. `origin/main` remains the source of truth; local and remote must be reconciled through merge checkpoints.
 
 This BOM is the release inventory; the checklist in
 `docs/publish-readiness-checklist.html` is the executable gate.

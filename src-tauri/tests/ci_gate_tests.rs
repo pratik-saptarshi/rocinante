@@ -294,6 +294,26 @@ fn ci_workflow_has_ci_health_bootstrap_job() {
 }
 
 #[test]
+fn ci_workflow_has_aggregate_test_gate() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("test:"));
+    assert!(workflow.contains("if: ${{ always() }}"));
+    assert!(workflow.contains(
+        "needs: [\n      - ci-workflow-parse\n      - ci-scope\n      - rust-build-seed\n      - rust-quality-gates\n      - rust-lint\n      - rust-tests\n      - rust-coverage\n    ]",
+    ));
+    assert_step_block_contains_all(
+        &workflow,
+        "Gate summary",
+        &[
+            "if [[ \"${{ needs.rust-build-seed.result }}\" == \"failure\" || \"${{ needs.rust-build-seed.result }}\" == \"cancelled\" ]]",
+            "if [[ \"${{ needs.rust-lint.result }}\" == \"failure\" || \"${{ needs.rust-lint.result }}\" == \"cancelled\" ]]",
+            "if [[ \"${{ needs.rust-tests.result }}\" == \"failure\" || \"${{ needs.rust-tests.result }}\" == \"cancelled\" ]]",
+        ],
+    );
+}
+
+#[test]
 fn ci_workflow_has_offline_workflow_parseability_gate() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
