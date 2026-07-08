@@ -15,7 +15,82 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ci-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: CI bootstrap marker
+        run: |
+          echo "::notice title=CI bootstrap::ci-yaml job graph has started"
+          echo "ci_bootstrap=ok" >> "$GITHUB_STEP_SUMMARY"
+
+  ci-workflow-parse:
+    needs: [ci-health]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Validate workflow parseability
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@latest
+          actionlint -oneline .github/workflows/ci.yml .github/workflows/security.yml
+
+  ci-scope:
+    needs: [ci-workflow-parse]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      needs-rust: ${{ steps.detect.outputs.needs_rust }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - id: detect
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          else
+            BASE_SHA=""
+            HEAD_SHA="${{ github.sha }}"
+          fi
+
+          if [[ -z "$BASE_SHA" || -z "$HEAD_SHA" ]] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            echo "needs_rust=true" >> "$GITHUB_OUTPUT"
+            echo "scope_reason=baseline-fallback" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          NEEDS_RUST=false
+
+          while IFS= read -r path; do
+            [[ -z "$path" ]] && continue
+            case "$path" in
+              docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*)
+                continue
+                ;;
+              *)
+                NEEDS_RUST=true
+                break
+                ;;
+            esac
+          done <<< "$CHANGED_FILES"
+
+          echo "needs_rust=$NEEDS_RUST" >> "$GITHUB_OUTPUT"
+          echo "scope_reason=$([ "$NEEDS_RUST" == "true" ] && echo code-surface-touched || echo docs-only-tweak)" >> "$GITHUB_OUTPUT"
+
   rust-build-seed:
+    needs: [ci-workflow-parse, ci-scope]
+    if: ${{ needs.ci-scope.outputs.needs-rust == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -63,10 +138,10 @@ jobs:
         if: ${{ steps.build-scope.outputs.scope == 'release' }}
         run: |
           RELEASE_SEED_START_TS=$(date +%s)
-          cargo test \
-            --locked \
-            --manifest-path src-tauri/Cargo.toml \
-            --features analytics \
+            timeout 900s cargo test \
+              --locked \
+              --manifest-path src-tauri/Cargo.toml \
+              --features analytics \
             --bins \
             --lib \
             --tests \
@@ -77,10 +152,10 @@ jobs:
         if: ${{ steps.build-scope.outputs.scope == 'delta' }}
         run: |
           DELTA_SEED_START_TS=$(date +%s)
-          cargo test \
-            --locked \
-            --manifest-path src-tauri/Cargo.toml \
-            --no-default-features \
+            timeout 900s cargo test \
+              --locked \
+              --manifest-path src-tauri/Cargo.toml \
+              --no-default-features \
             --lib \
             --tests \
             --no-run
@@ -88,7 +163,8 @@ jobs:
           echo "::notice title=Release build seed::scope=delta duration_sec=${DELTA_SEED_ELAPSED_SECONDS}"
 
   rust-quality-gates:
-    needs: [rust-build-seed]
+    needs: [rust-build-seed, ci-scope]
+    if: ${{ needs.ci-scope.outputs.needs-rust == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -131,13 +207,14 @@ jobs:
       - name: CI gate contract
         run: |
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
-            cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests
+            timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests
           else
-            cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --test ci_gate_tests
+            timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --test ci_gate_tests
           fi
 
   rust-lint:
-    needs: [rust-quality-gates]
+    needs: [rust-quality-gates, ci-scope]
+    if: ${{ needs.ci-scope.outputs.needs-rust == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -183,25 +260,26 @@ jobs:
           save-if: false
       - name: Format check
         if: matrix.lane == 'fmt'
-        run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+        run: timeout 900s cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
       - name: Lint
         if: matrix.lane == 'clippy'
         run: |
           LINT_START_TS=$(date +%s)
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
-            cargo clippy \
+            timeout 900s cargo clippy \
               --locked \
               --manifest-path src-tauri/Cargo.toml \
               --features analytics \
               -- -A dead_code -D warnings
           else
-            cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code -D warnings
+            timeout 900s cargo clippy --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib -- -A dead_code -D warnings
           fi
           LINT_ELAPSED_SECONDS=$(( $(date +%s) - LINT_START_TS ))
           echo "::notice title=Rust quality lint::scope=${CI_RUST_BUILD_SCOPE} lane=${{ matrix.lane }} duration_sec=${LINT_ELAPSED_SECONDS}"
 
   rust-tests:
-    needs: [rust-quality-gates]
+    needs: [rust-quality-gates, ci-scope]
+    if: ${{ needs.ci-scope.outputs.needs-rust == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -248,16 +326,16 @@ jobs:
       - name: Test
         run: |
           TEST_START_TS=$(date +%s)
-          if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
-            if [[ "${{ matrix.lane }}" == "storage" ]]; then
-              cargo test \
+            if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
+              if [[ "${{ matrix.lane }}" == "storage" ]]; then
+              timeout 900s cargo test \
                 --locked \
                 --manifest-path src-tauri/Cargo.toml \
                 --features analytics \
                 --test storage_duallayer_tests \
                 -- --timeout 180
             else
-              cargo test \
+              timeout 900s cargo test \
                 --locked \
                 --manifest-path src-tauri/Cargo.toml \
                 --features analytics \
@@ -304,14 +382,14 @@ jobs:
               echo "Skipping non-core lane '${{ matrix.lane }}' on delta scope"
               exit 0
             fi
-            cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests
+            timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests
           fi
           TEST_ELAPSED_SECONDS=$(( $(date +%s) - TEST_START_TS ))
           echo "::notice title=Rust quality test::scope=${CI_RUST_BUILD_SCOPE} lane=${{ matrix.lane }} duration_sec=${TEST_ELAPSED_SECONDS}"
 
   rust-coverage:
-    if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}
-    needs: [rust-quality-gates]
+    if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}
+    needs: [rust-quality-gates, ci-scope]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -347,7 +425,7 @@ jobs:
         run: |
           COVERAGE_START_TS=$(date +%s)
           mkdir -p target/coverage
-          cargo llvm-cov \
+          timeout 900s cargo llvm-cov \
             --locked \
             --features analytics \
             --manifest-path src-tauri/Cargo.toml \

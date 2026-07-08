@@ -12,6 +12,10 @@
   - Release remains blocked until the exception registry exists and the current floor is retired or formally accepted.
 - `RT-RC-002` GTK-free host migration planning:
   - Phase 0 through Phase 4 stay test-driven, with parity, core extraction, native shell, fallback containment, and dependency-floor removal each starting from a failing test or contract.
+- `RT-CI-004` Run 28912108975 CI recovery slice:
+  - `T-055` CI bootstrap + workflow parseability.
+  - `T-056` CI lane scope and orchestration contract.
+  - `T-057` Release-lane timeout and coverage-isolation contract.
 
 ## Existing Test Coverage
 
@@ -51,9 +55,15 @@
 - `F-023` -> `T-011`
 - `F-030` -> `T-046`
 - `F-046` -> `T-048`
-- Host-migration and dependency-floor tracks (F-047..F-052) are mapped to:
-  `T-049` through `T-054`; detailed test contracts live in the "Existing Test
-  Coverage Additions" section below to avoid duplicated matrix entries.
+- `F-047` -> `T-049`
+- `F-048` -> `T-050`
+- `F-049` -> `T-051`
+- `F-050` -> `T-052`
+- `F-051` -> `T-053`
+- `F-052` -> `T-054`
+- `F-053` -> `T-055`
+- `F-054` -> `T-056`
+- `F-055` -> `T-057`
 - `F-036` -> `T-038`
 - `F-037` -> `T-039`
 - `F-038` -> `T-042`
@@ -195,6 +205,21 @@
   - `pnpm -C ui build`
   - Remote alert query `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"`
   - The UI toolchain must resolve `esbuild` at `0.28.1` or newer and the open Dependabot alert must close before the slice is complete.
+
+- `T-055` CI bootstrap and workflow parseability tests (`F-053`):
+  - `src-tauri/tests/ci_gate_tests.rs`
+  - `ci-workflow-health` contract: `ci-health` marker exists and workflow parseability job exists.
+  - New syntax check path in CI must fail fast when workflow expressions are malformed.
+
+- `T-056` CI lane orchestration and non-release gating tests (`F-054`):
+  - `src-tauri/tests/ci_gate_tests.rs`
+  - `rust-lint` and `rust-tests` keep matrix conditions step-scoped.
+  - Non-release PR lanes skip release-only `storage` and coverage lanes unless explicitly required.
+
+- `T-057` Release-path performance and timeout isolation tests (`F-055`):
+  - `src-tauri/tests/ci_gate_tests.rs`
+  - `rust-coverage` and heavy storage integration run only on release scope.
+  - Lane-specific timeout and release/delta cache scope are asserted in workflow contract tests.
 
 - `T-040` Explainability panel tests:
   - `ui/src/App.test.tsx`

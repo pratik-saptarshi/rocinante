@@ -161,5 +161,202 @@
       <li>If you want, I can also add a path-based lane planner script so non-release changes automatically narrow delta lane coverage in this workflow.</li>
     </ul>
   </section>
+
+  <section>
+    <h2>Plan Review Integrator Mapping</h2>
+
+    <h3>Mapped Governance Slice</h3>
+    <ul>
+      <li><strong>Epic</strong>: EP-07 CI reliability hardening</li>
+      <li><strong>Feature</strong>: F-053/F-054/F-055 (bootstrap, lane orchestration, and release-path performance)</li>
+      <li><strong>Bead tickets</strong>: BI-053, BI-054, BI-055, BI-056</li>
+      <li><strong>Test track</strong>: T-055, T-056, T-057</li>
+      <li><strong>Priority</strong>: P0 for bootstrap/parseability, P0 for lane-orchestration, P1 for release-path optimization</li>
+    </ul>
+
+    <h3>Phase 0 — Workflow Bootstrap and Contract Guard (P0)</h3>
+    <ul>
+      <li>Add `ci-health` job as a guaranteed first-run signal.</li>
+      <li>Add required parseability job that validates workflow syntax and expression grammar.</li>
+      <li>Wire all heavy jobs behind the health+parseability gates.</li>
+      <li>Acceptance:
+        <ul>
+          <li>Any CI dispatch emits a check-run for bootstrap before lint/test jobs appear.</li>
+          <li>Malformed workflow expressions fail as a parseability fault in under 60 seconds.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Phase 1 — Orchestration and Lane Governance (P0/P1)</h3>
+    <ul>
+      <li>Keep orchestration and lane dispatch separate from quality execution jobs.</li>
+      <li>Move unstable `matrix`-scoped guards to step-level conditionals where safe.</li>
+      <li>Default non-release paths to `ci-workflow` contract + `rust-quality-gates` + `rust-lint` + `rust-tests` core lane only.</li>
+      <li>Acceptance:
+        <ul>
+          <li>Zero-check-run failures are no longer used as the default failure mode for workflow dispatch.</li>
+          <li>Non-release `storage` and `coverage` lanes are either skipped explicitly or never invoked.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Phase 2 — Release-Path Optimization and Telemetry (P1)</h3>
+    <ul>
+      <li>Keep `storage` heavy lanes and coverage as release-only execution paths.</li>
+      <li>Keep timeout and duration telemetry on each lane boundary.</li>
+      <li>Preserve failure visibility with `fail-fast: false` where independent diagnostics are required.</li>
+      <li>Acceptance:
+        <ul>
+          <li>Release-only heavy lanes run with dedicated timeout budgets and per-lane elapsed notices.</li>
+          <li>Non-release PR wall-clock drops because no duckdb full-coverage or long storage lane is forced by default.</li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Run 28912108975 Remediation Plan</h2>
+
+    <h3>Failure confirmation</h3>
+    <ul>
+      <li>run: <code>28912108975</code></li>
+      <li>failing jobs:
+        <ul>
+          <li><code>rust-lint</code> / step <code>Format check</code></li>
+          <li><code>rust-tests (core)</code> / test <code>gtk_free_host_migration_plan_tests.rs</code> failed on contract drift</li>
+        </ul>
+      </li>
+      <li>affected files:
+        <ul>
+          <li><code>src-tauri/tests/ci_gate_tests.rs</code> (format drift)</li>
+          <li><code>docs/roadmap/test-plan.html</code> (missing <code>`F-047` -> `T-049`</code> entry used by contract test)</li>
+        </ul>
+      </li>
+      <li>root cause: source drift in CI governance contracts, not runtime/toolchain instability.</li>
+    </ul>
+
+    <h3>Priority 0 (Immediate — unblock CI)</h3>
+    <ul>
+      <li>Apply formatting to <code>src-tauri/tests/ci_gate_tests.rs</code> and keep bootstrap+parse gates intact.</li>
+      <li>Restore or add <code>`F-047` -> `T-049`</code> in <code>docs/roadmap/test-plan.html</code> so <code>gtk_free_host_migration_plan_tests</code> remains green.</li>
+      <li>Run and record:</li>
+      <ul>
+        <li><code>cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check</code></li>
+        <li><code>rustup run 1.96.1 cargo test --manifest-path src-tauri/Cargo.toml --test ci_gate_tests --no-default-features --no-run</code></li>
+        <li><code>rustup run 1.96.1 cargo test --manifest-path src-tauri/Cargo.toml --test gtk_free_host_migration_plan_tests</code></li>
+        <li>Push and rerun CI on the same branch; verify <code>ci-health</code> and <code>ci-workflow-parse</code> appear before <code>rust-lint</code>.</li>
+      </ul>
+      <li>Acceptance:</li>
+      <ul>
+        <li>Format step passes with no diff.</li>
+        <li><code>rust-lint</code> fmt matrix job is green on next push.</li>
+        <li><code>gtk_free_host_migration_plan_tests</code> no longer fails on <code>F-047/T-049</code>.</li>
+        <li>ci-gate bootstrap path appears before any heavy job in workflow run details.</li>
+      </ul>
+    </ul>
+
+    <h3>Priority 1 (Stability)</h3>
+    <ul>
+      <li>Preserve deterministic CI bootstrap and make lane guards explicit for step-level matrix execution.</li>
+      <li>Keep <code>ci-scope</code> output as the single source of non-release lane eligibility.</li>
+      <li>Extend scope detection to skip rust-heavy lanes for docs-only, markdown-only, and lockfile-only edits.</li>
+      <li><strong>Acceptance:</strong> for non-code or docs-only PRs, rust-heavy and storage/coverage lanes remain skipped unless forced by scope.</li>
+    </ul>
+
+    <h3>Priority 2 (Performance and Safety)</h3>
+    <ul>
+      <li>Apply explicit timeout wrappers to all long-lived release commands and make timeout duration telemetry visible as notices.</li>
+      <li>Split storage-heavy suites into isolated release buckets if a repeat regression appears after the next 10 successful release runs.</li>
+      <li><strong>Acceptance:</strong> no release command runs past timeout policy without structured timeout evidence and no skipped lane loses diagnostic visibility.</li>
+    </ul>
+
+    <h3>Mapping</h3>
+    <h4>Epic/Feature/Capability/Function/Task Alignment</h4>
+    <ul>
+      <li><strong>Epic</strong>: EP-07 CI reliability hardening</li>
+      <li><strong>Feature</strong>: F-053 CI bootstrap and workflow parseability</li>
+      <ul>
+        <li><strong>Capability</strong>: C-053 launch-time contract guard</li>
+        <li><strong>Function</strong>: FN-053 ci-health marker and workflow parseability gate</li>
+        <li><strong>Task</strong>: never hide workflow parse errors behind zero-check-run bootstrap behavior.</li>
+      </ul>
+      <li><strong>Feature</strong>: F-054 CI lane orchestration and gating</li>
+      <ul>
+        <li><strong>Capability</strong>: C-054 deterministic lane planning</li>
+        <li><strong>Function</strong>: FN-054 scope-aware matrix dispatch</li>
+        <li><strong>Task</strong>: protect step-level matrix lanes from unstable top-level suppression.</li>
+      </ul>
+      <li><strong>Feature</strong>: F-055 Release-path performance optimization</li>
+      <ul>
+        <li><strong>Capability</strong>: C-056 release-only execution isolation</li>
+        <li><strong>Function</strong>: FN-056 timeout controls, storage split, and coverage isolation</li>
+        <li><strong>Task</strong>: preserve release confidence while shrinking delta path wall-time.</li>
+      </ul>
+      <li><strong>Bead tickets</strong>: BI-053, BI-054, BI-056</li>
+      <li><strong>Tests</strong>: T-055, T-056, T-057</li>
+      <li><strong>Release target</strong>: zero bootstrap parse failures, deterministic delta path, and no style-induced gate collapse.</li>
+    </ul>
+
+    <h4>Acceptance and Evidence Requirements</h4>
+    <ul>
+      <li><strong>P0:</strong> <code>cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check</code> returns clean.</li>
+      <li><strong>P0:</strong> <code>ci-health</code> and <code>ci-workflow-parse</code> are materialized before heavy jobs in every dispatch.</li>
+      <li><strong>P1:</strong> <code>ci-scope</code> output is used to skip rust-heavy matrix lanes for docs-only/markdown-only changes.</li>
+      <li><strong>P1:</strong> <code>rust-lint</code> and <code>rust-tests</code> remain step-scoped and continue to report skipped lanes explicitly.</li>
+      <li><strong>P2:</strong> no release command exceeds timeout policy without visible timeout notice and exit reason.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Run 28912108975 Remediation Matrix (Prioritized)</h2>
+
+    <h3>Phase 0 — unblock immediate gate (P0)</h3>
+    <ul>
+      <li>Fix the formatting regression in <code>src-tauri/tests/ci_gate_tests.rs</code> and re-run the CI check suite for that file.</li>
+      <li>Re-queue <code>rust-lint</code> on the same branch and verify all fmt/clippy matrix lanes finish or report explicit skip states.</li>
+      <li>Acceptance:
+        <ul>
+          <li><code>cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check</code> passes.</li>
+          <li><code>src-tauri/tests/ci_gate_tests.rs</code> is formatted and committed.</li>
+          <li>remote run shows both <code>ci-health</code> and <code>ci-workflow-parse</code> before <code>rust-lint</code>.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Phase 1 — restore deterministic orchestration (P0/P1)</h3>
+    <ul>
+      <li>Keep all orchestration decisions at <code>ci-scope</code> and parser-preflight level; keep matrix execution step-scoped.</li>
+      <li>Preserve bootstrap and parse gates as hard preconditions for all heavy jobs.</li>
+      <li>Acceptance:
+        <ul>
+          <li>No dispatch returns zero check-runs before job materialization.</li>
+          <li><code>ci-lint</code> and <code>ci-tests</code> lanes are visible even when skipped.</li>
+          <li>No workflow-level matrix <code>if:</code> suppresses all downstream jobs without a visible parse/bootstrap result.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Phase 2 — scope and performance hardening (P1/P2)</h3>
+    <ul>
+      <li>Extend docs-only scope filter for markdown and non-functional edits across README, SECURITY, and policy/plan docs.</li>
+      <li>Add explicit per-command timeout evidence across all storage and coverage-related paths.</li>
+      <li>Split long storage test path into an isolated release-only lane if it still exceeds timeout budgets.</li>
+      <li>Acceptance:
+        <ul>
+          <li>Non-release docs-only edits skip <code>storage</code> and <code>coverage</code> lanes unless workflow files force Rust scope.</li>
+          <li>All long-lived commands emit duration notices using the lane+scope labels.</li>
+          <li>Post-fix trend: non-release runs no longer queue any forced duckdb/coverage lane by default.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Governance Mapping (Epic → Feature → Capability → Function → Task)</h3>
+    <table>
+      <tr><th>Epic</th><th>Feature</th><th>Capability</th><th>Function</th><th>Task</th><th>Acceptance</th><th>Bead</th><th>Status</th><th>Test</th></tr>
+      <tr><td>EP-07</td><td>F-053</td><td>C-053</td><td>FN-053</td><td>Bootstrap marker + workflow parser gate before heavy jobs.</td><td><code>ci-health</code> and <code>ci-workflow-parse</code> always run first.</td><td>BI-053</td><td>In Progress</td><td>T-055</td></tr>
+      <tr><td>EP-07</td><td>F-054</td><td>C-054</td><td>FN-054</td><td>Deterministic lane scope/skip contract and step-level conditions.</td><td>No zero-check-run and no unstable matrix-scope suppression.</td><td>BI-054</td><td>In Progress</td><td>T-056</td></tr>
+      <tr><td>EP-07</td><td>F-055</td><td>C-056</td><td>FN-056</td><td>Release-lane timeout/isolation and no default coverage in delta lanes.</td><td>Non-release PR wall clock remains bounded; release-only lanes have explicit timeout evidence.</td><td>BI-055</td><td>In Progress</td><td>T-057</td></tr>
+    </table>
+  </section>
 </body>
 </html>

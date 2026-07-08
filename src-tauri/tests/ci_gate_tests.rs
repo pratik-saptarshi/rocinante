@@ -281,6 +281,48 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
 }
 
 #[test]
+fn ci_workflow_has_ci_health_bootstrap_job() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("ci-health:"));
+    assert!(workflow.contains("CI bootstrap marker"));
+    assert_step_run_contains_all(
+        &workflow,
+        "CI bootstrap marker",
+        &["echo \"::notice title=CI bootstrap::ci-yaml job graph has started\""],
+    );
+}
+
+#[test]
+fn ci_workflow_has_offline_workflow_parseability_gate() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("ci-workflow-parse:"));
+    assert!(workflow.contains("needs: [ci-health]"));
+    assert!(workflow.contains("actions/checkout@v7"));
+    assert_step_run_contains_all(
+        &workflow,
+        "Validate workflow parseability",
+        &[
+            "go install github.com/rhysd/actionlint/cmd/actionlint@latest",
+            "actionlint -oneline .github/workflows/ci.yml .github/workflows/security.yml",
+        ],
+    );
+}
+
+#[test]
+fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert!(workflow.contains("ci-scope:"));
+    assert!(workflow.contains("id: detect"));
+    assert!(workflow.contains("scope_reason=baseline-fallback"));
+    assert!(workflow.contains("scope_reason=$([ \"$NEEDS_RUST\" == \"true\" ] && echo code-surface-touched || echo docs-only-tweak)"));
+    assert!(workflow.contains("NEEDS_RUST=false"));
+    assert!(workflow.contains("echo \"needs_rust=$NEEDS_RUST\" >> \"$GITHUB_OUTPUT\""));
+}
+
+#[test]
 fn ci_workflow_verifies_esbuild_lock_floor_in_release_ci() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
     let check_script = read_repo_file("../scripts/check-esbuild-lock.mjs");
@@ -410,9 +452,10 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
             "fi",
         ],
     );
-    assert!(workflow.contains("if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"));
-    assert!(workflow.contains("rust-lint:\n    needs: [rust-quality-gates]"));
-    assert!(workflow.contains("strategy:\n      fail-fast: false\n      matrix:\n        lane: [fmt, clippy]"));
+    assert!(workflow.contains("if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}"));
+    assert!(workflow.contains("rust-lint:\n    needs: [rust-quality-gates, ci-scope]"));
+    assert!(workflow
+        .contains("strategy:\n      fail-fast: false\n      matrix:\n        lane: [fmt, clippy]"));
 }
 
 #[test]
@@ -421,10 +464,10 @@ fn ci_workflow_runs_coverage_only_for_release_lanes() {
 
     assert!(workflow.contains("rust-coverage:"));
     assert!(workflow.contains(
-        "if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
+        "if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}"
     ));
     assert!(workflow.contains(
-        "rust-coverage:\n    if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}\n    needs: [rust-quality-gates]"
+        "rust-coverage:\n    if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}\n    needs: [rust-quality-gates, ci-scope]"
     ));
 }
 
@@ -450,9 +493,11 @@ fn ci_workflow_releases_share_compilation_cache_and_release_seed_runs_in_paralle
 ) {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
-    assert!(workflow.contains("rust-quality-gates:\n    needs: [rust-build-seed]"));
-    assert!(workflow.contains("rust-tests:\n    needs: [rust-quality-gates]"));
-    assert!(workflow.contains("needs: [rust-build-seed]"));
+    assert!(workflow.contains("ci-health:\n"));
+    assert!(workflow.contains("ci-workflow-parse:\n    needs: [ci-health]"));
+    assert!(workflow.contains("rust-build-seed:\n    needs: [ci-workflow-parse, ci-scope]"));
+    assert!(workflow.contains("rust-quality-gates:\n    needs: [rust-build-seed, ci-scope]"));
+    assert!(workflow.contains("rust-tests:\n    needs: [rust-quality-gates, ci-scope]"));
     assert!(workflow.contains("save-if: false"));
     assert!(workflow.contains(
         "save-if: |\n            ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}"
