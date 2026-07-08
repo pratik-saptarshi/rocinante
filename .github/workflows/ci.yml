@@ -339,8 +339,7 @@ jobs:
                 --locked \
                 --manifest-path src-tauri/Cargo.toml \
                 --features analytics \
-                --test storage_duallayer_tests \
-                -- --timeout 180
+                --test storage_duallayer_tests -- --timeout 180
             else
               timeout 900s cargo test \
                 --locked \
@@ -382,8 +381,7 @@ jobs:
                 --test team_policy_tests \
                 --test telemetry_tests \
                 --test triage_tests \
-                --test verifier_tests
-                -- --timeout 180
+                --test verifier_tests -- --timeout 180
             fi
           else
             if [[ "${{ matrix.lane }}" != "core" ]]; then
