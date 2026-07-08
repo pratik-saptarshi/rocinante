@@ -36,7 +36,9 @@ jobs:
       - name: Validate workflow parseability
         run: |
           go install github.com/rhysd/actionlint/cmd/actionlint@latest
-          export PATH="$(go env GOPATH)/bin:$PATH"
+          # shellcheck disable=SC2155
+          GOBIN="$(go env GOPATH)/bin"
+          export PATH="$GOBIN:$PATH"
           actionlint -oneline .github/workflows/ci.yml .github/workflows/security.yml
 
   ci-scope:
