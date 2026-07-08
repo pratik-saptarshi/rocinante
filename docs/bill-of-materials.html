@@ -12,7 +12,7 @@ then release from the merged tip.
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary integration branch: `main`
 - Remote: `origin`
-- `main` is currently aligned with `origin/main` (synchronization checkpoint complete).
+- `main` is currently ahead of `origin/main` by local PR checkpoint commits and is being merged through protected PR flow.
 - Product: Rust + Tauri repository analyzer with a bead-backed roadmap
   execution model and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -152,7 +152,8 @@ Packages declared in `ui/package.json`:
 - Advisory exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`
 - `scripts/dependency-floor-proof.sh` records the current GTK/GLib floor
 - `scripts/check-esbuild-lock.mjs` enforces UI lockfile floor `esbuild >= 0.28.1`
-- `scripts/check-dependabot-esbuild-alert.sh` enforces release-only `esbuild` advisory closure for `GHSA-g7r4-m6w7-qqqr`
+- `scripts/check-dependabot-esbuild-alert.sh` enforces advisory-specific Dependabot checks using explicit GHSA filtering.
+- Remote `open` Dependabot state includes `GHSA-wrw7-89jp-8q8g` for `glib`, which remains governed by RT-RC-001.
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 - `test` aggregate job in `.github/workflows/ci.yml` is the merge gate for protected-branch checks and depends on parse/scope/lint/test/coverage jobs.
