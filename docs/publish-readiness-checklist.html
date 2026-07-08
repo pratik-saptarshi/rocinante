@@ -113,6 +113,7 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 - Open Dependabot alerts should be closed or explicitly accepted before publish.
 - If any CI job fails, fix the branch and rerun the gate before merging.
 - If the branch contains docs-only changes, the same gating still applies.
+- If `main` is not fast-forward aligned to `origin/main`, halt publish workflow until a sync checkpoint PR is merged.
 
 ## 8) Branch governance and merge checkpoints
 
@@ -123,3 +124,14 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
   - `docs/roadmap/bead-issue-tracker.html`
   - `codemap.md`
 - Any final merge attempt into `main` should include terminal check visibility via `gh pr view <pr>` and `gh run view <run>`.
+
+## 9) Coverage hardening plan
+
+- Baseline coverage targets are part of the publish hardening ladder (informational today):
+  - Branch: 85%
+  - Backend unit: 85%
+  - Backend integration: 85%
+  - UI unit: 85%
+  - E2E: 85%
+- Promotion rule: after three consecutive release runs that satisfy current gates,
+  enforce the above thresholds as hard checks in the next dedicated CI hardening slice.

@@ -13,9 +13,11 @@ _Captured: 2026-07-08_
 ## Branch and Sync State
 
 - `origin/main` currently points to commit `e339963`.
-- `main` contains `53` unique local commits and is not a fast-forward descendant of `origin/main`.
-- This feature branch includes `origin/main` in ancestry, and can merge cleanly into a checkpointed `main` rebase if policy requires linear updates.
-- Merge strategy for next checkpoint: align main to `origin/main`, then merge feature slices with explicit evidence and PR gates.
+- `main` currently contains `53` unique local commits and is not a fast-forward descendant of `origin/main`.
+- This feature branch includes `origin/main` in ancestry, and local branch progression is currently checkpointed on
+  `feat/ci-path-scope-and-bom-hardening`.
+- Merge strategy for next checkpoint: preserve a local backup of any `main`-only commits, align local `main`
+  by fast-forwarding to `origin/main`, then merge feature slices via PR gates with explicit evidence.
 - Branch checkpoint status: all ready work this slice is isolated on `feat/ci-path-scope-and-bom-hardening` and is ready for PR-based merge once CI gate evidence is refreshed.
 
 ## Runtime Surface
@@ -33,6 +35,7 @@ _Captured: 2026-07-08_
 - `BI-053` — F-053 CI bootstrap and workflow parseability (in progress)
 - `BI-054` — F-054 CI lane orchestration and gating (in progress)
 - `BI-056` — F-055 Release-path performance optimization (in progress)
+- `BI-057` — CI bootstrap + workflow parseability recovery (in progress)
 - `RT-RC-001` — GTK/glib dependency-floor governance (active)
 - `RT-RC-002` — GTK-free host migration planning (active)
 
@@ -42,7 +45,8 @@ _Captured: 2026-07-08_
 - Targeted test compile (`cargo test --locked ... --test ci_gate_tests --no-run`) succeeds with existing non-fatal dead-code warnings.
 - `node scripts/check-esbuild-lock.mjs` passes and confirms `esbuild >= 0.28.1` floor.
 - `scripts/check-dependabot-esbuild-alert.sh` still reports open `GHSA-g7r4-m6w7-qqqr` and blocks publish until closed or accepted.
-- `publish-readiness-checklist.html` remains partially open because clippy, full Rust tests, and UI typecheck/unit suites are not yet fully re-run in this environment.
+- `publish-readiness-checklist.html` remains open because clippy, full Rust tests, and UI typecheck/unit suites are not yet fully re-run in this environment.
+- Duplicate feature mapping cleanup completed by removing legacy duplicate `F-027` row from `docs/feature-list.html` (test traceability consolidation pass complete).
 
 ## Dependency Controls and Security Gate Stack
 

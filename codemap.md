@@ -94,7 +94,8 @@ roadmap artifacts.
 
 ## Governance and Execution Snapshot
 
-- Active bead slices: `BI-047`, `BI-052`, and CI reliability `BI-053`/`BI-054`/`BI-056`.
+- Active bead slices: `BI-047`, `BI-052`, CI reliability `BI-053`/`BI-054`/`BI-056`/`BI-057`,
+  and governance doc dedupe cleanups in `docs/feature-list.html`.
 - Active security slice: `BI-052` (Dependabot/esbuild remediation) + `RT-RC-001` (GTK/GLib
   dependency floor control).
 - Current local signal: UI `esbuild` lock floor checks pass at `0.28.1`, while the
