@@ -13,7 +13,7 @@ _Captured: 2026-07-08_
 
 ## Branch and Sync State
 
-- `origin/main` and local `main` are aligned on commit `1ea5548` (`feat(ci): refine scope gate for rust lane skips (#75)`).
+- `origin/main` and local `main` are aligned on commit `a1667f8` (`chore(docs): refresh main snapshot metadata (#77)`).
 - Remaining open slices continue via PR checkpoints with explicit roadmap/checklist
   evidence and conventional commits.
 - `feat/ci-054-scope-refinement` now owns the lane-scope fast-path refinement for CI and keeps
