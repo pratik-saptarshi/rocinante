@@ -337,9 +337,14 @@ fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
     assert!(workflow.contains("ci-scope:"));
     assert!(workflow.contains("id: detect"));
     assert!(workflow.contains("scope_reason=baseline-fallback"));
-    assert!(workflow.contains("scope_reason=$([ \"$NEEDS_RUST\" == \"true\" ] && echo code-surface-touched || echo docs-only-tweak)"));
+    assert!(workflow.contains("scope-profile"));
+    assert!(workflow.contains("run-rust-storage-lanes"));
+    assert!(workflow.contains("run-rust-coverage-lanes"));
     assert!(workflow.contains("NEEDS_RUST=false"));
     assert!(workflow.contains("echo \"needs_rust=$NEEDS_RUST\" >> \"$GITHUB_OUTPUT\""));
+    assert!(workflow.contains("SCOPE_PROFILE=docs-only-tweak"));
+    assert!(workflow.contains("RUN_RUST_STORAGE_LANES=true"));
+    assert!(workflow.contains("RUN_RUST_COVERAGE_LANES=true"));
 
     assert!(workflow.contains("case \"$path\" in"));
     assert!(workflow.contains(
@@ -347,6 +352,27 @@ fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
     ));
     assert!(workflow.contains(".github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock"));
     assert!(workflow.contains("src-tauri/*"));
+}
+
+#[test]
+fn ci_workflow_has_scope_profile_outputs_for_lane_planning() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert_step_run_contains_all(
+        &workflow,
+        "detect",
+        &[
+            "SCOPE_PROFILE=docs-only-tweak",
+            "echo \"scope_profile=$SCOPE_PROFILE\" >> \"$GITHUB_OUTPUT\"",
+            "echo \"run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES\" >> \"$GITHUB_OUTPUT\"",
+            "echo \"run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES\" >> \"$GITHUB_OUTPUT\"",
+        ],
+    );
+    assert!(workflow.contains("scope-profile: ${{ steps.detect.outputs.scope_profile }}"));
+    assert!(workflow
+        .contains("run-rust-storage-lanes: ${{ steps.detect.outputs.run_rust_storage_lanes }}"));
+    assert!(workflow
+        .contains("run-rust-coverage-lanes: ${{ steps.detect.outputs.run_rust_coverage_lanes }}"));
 }
 
 #[test]

@@ -107,7 +107,8 @@ roadmap artifacts.
   currently reports API response handling issues (`skip: malformed Dependabot API response`) in
   offline/dev mode and remains blocked by release-policy checks until validated in CI.
 - Sync signal: local `main` is aligned to `origin/main` (no local-only commits);
-  publish flow is proceeding via checkpointed PRs rather than direct push.
+  current scope-planning branch `chore/ci-scope-lane-hardening` adds lane profile outputs
+  (`run-rust-storage-lanes`, `run-rust-coverage-lanes`, `scope-profile`) for CI gating.
 - Publish status: blocked by open security advisory exceptions and unresolved host-
   migration + release-gating parity tasks.
 

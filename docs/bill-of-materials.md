@@ -7,17 +7,15 @@ _Captured: 2026-07-08_
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- No active feature branch is pinned in this snapshot; PR checkpoints for the next
-  CI hardening slice remain split by mergeable commits on `main`.
+- Current working slice is `chore/ci-scope-lane-hardening`.
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
-- `origin/main` and local `main` are aligned on commit `a1667f8` (`chore(docs): refresh main snapshot metadata (#77)`).
+- `origin/main` and local `main` are aligned on commit `82cb597` (`chore(ci): harden rust test timeouts`).
 - Remaining open slices continue via PR checkpoints with explicit roadmap/checklist
   evidence and conventional commits.
-- `feat/ci-054-scope-refinement` now owns the lane-scope fast-path refinement for CI and keeps
-  non-Rust changes from triggering full Rust build/lint/test lanes.
+- Lane-scope refinement now keeps docs-only and non-functional edits out of storage/coverage-heavy lanes while preserving core rust gate visibility.
 
 ## Runtime Surface
 
@@ -32,7 +30,7 @@ _Captured: 2026-07-08_
 - `BI-047` — F-047 Desktop parity evaluation and host decision (in progress)
 - `BI-052` — F-052 Dependabot esbuild remediation (in progress)
 - `BI-053` — F-053 CI bootstrap and workflow parseability (completed with PR gate recovery + merge checkpoint)
-- `BI-054` — F-054 CI lane orchestration and gating (scope fast-path refinement in progress on `feat/ci-054-scope-refinement`).
+- `BI-054` — F-054 CI lane orchestration and gating (lane profiles now implemented in `chore/ci-scope-lane-hardening`).
 - `BI-056` — F-055 Release-path performance optimization (in progress)
 - `BI-057` — CI bootstrap + workflow parseability recovery (Red->Green complete)
 - `RT-RC-001` — GTK/glib dependency-floor governance (active)
