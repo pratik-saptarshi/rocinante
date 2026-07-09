@@ -522,9 +522,7 @@ fn ci_workflow_materializes_delta_test_lanes_from_scope_outputs() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
     assert!(workflow.contains("rust-tests:"));
-    assert!(workflow.contains(
-        "lane: ${{ fromJSON(needs.ci-scope.outputs.rust-test-lanes) }}"
-    ));
+    assert!(workflow.contains("lane: ${{ fromJSON(needs.ci-scope.outputs.rust-test-lanes) }}"));
     assert!(workflow.contains("rust-test-lanes: ${{ steps.detect.outputs.rust_test_lanes }}"));
     assert!(workflow.contains("RUST_TEST_LANES='[\"core\",\"storage\"]'"));
     assert!(workflow.contains("echo \"rust_test_lanes=$RUST_TEST_LANES\""));
