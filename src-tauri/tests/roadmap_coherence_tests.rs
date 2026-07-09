@@ -34,7 +34,7 @@ fn stage3_convergence_has_a_single_release_gate_and_test_mapping() {
 }
 
 #[test]
-fn active_host_migration_beads_and_test_plan_mappings_stay_in_sync() {
+fn completed_host_migration_beads_and_test_plan_mappings_stay_in_sync() {
     let feature_list = include_str!("../../docs/feature-list.html");
     let feature_backlog = include_str!("../../docs/roadmap/feature-backlog.html");
     let bead_tracker = include_str!("../../docs/roadmap/bead-issue-tracker.html");
@@ -42,8 +42,8 @@ fn active_host_migration_beads_and_test_plan_mappings_stay_in_sync() {
 
     assert!(
         feature_list.contains("| P0 | EP-06 Host migration planning | F-047 Desktop parity evaluation and host decision |") &&
-            feature_list.contains("| In Progress | BI-047 | In Progress |"),
-        "feature list is missing active BI-047 host-migration tracking",
+            feature_list.contains("| Green | BI-047 | Completed |"),
+        "feature list is missing completed BI-047 host-migration tracking",
     );
 
     assert!(
@@ -63,9 +63,9 @@ fn active_host_migration_beads_and_test_plan_mappings_stay_in_sync() {
     assert!(
         bead_tracker.contains(
             "| BI-047 | Stage 0 | EP-06 Host migration planning | F-047 Desktop parity evaluation and host decision |",
-        ) && bead_tracker.contains("| In Progress | In Progress |") &&
+        ) && bead_tracker.contains("| Red->Green complete | Completed |") &&
             bead_tracker.contains("BI-047"),
-        "bead tracker is missing BI-047 with active status",
+        "bead tracker is missing BI-047 with completed status",
     );
 
     assert!(
