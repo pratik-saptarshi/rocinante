@@ -512,8 +512,8 @@ jobs:
             exit 1
           fi
 
-          if [[ "${{ needs.ci-scope.result }}" == "failure" ]]; then
-            echo "scope detection failed"
+          if [[ "${{ needs.ci-scope.result }}" == "failure" || "${{ needs.ci-scope.result }}" == "cancelled" ]]; then
+            echo "scope detection failed or was cancelled"
             exit 1
           fi
 
