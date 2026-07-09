@@ -320,7 +320,7 @@ jobs:
 
   rust-tests:
     needs: [rust-quality-gates, ci-scope]
-    if: ${{ needs.ci-scope.outputs.needs-rust == 'true' }}
+    if: ${{ needs.ci-scope.outputs.needs-rust == 'true' && (matrix.lane != 'storage' || needs.ci-scope.outputs.run-rust-storage-lanes == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
