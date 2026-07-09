@@ -518,14 +518,16 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
 }
 
 #[test]
-fn ci_workflow_skips_storage_lane_job_on_delta_scope() {
+fn ci_workflow_materializes_delta_test_lanes_from_scope_outputs() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
     assert!(workflow.contains("rust-tests:"));
     assert!(workflow.contains(
-        "if: ${{ needs.ci-scope.outputs.needs-rust == 'true' && (matrix.lane != 'storage' || needs.ci-scope.outputs.run-rust-storage-lanes == 'true') }}"
+        "lane: ${{ fromJSON(needs.ci-scope.outputs.rust-test-lanes) }}"
     ));
-    assert!(workflow.contains("matrix:\n        lane: [core, storage]"));
+    assert!(workflow.contains("rust_test_lanes='[\"core\"]'"));
+    assert!(workflow.contains("RUST_TEST_LANES='[\"core\",\"storage\"]'"));
+    assert!(workflow.contains("echo \"rust_test_lanes=$RUST_TEST_LANES\""));
 }
 
 #[test]
