@@ -107,8 +107,8 @@ roadmap artifacts.
 - Current local signal: CI includes a top-level `test` aggregate gate for branch
   protection, UI `esbuild` lock checks pass at `0.28.1`, and the merged CI lane
   contract now materializes delta lanes from scope outputs with PR run `28987645462`.
-- Sync signal: local `main` matches `origin/main` tree after `BI-047` merged;
-  `BI-047` merged on PR `#85`, and the next ready slice is the GTK/GLib host work behind
+- Sync signal: local main matches origin/main tree after BI-047 merged;
+  BI-047 merged on PR #85, and the next ready slice is the GTK/GLib host work behind
   `RT-RC-001` / `RT-RC-002`.
 - Publish status: blocked by open security advisory exceptions and unresolved host-
   migration + release-gating parity tasks.
