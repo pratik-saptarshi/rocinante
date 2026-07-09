@@ -50,6 +50,7 @@ jobs:
       scope-profile: ${{ steps.detect.outputs.scope_profile }}
       run-rust-storage-lanes: ${{ steps.detect.outputs.run_rust_storage_lanes }}
       run-rust-coverage-lanes: ${{ steps.detect.outputs.run_rust_coverage_lanes }}
+      rust-test-lanes: ${{ steps.detect.outputs.rust_test_lanes }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -82,6 +83,7 @@ jobs:
           NEEDS_RUST=false
           RUN_RUST_STORAGE_LANES=false
           RUN_RUST_COVERAGE_LANES=false
+          RUST_TEST_LANES='["core"]'
           SCOPE_PROFILE=docs-only-tweak
           ONLY_NON_RUST=true
 
@@ -91,20 +93,22 @@ jobs:
               docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*|.github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock|*.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico)
                 ;;
               src-tauri/*)
-                NEEDS_RUST=true
-                RUN_RUST_STORAGE_LANES=true
-                RUN_RUST_COVERAGE_LANES=true
-                SCOPE_PROFILE=code-surface-touched
-                ONLY_NON_RUST=false
-                break
+              NEEDS_RUST=true
+              RUN_RUST_STORAGE_LANES=true
+              RUN_RUST_COVERAGE_LANES=true
+              RUST_TEST_LANES='["core","storage"]'
+              SCOPE_PROFILE=code-surface-touched
+              ONLY_NON_RUST=false
+              break
                 ;;
               *)
-                NEEDS_RUST=true
-                RUN_RUST_STORAGE_LANES=true
-                RUN_RUST_COVERAGE_LANES=true
-                SCOPE_PROFILE=code-surface-touched
-                ONLY_NON_RUST=false
-                break
+              NEEDS_RUST=true
+              RUN_RUST_STORAGE_LANES=true
+              RUN_RUST_COVERAGE_LANES=true
+              RUST_TEST_LANES='["core","storage"]'
+              SCOPE_PROFILE=code-surface-touched
+              ONLY_NON_RUST=false
+              break
                 ;;
             esac
           done <<< "$CHANGED_FILES"
@@ -113,6 +117,7 @@ jobs:
             NEEDS_RUST=true
             RUN_RUST_STORAGE_LANES=true
             RUN_RUST_COVERAGE_LANES=true
+            RUST_TEST_LANES='["core","storage"]'
             if [[ "$SCOPE_PROFILE" == "docs-only-tweak" ]]; then
               SCOPE_PROFILE=release-docs-tweak
             fi
@@ -120,6 +125,7 @@ jobs:
             NEEDS_RUST=true
             RUN_RUST_STORAGE_LANES=false
             RUN_RUST_COVERAGE_LANES=false
+            RUST_TEST_LANES='["core"]'
           fi
 
           {
@@ -127,6 +133,7 @@ jobs:
             echo "scope_profile=$SCOPE_PROFILE"
             echo "run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES"
             echo "run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES"
+            echo "rust_test_lanes=$RUST_TEST_LANES"
           } >> "$GITHUB_OUTPUT"
 
   rust-build-seed:
@@ -320,13 +327,12 @@ jobs:
 
   rust-tests:
     needs: [rust-quality-gates, ci-scope]
-    if: ${{ needs.ci-scope.outputs.needs-rust == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        lane: [core, storage]
+        lane: ${{ fromJSON(needs.ci-scope.outputs.rust-test-lanes) }}
     steps:
       - uses: actions/checkout@v7
         with:
