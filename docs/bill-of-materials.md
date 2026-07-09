@@ -7,7 +7,7 @@ _Captured: 2026-07-08_
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Current working slice is `main` after merging `feat/bi-055-delta-fast-path`.
+- Current working slice is `main` after merging `feat/bi-056-timeout-contract`.
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
@@ -32,7 +32,7 @@ _Captured: 2026-07-08_
 - `BI-053` — F-053 CI bootstrap and workflow parseability (completed; validated on PR run `28983234703`)
 - `BI-054` — F-054 CI lane orchestration and gating (completed; validated on PR run `28983234703`)
 - `BI-055` — F-054 CI lane orchestration and gating (completed)
-- `BI-056` — F-055 Release-path performance optimization (in progress)
+- `BI-056` — F-055 Release-path performance optimization (completed)
 - `BI-057` — CI bootstrap + workflow parseability recovery (Red->Green complete)
 - `RT-RC-001` — GTK/glib dependency-floor governance (active)
 - `RT-RC-002` — GTK-free host migration planning (active)
@@ -45,7 +45,7 @@ _Captured: 2026-07-08_
 - `scripts/check-dependabot-esbuild-alert.sh` is being corrected to query advisory IDs explicitly; remote Dependabot state now shows open alert `GHSA-wrw7-89jp-8q8g` for `glib`.
 - `publish-readiness-checklist.html` remains open because RT-RC-001 is still active and publish still requires a formal release branch / merge checkpoint, even though the CI recovery and CI lane slices now pass their latest remote checks.
 - Duplicate feature mapping cleanup completed by removing legacy duplicate `F-027` row from `docs/feature-list.html` (test traceability consolidation pass complete).
-- Remote PR run `28986275419` is green for `ci-health`, `ci-workflow-parse`, `ci-scope`, `rust-build-seed`, `rust-quality-gates`, `rust-lint`, `rust-tests`, and the aggregate `test` gate.
+- Remote PR run `28987645462` is green for `ci-health`, `ci-workflow-parse`, `ci-scope`, `rust-build-seed`, `rust-quality-gates`, `rust-lint`, `rust-tests`, and the aggregate `test` gate.
 
 ## Dependency Controls and Security Gate Stack
 
