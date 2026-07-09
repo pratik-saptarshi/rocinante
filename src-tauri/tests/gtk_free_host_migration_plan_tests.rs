@@ -29,6 +29,7 @@ fn parity_matrix_records_host_path_and_fallback_scope() {
 
     assert!(matrix.contains("native-shell"));
     assert!(matrix.contains("browser-sidecar"));
+    assert!(matrix.contains("temporary Tauri"));
     assert!(matrix.contains("Decision owner"));
     assert!(matrix.contains("Review-by date"));
     assert!(matrix.contains("RT-RC-002"));

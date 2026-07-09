@@ -97,18 +97,18 @@ roadmap artifacts.
 
 ## Governance and Execution Snapshot
 
-- Active bead slices: `BI-047`, `BI-052`, CI reliability `BI-056`,
+- Active bead slices: `BI-047`, `BI-052`,
   and governance doc updates in `docs/feature-list.html`, `docs/bill-of-materials.html`,
   and `docs/publish-readiness-checklist.html`.
-- CI recovery slices `BI-053`, `BI-054`, `BI-055`, and `BI-057` are complete; the latest
-  green remote run is `28986275419`.
+- CI recovery slices `BI-053`, `BI-054`, `BI-055`, `BI-056`, and `BI-057` are complete; the latest
+  green remote run is `28987645462`.
 - Active security slice: `BI-052` (Dependabot/esbuild remediation) + `RT-RC-001` (GTK/GLib
   dependency floor control).
 - Current local signal: CI includes a top-level `test` aggregate gate for branch
   protection, UI `esbuild` lock checks pass at `0.28.1`, and the merged CI lane
-  contract now materializes delta lanes from scope outputs with PR run `28986275419`.
-- Sync signal: local `main` is aligned to `origin/main` after merging `feat/bi-055-delta-fast-path`;
-  the next ready CI slice is `BI-056` and the GTK/GLib host work remains behind `RT-RC-001` / `RT-RC-002`.
+  contract now materializes delta lanes from scope outputs with PR run `28987645462`.
+- Sync signal: local `main` is aligned to `origin/main` after merging `feat/bi-056-timeout-contract`;
+  the next ready slice is the GTK/GLib host work behind `RT-RC-001` / `RT-RC-002`.
 - Publish status: blocked by open security advisory exceptions and unresolved host-
   migration + release-gating parity tasks.
 
