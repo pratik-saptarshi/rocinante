@@ -51,3 +51,19 @@ fn parity_decision_artifacts_stay_stable_during_planned_work() {
     assert!(migration_plan.contains("F-047"));
     assert!(checklist.contains("RT-RC-002 is active"));
 }
+
+#[test]
+fn parity_decision_artifacts_record_bi_047_completion() {
+    let matrix = read_repo_file("../docs/roadmap/desktop-parity-matrix.html");
+    let migration_plan = read_repo_file("../docs/roadmap/gtk-free-host-migration-plan.html");
+    let tracker = read_repo_file("../docs/roadmap/bead-issue-tracker.html");
+    let feature_list = read_repo_file("../docs/feature-list.html");
+
+    assert!(matrix.contains("BI-047"));
+    assert!(matrix.contains("host decision is signed off"));
+    assert!(migration_plan.contains("BI-047"));
+    assert!(migration_plan.contains("Phase 0"));
+    assert!(tracker.contains("| Completed |"));
+    assert!(tracker.contains("feat(parity): record temporary tauri stopgap"));
+    assert!(feature_list.contains("F-047 Desktop parity evaluation and host decision"));
+}

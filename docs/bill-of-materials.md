@@ -1,18 +1,19 @@
 # Bill of Materials - Markdown Snapshot
 
-_Captured: 2026-07-08_
+_Captured: 2026-07-09_
 
 ## Repository and Source Control
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Current working slice is `main` after merging `feat/bi-056-timeout-contract`.
+- Current working slice is `main` after merging `feat/bi-047-decision-paths`.
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
-- `origin/main` and local `main` are aligned on commit `ce2dd48` (squash merge of `feat/bi-055-delta-fast-path`).
+- `origin/main` and local `main` share the same tree after the BI-047 reconciliation merge;
+  local history still includes merge checkpoints, but the release inventory matches the remote tip.
 - Remaining open slices continue via PR checkpoints with explicit roadmap/checklist
   evidence and conventional commits.
 - Lane-scope refinement now keeps docs-only and non-functional edits out of storage/coverage-heavy lanes while preserving core rust gate visibility.
@@ -27,7 +28,7 @@ _Captured: 2026-07-08_
 
 ## Active Governance and Planned Slices
 
-- `BI-047` — F-047 Desktop parity evaluation and host decision (in progress)
+- `BI-047` — F-047 Desktop parity evaluation and host decision (completed on PR run `28988956969`)
 - `BI-052` — F-052 Dependabot esbuild remediation (in progress)
 - `BI-053` — F-053 CI bootstrap and workflow parseability (completed; validated on PR run `28983234703`)
 - `BI-054` — F-054 CI lane orchestration and gating (completed; validated on PR run `28983234703`)
@@ -43,7 +44,7 @@ _Captured: 2026-07-08_
 - `cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests` passes on the pinned `1.96.1` toolchain.
 - `node scripts/check-esbuild-lock.mjs` passes and confirms `esbuild >= 0.28.1` floor.
 - `scripts/check-dependabot-esbuild-alert.sh` is being corrected to query advisory IDs explicitly; remote Dependabot state now shows open alert `GHSA-wrw7-89jp-8q8g` for `glib`.
-- `publish-readiness-checklist.html` remains open because RT-RC-001 is still active and publish still requires a formal release branch / merge checkpoint, even though the CI recovery and CI lane slices now pass their latest remote checks.
+- `publish-readiness-checklist.html` remains open because RT-RC-001 is still active and publish still requires a formal release branch / merge checkpoint, even though BI-047 is merged and the CI recovery and CI lane slices now pass their latest remote checks.
 - Duplicate feature mapping cleanup completed by removing legacy duplicate `F-027` row from `docs/feature-list.html` (test traceability consolidation pass complete).
 - Remote PR run `28987645462` is green for `ci-health`, `ci-workflow-parse`, `ci-scope`, `rust-build-seed`, `rust-quality-gates`, `rust-lint`, `rust-tests`, and the aggregate `test` gate.
 
