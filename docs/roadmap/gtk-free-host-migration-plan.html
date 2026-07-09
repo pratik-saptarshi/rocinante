@@ -19,13 +19,13 @@ user-visible behavior, backed by host-agnostic Rust core logic.
 - Treat browser-sidecar only as a scoped fallback for parity gaps, not as the
   default architecture.
 - Keep temporary Tauri as the explicit stopgap comparison path until the parity
-  matrix is signed off and the selected host path is recorded.
+  matrix is signed off and `BI-047` is complete.
 
 ## Phase Plan
 
 | Phase | Goal | Backlog / Beads | Test-first gate | Exit criteria |
 |---|---|---|---|---|
-| Phase 0 | Parity evaluation and host decision | `F-047`, `BI-047` | Desktop parity matrix tests and host-decision coverage fail until the required surface is classified. | Parity matrix signed off, must-have/should-have/can-defer split recorded, and the host path is either native desktop, a documented browser-sidecar fallback, or an explicitly time-boxed temporary Tauri stopgap. |
+| Phase 0 | Parity evaluation and host decision | `F-047`, `BI-047` | Desktop parity matrix tests and host-decision coverage fail until the required surface is classified. | Parity matrix signed off, must-have/should-have/can-defer split recorded, `BI-047` is complete, and the host path is either native desktop, a documented browser-sidecar fallback, or an explicitly time-boxed temporary Tauri stopgap. |
 | Phase 1 | Core extraction | `F-048`, `BI-048` | Core contract tests fail until risk scoring, triage, verifier, budget guard, release baseline, and auth-sensitive flows are host-agnostic. | Domain behavior lives in `rocinante-core` with no GUI/runtime dependency and host adapters stay thin. |
 | Phase 2 | GTK-free native desktop MVP | `F-049`, `BI-049` | Native shell integration tests fail until windowing, menus, dialogs, tray, deep links, persistence, and shortcuts work without GTK/GLib. | The native shell runs the current UI and backend flows on supported desktop platforms without Tauri/GTK/GLib. |
 | Phase 3 | Parity closure and fallback containment | `F-050`, `BI-050` | End-to-end desktop tests fail until remaining parity items are either implemented or explicitly deferred. | The parity matrix is green or has an approved defer list, and any browser-sidecar fallback is isolated to documented exceptions. |

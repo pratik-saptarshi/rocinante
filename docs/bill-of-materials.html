@@ -12,7 +12,9 @@ then release from the merged tip.
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary integration branch: `main`
 - Remote: `origin`
-- `origin/main` and local `main` are aligned on commit `ce2dd48` (squash merge of `feat/bi-055-delta-fast-path`).
+- Current working slice is `main` after merging `feat/bi-047-decision-paths`.
+- `origin/main` and local `main` share the same tree after the BI-047 reconciliation merge;
+  local history still includes merge checkpoints, but the release inventory matches the remote tip.
 - Product: Rust + Tauri repository analyzer with a bead-backed roadmap
   execution model and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -191,7 +193,7 @@ Before any release reaches `origin/main`, the repository should satisfy:
 7. The final publish uses a protected-branch-safe squash or PR merge.
 8. `origin/main` remains the source of truth; local and remote must be reconciled through merge checkpoints.
 
-CI recovery evidence on `feat/bi-056-timeout-contract` is green and merged; the publish checklist still waits on RT-RC-001 and the remaining release-gate evidence.
+CI recovery evidence on `feat/bi-056-timeout-contract` is green and merged; BI-047 is also merged on PR run `28988956969`, and the publish checklist still waits on RT-RC-001 and the remaining release-gate evidence.
 
 This BOM is the release inventory; the checklist in
 `docs/publish-readiness-checklist.html` is the executable gate.
