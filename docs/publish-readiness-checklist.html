@@ -39,8 +39,8 @@ Security policy exists | [x] | `SECURITY.md`
 Repository operating rules documented | [x] | `docs/project-rules.html`
 Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
-Latest local branch snapshot: `origin/main` and local `main` are aligned on `a90ac70`
-after merging `feat/bi-056-timeout-contract` on PR run `28987645462`.
+Latest local branch snapshot: local `main` matches `origin/main` tree after BI-047
+merged on PR run `28988956969`, and the remaining divergence is local merge history only.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -100,7 +100,7 @@ Push branch to `origin` | [ ] | `git push -u origin <release-branch>`
 Open PR against `main` | [ ] | `gh pr create`
 Wait for GitHub checks to complete | [ ] | GitHub Actions run status
 Squash merge only; no merge commits on `main` | [x] | Repository branch protection behavior
-Sync local `main` to merged remote tip | [ ] | `git merge --no-edit origin/main`
+Sync local `main` to merged remote tip | [x] | `git merge --no-ff origin/main`
 
 ## 6) Release monitoring gate
 
@@ -124,7 +124,7 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 
 ## 8) Branch governance and merge checkpoints
 
-- Local branch `main` is currently aligned to `origin/main` with no uncommitted local changes; publish actions continue via protected PR flow only. BI-055 and BI-056 are merged, and RT-RC-001 remains the next release-blocking governance slice.
+- Local branch `main` matches the `origin/main` tree after the BI-047 merge checkpoint; publish actions continue via protected PR flow only. BI-055, BI-056, and BI-047 are merged, BI-047 is complete, and RT-RC-001 remains the next release-blocking governance slice.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`

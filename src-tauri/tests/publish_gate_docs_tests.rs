@@ -22,6 +22,22 @@ fn publish_gate_documents_backend_rust_coverage_lane() {
 }
 
 #[test]
+fn publish_gate_documents_reflect_bi_047_merge_and_current_main_snapshot() {
+    let checklist = read_repo_file("../docs/publish-readiness-checklist.html");
+    let bom = read_repo_file("../docs/bill-of-materials.html");
+    let codemap = read_repo_file("../codemap.md");
+
+    assert!(
+        bom.contains("Current working slice is `main` after merging `feat/bi-047-decision-paths`.")
+    );
+    assert!(bom.contains("BI-047"));
+    assert!(checklist.contains("BI-047 is complete"));
+    assert!(checklist.contains("local `main` matches `origin/main` tree after BI-047"));
+    assert!(codemap.contains("BI-047 merged"));
+    assert!(codemap.contains("main matches origin/main tree after BI-047"));
+}
+
+#[test]
 fn publish_gate_ignores_local_validation_artifacts() {
     let gitignore = read_repo_file("../.gitignore");
 
