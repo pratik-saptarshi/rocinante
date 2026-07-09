@@ -39,8 +39,8 @@ Security policy exists | [x] | `SECURITY.md`
 Repository operating rules documented | [x] | `docs/project-rules.html`
 Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
-Latest local branch snapshot: `origin/main` and local `main` are aligned on `ce2dd48`
-after merging `feat/bi-055-delta-fast-path` on PR run `28986275419`.
+Latest local branch snapshot: `origin/main` and local `main` are aligned on `a90ac70`
+after merging `feat/bi-056-timeout-contract` on PR run `28987645462`.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -124,7 +124,7 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 
 ## 8) Branch governance and merge checkpoints
 
-- Local branch `main` is currently aligned to `origin/main` with no uncommitted local changes; publish actions continue via protected PR flow only. BI-055 is merged, and BI-056 is the next ready CI-hardening slice.
+- Local branch `main` is currently aligned to `origin/main` with no uncommitted local changes; publish actions continue via protected PR flow only. BI-055 and BI-056 are merged, and RT-RC-001 remains the next release-blocking governance slice.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`
