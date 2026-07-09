@@ -471,7 +471,7 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
     assert!(workflow.contains("rust-quality-gates:"));
     assert!(workflow.contains("rust-tests:"));
     assert!(workflow.contains("strategy:"));
-    assert!(workflow.contains("lane: [core, storage]"));
+    assert!(workflow.contains("lane: ${{ fromJSON(needs.ci-scope.outputs.rust-test-lanes) }}"));
     assert_step_block_contains_all(
         &workflow,
         "Format check",
@@ -525,7 +525,7 @@ fn ci_workflow_materializes_delta_test_lanes_from_scope_outputs() {
     assert!(workflow.contains(
         "lane: ${{ fromJSON(needs.ci-scope.outputs.rust-test-lanes) }}"
     ));
-    assert!(workflow.contains("rust_test_lanes='[\"core\"]'"));
+    assert!(workflow.contains("rust-test-lanes: ${{ steps.detect.outputs.rust_test_lanes }}"));
     assert!(workflow.contains("RUST_TEST_LANES='[\"core\",\"storage\"]'"));
     assert!(workflow.contains("echo \"rust_test_lanes=$RUST_TEST_LANES\""));
 }
