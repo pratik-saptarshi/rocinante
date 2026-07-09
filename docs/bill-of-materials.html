@@ -1,6 +1,6 @@
 # Bill of Materials - Rocinante Release Gate
 
-_Current as of 2026-07-08_
+_Current as of 2026-07-09_
 
 This document inventories the release-critical components, dependency surface,
 and governance artifacts that must stay aligned before publishing to `origin`.
@@ -12,12 +12,12 @@ then release from the merged tip.
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary integration branch: `main`
 - Remote: `origin`
-- `origin/main` and local `main` are aligned on commit `82cb597` (`chore(ci): harden rust test timeouts`).
+- `origin/main` and local `main` are aligned on commit `ce2dd48` (squash merge of `feat/bi-055-delta-fast-path`).
 - Product: Rust + Tauri repository analyzer with a bead-backed roadmap
   execution model and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
   the default branch
-- Current CI-hardening branch `chore/ci-scope-lane-hardening` passed PR run `28983234703`, which greened the health, parseability, lint, test, and aggregate merge gates.
+- Current CI-hardening branch `feat/bi-055-delta-fast-path` was merged on PR run `28986275419`, which greened the health, parseability, scope, build-seed, lint, test, and aggregate merge gates.
 
 ## 2) Build, runtime, and release surface
 
@@ -191,7 +191,7 @@ Before any release reaches `origin/main`, the repository should satisfy:
 7. The final publish uses a protected-branch-safe squash or PR merge.
 8. `origin/main` remains the source of truth; local and remote must be reconciled through merge checkpoints.
 
-CI recovery evidence on `chore/ci-scope-lane-hardening` is green, but that branch still needs merge-review handling before the publish checklist can flip to complete.
+CI recovery evidence on `feat/bi-055-delta-fast-path` is green and merged; the publish checklist still waits on RT-RC-001 and the remaining release-gate evidence.
 
 This BOM is the release inventory; the checklist in
 `docs/publish-readiness-checklist.html` is the executable gate.
