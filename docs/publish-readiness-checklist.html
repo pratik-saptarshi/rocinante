@@ -39,7 +39,7 @@ Security policy exists | [x] | `SECURITY.md`
 Repository operating rules documented | [x] | `docs/project-rules.html`
 Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
-Latest local branch snapshot: `origin/main` and local `main` are aligned on `a1667f8`
+Latest local branch snapshot: `origin/main` and local `main` are aligned on `82cb597`
 at the moment of this snapshot.
 
 ## 2) Security, privacy, and secret hygiene
@@ -124,7 +124,7 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 
 ## 8) Branch governance and merge checkpoints
 
-- Local branch `main` is currently ahead of `origin/main` with no uncommitted local changes; publish actions continue via protected PR flow only.
+- Local branch `main` is currently aligned to `origin/main` with no uncommitted local changes; publish actions continue via protected PR flow only. The CI-hardening branch `chore/ci-scope-lane-hardening` has a green remote run (`28983234703`) and is the current merge candidate.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`

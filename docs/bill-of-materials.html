@@ -12,11 +12,12 @@ then release from the merged tip.
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary integration branch: `main`
 - Remote: `origin`
-- `origin/main` and local `main` are aligned on commit `a1667f8`.
+- `origin/main` and local `main` are aligned on commit `82cb597` (`chore(ci): harden rust test timeouts`).
 - Product: Rust + Tauri repository analyzer with a bead-backed roadmap
   execution model and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
   the default branch
+- Current CI-hardening branch `chore/ci-scope-lane-hardening` passed PR run `28983234703`, which greened the health, parseability, lint, test, and aggregate merge gates.
 
 ## 2) Build, runtime, and release surface
 
@@ -189,6 +190,8 @@ Before any release reaches `origin/main`, the repository should satisfy:
 6. GitHub Actions checks are green on the PR or release branch.
 7. The final publish uses a protected-branch-safe squash or PR merge.
 8. `origin/main` remains the source of truth; local and remote must be reconciled through merge checkpoints.
+
+CI recovery evidence on `chore/ci-scope-lane-hardening` is green, but that branch still needs merge-review handling before the publish checklist can flip to complete.
 
 This BOM is the release inventory; the checklist in
 `docs/publish-readiness-checklist.html` is the executable gate.

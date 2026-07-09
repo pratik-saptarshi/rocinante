@@ -337,9 +337,17 @@ fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
     assert!(workflow.contains("ci-scope:"));
     assert!(workflow.contains("id: detect"));
     assert!(workflow.contains("scope_reason=baseline-fallback"));
-    assert!(workflow.contains("scope_reason=$([ \"$NEEDS_RUST\" == \"true\" ] && echo code-surface-touched || echo docs-only-tweak)"));
+    assert!(workflow.contains("scope-profile"));
+    assert!(workflow.contains("run-rust-storage-lanes"));
+    assert!(workflow.contains("run-rust-coverage-lanes"));
     assert!(workflow.contains("NEEDS_RUST=false"));
-    assert!(workflow.contains("echo \"needs_rust=$NEEDS_RUST\" >> \"$GITHUB_OUTPUT\""));
+    assert!(workflow.contains("echo \"needs_rust=$NEEDS_RUST\""));
+    assert!(workflow.contains("echo \"scope_profile=$SCOPE_PROFILE\""));
+    assert!(workflow.contains("echo \"run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES\""));
+    assert!(workflow.contains("echo \"run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES\""));
+    assert!(workflow.contains("SCOPE_PROFILE=docs-only-tweak"));
+    assert!(workflow.contains("RUN_RUST_STORAGE_LANES=true"));
+    assert!(workflow.contains("RUN_RUST_COVERAGE_LANES=true"));
 
     assert!(workflow.contains("case \"$path\" in"));
     assert!(workflow.contains(
@@ -347,6 +355,30 @@ fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
     ));
     assert!(workflow.contains(".github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock"));
     assert!(workflow.contains("src-tauri/*"));
+}
+
+#[test]
+fn ci_workflow_has_scope_profile_outputs_for_lane_planning() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert_step_run_contains_all(
+        &workflow,
+        "Detect CI scope",
+        &[
+            "SCOPE_PROFILE=docs-only-tweak",
+            "{",
+            "echo \"needs_rust=$NEEDS_RUST\"",
+            "echo \"scope_profile=$SCOPE_PROFILE\"",
+            "echo \"run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES\"",
+            "echo \"run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES\"",
+            "} >> \"$GITHUB_OUTPUT\"",
+        ],
+    );
+    assert!(workflow.contains("scope-profile: ${{ steps.detect.outputs.scope_profile }}"));
+    assert!(workflow
+        .contains("run-rust-storage-lanes: ${{ steps.detect.outputs.run_rust_storage_lanes }}"));
+    assert!(workflow
+        .contains("run-rust-coverage-lanes: ${{ steps.detect.outputs.run_rust_coverage_lanes }}"));
 }
 
 #[test]
@@ -479,7 +511,7 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
             "fi",
         ],
     );
-    assert!(workflow.contains("if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}"));
+    assert!(workflow.contains("if: ${{ needs.ci-scope.outputs.needs-rust == 'true' }}"));
     assert!(workflow.contains("rust-lint:\n    needs: [rust-quality-gates, ci-scope]"));
     assert!(workflow
         .contains("strategy:\n      fail-fast: false\n      matrix:\n        lane: [fmt, clippy]"));
@@ -491,10 +523,10 @@ fn ci_workflow_runs_coverage_only_for_release_lanes() {
 
     assert!(workflow.contains("rust-coverage:"));
     assert!(workflow.contains(
-        "if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}"
+        "if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' && needs.ci-scope.outputs.run-rust-coverage-lanes == 'true' }}"
     ));
     assert!(workflow.contains(
-        "rust-coverage:\n    if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}\n    needs: [rust-quality-gates, ci-scope]"
+        "rust-coverage:\n    if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' && needs.ci-scope.outputs.run-rust-coverage-lanes == 'true' }}\n    needs: [rust-quality-gates, ci-scope]"
     ));
 }
 

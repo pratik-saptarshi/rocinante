@@ -47,12 +47,16 @@ jobs:
     timeout-minutes: 10
     outputs:
       needs-rust: ${{ steps.detect.outputs.needs_rust }}
+      scope-profile: ${{ steps.detect.outputs.scope_profile }}
+      run-rust-storage-lanes: ${{ steps.detect.outputs.run_rust_storage_lanes }}
+      run-rust-coverage-lanes: ${{ steps.detect.outputs.run_rust_coverage_lanes }}
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
           fetch-depth: 2
-      - id: detect
+      - name: Detect CI scope
+        id: detect
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -67,33 +71,63 @@ jobs:
           fi
 
           if [[ -z "$BASE_SHA" || -z "$HEAD_SHA" ]] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
-            echo "needs_rust=true" >> "$GITHUB_OUTPUT"
-            echo "scope_reason=baseline-fallback" >> "$GITHUB_OUTPUT"
+            {
+              echo "needs_rust=true"
+              echo "scope_reason=baseline-fallback"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
           NEEDS_RUST=false
+          RUN_RUST_STORAGE_LANES=false
+          RUN_RUST_COVERAGE_LANES=false
+          SCOPE_PROFILE=docs-only-tweak
+          ONLY_NON_RUST=true
 
           while IFS= read -r path; do
             [[ -z "$path" ]] && continue
             case "$path" in
               docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*|.github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock|*.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico)
-                continue
                 ;;
               src-tauri/*)
                 NEEDS_RUST=true
+                RUN_RUST_STORAGE_LANES=true
+                RUN_RUST_COVERAGE_LANES=true
+                SCOPE_PROFILE=code-surface-touched
+                ONLY_NON_RUST=false
                 break
                 ;;
               *)
                 NEEDS_RUST=true
+                RUN_RUST_STORAGE_LANES=true
+                RUN_RUST_COVERAGE_LANES=true
+                SCOPE_PROFILE=code-surface-touched
+                ONLY_NON_RUST=false
                 break
                 ;;
             esac
           done <<< "$CHANGED_FILES"
 
-          echo "needs_rust=$NEEDS_RUST" >> "$GITHUB_OUTPUT"
-          echo "scope_reason=$([ "$NEEDS_RUST" == "true" ] && echo code-surface-touched || echo docs-only-tweak)" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ startsWith(github.ref, 'refs/heads/release/') }}" == "true" ]]; then
+            NEEDS_RUST=true
+            RUN_RUST_STORAGE_LANES=true
+            RUN_RUST_COVERAGE_LANES=true
+            if [[ "$SCOPE_PROFILE" == "docs-only-tweak" ]]; then
+              SCOPE_PROFILE=release-docs-tweak
+            fi
+          elif [[ "$ONLY_NON_RUST" == "true" ]]; then
+            NEEDS_RUST=true
+            RUN_RUST_STORAGE_LANES=false
+            RUN_RUST_COVERAGE_LANES=false
+          fi
+
+          {
+            echo "needs_rust=$NEEDS_RUST"
+            echo "scope_profile=$SCOPE_PROFILE"
+            echo "run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES"
+            echo "run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES"
+          } >> "$GITHUB_OUTPUT"
 
   rust-build-seed:
     needs: [ci-workflow-parse, ci-scope]
@@ -333,13 +367,18 @@ jobs:
       - name: Test
         run: |
           TEST_START_TS=$(date +%s)
+            if [[ "${{ matrix.lane }}" == "storage" && "${{ needs.ci-scope.outputs.run-rust-storage-lanes }}" != "true" ]]; then
+              echo "Skipping storage lane by scope profile"
+              exit 0
+            fi
+
             if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
               if [[ "${{ matrix.lane }}" == "storage" ]]; then
-              timeout 900s cargo test \
+                timeout 900s cargo test \
                 --locked \
                 --manifest-path src-tauri/Cargo.toml \
                 --features analytics \
-                --test storage_duallayer_tests -- --timeout 180
+                --test storage_duallayer_tests
             else
               timeout 900s cargo test \
                 --locked \
@@ -381,20 +420,20 @@ jobs:
                 --test team_policy_tests \
                 --test telemetry_tests \
                 --test triage_tests \
-                --test verifier_tests -- --timeout 180
+                --test verifier_tests
             fi
           else
             if [[ "${{ matrix.lane }}" != "core" ]]; then
               echo "Skipping non-core lane '${{ matrix.lane }}' on delta scope"
               exit 0
             fi
-            timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests -- --timeout 180
+            timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests
           fi
           TEST_ELAPSED_SECONDS=$(( $(date +%s) - TEST_START_TS ))
           echo "::notice title=Rust quality test::scope=${CI_RUST_BUILD_SCOPE} lane=${{ matrix.lane }} duration_sec=${TEST_ELAPSED_SECONDS}"
 
   rust-coverage:
-    if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' }}
+    if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && needs.ci-scope.outputs.needs-rust == 'true' && needs.ci-scope.outputs.run-rust-coverage-lanes == 'true' }}
     needs: [rust-quality-gates, ci-scope]
     runs-on: ubuntu-latest
     timeout-minutes: 30

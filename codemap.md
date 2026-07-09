@@ -97,9 +97,11 @@ roadmap artifacts.
 
 ## Governance and Execution Snapshot
 
-- Active bead slices: `BI-047`, `BI-052`, CI reliability `BI-053`/`BI-054`/`BI-056`/`BI-057`,
+- Active bead slices: `BI-047`, `BI-052`, CI reliability `BI-055`/`BI-056`,
   and governance doc updates in `docs/feature-list.html`, `docs/bill-of-materials.html`,
   and `docs/publish-readiness-checklist.html`.
+- CI recovery slices `BI-053`, `BI-054`, and `BI-057` are complete; the latest
+  green remote run is `28983234703`.
 - Active security slice: `BI-052` (Dependabot/esbuild remediation) + `RT-RC-001` (GTK/GLib
   dependency floor control).
 - Current local signal: CI includes a top-level `test` aggregate gate for branch
@@ -107,7 +109,9 @@ roadmap artifacts.
   currently reports API response handling issues (`skip: malformed Dependabot API response`) in
   offline/dev mode and remains blocked by release-policy checks until validated in CI.
 - Sync signal: local `main` is aligned to `origin/main` (no local-only commits);
-  publish flow is proceeding via checkpointed PRs rather than direct push.
+  current scope-planning branch `chore/ci-scope-lane-hardening` adds lane profile outputs
+  (`run-rust-storage-lanes`, `run-rust-coverage-lanes`, `scope-profile`) for CI gating
+  and now passes the merge gate on PR run `28983234703`.
 - Publish status: blocked by open security advisory exceptions and unresolved host-
   migration + release-gating parity tasks.
 
