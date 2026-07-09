@@ -7,12 +7,12 @@ _Captured: 2026-07-08_
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Current working slice is `chore/ci-scope-lane-hardening`.
+- Current working slice is `main` after merging `feat/bi-055-delta-fast-path`.
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
-- `origin/main` and local `main` are aligned on commit `82cb597` (`chore(ci): harden rust test timeouts`).
+- `origin/main` and local `main` are aligned on commit `ce2dd48` (squash merge of `feat/bi-055-delta-fast-path`).
 - Remaining open slices continue via PR checkpoints with explicit roadmap/checklist
   evidence and conventional commits.
 - Lane-scope refinement now keeps docs-only and non-functional edits out of storage/coverage-heavy lanes while preserving core rust gate visibility.
@@ -31,7 +31,7 @@ _Captured: 2026-07-08_
 - `BI-052` — F-052 Dependabot esbuild remediation (in progress)
 - `BI-053` — F-053 CI bootstrap and workflow parseability (completed; validated on PR run `28983234703`)
 - `BI-054` — F-054 CI lane orchestration and gating (completed; validated on PR run `28983234703`)
-- `BI-055` — F-054 CI lane orchestration and gating (in progress)
+- `BI-055` — F-054 CI lane orchestration and gating (completed)
 - `BI-056` — F-055 Release-path performance optimization (in progress)
 - `BI-057` — CI bootstrap + workflow parseability recovery (Red->Green complete)
 - `RT-RC-001` — GTK/glib dependency-floor governance (active)
@@ -40,12 +40,12 @@ _Captured: 2026-07-08_
 ## Validation Snapshot (Latest Local Run)
 
 - `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` passes.
-- Targeted CI-gate contract check (`cargo test ... --test ci_gate_tests --no-run`) compiles successfully with non-fatal dead-code warnings from existing storage contract coverage.
+- `cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests` passes on the pinned `1.96.1` toolchain.
 - `node scripts/check-esbuild-lock.mjs` passes and confirms `esbuild >= 0.28.1` floor.
 - `scripts/check-dependabot-esbuild-alert.sh` is being corrected to query advisory IDs explicitly; remote Dependabot state now shows open alert `GHSA-wrw7-89jp-8q8g` for `glib`.
-- `publish-readiness-checklist.html` remains open because RT-RC-001 is still active and publish still requires a formal release branch / merge checkpoint, even though the CI recovery branch passed its latest remote checks.
+- `publish-readiness-checklist.html` remains open because RT-RC-001 is still active and publish still requires a formal release branch / merge checkpoint, even though the CI recovery and CI lane slices now pass their latest remote checks.
 - Duplicate feature mapping cleanup completed by removing legacy duplicate `F-027` row from `docs/feature-list.html` (test traceability consolidation pass complete).
-- Remote PR run `28983234703` is green for `ci-health`, `ci-workflow-parse`, `rust-quality-gates`, `rust-tests`, `rust-lint`, and the aggregate `test` gate.
+- Remote PR run `28986275419` is green for `ci-health`, `ci-workflow-parse`, `ci-scope`, `rust-build-seed`, `rust-quality-gates`, `rust-lint`, `rust-tests`, and the aggregate `test` gate.
 
 ## Dependency Controls and Security Gate Stack
 
