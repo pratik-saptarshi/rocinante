@@ -542,6 +542,30 @@ fn ci_workflow_runs_coverage_only_for_release_lanes() {
 }
 
 #[test]
+fn ci_workflow_keeps_explicit_timeout_guards_on_release_storage_and_coverage_paths() {
+    let workflow = read_repo_file("../.github/workflows/ci.yml");
+
+    assert_step_block_contains_all(
+        &workflow,
+        "Test",
+        &[
+            "timeout 900s cargo test \\",
+            "--test storage_duallayer_tests",
+            "timeout 900s cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib --tests",
+        ],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Rust coverage",
+        &[
+            "timeout 900s cargo llvm-cov \\",
+            "--lcov \\",
+            "--output-path target/coverage/lcov.info",
+        ],
+    );
+}
+
+#[test]
 fn ci_workflow_ci_gate_contract_respects_release_and_delta_scope() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
