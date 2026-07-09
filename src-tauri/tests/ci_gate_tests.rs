@@ -270,7 +270,7 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
         &workflow,
         "Upload Rust coverage report",
         &[
-            "actions/upload-artifact@v5",
+            "actions/upload-artifact@v7.0.1",
             "name: rust-coverage-lcov",
             "target/coverage/lcov.info",
         ],
@@ -306,6 +306,7 @@ fn ci_workflow_has_aggregate_test_gate() {
         &workflow,
         "Gate summary",
         &[
+            "if [[ \"${{ needs.ci-scope.result }}\" == \"failure\" || \"${{ needs.ci-scope.result }}\" == \"cancelled\" ]]",
             "if [[ \"${{ needs.rust-build-seed.result }}\" == \"failure\" || \"${{ needs.rust-build-seed.result }}\" == \"cancelled\" ]]",
             "if [[ \"${{ needs.rust-lint.result }}\" == \"failure\" || \"${{ needs.rust-lint.result }}\" == \"cancelled\" ]]",
             "if [[ \"${{ needs.rust-tests.result }}\" == \"failure\" || \"${{ needs.rust-tests.result }}\" == \"cancelled\" ]]",
