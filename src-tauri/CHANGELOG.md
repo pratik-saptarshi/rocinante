@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0](https://github.com/pratik-saptarshi/rocinante/compare/v0.1.1...v0.2.0) (2026-07-09)
+
+
+### Features
+
+* **ci:** add scope-profile outputs for lane gating ([#80](https://github.com/pratik-saptarshi/rocinante/issues/80)) ([825ab7c](https://github.com/pratik-saptarshi/rocinante/commit/825ab7cf85ae0e2cf02cf74fd3d64d366f697708))
+* **ci:** refine scope gate for rust lane skips ([#75](https://github.com/pratik-saptarshi/rocinante/issues/75)) ([1ea5548](https://github.com/pratik-saptarshi/rocinante/commit/1ea554835c9dcb93d67de231a6255b60dd75cc62))
+* **parity:** record temporary tauri stopgap ([#85](https://github.com/pratik-saptarshi/rocinante/issues/85)) ([e1a462c](https://github.com/pratik-saptarshi/rocinante/commit/e1a462c9b7be86cb2b93829c5a6a5901eb78a790))
+
+
+### Bug Fixes
+
+* **ci:** gate delta storage lane at job scope ([#81](https://github.com/pratik-saptarshi/rocinante/issues/81)) ([ce2dd48](https://github.com/pratik-saptarshi/rocinante/commit/ce2dd48cfe612acbbdd8d206be449efc6ece1cc1))
+
 ## [0.1.1](https://github.com/pratik-saptarshi/rocinante/compare/v0.1.0...v0.1.1) (2026-07-07)
 
 
