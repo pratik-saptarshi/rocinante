@@ -173,7 +173,7 @@ jobs:
           else
             echo "scope=delta" >> "$GITHUB_OUTPUT"
           fi
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.100.0
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
@@ -240,7 +240,7 @@ jobs:
             echo "scope=delta" >> "$GITHUB_OUTPUT"
             echo "CI_RUST_BUILD_SCOPE=delta" >> "$GITHUB_ENV"
           fi
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.100.0
         with:
           components: clippy, rustfmt
       - name: Prime Rust toolchain
@@ -294,7 +294,7 @@ jobs:
             echo "scope=delta" >> "$GITHUB_OUTPUT"
             echo "CI_RUST_BUILD_SCOPE=delta" >> "$GITHUB_ENV"
           fi
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.100.0
         with:
           components: clippy, rustfmt
       - name: Prime Rust toolchain
@@ -358,7 +358,7 @@ jobs:
             echo "scope=delta" >> "$GITHUB_OUTPUT"
             echo "CI_RUST_BUILD_SCOPE=delta" >> "$GITHUB_ENV"
           fi
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.100.0
         with:
           components: clippy, rustfmt
       - name: Prime Rust toolchain
@@ -462,7 +462,7 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.100.0
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
