@@ -49,7 +49,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: TruffleHog OSS scan
-        uses: trufflesecurity/trufflehog@v3.95.8
+        uses: trufflesecurity/trufflehog@v3.95.9
         with:
           path: ./
           base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
