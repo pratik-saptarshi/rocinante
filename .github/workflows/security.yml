@@ -32,11 +32,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.96.1
         with:
           components: clippy, rustfmt
-      - uses: github/codeql-action/init@v4
+      - uses: github/codeql-action/init@v4.37.3
         with:
           languages: rust
-      - uses: github/codeql-action/autobuild@v4
-      - uses: github/codeql-action/analyze@v4
+      - uses: github/codeql-action/autobuild@v4.37.3
+      - uses: github/codeql-action/analyze@v4.37.3
 
   secret-scan:
     runs-on: ubuntu-latest
