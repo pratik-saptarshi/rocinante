@@ -514,7 +514,7 @@ mod native_ui {
     }
 
     impl eframe::App for RocinanteApp {
-        fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
             let ctx = ui.ctx().clone();
             if !self.initial_visibility_requested {
                 self.initial_visibility_requested = true;
@@ -547,7 +547,13 @@ mod native_ui {
                     WindowCloseBehavior::Exit => {
                         self.state.dispatch(NavigationAction::Close);
                         #[cfg(target_os = "macos")]
-                        super::macos_url::terminate_application();
+                        {
+                            if let Some(storage) = frame.storage_mut() {
+                                self.save(storage);
+                                storage.flush();
+                            }
+                            super::macos_url::terminate_application();
+                        }
                     }
                 }
             }
@@ -1105,6 +1111,7 @@ mod native_ui {
                         }
                         self.state.select_repository(Some(path));
                         self.state.dispatch(NavigationAction::OpenRepositories);
+                        record_acceptance_state(&self.state, self.tray_icon.is_some());
                     }
                 }
             }
