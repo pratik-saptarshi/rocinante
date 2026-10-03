@@ -10,6 +10,7 @@ app_data="$test_root/app-data"
 witness="$test_root/applied-state.txt"
 quit_file="$test_root/request-clean-quit"
 notification_log="$test_root/notification-log.txt"
+notification_result="$test_root/notification-request.txt"
 dunst_config="$test_root/dunst.conf"
 test_pid=""
 dunst_pid=""
@@ -81,6 +82,7 @@ ROCINANTE_ACCEPTANCE_WITNESS="$witness" \
 ROCINANTE_ACCEPTANCE_DATA_DIR="$app_data" \
 ROCINANTE_ACCEPTANCE_QUIT_FILE="$quit_file" \
 ROCINANTE_ACCEPTANCE_NOTIFICATION=1 \
+ROCINANTE_ACCEPTANCE_NOTIFICATION_RESULT="$notification_result" \
   cargo build --manifest-path "$shell_manifest" --bin rocinante-desktop-shell \
     --features acceptance-witness --locked
 if [[ ! -x "$shell_binary" ]]; then
@@ -115,10 +117,14 @@ for _ in {1..30}; do
     echo "The test notification daemon exited during startup" >&2
     exit 1
   fi
-  if dunstctl is-paused >/dev/null 2>&1; then break; fi
+  notification_name_owned="$(dbus-send --session --type=method_call --print-reply \
+    --dest=org.freedesktop.DBus /org/freedesktop/DBus \
+    org.freedesktop.DBus.NameHasOwner string:org.freedesktop.Notifications \
+    2>/dev/null | sed -n 's/.*boolean //p')"
+  if [[ "$notification_name_owned" == true ]]; then break; fi
   sleep 1
 done
-if ! dunstctl is-paused >/dev/null 2>&1; then
+if [[ "$notification_name_owned" != true ]]; then
   echo "The test notification daemon did not register on the private D-Bus session" >&2
   exit 1
 fi
@@ -173,6 +179,11 @@ mkdir -p "$cold_path" "$warm_path"
 gio open "$(make_uri "$cold_path")"
 wait_for_applied_path "$cold_path"
 wait_for_notification
+if ! grep -F -x "request_succeeded=true" "$notification_result" >/dev/null 2>&1; then
+  echo "The shell did not successfully submit its acceptance notification" >&2
+  [[ ! -f "$notification_result" ]] || cat "$notification_result" >&2
+  exit 1
+fi
 assert_notification_is_displayed
 test_pid="$(sed -n 's/^pid=//p' "$witness")"
 if [[ -z "$test_pid" ]]; then
