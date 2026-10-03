@@ -1,0 +1,38 @@
+[package]
+name = "rocinante-desktop-shell"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.96.1"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rocinante-analysis = { path = "../rocinante-analysis", optional = true }
+rocinante-storage = { path = "../rocinante-storage", optional = true }
+eframe = { version = "0.36.2", default-features = false, features = ["default_fonts", "persistence", "wgpu", "wayland", "x11"], optional = true }
+rfd = { version = "0.15.4", default-features = false, features = ["xdg-portal"], optional = true }
+notify-rust = { version = "4.18.1", optional = true }
+tray-icon = { version = "0.25.1", default-features = false, features = ["ksni"], optional = true }
+fs2 = { version = "0.4", optional = true }
+url = "2.5"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6.4"
+objc2-app-kit = { version = "0.3.2", default-features = false, features = ["NSApplication", "NSRunningApplication"] }
+objc2-foundation = { version = "0.3.2", default-features = false, features = ["NSAppleEventDescriptor", "NSAppleEventManager", "NSObject", "NSString"] }
+
+[features]
+default = ["native-ui"]
+native-ui = ["dep:eframe", "dep:rfd", "dep:notify-rust", "dep:tray-icon", "dep:fs2", "dep:rocinante-analysis", "dep:rocinante-storage"]
+acceptance-witness = []
+
+[dev-dependencies]
+tempfile = "3"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "rocinante-desktop-shell"
+path = "src/main.rs"
+required-features = ["native-ui"]

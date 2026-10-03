@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>rocinante-desktop-shell</string>
+	<key>CFBundleIdentifier</key>
+	<string>dev.rocinante.desktop-shell</string>
+	<key>CFBundleName</key>
+	<string>Rocinante Repo Analyzer</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>CFBundleVersion</key>
+	<string>0.1.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.developer-tools</string>
+	<key>CFBundleIconFile</key>
+	<string>Rocinante.icns</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Rocinante repository links</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>rocinante</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
