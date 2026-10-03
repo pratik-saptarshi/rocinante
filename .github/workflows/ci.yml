@@ -34,7 +34,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
       - name: Set up Rust for fast roadmap contracts
-        uses: dtolnay/rust-toolchain@1.96.1
+        uses: dtolnay/rust-toolchain@1.99.0
       - name: Test roadmap and publish-doc contracts
         run: bash scripts/test-roadmap-doc-contracts.sh
       - name: Validate workflow parseability
@@ -426,7 +426,7 @@ jobs:
             echo "scope=delta" >> "$GITHUB_OUTPUT"
             echo "CI_RUST_BUILD_SCOPE=delta" >> "$GITHUB_ENV"
           fi
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: clippy, rustfmt
       - name: Prime Rust toolchain
@@ -480,7 +480,7 @@ jobs:
             echo "scope=delta" >> "$GITHUB_OUTPUT"
             echo "CI_RUST_BUILD_SCOPE=delta" >> "$GITHUB_ENV"
           fi
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: clippy, rustfmt
       - name: Prime Rust toolchain
@@ -544,7 +544,7 @@ jobs:
             echo "scope=delta" >> "$GITHUB_OUTPUT"
             echo "CI_RUST_BUILD_SCOPE=delta" >> "$GITHUB_ENV"
           fi
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: clippy, rustfmt
       - name: Prime Rust toolchain
@@ -648,7 +648,7 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
