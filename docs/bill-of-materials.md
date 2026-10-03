@@ -86,24 +86,36 @@ _Captured: 2026-10-03_
 
 ## Current Remediation State Notes
 
-- As of 2026-10-03, Rust formatting and the advisory-governance, roadmap-doc,
-  Dependabot-checker, and native-shell dependency-guard contract scripts pass;
-  the `rocinante-core` suite passes 9 tests. UI typecheck and production build
-  pass through the existing local binaries. Vitest did not report test results
-  before stalling, and the full-workspace Cargo test did not complete. The live
-  advisory checker correctly fails closed for all 17 overdue reviews; no owner
-  disposition is recorded. Hosted checks have not run for this branch.
+- On 2026-10-03, `cargo update` refreshed 193 Rust lockfile packages to their
+  latest semver-compatible stable releases; this includes Tauri `2.12.1` and
+  `serde_with` `3.24.0`. Cargo audit refreshed RustSec and completed with no
+  findings. Full-workspace clippy completed with no issues after moving the
+  trailing analysis function ahead of its test module. Full-workspace tests
+  are compiling the updated desktop analyzer and native dependency stack.
+- On 2026-10-03, UI direct dependencies were updated to current stable releases:
+  MUI `9.4.0`, React `19.3.0`, Vite `8.3.2`, Vitest `5.0.3`, TypeScript
+  `7.0.2`, Playwright `1.63.0`, and esbuild `0.28.2`. `pnpm outdated` reports
+  no outdated direct dependencies, and the full pnpm audit reports no known
+  vulnerabilities. Typecheck and production build pass after the MUI v9
+  system-props codemod; the build reports a chunk-size advisory. Vitest has
+  stalled before reporting test results.
+- Rust formatting, the advisory-governance, roadmap-doc, Dependabot-checker,
+  and native-shell dependency-guard contracts pass. The live advisory checker
+  still fails closed for all 17 overdue reviews; no owner disposition is
+  recorded. UI unit tests have not returned results. Hosted checks have not
+  run for this branch.
 - CI now tests the full Cargo workspace on Rust changes and routes changes to
   `.github/workflows/ci.yml` through the Rust checks. Cross-platform native URL
   and restart acceptance remains dependent on the corresponding hosted jobs.
-- The UI manifest pins pnpm `12.8.1`, the latest published release verified on
-  2026-10-03. The local toolchain reports Node `v26.10.0` and pnpm `12.8.1`.
-  Invoking pnpm after the pin change tried to fetch its configured executable
-  from npm and failed on registry DNS; direct local binaries were used for the
-  UI checks noted above.
+- The UI manifest pins pnpm `12.8.1`, verified against the current npm latest
+  tag on 2026-10-03. The local toolchain reports Node `v26.10.0` and pnpm
+  `12.8.1`.
 
-- `ui/pnpm-lock.yaml` resolves `esbuild@0.28.1`; the Node lockfile checker result for this remediation run is pending.
-- The local lockfile resolves `esbuild@0.28.1`; the pinned temporary Node 22 runtime ran `scripts/check-esbuild-lock.mjs`. PR #59 merged, and a live query confirmed the tracked alert is closed on 2026-09-30. Five unrelated alerts and the GTK/GLib alert remain open on `main`. The working UI lockfile resolves Vitest, `@vitest/mocker`, and `@vitest/coverage-v8` to 4.1.11 and PostCSS to 8.5.23 via a workspace override; together with the Rust `serde_with@3.21.0` update, these address all five unrelated alerts in this working tree, pending merge and hosted re-query. UI tests and coverage pass (62 tests), the UI production build passes, and pnpm audit reports no known vulnerabilities.
+- The latest UI lockfile resolves `esbuild@0.28.2`; the version-floor checker still requires a fresh run.
+- At the 2026-09-30 snapshot, the UI suite and coverage passed 62 tests, the
+  build passed, and the lockfile used `esbuild@0.28.1`, Vitest `4.1.11`, and
+  PostCSS `8.5.23`. The 2026-10-03 update supersedes those dependency versions;
+  current audit and validation results are recorded above.
 
 ## Release Artifacts
 

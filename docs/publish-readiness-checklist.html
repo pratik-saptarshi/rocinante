@@ -56,7 +56,7 @@ CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL 
 Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
 Dependency audit exceptions are current and registry-backed | [ ] | `.cargo/audit.toml`, `docs/roadmap/security-advisory-exceptions.json`, and `scripts/check-security-advisory-exceptions.py`; all 17 review dates (2026-08-06) are overdue as of 2026-09-30 and no risk-owner acceptance is recorded. Do not renew dates without review.
 Open Dependabot alerts are closed or formally accepted | [ ] | The live query on 2026-09-30 confirmed the tracked esbuild alert is closed. Five unrelated alerts and GTK/GLib alert #1 remain open on `main`; local Rust and UI lockfile fixes are pending merge.
-Latest recorded evidence (2026-09-30):
+Previously recorded evidence (2026-09-30):
 
 - Remediation branch local checks on 2026-10-03: Rust formatting, roadmap and
   publish-doc contracts, advisory-checker contract, Dependabot-checker
@@ -71,6 +71,14 @@ Latest recorded evidence (2026-09-30):
 - Esbuild PR #59 merged and the lockfile resolves `0.28.1`; `scripts/check-dependabot-esbuild-alert.sh` passed on 2026-09-30 and confirmed the tracked alert is closed. Five unrelated alerts and GTK/GLib alert #1 (`GHSA-wrw7-89jp-8q8g`) remain open on `main` and block release.
 - The latest hosted Rust Security run [36424294477](https://github.com/pratik-saptarshi/rocinante/actions/runs/36424294477) failed on `rustls@0.23.40`, `rkyv@0.7.46`, and yanked `chacha20@0.10.1`. The local lockfile now includes the prior fixes plus `serde_with@3.21.0`; the documented root command `cargo audit --file src-tauri/Cargo.lock --deny warnings` passes. Hosted validation is still required, and all 17 GTK/GLib exception reviews remain overdue.
 - The live open-alert query on 2026-09-30 lists five unrelated alerts: vitest and @vitest/mocker (`GHSA-82fw-gwwq-j7x9`), serde_with (`GHSA-7gcf-g7xr-8hxj`), and postcss (`GHSA-fxqj-rqcc-2cmp`, fixed in 8.5.23; `GHSA-r28c-9q8g-f849`, fixed in 8.5.18). The working tree now resolves Vitest, @vitest/mocker, and @vitest/coverage-v8 to 4.1.11, PostCSS to 8.5.23 through a workspace override, and serde_with plus macros to 3.21.0. All five alerts still appear open on `main` pending merge. The UI suite and coverage passed 62 tests, the production build passed, and pnpm audit reports no known vulnerabilities. GTK/GLib alert #1 (`GHSA-wrw7-89jp-8q8g`) remains tracked under RT-RC-001.
+
+Current local dependency update (2026-10-03): Rust audit passes after refreshing
+the RustSec database. The pnpm tree has no outdated direct dependencies and
+no known advisories. UI typecheck and production build pass after upgrading to
+MUI 9; unit tests have not returned results. Full-workspace clippy passes with
+no issues, and full-workspace tests are compiling the updated dependency tree.
+All 17 security-owner reviews remain overdue, and hosted checks have not run on
+this branch.
 
 Open Dependabot alerts are verified in CI on release lane | [ ] | `scripts/check-dependabot-esbuild-alert.sh` executes on `main` pushes in `.github/workflows/ci.yml`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts

@@ -234,6 +234,17 @@ fn encode_path_bytes(bytes: &[u8], safe_ascii: &[u8]) -> String {
     identity
 }
 
+pub fn query_metrics(
+    token: &str,
+    query: &AdminQuery,
+    db_path: &Path,
+) -> Result<Vec<AnalysisMetric>, AnalyzerError> {
+    auth::require_configured_token_secret()?;
+    let principal = auth::decode_principal(token)?;
+    auth::require_admin(&principal)?;
+    TelemetryStore::open(db_path)?.query(query)
+}
+
 #[cfg(test)]
 mod repository_identity_tests {
     use super::disambiguate_duplicate_names;
@@ -271,15 +282,4 @@ mod repository_identity_tests {
             ["group-%25FE/shared", "group-%FE/shared", "group-%FF/shared"]
         );
     }
-}
-
-pub fn query_metrics(
-    token: &str,
-    query: &AdminQuery,
-    db_path: &Path,
-) -> Result<Vec<AnalysisMetric>, AnalyzerError> {
-    auth::require_configured_token_secret()?;
-    let principal = auth::decode_principal(token)?;
-    auth::require_admin(&principal)?;
-    TelemetryStore::open(db_path)?.query(query)
 }

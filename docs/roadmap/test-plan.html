@@ -225,24 +225,26 @@
 - The current local Rust lockfile resolves `serde_with` and `serde_with_macros` to patched `3.21.0`; `cargo check -p rocinante-storage --locked --offline`, the grouped 69-test migration run, and the documented root `cargo audit --file src-tauri/Cargo.lock --deny warnings` pass. The live alert remains open on `main` pending merge. The exception registry is unchanged.
 - These crate and shell checks do not close BI-049 hosted runtime and parity gates; BI-050 and BI-051 remain queued.
 
-## Readiness Remediation Validation — 2026-10-03
+## Latest Stable Dependency Validation — 2026-10-03
 
-- Rust formatting, the advisory-governance contract, roadmap/publish-doc
-  contracts, Dependabot-checker contract, and desktop-shell dependency-guard
-  contract pass locally. `rocinante-core` passes all nine tests.
-- The full Cargo workspace test was started but did not finish during this
-  run. The publish-readiness gate remains unchecked until the complete command
-  passes.
-- With Node `v26.10.0`, the UI TypeScript build check and Vite production build
-  pass using the existing local binaries. Vitest did not produce results before
-  stalling; the unit-test gate remains open. The manifest now pins pnpm `12.8.1`.
-  Running pnpm attempted to download its configured executable from npm and
-  failed because registry DNS was unavailable.
-- The advisory checker validates 17 entries and fails closed because every
-  review date expired on 2026-08-06. The registry has no current security-owner
-  dispositions, so no entry was renewed or removed.
-- CI now runs full-workspace Rust tests and pinned-pnpm UI typecheck, unit tests,
-  and production build as required jobs. Those hosted results are pending.
+- `cargo update` refreshed 193 Rust lockfile packages to their latest
+  semver-compatible stable releases, including Tauri `2.12.1` and
+  `serde_with` `3.24.0`. `cargo audit --file src-tauri/Cargo.lock --deny
+  warnings` refreshed RustSec and passed with no findings. Full-workspace
+  clippy completed with no issues; full-workspace tests are compiling the
+  updated desktop analyzer and native dependency stack.
+- UI dependencies are pinned to the latest stable versions reported by
+  `pnpm outdated`: MUI `9.4.0`, React `19.3.0`, Vite `8.3.2`, Vitest `5.0.3`,
+  TypeScript `7.0.2`, Playwright `1.63.0`, and esbuild `0.28.2`. No direct UI
+  dependency is outdated, and `pnpm audit` reports no known vulnerabilities.
+- MUI’s official v9 system-props codemod migrated removed component props.
+  Typecheck and production build pass; Vite reports a chunk-size warning above
+  500 kB. Vitest stalled before returning results, so UI unit tests remain
+  unverified.
+- Rust formatting, advisory and roadmap contracts, Dependabot checker, and
+  native-shell dependency-guard contracts pass. The current advisory gate
+  still fails because all 17 owner reviews expired on 2026-08-06 and no current
+  owner dispositions are recorded. Hosted checks have not run on this branch.
 
 - `T-052` Parity closure and fallback containment tests:
   - `src-tauri/tests/parity_closure_tests.rs` (planned for BI-050; the file does not exist yet)
