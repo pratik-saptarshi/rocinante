@@ -544,7 +544,11 @@ mod native_ui {
                         ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
                         ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
                     }
-                    WindowCloseBehavior::Exit => self.state.dispatch(NavigationAction::Close),
+                    WindowCloseBehavior::Exit => {
+                        self.state.dispatch(NavigationAction::Close);
+                        #[cfg(target_os = "macos")]
+                        super::macos_url::terminate_application();
+                    }
                 }
             }
             while let Ok(action) = self.tray_action_receiver.try_recv() {
