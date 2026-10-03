@@ -19,9 +19,9 @@ Rocinante helps teams measure and explain repository risk using on-prem analysis
 
 ### 1) Scan pipeline + plugin architecture
 
-- `src-tauri/src/engine.rs` runs a deterministic repository analysis pipeline.
-- `BeadPlugin` trait in `src-tauri/src/plugins/mod.rs` lets new analyzers be added in isolation.
-- Built-in beads in `src-tauri/src/plugins/*`:
+- `src-tauri/crates/rocinante-analysis/src/engine.rs` runs a deterministic repository analysis pipeline.
+- `BeadPlugin` trait in `src-tauri/crates/rocinante-analysis/src/plugins/mod.rs` lets new analyzers be added in isolation.
+- Built-in beads in `src-tauri/crates/rocinante-analysis/src/plugins/*`:
   - `code_quality`: counts TODO markers.
   - `complexity`: token-based cyclomatic estimate.
   - `parser`: language-aware AST-like structural estimate with incremental digest cache.
@@ -31,7 +31,7 @@ Rocinante helps teams measure and explain repository risk using on-prem analysis
 
 ### 2) Security controls and governance
 
-- JWT token validation and admin role enforcement in `src-tauri/src/auth.rs`.
+- JWT token validation and admin role enforcement in `src-tauri/crates/rocinante-analysis/src/auth.rs`.
 - Admin command surface is explicit and closed over command names in `src-tauri/src/main.rs` and `src-tauri/src/admin.rs`:
   - `run_scan`
   - `query_metrics`
@@ -139,7 +139,7 @@ admin::update_scoring_weights(
 ### 1) Prerequisites
 
 - Rust stable toolchain.
-- Node.js + `pnpm` (`ui/package.json` declares `pnpm@11.4.0`).
+- Node.js + `pnpm` (`ui/package.json` declares `pnpm@12.8.1`).
 - Optional: Linux desktop deps for Tauri packaging if running full app packaging workflows.
 
 ### 2) Build UI bundle
@@ -154,9 +154,63 @@ pnpm run build
 
 ```bash
 cd ../src-tauri
-cargo test --manifest-path Cargo.toml          # validate Rust behavior first
+cargo test --workspace --locked --manifest-path Cargo.toml # test Tauri and extracted crates
 cargo run --manifest-path Cargo.toml
 ```
+
+The GTK-free native shell can also be launched independently:
+
+```bash
+cargo run --manifest-path Cargo.toml -p rocinante-desktop-shell
+```
+
+On macOS, install a built shell as a per-user app bundle and register its URL
+scheme with Launch Services:
+
+```bash
+cd src-tauri
+cargo build --release -p rocinante-desktop-shell
+sh crates/rocinante-desktop-shell/packaging/macos/install-user.sh \
+  target/release/rocinante-desktop-shell
+```
+
+On Windows, register the URL handler for the current user with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File `
+  src-tauri/crates/rocinante-desktop-shell/packaging/windows/install-user.ps1 `
+  src-tauri/target/release/rocinante-desktop-shell.exe
+```
+
+Choose a repository folder, enter a release and admin JWT, then analyze it. The
+shell can reload metrics already stored for the selected repository tree and
+release without rescanning. Scan completion requests a success or failure
+desktop notification; delivery still needs runtime validation per platform. It
+shows the selected repository and release context, metric and analyzer counts,
+and the recorded values/details after a scan or saved-metric reload. It
+parses cold-launch arguments using:
+
+`rocinante://repository/open?path=<percent-encoded-absolute-path>`
+
+Linux and macOS user-installation artifacts and a bounded per-user inbox for
+second-instance URI delivery are in place. To install the GTK-free shell for
+the current user on Linux, build and install it with:
+
+```bash
+cd src-tauri
+cargo build --release -p rocinante-desktop-shell
+sh crates/rocinante-desktop-shell/packaging/linux/install-user.sh \
+  target/release/rocinante-desktop-shell
+```
+
+This installs the binary under `~/.local/bin`, registers the desktop entry and
+`rocinante://` handler in the user's XDG data directory, and refreshes the
+desktop/MIME databases when their tools are installed. The Windows installer
+copies the executable into `%LOCALAPPDATA%` and registers a current-user
+`rocinante://` command under `HKCU`; its PowerShell source contract is checked
+on this host, and Windows registry dispatch still needs runtime validation.
+The macOS scheme is declared in the `.app` bundle and registered through
+Launch Services; native URI dispatch still needs runtime validation.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.
 
@@ -174,6 +228,11 @@ pnpm exec tsc -b
 pnpm exec vitest run
 pnpm exec playwright test
 ```
+
+The Rust workspace test command includes `rocinante-core`,
+`rocinante-analysis`, `rocinante-storage`, and `rocinante-desktop-shell` as
+well as the Tauri adapter. Use the `pnpm@12.8.1` version declared in
+`ui/package.json` for UI checks.
 
 ### 5) Governance artifacts
 

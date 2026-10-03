@@ -12,6 +12,7 @@
   - Release remains blocked until the exception registry exists and the current floor is retired or formally accepted.
 - `RT-RC-002` GTK-free host migration planning:
   - Phase 0 through Phase 4 stay test-driven, with parity, core extraction, native shell, fallback containment, and dependency-floor removal each starting from a failing test or contract.
+  - `F-049` / `T-051` includes shell close policy coverage: window close hides when a tray is available, while explicit Quit and tray-unavailable close exit. `native_shell_contract.rs` currently passes twelve tests. Darwin acceptance now covers close-to-tray, Show restoration, and Quit through the shared action handler used by tray callbacks; physical menu-click delivery and Linux/Windows tray behavior still need runtime validation.
 - `RT-CI-004` Run 28912108975 CI recovery slice:
   - `T-055` CI bootstrap + workflow parseability is green on PR run `28983234703`.
   - `T-056` CI lane scope and orchestration contract is green on PR run `28983234703`.
@@ -173,38 +174,95 @@
 
 - `T-048` Security advisory exception registry and dependency-floor proof tests:
   - `src-tauri/tests/security_advisory_exception_tests.rs`
-  - Audit ignores stay mapped one-to-one to the exception registry, the registry stays time-boxed, and the GTK/glib floor remains release-blocking until retired or formally accepted.
+  - `scripts/check-security-advisory-exceptions.py` and its shell contract test validate date syntax and expiry; required CI job `security-exception-governance` runs the checker against the current date and keeps the aggregate `test` gate blocked while reviews are overdue.
+  - Audit ignores stay mapped one-to-one to the exception registry. All 17 current review dates are overdue as of 2026-09-30; the release stays blocked until the floor is retired or formally accepted.
 
 - `T-049` Parity matrix and host-decision tests:
   - `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`
   - Parity surface coverage must fail until the desktop matrix, host decision, and fallback scope are all recorded.
+  - `scripts/test-roadmap-doc-contracts.sh` also runs this standard-library-only contract early in CI, together with the publish-readiness and roadmap-coherence doc contracts, before root Tauri test compilation.
 
 - `T-050` Core extraction contract tests:
+  - `src-tauri/crates/rocinante-core/tests/risk_contract.rs`
+  - Current coverage: risk, budget, fix proposal, triage, verifier, claim and admin policy, baseline scoring, and the authorized release-baseline repository contract. Nine tests pass; all Tauri test targets compile with `--no-default-features`.
   - `src-tauri/tests/core_contract_tests.rs`
   - `src-tauri/tests/host_agnostic_boundary_tests.rs`
   - Core-domain behavior must be host-agnostic before the GTK-free shell work starts.
 
 - `T-051` Native shell integration tests:
-  - `src-tauri/tests/native_shell_integration_tests.rs`
+  - `src-tauri/crates/rocinante-desktop-shell/tests/native_shell_contract.rs`
+  - `src-tauri/crates/rocinante-desktop-shell/tests/dashboard_view.rs`
+  - `src-tauri/crates/rocinante-desktop-shell/tests/dashboard_reference.rs` covers static sample audit findings, selector defaults, sample-data labeling, and audience-specific focus sections.
+  - `src-tauri/crates/rocinante-desktop-shell/tests/macos_installation.rs`
+  - `src-tauri/crates/rocinante-desktop-shell/tests/windows_registration.rs`
+  - `scripts/generate-desktop-icons.sh` regenerates the shared 512px PNG, macOS ICNS, and Windows ICO from one vector-drawn source.
+  - `scripts/test-macos-url-dispatch.sh` installs a uniquely named temporary bundle under the user's Applications directory through the per-user installer, registers it in the logged-in user's Launch Services database, then uses URI-only `open <rocinante-uri>` for cold and warm links to verify scheme selection, same-process routing, and selected-repository restoration after a clean restart. The Darwin acceptance passed on 2026-09-30: cold and warm URI delivery, same-process routing while minimized, visible-window restoration, and selected-repository restoration after a clean process restart. The acceptance helper reports visibility, frontmost state, AppKit activation policy, and active state; strict mode can require frontmost with `ROCINANTE_ACCEPTANCE_REQUIRE_FRONTMOST=1`. The latest strict cold-launch check reports `visible=true`, `activation_policy=0` (Regular), `active=false`, and `frontmost=false`, so foreground activation remains unproven. The normal installed lifecycle acceptance passed.
+  - `scripts/test-check-desktop-shell-dependencies.sh` verifies the guard accepts a clean tree and rejects `gtk`, `glib`, `tauri`, and `wry`; CI runs this contract test. `scripts/check-desktop-shell-dependencies.sh` checks the locked `x86_64-unknown-linux-gnu` native-shell dependency graph before Linux URI/notification acceptance. This protects the native shell boundary; BI-051 still needs a whole-release graph gate after Tauri removal.
+  - `scripts/test-linux-url-dispatch.sh` runs under Xvfb and a private D-Bus session, installs into temporary XDG directories, verifies the registered handler, cold/warm dispatch to the same PID, saved-state restoration in a fresh process, and notification delivery to Dunst through the shell's shared notification helper. The hosted Ubuntu result remains pending.
+  - `scripts/test-windows-registration.ps1` runs on `windows-latest` to execute the installer against a temporary `LOCALAPPDATA` directory and verify its HKCU protocol key, URL Protocol marker, copied executable, and exact quoted `%1` command. The Windows runtime result remains unverified until this CI job runs.
+  - Forty-nine tests pass across the native shell suites, covering navigation, tray menu action routing and unknown-action rejection, tray close policy, explicit quit, startup route and repository selection restoration (including non-UTF-8 Unix paths and legacy UTF-8 state), command shortcut mapping, configured window profile, the decodable 512px native window icon, deep-link parsing/routing, and clearing stale results when a URL switches repositories. Eleven insight-model tests cover sample parity, custom payload ranking and limits, nested JSON envelopes, tolerant limit parsing, malformed-input recovery, quality-pulse buckets, audience recommendations, action routing, explainability traces, trend/PR-risk summaries, and empty-state handling. Four dashboard view-model tests cover empty data, deterministic plugin summaries/metric details, avoiding inferred risk claims, and accurate distinction between newly inserted and already stored metrics. Four dashboard-reference tests cover static sample audit metrics/findings, SEO-scope and performance-data selector defaults, visible sample-data labeling, and the four audience-focus sections. The Dashboard renders repository and release metric counts, plugin counts, and metric details for both scan results and saved-metric reloads; its Optimization insights panel ports the companion's commit-risk, stage-bottleneck, opportunity, quality-pulse, audience routing, explainability, trend/PR-risk, and job-observability formulas and labels sample data explicitly. Static sample accessibility, SEO/GEO/AEO, Drupal security, and performance panels are also rendered; these are not live repository audit results. All eight admin bridge actions, including release-baseline query/reseed, use the shared authorization and storage services through JSON dispatch; Alerts and Settings remain placeholders. Stale-context results remain discarded. The macOS installer contract builds a temporary `.app`, validates its plist with `plutil`, and checks the Launch Services registration invocation through a shim. The native shell now registers a retained `NSAppleEventManager` `kAEGetURL` handler and compiles locally; the bundled acceptance passed locally on 2026-09-30 for cold/warm delivery, tray initialization, close-to-tray, Show restoration through the shared tray action handler, minimized-window restoration, Quit, and saved-state restoration after restart. A pre-fix rerun failed its initial cold-window visibility check. The shell now requests visible, unminimized state and macOS activation on its first UI frame. Tray Show sends visible/focus commands before waking the UI loop, and the shared action requests AppKit activation. The latest full Darwin acceptance passed. Physical tray-menu click delivery remains unverified; foreground activation is measured but remains unproven because strict mode reported `visible=true`, `frontmost=false` in this automation session. Windows has a source-contract test for the current-user URL registration and an acceptance script that builds and installs the executable, exercises cold and warm URI dispatch, checks same-process delivery, requests clean quit, and verifies saved-state restoration in a new process. The Windows acceptance script and installer test are wired into the `windows-latest` job and aggregate CI gate; hosted execution is pending. Linux registration now has an acceptance job under Xvfb and D-Bus that checks cold/warm dispatch, same-process forwarding, restart restoration, and visible notification display through Dunst; hosted execution is pending. Visible notification delivery on macOS and Windows remains unverified. Darwin acceptance tests the shared Show/Quit handler path, while actual menu clicks and Linux/Windows tray runtime remain open. The Linux-target dependency tree has no GTK/GLib. The inbox contract suite has eleven tests: eight inbox behaviors (per-link and total queue caps, validation, activation, stale-temp cleanup, sequence ordering, recovery after sequence-counter corruption, and forwarding from a separate OS process), one Linux desktop-entry assertion, one per-user installer contract for escaped desktop-entry paths, and one Linux runtime-acceptance script contract. Ordering tests use deterministic filename fixtures; the forwarding test launches a second OS process. Linux, macOS, and Windows per-user registration artifacts are implemented. Platform runtime validation remains open.
+  - `src-tauri/crates/rocinante-analysis/tests/repository_scan.rs`
+  - `src-tauri/crates/rocinante-analysis/tests/telemetry_db_migration.rs`
+  - Five tests cover admin-authorized scan persistence and exact repository/release metric queries (including reload queries for the same repository tree and release), rejection before database creation for invalid tokens, discovery of worktrees/submodules with `.git` files, online backup migration from an open legacy SQLite database, and collision-free identity for duplicate repository names with non-UTF-8 Unix path components. The scan contract also verifies nested repositories with duplicate basenames remain distinct, and excludes similarly named repositories and old releases. Scans and metric queries require a configured `RUNICIPAL_TOKEN_SECRET` of at least 32 bytes; the public development fallback cannot authorize them. The GTK-free shell calls the shared services asynchronously and uses the same resolved app-data telemetry database as Tauri; scan and saved-metric results render on the Dashboard and Repositories pages, including after restart without rescanning. Dashboard parity includes insight scoring, audience-specific quality pulse, explainability, trend/PR-risk, job-observability, release-baseline query/reseed controls, and static sample accessibility, SEO/GEO/AEO, Drupal security, and performance panels; all eight admin bridge actions use shared JSON dispatch, and Alerts and Settings remain placeholders. The audit panels are labeled sample data and are not live repository scans. No browser-sidecar deferral is approved.
+  - `rfd` is configured with default features disabled and `xdg-portal` enabled; the shell offers repository-folder selection and stores the chosen path. Broader dashboard parity, physical tray-menu click delivery, Linux/Windows tray runtime, visible macOS/Windows notification delivery, and visual icon launch validation remain open; Darwin acceptance covers close-to-tray, Show restoration, and Quit through the shared action handler. A read-only `AXIsProcessTrusted` probe returned false for the current automation process, so the physical click path still needs an Accessibility-authorized interactive run. OS-level URI dispatch and Linux notification display have hosted acceptance jobs. Login autostart is out of scope unless separately approved.
+  - `src-tauri/crates/rocinante-desktop-shell/tests/deep_link_inbox.rs` (eleven passing inbox-boundary, process forwarding, ordering/recovery, Linux registration artifact, installer, and acceptance-script tests).
+  - `src-tauri/crates/rocinante-storage` tests the shared Sled/DuckDB baseline round-trip, the eight-command name contract, unknown-command rejection, and authorized dispatch coverage across all eight commands and baseline reader denial. Tauri `release_baseline_tests` retain the existing adapter contract.
   - Native desktop lifecycle, menus, dialogs, tray, deep links, shortcuts, and persistence must pass without GTK/GLib.
 
+## GTK-Free Migration Validation — 2026-09-30
+
+- `cargo test --manifest-path src-tauri/Cargo.toml -p rocinante-core --locked`: 9 tests pass.
+- `cargo test --manifest-path src-tauri/Cargo.toml -p rocinante-storage --all-targets --locked`: 4 tests pass.
+- `cargo test --manifest-path src-tauri/Cargo.toml -p rocinante-analysis --all-targets --locked`: 7 tests pass across 3 suites.
+- `cargo test --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell --all-targets --locked`: 49 tests pass across 8 suites.
+- Fresh grouped run on 2026-09-30: `cargo test --manifest-path src-tauri/Cargo.toml -p rocinante-core -p rocinante-analysis -p rocinante-storage -p rocinante-desktop-shell --locked --no-fail-fast` passes 69 tests across 19 suites.
+- Fresh installed Darwin acceptance on 2026-09-30 passes cold/warm URL delivery, tray hide/show/quit, minimized-window restoration, and saved-state restart. A strict frontmost rerun exited 1 at cold launch with `visible=true`, `activation_policy=0` (Regular), `active=false`, and `frontmost=false`; foreground activation remains unproven. The AppKit activation request returned `false`; the notification API request succeeded, but visible delivery was not observed.
+- `cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --test gtk_free_host_migration_plan_tests --locked`: all four roadmap contract tests pass.
+- `engine_tests::pipeline_runs_all_beads` and both `parser_plugin_tests` pass after their fixtures were changed to create a local repository and the `v0.1.0` tag they analyze, with commit signing and hooks disabled locally.
+- The latest full-workspace all-target run passed the core, analysis, shell, and root suites through parser-plugin coverage, then exposed stale publish-gate and BI-052 status assertions. Both assertions now match the current repository state; the standard-library-only publish-gate and roadmap-coherence Rust test sources compile and pass directly with `rustc` (3/3 and 2/2). All remaining root test binaries from that workspace build were executed individually and passed. Cargo rebuilds of the Tauri test target were stopped after 15 minutes, so the Cargo all-target aggregate itself is not claimed green.
+- An earlier default-feature all-target attempt failed while writing Cargo metadata with `No space left on device`. `cargo clean -p rocinante-repo-analyzer` removed generated artifacts and restored disk space. Workspace `cargo fmt --all -- --check` and `git diff --check` pass.
+- The live Dependabot query confirms the tracked esbuild alert is closed. Six other alerts remain open, including GLib. The exception governance check validates all 17 registry entries and fails closed because their review dates expired on 2026-08-06.
+- The current local Rust lockfile resolves `serde_with` and `serde_with_macros` to patched `3.21.0`; `cargo check -p rocinante-storage --locked --offline`, the grouped 69-test migration run, and the documented root `cargo audit --file src-tauri/Cargo.lock --deny warnings` pass. The live alert remains open on `main` pending merge. The exception registry is unchanged.
+- These crate and shell checks do not close BI-049 hosted runtime and parity gates; BI-050 and BI-051 remain queued.
+
+## Readiness Remediation Validation — 2026-10-03
+
+- Rust formatting, the advisory-governance contract, roadmap/publish-doc
+  contracts, Dependabot-checker contract, and desktop-shell dependency-guard
+  contract pass locally. `rocinante-core` passes all nine tests.
+- The full Cargo workspace test was started but did not finish during this
+  run. The publish-readiness gate remains unchecked until the complete command
+  passes.
+- With Node `v26.10.0`, the UI TypeScript build check and Vite production build
+  pass using the existing local binaries. Vitest did not produce results before
+  stalling; the unit-test gate remains open. The manifest now pins pnpm `12.8.1`.
+  Running pnpm attempted to download its configured executable from npm and
+  failed because registry DNS was unavailable.
+- The advisory checker validates 17 entries and fails closed because every
+  review date expired on 2026-08-06. The registry has no current security-owner
+  dispositions, so no entry was renewed or removed.
+- CI now runs full-workspace Rust tests and pinned-pnpm UI typecheck, unit tests,
+  and production build as required jobs. Those hosted results are pending.
+
 - `T-052` Parity closure and fallback containment tests:
-  - `src-tauri/tests/parity_closure_tests.rs`
+  - `src-tauri/tests/parity_closure_tests.rs` (planned for BI-050; the file does not exist yet)
   - Any remaining should-have gaps must be explicitly deferred or contained behind a documented browser-sidecar adapter.
+  - BI-050 remains queued until BI-049 must-have runtime parity is proven and every outstanding must-have is resolved or formally scoped.
 
 - `T-053` Dependency-floor removal tests:
   - `scripts/dependency-floor-proof.sh`
   - `.cargo/audit.toml`
   - `docs/roadmap/repository-security-baseline.html`
-  - Release gates fail if `gtk` or `glib` reappear in the dependency tree or the exception registry remains open after removal.
+  - BI-051 must add executable release gates that fail if `gtk` or `glib` reappear in the release dependency tree or the exception registry remains open after removal. This gate is planned, not currently enforced by `dependency-floor-proof.sh`.
 
 - `T-054` Dependabot esbuild remediation tests:
   - `ui/pnpm-lock.yaml`
   - `ui/package.json`
   - `pnpm -C ui test`
   - `pnpm -C ui build`
-  - Remote alert query `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"`
-  - The UI toolchain must resolve `esbuild` at `0.28.1` or newer and the open Dependabot alert must close before the slice is complete.
+  - Main CI run [29415214522](https://github.com/pratik-saptarshi/rocinante/actions/runs/29415214522) on 2026-07-15 did not verify closure because its checker skipped a malformed response. The local checker now fails closed; `scripts/test-check-dependabot-esbuild-alert.sh` covers malformed API and pagination responses. A successful live query on 2026-09-30 confirmed the tracked alert is no longer open.
+  - The UI lockfile resolves `esbuild@0.28.1`; the local Node script could not run in this environment. Five unrelated Dependabot alerts and GTK/GLib exceptions remain release blockers.
+  - `scripts/test-check-dependabot-esbuild-alert.sh` verifies confirmed-zero pass, open matches, malformed error/pagination responses, and exit-2 errors for missing `gh`/`jq`, API or jq failures, and malformed output. The alert-query job grants `vulnerability-alerts: read`, the GitHub-documented token scope. actionlint v1.7.12 does not recognize this documented scope, so the parser ignores only that diagnostic. A fresh live query passed on 2026-09-30.
 
 - `T-055` CI bootstrap and workflow parseability tests (`F-053`):
   - `src-tauri/tests/ci_gate_tests.rs`
@@ -250,7 +308,7 @@
   - `src-tauri/tests/release_baseline_tests.rs`
   - `src-tauri/tests/release_baseline_handler_tests.rs`
   - `src-tauri/tests/release_baseline_storage_tests.rs`
-  - Dashboard render exposes current release baseline query/reseed controls from the shared admin bridge, the registered Tauri handler path, and the extracted baseline store boundary.
+  - The native Dashboard release-baseline controls call the shared admin-authorized Sled/DuckDB adapter asynchronously. Tauri commands and the shell use the same storage paths, writer lock, and snapshot refresh implementation.
 
 - `T-044` Vitest and Playwright runner boundary tests (`F-040`):
   - `ui/vite.config.ts`

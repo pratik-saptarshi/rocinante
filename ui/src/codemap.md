@@ -14,6 +14,10 @@ The folder uses a composition-first pattern:
 - `dashboard-explainability.ts` and `dashboard-visuals.ts` derive presentation
   cards from the insight model.
 - `insight-engine.ts` transforms telemetry into domain-shaped view models.
+- The GTK-free native mirror lives in
+  `src-tauri/crates/rocinante-desktop-shell/src/dashboard_insights.rs`; keep
+  its model and payload tests aligned with this module's scoring and pulse
+  contracts during parity work.
 - `admin-bridge-contract.ts` and `tauri-admin.ts` define the command bridge.
 - `domain/` contains pure helpers for risk, opportunity, and quality logic.
 

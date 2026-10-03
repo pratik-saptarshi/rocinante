@@ -12,6 +12,7 @@
 ## Privacy Controls
 
 - Never commit secrets or credentials.
+- The Tauri host must not start unless `RUNICIPAL_TOKEN_SECRET` is configured with at least 32 bytes; GTK-free repository scans enforce the same gate before token verification.
 - `.env*`, keys, certs, and runtime databases are ignored by default.
 - Secret scanning enabled in CI.
 
@@ -23,10 +24,12 @@
 - Open Dependabot alerts are tracked as release blockers until remediated or explicitly accepted.
 - Dependency audit exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`.
 - `scripts/dependency-floor-proof.sh` records the current GTK/glib dependency floor.
+- `scripts/check-security-advisory-exceptions.py` fails when an exception review date is overdue; required CI job `security-exception-governance` enforces current dates through the aggregate `test` gate. The current registry reports 17 overdue reviews as of 2026-09-30.
 
 ## Release Blockers
 
 - `RT-RC-001` remains open while the GTK/glib dependency floor is present in `src-tauri/Cargo.lock`.
 - Release readiness is blocked by the tracked GTK/glib advisory exception.
 - Release readiness is blocked until the tracked GTK/glib advisory exception is retired or formally accepted.
-- `R3-F08` remains open until the UI lockfile resolves `esbuild` at `0.28.1` or newer and the remote Dependabot alert closes.
+- `R3-F08` / BI-052: the UI lockfile resolves `esbuild@0.28.1`, PR #59 merged, and a live query on 2026-09-30 confirmed the tracked alert is closed. Five other alerts and the GTK/GLib alert tracked under RT-RC-001 remain release blockers.
+- The latest hosted Rust Security run [36424294477](https://github.com/pratik-saptarshi/rocinante/actions/runs/36424294477) failed on 2026-09-28: `rustls@0.23.40` (`RUSTSEC-2026-0285`), `rkyv@0.7.46` (`RUSTSEC-2026-0235`), and yanked `chacha20@0.10.1`. The working lockfile now uses patched `rustls@0.23.45` and `chacha20@0.10.2`, upgrades `rust_decimal` to 1.43.0 (removing `rkyv@0.7.46`), and resolves `serde_with` plus macros to 3.21.0. The documented root command `cargo audit --file src-tauri/Cargo.lock --deny warnings` passes. Hosted validation remains outstanding. The 17 GTK/GLib exception reviews remain overdue and unchanged.

@@ -1,6 +1,6 @@
 # Bill of Materials - Markdown Snapshot
 
-_Captured: 2026-07-09_
+_Captured: 2026-10-03_
 
 ## Repository and Source Control
 
@@ -12,8 +12,9 @@ _Captured: 2026-07-09_
 
 ## Branch and Sync State
 
-- `origin/main` and local `main` share the same tree after the BI-047 reconciliation merge;
-  local history still includes merge checkpoints, but the release inventory matches the remote tip.
+- The remediation branch `fix/rocinante-readiness-remediation` is based on
+  `main` at `4c28d9f`. It preserves the existing BI-048 extraction and
+  governance edits as working changes; they are not committed or pushed.
 - Remaining open slices continue via PR checkpoints with explicit roadmap/checklist
   evidence and conventional commits.
 - Lane-scope refinement now keeps docs-only and non-functional edits out of storage/coverage-heavy lanes while preserving core rust gate visibility.
@@ -21,6 +22,9 @@ _Captured: 2026-07-09_
 ## Runtime Surface
 
 - Backend: `src-tauri/Cargo.toml`, `src-tauri/src/*.rs`
+- Host-agnostic Rust contracts: `src-tauri/crates/rocinante-core/`
+- GTK-free desktop shell: `src-tauri/crates/rocinante-desktop-shell/` (eframe/winit, rfd XDG portal, optional notify-rust, tray-icon/ksni, and fs2 inbox locking)
+- Shared authenticated repository analysis: `src-tauri/crates/rocinante-analysis/`
 - Frontend: `ui/package.json`, `ui/src/**`, `ui/e2e/**`
 - Automation: `.github/workflows/*.yml`, `scripts/*.sh`, `scripts/*.mjs`
 - Governance artifacts: `docs/bill-of-materials.html`, `docs/publish-readiness-checklist.html`,
@@ -29,7 +33,10 @@ _Captured: 2026-07-09_
 ## Active Governance and Planned Slices
 
 - `BI-047` — F-047 Desktop parity evaluation and host decision (completed on PR run `28988956969`)
-- `BI-052` — F-052 Dependabot esbuild remediation (in progress)
+- `BI-046` — F-046 GTK/glib dependency-floor governance (in progress; 17 exception reviews overdue since 2026-08-06)
+- `BI-048` — F-048 Core extraction and host-agnostic contract (completed locally; nine contract tests pass)
+- `BI-049` — F-049 GTK-free native desktop MVP (in progress; eframe/winit shell with lossless paths, authenticated scans, saved-metric reload, and desktop notification requests)
+- `BI-052` — F-052 Dependabot esbuild remediation (tracked esbuild alert confirmed closed by live query on 2026-09-30; other release blockers remain)
 - `BI-053` — F-053 CI bootstrap and workflow parseability (completed; validated on PR run `28983234703`)
 - `BI-054` — F-054 CI lane orchestration and gating (completed; validated on PR run `28983234703`)
 - `BI-055` — F-054 CI lane orchestration and gating (completed)
@@ -42,8 +49,10 @@ _Captured: 2026-07-09_
 
 - `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` passes.
 - `cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests` passes on the pinned `1.96.1` toolchain.
-- `node scripts/check-esbuild-lock.mjs` passes and confirms `esbuild >= 0.28.1` floor.
-- `scripts/check-dependabot-esbuild-alert.sh` is being corrected to query advisory IDs explicitly; remote Dependabot state now shows open alert `GHSA-wrw7-89jp-8q8g` for `glib`.
+- `scripts/dependency-floor-proof.sh` confirms GTK 0.18.2 and GLib 0.18.5 remain in the Tauri/Wry tree; the registry's 17 `review_by` dates (2026-08-06) are overdue.
+- Core-only contract suite has nine passing tests, including host-independent claim validation and an admin-authorized release-baseline repository contract. The no-default-features test targets compile, and the default analytics library check passes. The auth integration test executable build was cancelled after several minutes without progress.
+- The esbuild version remediation is merged in PR #59 and the lockfile is at `0.28.1`; a live query on 2026-09-30 confirmed its Dependabot alert is closed. Main CI run 29415214522 logged a malformed response and did not verify closure. Five other alerts and GTK/GLib alert #1 remain recorded as release blockers.
+- Hosted Security run [36424294477](https://github.com/pratik-saptarshi/rocinante/actions/runs/36424294477) failed on 2026-09-28 with vulnerable `rustls@0.23.40`, vulnerable `rkyv@0.7.46`, and yanked `chacha20@0.10.1`. The local lockfile now updates `rustls` to 0.23.45, `rust_decimal` to 1.43.0 (removing `rkyv@0.7.46`), `chacha20` to 0.10.2, and `serde_with` plus macros to 3.21.0. The documented root audit command passes; hosted validation remains outstanding. The live `serde_with` Dependabot alert is still open on main pending merge.
 - `publish-readiness-checklist.html` remains open because RT-RC-001 is still active and publish still requires a formal release branch / merge checkpoint, even though BI-047 is merged and the CI recovery and CI lane slices now pass their latest remote checks.
 - Duplicate feature mapping cleanup completed by removing legacy duplicate `F-027` row from `docs/feature-list.html` (test traceability consolidation pass complete).
 - Remote PR run `28987645462` is green for `ci-health`, `ci-workflow-parse`, `ci-scope`, `rust-build-seed`, `rust-quality-gates`, `rust-lint`, `rust-tests`, and the aggregate `test` gate.
@@ -71,12 +80,30 @@ _Captured: 2026-07-09_
 - CI split now enforces explicit jobs:
   - `rust-quality-gates` (fmt, clippy, CI gate contract)
   - `rust-tests` (lane matrix: `core`, `storage`)
+  - `rust-workspace-tests` (full-workspace clippy and tests)
+  - `ui-quality` (pnpm `12.8.1`, typecheck, unit tests, production build)
   - `rust-coverage` (release-only coverage)
 
 ## Current Remediation State Notes
 
-- `ui/pnpm-lock.yaml` lockfile currently resolves `esbuild@0.28.1` and `scripts/check-esbuild-lock.mjs` passes locally.
-- Remote Dependabot state currently exposes `GHSA-wrw7-89jp-8q8g` on `glib` (`open`) and is tracked by RT-RC-001 as a release-blocking item.
+- As of 2026-10-03, Rust formatting and the advisory-governance, roadmap-doc,
+  Dependabot-checker, and native-shell dependency-guard contract scripts pass;
+  the `rocinante-core` suite passes 9 tests. UI typecheck and production build
+  pass through the existing local binaries. Vitest did not report test results
+  before stalling, and the full-workspace Cargo test did not complete. The live
+  advisory checker correctly fails closed for all 17 overdue reviews; no owner
+  disposition is recorded. Hosted checks have not run for this branch.
+- CI now tests the full Cargo workspace on Rust changes and routes changes to
+  `.github/workflows/ci.yml` through the Rust checks. Cross-platform native URL
+  and restart acceptance remains dependent on the corresponding hosted jobs.
+- The UI manifest pins pnpm `12.8.1`, the latest published release verified on
+  2026-10-03. The local toolchain reports Node `v26.10.0` and pnpm `12.8.1`.
+  Invoking pnpm after the pin change tried to fetch its configured executable
+  from npm and failed on registry DNS; direct local binaries were used for the
+  UI checks noted above.
+
+- `ui/pnpm-lock.yaml` resolves `esbuild@0.28.1`; the Node lockfile checker result for this remediation run is pending.
+- The local lockfile resolves `esbuild@0.28.1`; the pinned temporary Node 22 runtime ran `scripts/check-esbuild-lock.mjs`. PR #59 merged, and a live query confirmed the tracked alert is closed on 2026-09-30. Five unrelated alerts and the GTK/GLib alert remain open on `main`. The working UI lockfile resolves Vitest, `@vitest/mocker`, and `@vitest/coverage-v8` to 4.1.11 and PostCSS to 8.5.23 via a workspace override; together with the Rust `serde_with@3.21.0` update, these address all five unrelated alerts in this working tree, pending merge and hosted re-query. UI tests and coverage pass (62 tests), the UI production build passes, and pnpm audit reports no known vulnerabilities.
 
 ## Release Artifacts
 

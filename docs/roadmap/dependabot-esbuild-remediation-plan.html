@@ -4,15 +4,12 @@
 
 - Local dependency-floor check confirms `ui/pnpm-lock.yaml` resolves `esbuild@0.28.1`.
 - `scripts/check-esbuild-lock.mjs` enforces `esbuild >= 0.28.1` in CI and local runs.
-- Remote GHSA alert state requires network verification:
-  - expected advisory: `GHSA-g7r4-m6w7-qqqr`
-  - package: `esbuild`
-  - location: `ui/pnpm-lock.yaml`
-  - first patched version: `0.28.1`
-- The remote confirmatory query is blocked in environments without GitHub API access;
-  close status remains pending until `gh api "repos/pratik-saptarshi/rocinante/dependabot/alerts?state=open"` returns no matching `esbuild` item.
+- PR #59 merged on 2026-07-07, and `ui/pnpm-lock.yaml` resolves the first patched version, `0.28.1`. The latest main CI run [29415214522](https://github.com/pratik-saptarshi/rocinante/actions/runs/29415214522) on 2026-07-15 did not verify alert closure because its checker skipped a malformed API response. A fresh live query on 2026-09-30 passed: `scripts/check-dependabot-esbuild-alert.sh` confirmed `GHSA-g7r4-m6w7-qqqr` is not open. The local checker exits 2 on malformed payloads, and its contract test covers malformed API and pagination shapes.
+- Remediation PR [#59](https://github.com/pratik-saptarshi/rocinante/pull/59) merged on 2026-07-07. Its aggregate `test` and `dependency-review` checks passed.
 - Release pipeline now runs `scripts/check-dependabot-esbuild-alert.sh` against the same alert endpoint
-  on `main` pushes before accepting the slice as complete.
+  on `main` pushes before accepting the slice as complete. The checker fails closed on missing CLI,
+  API errors, and malformed responses; an offline contract test covers these outcomes. The CI job
+  declares `vulnerability-alerts: read` for its `GITHUB_TOKEN` request.
 
 ## Remediation Strategy
 
@@ -41,6 +38,10 @@
 - Re-query the remote Dependabot alert list until the open `esbuild` alert is
   gone.
 - Confirm the release and dependency-review gates stay green after the update.
+
+## Current Repository Security State
+
+The esbuild version remediation is applied, and the live query on 2026-09-30 confirmed the tracked alert is closed. A full live query on 2026-09-30 found five unrelated alerts (Vitest, `@vitest/mocker`, `serde_with`, and two PostCSS alerts) plus the GTK/GLib alert under RT-RC-001. The working tree resolves Vitest, `@vitest/mocker`, and `@vitest/coverage-v8` to 4.1.11, PostCSS to 8.5.23 through a pnpm workspace override, and `serde_with` plus its macros to 3.21.0. The five alerts remain open on `main` pending merge. UI tests and coverage passed (62 tests), the production build passed, and pnpm audit reports no known vulnerabilities. The malformed-response CI skip remains invalid as closure evidence.
 
 ## Floor Check
 

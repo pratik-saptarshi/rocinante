@@ -1,6 +1,6 @@
 # Bill of Materials - Rocinante Release Gate
 
-_Current as of 2026-07-09_
+_Current as of 2026-09-30_
 
 This document inventories the release-critical components, dependency surface,
 and governance artifacts that must stay aligned before publishing to `origin`.
@@ -13,8 +13,8 @@ then release from the merged tip.
 - Primary integration branch: `main`
 - Remote: `origin`
 - Current working slice is `main` after merging `feat/bi-047-decision-paths`.
-- `origin/main` and local `main` share the same tree after the BI-047 reconciliation merge;
-  local history still includes merge checkpoints, but the release inventory matches the remote tip.
+- `origin/main` and local `main` are aligned at `4c28d9f`; the former local-only
+  merge checkpoints are preserved on `backup/main-pre-reconcile-20260930`.
 - Product: Rust + Tauri repository analyzer with a bead-backed roadmap
   execution model and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -26,13 +26,18 @@ then release from the merged tip.
 ### Backend / Tauri
 
 - `src-tauri/Cargo.toml`
+- `src-tauri/crates/rocinante-core/Cargo.toml`
+- `src-tauri/crates/rocinante-core/src/`
+- `src-tauri/crates/rocinante-desktop-shell/Cargo.toml` (`eframe`/`egui` native host MVP)
+- `src-tauri/crates/rocinante-analysis/Cargo.toml` (shared authenticated repository analysis service)
+- `src-tauri/crates/rocinante-desktop-shell/src/`
 - `src-tauri/src/main.rs`
 - `src-tauri/src/lib.rs`
-- `src-tauri/src/auth.rs`
+- `src-tauri/crates/rocinante-analysis/src/auth.rs`
 - `src-tauri/src/storage.rs`
 - `src-tauri/src/scoring.rs`
-- `src-tauri/src/plugins/sanitizer.rs`
-- `src-tauri/src/plugins/parser.rs`
+- `src-tauri/crates/rocinante-analysis/src/plugins/sanitizer.rs`
+- `src-tauri/crates/rocinante-analysis/src/plugins/parser.rs`
 - `rust-toolchain.toml`
 
 ### Frontend / UI
@@ -85,6 +90,7 @@ Core runtime and support crates in `src-tauri/Cargo.toml`:
 
 - `fs2`
 - `serde`
+- `eframe` / `egui` / `winit` for the GTK-free native shell (BI-049)
 - `serde_json`
 - `thiserror`
 - `walkdir`
@@ -95,11 +101,21 @@ Core runtime and support crates in `src-tauri/Cargo.toml`:
 - `base64`
 - `hmac`
 - `sha2`
+
+The separate `rocinante-desktop-shell` crate uses `rfd` with default features
+disabled and the XDG portal backend for folder selection, avoiding GTK. Its
+optional `notify-rust` dependency requests success/failure desktop notifications;
+optional `tray-icon` uses its GTK-free `ksni` feature on Linux to provide Show/Quit
+actions and hide-on-close behavior. Optional `fs2` provides the exclusive per-user
+lock for a bounded deep-link inbox; `packaging/linux/rocinante.desktop` declares
+the URI scheme. Package installation and Windows/macOS protocol registration are
+not yet integrated. Notification and tray delivery still need per-platform runtime
+validation.
 - `tempfile` for tests
 - `tauri-build` for the build step
 - `cargo-llvm-cov` for informational backend Rust coverage reporting
 - `cargo-audit` for RustSec dependency audit checks
-- `esbuild` in the UI lockfile is tracked through the Dependabot remediation slice until the alert is closed
+- The esbuild Dependabot remediation slice is complete; five unrelated alerts and the GTK/GLib alert remain open on `main`. The working tree contains lockfile fixes for all five unrelated alerts; UI tests and build pass, and hosted closure validation remains pending merge.
 
 ### UI / frontend packages
 
@@ -146,17 +162,20 @@ Packages declared in `ui/package.json`:
   - key/certificate material
   - local DB artifacts
   - build and cache outputs
-- `src-tauri/src/auth.rs` provides the command authorization boundary
+- `src-tauri/crates/rocinante-analysis/src/auth.rs` provides the shared token validation boundary
 - Tests cover authorization and denial behavior in the Rust test suite
 - Secret scanning is enforced in GitHub Actions through TruffleHog
 - Dependency review is enforced on pull requests
 - CodeQL is enabled for the Rust codebase
 - RustSec dependency audit is enforced through `cargo-audit`
 - Advisory exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`
+- All 17 GTK/GLib exception review dates are overdue as of 2026-09-30; none was renewed or accepted in this update.
 - `scripts/dependency-floor-proof.sh` records the current GTK/GLib floor
 - `scripts/check-esbuild-lock.mjs` enforces UI lockfile floor `esbuild >= 0.28.1`
+- Local `ui/pnpm-lock.yaml` resolves `esbuild@0.28.1`; the Node lockfile check could not run because Node is unavailable in this environment.
 - `scripts/check-dependabot-esbuild-alert.sh` enforces advisory-specific Dependabot checks using explicit GHSA filtering.
-- Remote `open` Dependabot state includes `GHSA-wrw7-89jp-8q8g` for `glib`, which remains governed by RT-RC-001.
+- The esbuild version remediation is merged in PR #59 and the lockfile is at `0.28.1`; a live query on 2026-09-30 confirmed its alert is closed. Main CI run 29415214522 reported a malformed Dependabot response and did not verify closure. Five other alerts and GTK/GLib alert #1 remain recorded as open release blockers.
+- Hosted Security run [36424294477](https://github.com/pratik-saptarshi/rocinante/actions/runs/36424294477) failed on 2026-09-28 with `rustls@0.23.40`, `rkyv@0.7.46`, and yanked `chacha20@0.10.1`. The working lockfile now uses `rustls@0.23.45`, `rust_decimal@1.43.0` (removing `rkyv@0.7.46`), `chacha20@0.10.2`, and `serde_with@3.21.0`; the documented root audit command passes. Hosted validation remains outstanding.
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 - `test` aggregate job in `.github/workflows/ci.yml` is the merge gate for protected-branch checks and depends on parse/scope/lint/test/coverage jobs.
