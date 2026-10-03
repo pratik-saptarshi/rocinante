@@ -45,6 +45,15 @@ fn update_max_usize(metric: &AtomicUsize, value: usize) {
     }
 }
 
+fn duration_to_millis_ceil(duration: Duration) -> u64 {
+    let fractional_millisecond = duration.subsec_nanos() % 1_000_000 != 0;
+    duration
+        .as_millis()
+        .saturating_add(if fractional_millisecond { 1 } else { 0 })
+        .max(1)
+        .min(u64::MAX as u128) as u64
+}
+
 #[cfg(not(feature = "analytics"))]
 fn analytics_feature_unavailable() -> AnalyzerError {
     AnalyzerError::Db("analytics feature is disabled for delta CI build".to_string())
@@ -317,7 +326,7 @@ impl AsyncIngestionEngine {
                     let _ = store_for_worker.ingest_commit_event(&evt);
                     update_max_u64(
                         &max_queue_lag_bg,
-                        queued_at.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                        duration_to_millis_ceil(queued_at.elapsed()),
                     );
 
                     if last_promotion.elapsed() >= promotion_interval {
@@ -1420,4 +1429,23 @@ fn now_ts() -> i64 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs() as i64)
         .unwrap_or(0)
+}
+
+#[cfg(test)]
+mod queue_lag_tests {
+    use super::duration_to_millis_ceil;
+    use std::time::Duration;
+
+    #[test]
+    fn queue_lag_milliseconds_round_up_and_saturate() {
+        assert_eq!(duration_to_millis_ceil(Duration::ZERO), 1);
+        assert_eq!(duration_to_millis_ceil(Duration::from_nanos(1)), 1);
+        assert_eq!(duration_to_millis_ceil(Duration::from_micros(999)), 1);
+        assert_eq!(duration_to_millis_ceil(Duration::from_millis(1)), 1);
+        assert_eq!(duration_to_millis_ceil(Duration::from_micros(1_001)), 2);
+        assert_eq!(
+            duration_to_millis_ceil(Duration::from_secs(u64::MAX)),
+            u64::MAX
+        );
+    }
 }
