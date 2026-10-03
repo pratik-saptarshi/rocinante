@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/pratik-saptarshi/rocinante/compare/v0.2.0...v0.2.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* **security:** patch vulnerable rustls in Cargo.lock ([#110](https://github.com/pratik-saptarshi/rocinante/issues/110)) ([80ceeab](https://github.com/pratik-saptarshi/rocinante/commit/80ceeab3fa19efe9eb665d696297134bf9384d29))
+
 ## [0.2.0](https://github.com/pratik-saptarshi/rocinante/compare/v0.1.1...v0.2.0) (2026-07-09)
 
 
