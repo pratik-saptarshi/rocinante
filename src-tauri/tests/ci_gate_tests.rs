@@ -308,7 +308,7 @@ fn ci_workflow_has_aggregate_test_gate() {
         &["python3 scripts/check-security-advisory-exceptions.py"],
     );
     assert!(workflow.contains(
-        "needs:\n      - ci-workflow-parse\n      - security-exception-governance\n      - ci-scope\n      - windows-registration\n      - macos-url-dispatch\n      - linux-url-dispatch\n      - rust-build-seed\n      - rust-quality-gates\n      - rust-lint\n      - rust-tests\n      - rust-coverage\n",
+        "needs:\n      - ci-workflow-parse\n      - security-exception-governance\n      - ci-scope\n      - ui-quality\n      - rust-workspace-tests\n      - windows-registration\n      - macos-url-dispatch\n      - linux-url-dispatch\n      - rust-build-seed\n      - rust-quality-gates\n      - rust-lint\n      - rust-tests\n      - rust-coverage\n",
     ));
     assert!(workflow.contains(
         "windows-registration:\n    needs: [ci-workflow-parse]\n    runs-on: windows-latest"
