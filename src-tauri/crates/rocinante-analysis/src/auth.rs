@@ -2,7 +2,7 @@ use crate::errors::AnalyzerError;
 use crate::types::Principal;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use hmac::{Hmac, KeyInit, Mac};
-use serde::{Deserialize, Serialize};
+use rocinante_core::auth_claims::PrincipalClaims;
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -14,17 +14,18 @@ const DEFAULT_AUDIENCE: &str = "repo-analyzer";
 #[allow(dead_code)]
 const CLAIM_TOKEN_TTL_SECONDS: i64 = 900;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct PrincipalClaims {
-    user: String,
-    roles: Vec<String>,
-    iss: String,
-    aud: String,
-    exp: i64,
-}
-
 fn token_secret() -> String {
     std::env::var("RUNICIPAL_TOKEN_SECRET").unwrap_or_else(|_| "dev-secret-key".to_string())
+}
+
+pub fn require_configured_token_secret() -> Result<(), AnalyzerError> {
+    match std::env::var("RUNICIPAL_TOKEN_SECRET") {
+        Ok(secret) if secret.len() >= 32 && secret != "dev-secret-key" => Ok(()),
+        _ => Err(AnalyzerError::Integrity(
+            "RUNICIPAL_TOKEN_SECRET must be configured with at least 32 bytes to scan repositories"
+                .into(),
+        )),
+    }
 }
 
 fn now_ts() -> i64 {
@@ -58,22 +59,6 @@ fn verify_signature(header: &str, payload: &str, signature: &str) -> bool {
         .is_some_and(|expected| expected == signature)
 }
 
-fn validate_claims(claims: &PrincipalClaims) -> bool {
-    if claims.iss != DEFAULT_ISSUER {
-        return false;
-    }
-    if claims.aud != DEFAULT_AUDIENCE {
-        return false;
-    }
-    if claims.exp <= now_ts() {
-        return false;
-    }
-    if claims.user.trim().is_empty() {
-        return false;
-    }
-    true
-}
-
 pub fn decode_principal(token: &str) -> Result<Principal, AnalyzerError> {
     let parts: Vec<&str> = token.split('.').collect();
     if parts.len() != 3 {
@@ -88,17 +73,13 @@ pub fn decode_principal(token: &str) -> Result<Principal, AnalyzerError> {
     let payload = decode_base64_url(parts[1])?;
     let claims: PrincipalClaims =
         serde_json::from_slice(&payload).map_err(|_| AnalyzerError::InvalidToken)?;
-    if !validate_claims(&claims) {
-        return Err(AnalyzerError::InvalidToken);
-    }
     if !verify_signature(parts[0], parts[1], parts[2]) {
         return Err(AnalyzerError::InvalidToken);
     }
 
-    Ok(Principal {
-        user: claims.user,
-        roles: claims.roles,
-    })
+    claims
+        .into_principal_if_valid(now_ts(), DEFAULT_ISSUER, DEFAULT_AUDIENCE)
+        .ok_or(AnalyzerError::InvalidToken)
 }
 
 pub fn issue_test_token(user: &str, roles: &[&str], ttl_seconds: i64) -> String {
@@ -119,7 +100,7 @@ pub fn issue_test_token(user: &str, roles: &[&str], ttl_seconds: i64) -> String 
 }
 
 pub fn require_admin(principal: &Principal) -> Result<(), AnalyzerError> {
-    if principal.roles.iter().any(|role| role == "admin") {
+    if rocinante_core::authorization::principal_is_admin(principal) {
         Ok(())
     } else {
         Err(AnalyzerError::PermissionDenied(principal.user.clone()))

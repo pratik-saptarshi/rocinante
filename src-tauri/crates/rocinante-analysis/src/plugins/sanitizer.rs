@@ -237,9 +237,10 @@ impl BeadPlugin for MandatorySanitizerPlugin {
 
     fn run(&self, input: &AnalysisInput) -> Result<Vec<AnalysisMetric>, AnalyzerError> {
         let mut findings = 0.0;
-        for target in [&input.repo.name, &input.repo.path] {
+        let repository_path = input.repo.path.to_string_lossy();
+        for target in [input.repo.name.as_str(), repository_path.as_ref()] {
             let scrubbed = scrub_text(target);
-            if scrubbed != *target {
+            if scrubbed != target {
                 findings += 1.0;
             }
         }

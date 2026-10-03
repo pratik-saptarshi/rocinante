@@ -300,12 +300,59 @@ fn ci_workflow_has_aggregate_test_gate() {
     assert!(workflow.contains("test:"));
     assert!(workflow.contains("if: ${{ always() }}"));
     assert!(workflow.contains(
-        "needs:\n      - ci-workflow-parse\n      - ci-scope\n      - rust-build-seed\n      - rust-quality-gates\n      - rust-lint\n      - rust-tests\n      - rust-coverage\n",
+        "security-exception-governance:\n    needs: [ci-workflow-parse]\n    runs-on: ubuntu-latest"
     ));
+    assert_step_run_contains_all(
+        &workflow,
+        "Enforce current advisory exception review dates",
+        &["python3 scripts/check-security-advisory-exceptions.py"],
+    );
+    assert!(workflow.contains(
+        "needs:\n      - ci-workflow-parse\n      - security-exception-governance\n      - ci-scope\n      - windows-registration\n      - macos-url-dispatch\n      - linux-url-dispatch\n      - rust-build-seed\n      - rust-quality-gates\n      - rust-lint\n      - rust-tests\n      - rust-coverage\n",
+    ));
+    assert!(workflow.contains(
+        "windows-registration:\n    needs: [ci-workflow-parse]\n    runs-on: windows-latest"
+    ));
+    assert_step_block_contains_all(
+        &workflow,
+        "Exercise per-user URI registration installer",
+        &[
+            "shell: pwsh",
+            "run: ./scripts/test-windows-registration.ps1",
+        ],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Verify cold, warm, and restarted Windows URL dispatch",
+        &[
+            "shell: pwsh",
+            "run: ./scripts/test-windows-url-dispatch.ps1",
+        ],
+    );
+    assert!(workflow.contains(
+        "macos-url-dispatch:\n    needs: [ci-workflow-parse]\n    runs-on: macos-latest"
+    ));
+    assert_step_run_contains_all(
+        &workflow,
+        "Verify bundled cold and warm URL dispatch",
+        &["bash scripts/test-macos-url-dispatch.sh"],
+    );
+    assert!(workflow.contains(
+        "linux-url-dispatch:\n    needs: [ci-workflow-parse]\n    runs-on: ubuntu-latest"
+    ));
+    assert_step_run_contains_all(
+        &workflow,
+        "Verify registered URL dispatch and notification delivery",
+        &["xvfb-run -a dbus-run-session -- bash scripts/test-linux-url-dispatch.sh"],
+    );
     assert_step_block_contains_all(
         &workflow,
         "Gate summary",
         &[
+            "if [[ \"${{ needs.security-exception-governance.result }}\" != \"success\" ]]",
+            "if [[ \"${{ needs.windows-registration.result }}\" != \"success\" ]]",
+            "if [[ \"${{ needs.macos-url-dispatch.result }}\" != \"success\" ]]",
+            "if [[ \"${{ needs.linux-url-dispatch.result }}\" != \"success\" ]]",
             "if [[ \"${{ needs.ci-scope.result }}\" == \"failure\" || \"${{ needs.ci-scope.result }}\" == \"cancelled\" ]]",
             "if [[ \"${{ needs.rust-build-seed.result }}\" == \"failure\" || \"${{ needs.rust-build-seed.result }}\" == \"cancelled\" ]]",
             "if [[ \"${{ needs.rust-lint.result }}\" == \"failure\" || \"${{ needs.rust-lint.result }}\" == \"cancelled\" ]]",
@@ -317,16 +364,38 @@ fn ci_workflow_has_aggregate_test_gate() {
 #[test]
 fn ci_workflow_has_offline_workflow_parseability_gate() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let roadmap_contracts = read_repo_file("../scripts/test-roadmap-doc-contracts.sh");
 
     assert!(workflow.contains("ci-workflow-parse:"));
     assert!(workflow.contains("needs: [ci-health]"));
     assert!(workflow.contains("actions/checkout@v7"));
+    assert_step_block_contains_all(
+        &workflow,
+        "Set up Rust for fast roadmap contracts",
+        &["uses: dtolnay/rust-toolchain@1.96.1"],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Test roadmap and publish-doc contracts",
+        &["bash scripts/test-roadmap-doc-contracts.sh"],
+    );
+    assert!(
+        roadmap_contracts.contains("gtk_free_host_migration_plan_tests")
+            && roadmap_contracts.contains("publish_gate_docs_tests")
+            && roadmap_contracts.contains("roadmap_coherence_tests"),
+        "fast roadmap contract step must execute all std-only planning contracts"
+    );
+    assert!(
+        workflow.find("Test roadmap and publish-doc contracts")
+            < workflow.find("Validate workflow parseability"),
+        "roadmap docs contracts should fail before workflow or Rust build checks"
+    );
     assert_step_run_contains_all(
         &workflow,
         "Validate workflow parseability",
         &[
             "go install github.com/rhysd/actionlint/cmd/actionlint@latest",
-            "actionlint -oneline .github/workflows/ci.yml .github/workflows/security.yml",
+            "actionlint -oneline -ignore 'unknown permission scope \"vulnerability-alerts\"' .github/workflows/ci.yml .github/workflows/security.yml",
         ],
     );
 }

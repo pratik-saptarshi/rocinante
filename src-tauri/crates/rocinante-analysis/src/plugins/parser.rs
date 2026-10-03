@@ -79,7 +79,7 @@ impl BeadPlugin for ParserPlugin {
         let mut hits = 0.0;
         let mut misses = 0.0;
         let mut node_estimate = 0.0;
-        let repo_root = Path::new(&input.repo.path);
+        let repo_root = input.repo.path.as_path();
 
         if input.changed_files.is_empty() {
             for entry in walkdir::WalkDir::new(repo_root).into_iter().flatten() {

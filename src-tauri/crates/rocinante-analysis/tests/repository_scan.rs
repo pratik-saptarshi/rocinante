@@ -1,0 +1,114 @@
+use rocinante_analysis::{
+    auth::issue_test_token,
+    git::discover_repositories_path,
+    query_repository_metrics, run_scan_with_metrics,
+    telemetry::TelemetryStore,
+    types::{AnalysisMetric, AnalysisRecord},
+};
+use std::fs;
+use tempfile::NamedTempFile;
+
+#[test]
+fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
+    std::env::set_var(
+        "RUNICIPAL_TOKEN_SECRET",
+        "test-secret-for-repository-scan-32-bytes",
+    );
+    let root = tempfile::tempdir().expect("root directory");
+    let repository = root.path().join("repo-one");
+    fs::create_dir_all(repository.join(".git")).expect("git directory");
+    fs::create_dir_all(repository.join("src")).expect("source directory");
+    fs::write(repository.join("src/lib.rs"), "pub fn example() {}\n").expect("source file");
+    let nested_repository = root.path().join("repo-two");
+    fs::create_dir_all(nested_repository.join(".git")).expect("nested git directory");
+    fs::create_dir_all(nested_repository.join("src")).expect("nested source directory");
+    fs::write(nested_repository.join("src/lib.rs"), "pub fn nested() {}\n")
+        .expect("nested source file");
+    for group in ["group-a", "group-b"] {
+        let duplicate_name_repository = root.path().join(group).join("shared");
+        fs::create_dir_all(duplicate_name_repository.join(".git"))
+            .expect("duplicate-name git directory");
+        fs::create_dir_all(duplicate_name_repository.join("src"))
+            .expect("duplicate-name source directory");
+        fs::write(
+            duplicate_name_repository.join("src/lib.rs"),
+            format!("pub fn {group}_shared() {{}}\n"),
+        )
+        .expect("duplicate-name source file");
+    }
+
+    let database = NamedTempFile::new().expect("database file");
+    let store = TelemetryStore::open(database.path()).expect("open telemetry database");
+    for (repo_name, release, key) in [
+        ("repo-one-shadow", "", "similar_repo_metric"),
+        ("repo-one", "previous-release", "old_release_metric"),
+    ] {
+        store
+            .insert_record(&AnalysisRecord {
+                repo_name: repo_name.into(),
+                release: release.into(),
+                metrics: vec![AnalysisMetric {
+                    plugin: "test".into(),
+                    key: key.into(),
+                    value: 1.0,
+                    details: String::new(),
+                }],
+            })
+            .expect("insert unrelated historic metric");
+    }
+    drop(store);
+
+    let token = issue_test_token("scan-admin", &["admin"], 300);
+    let (result, metrics) = run_scan_with_metrics(&token, root.path(), "", database.path())
+        .expect("repository scan and query");
+    let stored_metrics = query_repository_metrics(&token, root.path(), "", database.path())
+        .expect("query stored repository metrics");
+
+    assert_eq!(result.records_processed, 4);
+    assert!(result.rows_inserted >= 1);
+    assert_eq!(result.duplicate_source_keys, 0);
+    assert!(metrics.iter().any(|metric| metric.repo_name == "repo-one"));
+    assert!(metrics.iter().any(|metric| metric.repo_name == "repo-two"));
+    assert!(metrics
+        .iter()
+        .any(|metric| metric.repo_name == "group-a/shared"));
+    assert!(metrics
+        .iter()
+        .any(|metric| metric.repo_name == "group-b/shared"));
+    assert!(metrics.iter().all(|metric| metric.release.is_empty()));
+    assert!(metrics
+        .iter()
+        .all(|metric| metric.key != "similar_repo_metric"));
+    assert!(metrics
+        .iter()
+        .all(|metric| metric.key != "old_release_metric"));
+    assert_eq!(stored_metrics, metrics);
+}
+
+#[test]
+fn scan_requires_a_valid_admin_token_before_opening_the_database() {
+    let root = tempfile::tempdir().expect("root directory");
+    let database = root.path().join("must-not-be-created.db");
+    std::env::set_var(
+        "RUNICIPAL_TOKEN_SECRET",
+        "test-secret-for-repository-scan-32-bytes",
+    );
+    let result = run_scan_with_metrics("invalid", root.path(), "", &database);
+    let query_result = query_repository_metrics("invalid", root.path(), "", &database);
+
+    assert!(result.is_err());
+    assert!(query_result.is_err());
+    assert!(!database.exists());
+}
+
+#[test]
+fn repository_discovery_includes_worktrees_and_submodules_with_git_files() {
+    let root = tempfile::tempdir().expect("root directory");
+    let worktree = root.path().join("worktree");
+    fs::create_dir_all(&worktree).expect("worktree");
+    fs::write(worktree.join(".git"), "gitdir: ../metadata/worktree\n").expect("git file");
+
+    let repositories = discover_repositories_path(root.path());
+    assert_eq!(repositories.len(), 1);
+    assert_eq!(repositories[0].path, worktree);
+}

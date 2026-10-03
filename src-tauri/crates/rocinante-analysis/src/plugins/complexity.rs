@@ -2,7 +2,6 @@ use crate::errors::AnalyzerError;
 use crate::plugins::BeadPlugin;
 use crate::types::{AnalysisInput, AnalysisMetric};
 use std::fs;
-use std::path::Path;
 
 pub struct ComplexityPlugin;
 
@@ -17,7 +16,7 @@ impl BeadPlugin for ComplexityPlugin {
 
         if !input.changed_files.is_empty() {
             for rel in &input.changed_files {
-                let full = Path::new(&input.repo.path).join(rel);
+                let full = input.repo.path.join(rel);
                 if let Ok(contents) = fs::read_to_string(full) {
                     for token in decision_tokens {
                         complexity += contents.matches(token).count() as f64;

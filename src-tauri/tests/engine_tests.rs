@@ -3,6 +3,9 @@ use repo_analyzer_core::types::RepoTarget;
 use std::fs;
 use tempfile::tempdir;
 
+#[path = "common/git_repo.rs"]
+mod git_repo;
+
 #[test]
 fn pipeline_runs_all_beads() {
     let tmp = tempdir().expect("tempdir");
@@ -11,10 +14,11 @@ fn pipeline_runs_all_beads() {
         "fn main(){ if true { println!(\"ok\"); } }",
     )
     .expect("write file");
+    git_repo::initialize_tagged_repository(tmp.path(), "v0.1.0");
 
     let repo = RepoTarget {
         name: "demo".to_string(),
-        path: tmp.path().to_string_lossy().to_string(),
+        path: tmp.path().to_path_buf(),
     };
 
     let pipeline = Pipeline::default();

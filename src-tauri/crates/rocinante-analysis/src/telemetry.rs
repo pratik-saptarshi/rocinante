@@ -1,8 +1,9 @@
 use crate::errors::AnalyzerError;
 use crate::plugins::sanitizer::{scrub_metric, scrub_record_strings, scrub_text};
-use crate::types::{AdminQuery, AnalysisMetric, AnalysisRecord};
+use crate::types::{AdminQuery, AnalysisMetric, AnalysisRecord, RepositoryMetric};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TelemetryImportSummary {
@@ -17,7 +18,7 @@ pub struct TelemetryStore {
 }
 
 impl TelemetryStore {
-    pub fn open(path: &str) -> Result<Self, AnalyzerError> {
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, AnalyzerError> {
         let conn = Connection::open(path)?;
         conn.execute_batch(
             "
@@ -139,6 +140,51 @@ impl TelemetryStore {
             let mut metric = row?;
             scrub_metric(&mut metric);
             out.push(metric);
+        }
+        Ok(out)
+    }
+
+    pub fn query_repositories(
+        &self,
+        repo_names: &[String],
+        release: &str,
+    ) -> Result<Vec<RepositoryMetric>, AnalyzerError> {
+        let release = scrub_text(release);
+        let mut stmt = self.conn.prepare(
+            "SELECT repo_name, release, plugin, metric_key, metric_value, details
+             FROM telemetry
+             WHERE repo_name = ?1 AND release = ?2
+             ORDER BY repo_name, plugin, metric_key",
+        )?;
+        let mut out = Vec::new();
+        for name in repo_names {
+            let name = scrub_text(name);
+            let rows = stmt.query_map(params![name, release], |row| {
+                Ok(RepositoryMetric {
+                    repo_name: row.get(0)?,
+                    release: row.get(1)?,
+                    plugin: row.get(2)?,
+                    key: row.get(3)?,
+                    value: row.get(4)?,
+                    details: row.get(5)?,
+                })
+            })?;
+            for row in rows {
+                let mut row = row?;
+                row.repo_name = scrub_text(&row.repo_name);
+                row.release = scrub_text(&row.release);
+                let mut metric = AnalysisMetric {
+                    plugin: row.plugin.clone(),
+                    key: row.key.clone(),
+                    value: row.value,
+                    details: row.details.clone(),
+                };
+                scrub_metric(&mut metric);
+                row.plugin = metric.plugin;
+                row.key = metric.key;
+                row.details = metric.details;
+                out.push(row);
+            }
         }
         Ok(out)
     }

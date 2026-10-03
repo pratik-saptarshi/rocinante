@@ -1,5 +1,5 @@
 use crate::errors::AnalyzerError;
-use crate::git::git_stdout;
+use crate::git::git_stdout_path;
 use crate::plugins::BeadPlugin;
 use crate::types::{AnalysisInput, AnalysisMetric};
 
@@ -11,7 +11,7 @@ impl BeadPlugin for PrApprovalPlugin {
     }
 
     fn run(&self, input: &AnalysisInput) -> Result<Vec<AnalysisMetric>, AnalyzerError> {
-        let message_blob = git_stdout(
+        let message_blob = git_stdout_path(
             &input.repo.path,
             &["log", "--since=30.days", "--pretty=%B----END----"],
         )

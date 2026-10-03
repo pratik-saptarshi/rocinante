@@ -32,9 +32,10 @@ fn publish_gate_documents_reflect_bi_047_merge_and_current_main_snapshot() {
     );
     assert!(bom.contains("BI-047"));
     assert!(checklist.contains("BI-047 is complete"));
-    assert!(checklist.contains("local `main` matches `origin/main` tree after BI-047"));
+    assert!(checklist.contains("Latest local branch snapshot"));
+    assert!(checklist.contains("local `main` is aligned with"));
     assert!(codemap.contains("BI-047 merged"));
-    assert!(codemap.contains("main matches origin/main tree after BI-047"));
+    assert!(codemap.contains("local `main` is aligned with fetched `origin/main` at `4c28d9f`"));
 }
 
 #[test]

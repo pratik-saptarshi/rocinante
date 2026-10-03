@@ -5,6 +5,9 @@ use repo_analyzer_core::types::{AnalysisInput, RepoTarget};
 use std::fs;
 use tempfile::tempdir;
 
+#[path = "common/git_repo.rs"]
+mod git_repo;
+
 fn parser_metric_value(metrics: &[repo_analyzer_core::types::AnalysisMetric], key: &str) -> f64 {
     metrics
         .iter()
@@ -31,7 +34,7 @@ fn parser_plugin_tracks_language_counts_and_incremental_cache_hits() {
 
     let repo = RepoTarget {
         name: "demo".to_string(),
-        path: tmp.path().to_string_lossy().to_string(),
+        path: tmp.path().to_path_buf(),
     };
     let input = AnalysisInput {
         repo,
@@ -82,10 +85,11 @@ fn pipeline_default_exposes_parser_metrics() {
         "fn main() { if true { println!(\"ok\"); } }",
     )
     .expect("write file");
+    git_repo::initialize_tagged_repository(tmp.path(), "v0.1.0");
 
     let repo = RepoTarget {
         name: "demo".to_string(),
-        path: tmp.path().to_string_lossy().to_string(),
+        path: tmp.path().to_path_buf(),
     };
     let pipeline = Pipeline::default();
     let record = pipeline.analyze_repo(repo, "v0.1.0").expect("analyze");

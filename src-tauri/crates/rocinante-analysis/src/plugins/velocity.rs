@@ -1,5 +1,5 @@
 use crate::errors::AnalyzerError;
-use crate::git::git_stdout;
+use crate::git::git_stdout_path;
 use crate::plugins::BeadPlugin;
 use crate::types::{AnalysisInput, AnalysisMetric};
 
@@ -11,7 +11,7 @@ impl BeadPlugin for ContributionVelocityPlugin {
     }
 
     fn run(&self, input: &AnalysisInput) -> Result<Vec<AnalysisMetric>, AnalyzerError> {
-        let commits = git_stdout(
+        let commits = git_stdout_path(
             &input.repo.path,
             &["rev-list", "--count", "--since=30.days", "HEAD"],
         )
@@ -19,7 +19,7 @@ impl BeadPlugin for ContributionVelocityPlugin {
         .parse::<f64>()
         .unwrap_or(0.0);
 
-        let stat = git_stdout(
+        let stat = git_stdout_path(
             &input.repo.path,
             &["log", "--since=30.days", "--numstat", "--pretty="],
         )

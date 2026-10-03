@@ -49,8 +49,8 @@ fn completed_host_migration_beads_and_test_plan_mappings_stay_in_sync() {
     assert!(
         feature_list.contains(
             "| P2 | EP-05 Release/security governance | F-052 Dependabot esbuild remediation |"
-        ) && feature_list.contains("| In Progress | BI-052 | In Progress |"),
-        "feature list is missing active BI-052 remediation tracking",
+        ) && feature_list.contains("| Green | BI-052 | Completed |"),
+        "feature list is missing completed BI-052 remediation tracking",
     );
 
     assert!(
@@ -71,9 +71,9 @@ fn completed_host_migration_beads_and_test_plan_mappings_stay_in_sync() {
     assert!(
         bead_tracker.contains(
             "| BI-052 | Stage 4 | EP-05 Release/security governance | F-052 Dependabot esbuild remediation |",
-        ) && bead_tracker.contains("| In Progress | In Progress |") &&
+        ) && bead_tracker.contains("| Completed | Completed |") &&
             bead_tracker.contains("BI-052"),
-        "bead tracker is missing BI-052 progress state",
+        "bead tracker is missing BI-052 completion state",
     );
 
     assert!(

@@ -1,4 +1,4 @@
-# src-tauri/src/plugins/
+# src-tauri/crates/rocinante-analysis/src/plugins/
 
 ## Responsibility
 Analysis plugin subsystem for sanitization, parser caching, complexity proxy
@@ -22,5 +22,7 @@ extensions. Each module focuses on one concern:
 4. Resulting plugin outputs feed the storage and scoring layers.
 
 ## Integration
-- Imported by `src-tauri/src/engine.rs`, `storage.rs`, and `admin.rs`.
-- Covered by plugin-specific tests under `src-tauri/tests/`.
+- Imported by `src-tauri/crates/rocinante-analysis/src/engine.rs` and shared
+  through the `rocinante-analysis` library surface.
+- Covered by plugin-specific tests under `src-tauri/tests/` and analysis crate
+  integration tests.

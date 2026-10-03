@@ -53,10 +53,15 @@ fn security_advisory_exceptions_cover_all_audit_ignores() {
 
 #[test]
 fn security_advisory_exceptions_have_owner_review_date_and_exit_condition() {
+    let mut tracking_ids = BTreeSet::new();
     for entry in registry_entries() {
         let entry = entry.as_object().expect("registry object");
         assert!(!entry["owner"].as_str().expect("owner").is_empty());
-        assert_eq!(entry["review_by"], "2026-08-06");
+        assert_eq!(entry["kind"], "audit_ignore");
+        let review_by = entry["review_by"].as_str().expect("review date");
+        assert_eq!(review_by.len(), 10);
+        assert_eq!(&review_by[4..5], "-");
+        assert_eq!(&review_by[7..8], "-");
         assert!(!entry["exit_condition"]
             .as_str()
             .expect("exit condition")
@@ -66,10 +71,15 @@ fn security_advisory_exceptions_have_owner_review_date_and_exit_condition() {
             .expect("affected path")
             .is_empty());
         assert!(!entry["reason"].as_str().expect("reason").is_empty());
-        assert!(entry["tracking_id"]
+        let tracking_id = entry["tracking_id"]
             .as_str()
             .expect("tracking id")
-            .starts_with("RT-RC-001-"));
+            .to_string();
+        assert!(tracking_id.starts_with("RT-RC-001-"));
+        assert!(
+            tracking_ids.insert(tracking_id),
+            "tracking ids must be unique"
+        );
     }
 }
 
@@ -83,9 +93,8 @@ fn gtk_glib_dependency_floor_is_tracked_as_release_blocking() {
     assert!(baseline
         .contains("Release readiness is blocked by the tracked GTK/glib advisory exception."));
     assert!(baseline.contains("docs/roadmap/security-advisory-exceptions.json"));
-    assert!(checklist.contains(
-        "Dependency audit exceptions are registry-backed, time-boxed, and release-blocking"
-    ));
+    assert!(checklist.contains("Dependency audit exceptions are current and registry-backed"));
+    assert!(checklist.contains("all 17 review dates (2026-08-06) are overdue as of 2026-09-30"));
     assert!(checklist.contains("Release remains blocked until RT-RC-001 is closed"));
     assert!(proof_script.contains("cargo tree --manifest-path \"$repo_root/src-tauri/Cargo.toml\" -i glib --locked --target all"));
     assert!(proof_script.contains("cargo tree --manifest-path \"$repo_root/src-tauri/Cargo.toml\" -i gtk --locked --target all"));

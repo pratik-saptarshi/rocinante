@@ -5,10 +5,11 @@ use crate::types::{
     ScoringWeights, TelemetryPoint,
 };
 use serde::Deserialize;
+use std::path::PathBuf;
 use std::sync::Mutex;
 
 pub struct AppState {
-    pub db_path: Mutex<String>,
+    pub db_path: Mutex<PathBuf>,
     pub kv_path: Mutex<String>,
     pub columnar_path: Mutex<String>,
     pub weights_path: Mutex<String>,
@@ -18,22 +19,25 @@ pub struct AppState {
 
 #[derive(Deserialize)]
 struct ScanPayload {
+    token: String,
     root: String,
     release: String,
 }
 
 pub fn app_state() -> AppState {
+    crate::auth::require_configured_token_secret()
+        .expect("RUNICIPAL_TOKEN_SECRET must be configured with at least 32 bytes");
+    let db_path = rocinante_analysis::resolve_telemetry_db_path()
+        .expect("failed to prepare shared telemetry database path");
+    let (kv_path, columnar_path) = rocinante_storage::default_analytics_store_paths();
+    let (weights_path, audit_path) = rocinante_storage::default_scoring_paths();
     AppState {
-        db_path: Mutex::new("telemetry.db".to_string()),
-        kv_path: Mutex::new("telemetry-kv".to_string()),
-        columnar_path: Mutex::new("analytics.duckdb".to_string()),
-        weights_path: Mutex::new("scoring-weights.json".to_string()),
-        audit_path: Mutex::new("scoring-audit.jsonl".to_string()),
-        ingestion_backend: Mutex::new(IngestionBackendConfig {
-            kind: crate::storage::IngestionBackendKind::BadgerSidecar,
-            strict_badger_required: true,
-            endpoint: Some("unix:///var/run/badger.sock".to_string()),
-        }),
+        db_path: Mutex::new(db_path),
+        kv_path: Mutex::new(kv_path),
+        columnar_path: Mutex::new(columnar_path),
+        weights_path: Mutex::new(weights_path),
+        audit_path: Mutex::new(audit_path),
+        ingestion_backend: Mutex::new(rocinante_storage::default_ingestion_backend_config()),
     }
 }
 
@@ -51,6 +55,8 @@ pub fn build_app<R: tauri::Runtime>(
     builder: tauri::Builder<R>,
     state: AppState,
 ) -> tauri::Builder<R> {
+    crate::auth::require_configured_token_secret()
+        .expect("RUNICIPAL_TOKEN_SECRET must be configured with at least 32 bytes");
     builder
         .manage(state)
         .invoke_handler(tauri::generate_handler![
@@ -74,7 +80,7 @@ fn run_scan(
     payload: ScanPayload,
 ) -> Result<crate::telemetry::TelemetryImportSummary, String> {
     let db = state.db_path.lock().map_err(|e| e.to_string())?.clone();
-    admin::run_scan(&payload.root, &payload.release, &db).map_err(|e| e.to_string())
+    admin::run_scan(&payload.token, &payload.root, &payload.release, &db).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

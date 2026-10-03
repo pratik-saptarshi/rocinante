@@ -1,5 +1,5 @@
 use crate::errors::AnalyzerError;
-use crate::git::changed_files_since_tag;
+use crate::git::changed_files_since_tag_path;
 use crate::plugins::code_quality::CodeQualityPlugin;
 use crate::plugins::complexity::ComplexityPlugin;
 use crate::plugins::parser::ParserPlugin;
@@ -25,7 +25,7 @@ impl Pipeline {
         repo: RepoTarget,
         release: &str,
     ) -> Result<AnalysisRecord, AnalyzerError> {
-        let changed_files = changed_files_since_tag(&repo.path, release).unwrap_or_default();
+        let changed_files = changed_files_since_tag_path(&repo.path, release)?;
         let input = AnalysisInput {
             repo: repo.clone(),
             changed_files,

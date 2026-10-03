@@ -15,13 +15,16 @@ test = false
 
 [dependencies]
 fs2 = "0.4"
+rocinante-core = { path = "crates/rocinante-core" }
+rocinante-analysis = { path = "crates/rocinante-analysis" }
+rocinante-storage = { path = "crates/rocinante-storage", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 walkdir = "2"
 rusqlite = { version = "0.40", features = ["bundled"] }
 tauri = { version = "2", default-features = false, features = ["wry"] }
-sled = "0.34"
+sled = { version = "0.34", optional = true }
 duckdb = { version = "1.1", features = ["bundled"], optional = true }
 base64 = "0.22"
 hmac = "0.13"
@@ -29,7 +32,7 @@ sha2 = "0.11"
 
 [features]
 default = ["analytics"]
-analytics = ["duckdb"]
+analytics = ["rocinante-storage/analytics", "dep:sled", "dep:duckdb"]
 
 [dev-dependencies]
 tempfile = "3"
@@ -37,6 +40,15 @@ tauri = { version = "2", default-features = false, features = ["test"] }
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+
+[workspace]
+members = [
+    "crates/rocinante-core",
+    "crates/rocinante-analysis",
+    "crates/rocinante-storage",
+    "crates/rocinante-desktop-shell",
+]
+resolver = "2"
 
 [profile.dev]
 debug = 0

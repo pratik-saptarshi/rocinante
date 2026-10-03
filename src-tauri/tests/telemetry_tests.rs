@@ -105,6 +105,10 @@ fn bulk_import_dedupes_duplicate_source_keys() {
 
 #[test]
 fn run_scan_surfaces_import_summary_for_backend_boundary() {
+    std::env::set_var(
+        "RUNICIPAL_TOKEN_SECRET",
+        "test-secret-for-telemetry-scan-32-bytes",
+    );
     let root = tempfile::tempdir().expect("root");
     let repo = root.path().join("repo-x");
     fs::create_dir_all(repo.join(".git")).expect("git dir");
@@ -112,12 +116,9 @@ fn run_scan_surfaces_import_summary_for_backend_boundary() {
     fs::write(repo.join("src/lib.rs"), "pub fn example() {}\n").expect("file");
 
     let db = NamedTempFile::new().expect("temp db");
-    let summary = admin::run_scan(
-        root.path().to_str().expect("root"),
-        "",
-        db.path().to_str().expect("db"),
-    )
-    .expect("run scan");
+    let token = repo_analyzer_core::auth::issue_test_token("scan-admin", &["admin"], 300);
+    let summary = admin::run_scan(&token, root.path().to_str().expect("root"), "", db.path())
+        .expect("run scan");
 
     assert_eq!(summary.source, "");
     assert_eq!(summary.records_processed, 1);

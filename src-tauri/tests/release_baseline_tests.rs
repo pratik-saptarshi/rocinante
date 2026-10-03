@@ -39,6 +39,10 @@ fn release_baseline_roundtrips_through_storage() {
 
 #[test]
 fn admin_release_baseline_roundtrips_and_requires_admin() {
+    std::env::set_var(
+        "RUNICIPAL_TOKEN_SECRET",
+        "baseline-test-secret-with-at-least-32-bytes",
+    );
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
