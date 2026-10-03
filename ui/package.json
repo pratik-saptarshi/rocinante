@@ -2,7 +2,7 @@
   "name": "rocinante-ui",
   "private": true,
   "version": "0.1.0",
-  "packageManager": "pnpm@12.8.1",
+  "packageManager": "pnpm@12.8.2",
   "type": "module",
   "scripts": {
     "dev": "vite",

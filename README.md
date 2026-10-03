@@ -139,7 +139,7 @@ admin::update_scoring_weights(
 ### 1) Prerequisites
 
 - Rust stable toolchain.
-- Node.js + `pnpm` (`ui/package.json` declares `pnpm@12.8.1`).
+- Node.js + `pnpm` (`ui/package.json` declares `pnpm@12.8.2`).
 - Optional: Linux desktop deps for Tauri packaging if running full app packaging workflows.
 
 ### 2) Build UI bundle
@@ -231,7 +231,7 @@ pnpm exec playwright test
 
 The Rust workspace test command includes `rocinante-core`,
 `rocinante-analysis`, `rocinante-storage`, and `rocinante-desktop-shell` as
-well as the Tauri adapter. Use the `pnpm@12.8.1` version declared in
+well as the Tauri adapter. Use the `pnpm@12.8.2` version declared in
 `ui/package.json` for UI checks.
 
 ### 5) Governance artifacts

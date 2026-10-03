@@ -81,7 +81,7 @@ _Captured: 2026-10-03_
   - `rust-quality-gates` (fmt, clippy, CI gate contract)
   - `rust-tests` (lane matrix: `core`, `storage`)
   - `rust-workspace-tests` (full-workspace clippy and tests)
-  - `ui-quality` (pnpm `12.8.1`, typecheck, unit tests, production build)
+  - `ui-quality` (pnpm `12.8.2`, typecheck, unit tests, production build)
   - `rust-coverage` (release-only coverage)
 
 ## Current Remediation State Notes
@@ -107,9 +107,8 @@ _Captured: 2026-10-03_
 - CI now tests the full Cargo workspace on Rust changes and routes changes to
   `.github/workflows/ci.yml` through the Rust checks. Cross-platform native URL
   and restart acceptance remains dependent on the corresponding hosted jobs.
-- The UI manifest pins pnpm `12.8.1`, verified against the current npm latest
-  tag on 2026-10-03. The local toolchain reports Node `v26.10.0` and pnpm
-  `12.8.1`.
+- The UI manifest pins pnpm `12.8.2`, the latest stable release verified on
+  2026-10-03. Local validation of this version is pending.
 
 - The latest UI lockfile resolves `esbuild@0.28.2`; the version-floor checker still requires a fresh run.
 - At the 2026-09-30 snapshot, the UI suite and coverage passed 62 tests, the
