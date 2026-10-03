@@ -28,7 +28,7 @@ for dependency in gtk glib tauri wry; do
     echo "error: dependency guard accepted forbidden package $dependency" >&2
     exit 1
   fi
-  if ! rg -F "$dependency v1.0.0" "$temporary_root/stdout" >/dev/null; then
+  if ! grep -F "$dependency v1.0.0" "$temporary_root/stdout" >/dev/null; then
     echo "error: dependency guard did not report forbidden package $dependency" >&2
     cat "$temporary_root/stdout" >&2
     exit 1

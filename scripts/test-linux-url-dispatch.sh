@@ -129,8 +129,8 @@ wait_for_applied_path() {
     if [[ -f "$witness" ]]; then
       witness_pid="$(sed -n 's/^pid=//p' "$witness")"
       [[ -z "$witness_pid" ]] || test_pid="$witness_pid"
-      if rg -F -x "page=Repositories" "$witness" >/dev/null \
-        && rg -F -x "path=$expected_path" "$witness" >/dev/null; then
+      if grep -F -x "page=Repositories" "$witness" >/dev/null \
+        && grep -F -x "path=$expected_path" "$witness" >/dev/null; then
         return 0
       fi
     fi
@@ -143,7 +143,7 @@ wait_for_applied_path() {
 
 wait_for_notification() {
   for _ in {1..30}; do
-    if rg -F "Rocinante notification acceptance" "$notification_log" >/dev/null; then
+    if grep -F "Rocinante notification acceptance" "$notification_log" >/dev/null; then
       return 0
     fi
     sleep 1

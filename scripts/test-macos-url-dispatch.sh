@@ -31,7 +31,7 @@ bundle_process_ids() {
 }
 
 bundle_pid_is_running() {
-  bundle_process_ids | rg -F -x "$1" >/dev/null 2>&1
+  bundle_process_ids | grep -F -x "$1" >/dev/null 2>&1
 }
 
 cleanup() {
@@ -96,10 +96,10 @@ ROCINANTE_BUNDLE_IDENTIFIER="$bundle_identifier" \
     "$shell_binary"
 registration_dump="$bundle_root/launch-services.dump"
 "$lsregister" -dump > "$registration_dump"
-if ! rg -F "$bundle" "$registration_dump" >/dev/null \
-  || ! rg -F "$bundle_identifier" "$registration_dump" >/dev/null; then
+if ! grep -F "$bundle" "$registration_dump" >/dev/null \
+  || ! grep -F "$bundle_identifier" "$registration_dump" >/dev/null; then
   echo "Launch Services did not retain the installed acceptance bundle" >&2
-  rg -n -i -C 2 'rocinante|acceptance' "$registration_dump" >&2 || true
+  grep -n -i -C 2 -E 'rocinante|acceptance' "$registration_dump" >&2 || true
   exit 1
 fi
 if [[ ! -f "$bundle/Contents/Resources/Rocinante.icns" ]]; then
@@ -116,9 +116,9 @@ wait_for_applied_path() {
       fi
     fi
     if [[ -f "$witness" ]] \
-      && rg -F -x "page=Repositories" "$witness" >/dev/null \
-      && rg -F -x "path=$expected_path" "$witness" >/dev/null \
-      && rg -F -x "tray_available=true" "$witness" >/dev/null; then
+      && grep -F -x "page=Repositories" "$witness" >/dev/null \
+      && grep -F -x "path=$expected_path" "$witness" >/dev/null \
+      && grep -F -x "tray_available=true" "$witness" >/dev/null; then
       return 0
     fi
     sleep 1
@@ -135,9 +135,9 @@ wait_for_native_window_state() {
   expected_frontmost=$2
   for _ in {1..45}; do
     window_state="$("$window_state_helper" "$test_pid" 2>/dev/null || true)"
-    if rg -F -x "visible=$expected_visible" <<< "$window_state" >/dev/null \
+    if grep -F -x "visible=$expected_visible" <<< "$window_state" >/dev/null \
       && { [[ "$expected_frontmost" == "*" ]] \
-        || rg -F -x "frontmost=$expected_frontmost" <<< "$window_state" >/dev/null; }; then
+        || grep -F -x "frontmost=$expected_frontmost" <<< "$window_state" >/dev/null; }; then
       return 0
     fi
     sleep 1
@@ -173,7 +173,7 @@ for _ in {1..45}; do
   [[ -f "$notification_result" ]] && break
   sleep 1
 done
-if ! rg -F -x "request_succeeded=true" "$notification_result" >/dev/null 2>&1; then
+if ! grep -F -x "request_succeeded=true" "$notification_result" >/dev/null 2>&1; then
   echo "The native notification request did not succeed" >&2
   [[ ! -f "$notification_result" ]] || cat "$notification_result" >&2
   exit 1
@@ -203,13 +203,13 @@ if [[ ! -e "$show_file.received" ]]; then
   exit 1
 fi
 for _ in {1..45}; do
-  if rg -q '^request_accepted=(true|false)$' "$activation_result" 2>/dev/null; then
+  if grep -Eq '^request_accepted=(true|false)$' "$activation_result" 2>/dev/null; then
     break
   fi
   kill -0 "$test_pid" 2>/dev/null || break
   sleep 1
 done
-if ! rg -q '^request_accepted=(true|false)$' "$activation_result" 2>/dev/null; then
+if ! grep -Eq '^request_accepted=(true|false)$' "$activation_result" 2>/dev/null; then
   echo "The native Show handler did not complete its AppKit activation request" >&2
   if [[ -f "$activation_result" ]]; then
     cat "$activation_result" >&2
