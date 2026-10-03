@@ -546,12 +546,14 @@ mod native_ui {
                     }
                     WindowCloseBehavior::Exit => {
                         self.state.dispatch(NavigationAction::Close);
-                        #[cfg(target_os = "macos")]
-                        {
+                        if self.explicit_quit {
                             if let Some(storage) = frame.storage_mut() {
                                 self.save(storage);
                                 storage.flush();
                             }
+                        }
+                        #[cfg(target_os = "macos")]
+                        {
                             super::macos_url::terminate_application();
                         }
                     }

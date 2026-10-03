@@ -214,7 +214,7 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
     let manifest = read_repo_file("Cargo.toml");
 
-    assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
+    assert!(workflow.contains("dtolnay/rust-toolchain@1.99.0"));
     assert!(workflow.contains("components: clippy, rustfmt"));
     assert_step_run_contains_all(
         &workflow,
@@ -246,7 +246,7 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
     assert!(workflow.contains("rust-coverage:"));
-    assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
+    assert!(workflow.contains("dtolnay/rust-toolchain@1.99.0"));
     assert_step_block_contains_all(
         &workflow,
         "Install cargo-llvm-cov",
@@ -372,7 +372,7 @@ fn ci_workflow_has_offline_workflow_parseability_gate() {
     assert_step_block_contains_all(
         &workflow,
         "Set up Rust for fast roadmap contracts",
-        &["uses: dtolnay/rust-toolchain@1.96.1"],
+        &["uses: dtolnay/rust-toolchain@1.99.0"],
     );
     assert_step_run_contains_all(
         &workflow,
@@ -710,7 +710,7 @@ fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
     let workflow = read_repo_file("../.github/workflows/security.yml");
     let audit_config = read_repo_file("../.cargo/audit.toml");
 
-    assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
+    assert!(workflow.contains("dtolnay/rust-toolchain@1.99.0"));
     assert!(workflow.contains("components: clippy, rustfmt"));
     assert!(workflow.contains("taiki-e/install-action@v2"));
     assert!(workflow.contains("tool: cargo-audit"));
