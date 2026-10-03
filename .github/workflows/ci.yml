@@ -207,7 +207,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
@@ -251,7 +251,7 @@ jobs:
             librsvg2-dev \
             mesa-vulkan-drivers \
             patchelf
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
@@ -271,7 +271,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
@@ -310,7 +310,7 @@ jobs:
             mesa-vulkan-drivers \
             xvfb \
             xdg-utils
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
@@ -359,7 +359,7 @@ jobs:
           else
             echo "scope=delta" >> "$GITHUB_OUTPUT"
           fi
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
@@ -655,7 +655,7 @@ jobs:
           prefix-key: rust-cache-release-v2
           save-if: false
       - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.87.23
         with:
           tool: cargo-llvm-cov
       - name: Rust coverage

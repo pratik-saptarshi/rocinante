@@ -29,14 +29,14 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: clippy, rustfmt
-      - uses: github/codeql-action/init@v4
+      - uses: github/codeql-action/init@v4.38.2
         with:
           languages: rust
-      - uses: github/codeql-action/autobuild@v4
-      - uses: github/codeql-action/analyze@v4
+      - uses: github/codeql-action/autobuild@v4.38.2
+      - uses: github/codeql-action/analyze@v4.38.2
 
   secret-scan:
     runs-on: ubuntu-latest
@@ -66,10 +66,10 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: clippy, rustfmt
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@v2.87.23
         with:
           tool: cargo-audit
       - name: Audit Rust dependencies
