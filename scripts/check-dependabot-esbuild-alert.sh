@@ -6,32 +6,33 @@ ADVISORY="${2:-GHSA-g7r4-m6w7-qqqr}"
 STATE="${3:-open}"
 
 if ! command -v gh >/dev/null 2>&1; then
-  echo "skip: gh CLI unavailable in this environment"
-  exit 0
+  echo "error: gh CLI unavailable; cannot verify Dependabot alert state" >&2
+  exit 2
 fi
 
 echo "Checking dependabot alerts for $ADVISORY in $REPO (state=$STATE)"
-if ! ALERTHITS="$(gh api "repos/$REPO/dependabot/alerts?state=$STATE" --jq "if type==\"array\" then map(select((.security_advisory.ghsa_id // \"\") == \"$ADVISORY\" and .state == \"$STATE\")) | length else 0 end" 2>/dev/null || true)"; then
-  echo "skip: unable to query dependabot alerts in this environment"
-  exit 0
+if ! ALERT_PAGES="$(gh api "repos/$REPO/dependabot/alerts?state=$STATE" --paginate --slurp 2>&1)"; then
+  echo "error: unable to query Dependabot alerts: $ALERT_PAGES" >&2
+  exit 2
 fi
 
-if ! [[ "$ALERTHITS" =~ ^[0-9]+$ ]]; then
-  echo "skip: malformed Dependabot API response; cannot evaluate advisory state"
-  exit 0
+if ! command -v jq >/dev/null 2>&1; then
+  echo "error: jq unavailable; cannot evaluate Dependabot alert state" >&2
+  exit 2
 fi
 
-if [[ "${ALERTHITS:-0}" != "0" ]]; then
+if ! ALERTHITS="$(jq -er --arg advisory "$ADVISORY" --arg state "$STATE" 'if (type == "array" and all(.[]; type == "array")) then add | map(select((.security_advisory.ghsa_id // "") == $advisory and .state == $state)) | length else error("expected paginated alert arrays") end' <<<"$ALERT_PAGES" 2>&1)"; then
+  echo "error: unable to evaluate Dependabot alert response: $ALERTHITS" >&2
+  exit 2
+fi
+
+if [[ ! "$ALERTHITS" =~ ^[0-9]+$ ]]; then
+  echo "error: malformed Dependabot alert count; cannot evaluate advisory state: $ALERTHITS" >&2
+  exit 2
+fi
+
+if [[ "$ALERTHITS" != "0" ]]; then
   echo "fail: open Dependabot alert $ADVISORY is still present"
-  if ALERT_ROWS="$(gh api "repos/$REPO/dependabot/alerts?state=$STATE" --jq "if type==\"array\" then map(select((.security_advisory.ghsa_id // \"\") == \"$ADVISORY\" and .state == \"$STATE\"))[] | \"#\(.number) \(.dependency.package.name) \(.state)\" else empty end" 2>/dev/null || true)"; then
-    if [[ -n "$ALERT_ROWS" ]]; then
-      echo "$ALERT_ROWS"
-    else
-      echo "skip: unable to format Dependabot alert details"
-    fi
-  else
-    echo "skip: unable to fetch Dependabot alert details"
-  fi
   exit 1
 fi
 

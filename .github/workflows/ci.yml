@@ -33,13 +33,66 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+      - name: Set up Rust for fast roadmap contracts
+        uses: dtolnay/rust-toolchain@1.96.1
+      - name: Test roadmap and publish-doc contracts
+        run: bash scripts/test-roadmap-doc-contracts.sh
       - name: Validate workflow parseability
         run: |
           go install github.com/rhysd/actionlint/cmd/actionlint@latest
           # shellcheck disable=SC2155
           GOBIN="$(go env GOPATH)/bin"
           export PATH="$GOBIN:$PATH"
-          actionlint -oneline .github/workflows/ci.yml .github/workflows/security.yml
+          # GitHub documents vulnerability-alerts as a GITHUB_TOKEN scope; actionlint v1.7.12 does not recognize it yet.
+          actionlint -oneline -ignore 'unknown permission scope "vulnerability-alerts"' .github/workflows/ci.yml .github/workflows/security.yml
+      - name: Test Dependabot alert gate contract
+        run: bash scripts/test-check-dependabot-esbuild-alert.sh
+      - name: Test advisory exception expiry contract
+        run: bash scripts/test-check-security-advisory-exceptions.sh
+      - name: Test native shell dependency guard contract
+        run: bash scripts/test-check-desktop-shell-dependencies.sh
+
+  security-exception-governance:
+    needs: [ci-workflow-parse]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Enforce current advisory exception review dates
+        run: python3 scripts/check-security-advisory-exceptions.py
+
+  ui-quality:
+    needs: [ci-workflow-parse]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.8.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+      - name: Install UI dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck UI
+        run: pnpm exec tsc -b
+      - name: Run UI unit tests
+        run: pnpm exec vitest run
+      - name: Build production UI
+        run: pnpm run build
 
   ci-scope:
     needs: [ci-workflow-parse]
@@ -90,6 +143,15 @@ jobs:
           while IFS= read -r path; do
             [[ -z "$path" ]] && continue
             case "$path" in
+              .github/workflows/ci.yml)
+              NEEDS_RUST=true
+              RUN_RUST_STORAGE_LANES=true
+              RUN_RUST_COVERAGE_LANES=true
+              RUST_TEST_LANES='["core","storage"]'
+              SCOPE_PROFILE=code-surface-touched
+              ONLY_NON_RUST=false
+              break
+                ;;
               docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*|.github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock|*.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico)
                 ;;
               src-tauri/*)
@@ -136,11 +198,135 @@ jobs:
             echo "rust_test_lanes=$RUST_TEST_LANES"
           } >> "$GITHUB_OUTPUT"
 
+  windows-registration:
+    needs: [ci-workflow-parse]
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Exercise per-user URI registration installer
+        shell: pwsh
+        run: ./scripts/test-windows-registration.ps1
+      - name: Verify cold, warm, and restarted Windows URL dispatch
+        shell: pwsh
+        run: ./scripts/test-windows-url-dispatch.ps1
+
+  rust-workspace-tests:
+    needs: [ci-workflow-parse, ci-scope]
+    if: ${{ needs.ci-scope.outputs.needs-rust == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install Linux Rust desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libayatana-appindicator3-dev \
+            libegl1-mesa-dev \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libudev-dev \
+            libvulkan-dev \
+            libwayland-dev \
+            libwebkit2gtk-4.1-dev \
+            libx11-dev \
+            libxcb1-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxinerama-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-0 \
+            libxrandr-dev \
+            librsvg2-dev \
+            mesa-vulkan-drivers \
+            patchelf
+      - uses: dtolnay/rust-toolchain@1.96.1
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Lint full Rust workspace
+        run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --workspace --all-targets -- -A dead_code
+      - name: Test full Rust workspace
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --workspace
+
+  macos-url-dispatch:
+    needs: [ci-workflow-parse]
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Verify bundled cold and warm URL dispatch
+        run: bash scripts/test-macos-url-dispatch.sh
+
+  linux-url-dispatch:
+    needs: [ci-workflow-parse]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install Linux desktop acceptance dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            dbus-x11 \
+            dunst \
+            desktop-file-utils \
+            libegl1-mesa-dev \
+            libglib2.0-bin \
+            libudev-dev \
+            libvulkan-dev \
+            libwayland-dev \
+            libx11-dev \
+            libxcb1-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxinerama-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-0 \
+            libxrandr-dev \
+            mesa-vulkan-drivers \
+            xvfb \
+            xdg-utils
+      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Verify native shell dependency floor
+        run: bash scripts/check-desktop-shell-dependencies.sh
+      - name: Verify registered URL dispatch and notification delivery
+        run: xvfb-run -a dbus-run-session -- bash scripts/test-linux-url-dispatch.sh
+
   rust-build-seed:
     needs: [ci-workflow-parse, ci-scope]
     if: ${{ needs.ci-scope.outputs.needs-rust == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      vulnerability-alerts: read
     outputs:
       build-scope: ${{ steps.build-scope.outputs.scope }}
     steps:
@@ -494,7 +680,13 @@ jobs:
   test:
     needs:
       - ci-workflow-parse
+      - security-exception-governance
       - ci-scope
+      - ui-quality
+      - rust-workspace-tests
+      - windows-registration
+      - macos-url-dispatch
+      - linux-url-dispatch
       - rust-build-seed
       - rust-quality-gates
       - rust-lint
@@ -509,6 +701,36 @@ jobs:
         run: |
           if [[ "${{ needs.ci-workflow-parse.result }}" != "success" ]]; then
             echo "workflow parse failed or was skipped unexpectedly"
+            exit 1
+          fi
+
+          if [[ "${{ needs.security-exception-governance.result }}" != "success" ]]; then
+            echo "security advisory exceptions are invalid or overdue"
+            exit 1
+          fi
+
+          if [[ "${{ needs.rust-workspace-tests.result }}" != "success" && "${{ needs.ci-scope.outputs.needs-rust }}" == "true" ]]; then
+            echo "Rust workspace crate tests failed or were skipped unexpectedly"
+            exit 1
+          fi
+
+          if [[ "${{ needs.ui-quality.result }}" != "success" ]]; then
+            echo "UI typecheck, unit tests, or production build failed or was skipped unexpectedly"
+            exit 1
+          fi
+
+          if [[ "${{ needs.windows-registration.result }}" != "success" ]]; then
+            echo "Windows installer or cold/warm/restart URI acceptance failed or was skipped unexpectedly"
+            exit 1
+          fi
+
+          if [[ "${{ needs.macos-url-dispatch.result }}" != "success" ]]; then
+            echo "macOS bundled cold/warm URL dispatch failed or was skipped unexpectedly"
+            exit 1
+          fi
+
+          if [[ "${{ needs.linux-url-dispatch.result }}" != "success" ]]; then
+            echo "Linux registered cold/warm/restart URL dispatch failed or was skipped unexpectedly"
             exit 1
           fi
 
