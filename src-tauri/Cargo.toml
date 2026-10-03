@@ -26,7 +26,7 @@ rusqlite = { version = "0.40", features = ["bundled"] }
 tauri = { version = "2", default-features = false, features = ["wry"] }
 sled = { version = "0.34", optional = true }
 duckdb = { version = "1.1", features = ["bundled"], optional = true }
-base64 = "0.22"
+base64 = "0.23"
 hmac = "0.13"
 sha2 = "0.11"
 

@@ -4719,7 +4719,7 @@ dependencies = [
 name = "rocinante-repo-analyzer"
 version = "0.2.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "duckdb",
  "fs2",
  "hmac",
