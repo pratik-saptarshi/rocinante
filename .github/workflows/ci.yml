@@ -232,10 +232,9 @@ jobs:
             find "$package_root/usr/lib" -maxdepth 4 -type f -print
             exit 1
           fi
-          # shellcheck disable=SC2016
           rpath=$(patchelf --print-rpath "$package_root/usr/bin/rocinante-repo-analyzer")
           echo "Tauri executable RPATH: $rpath"
-          grep -F '$ORIGIN/../lib/rocinante-repo-analyzer' <<<"$rpath"
+          grep -F "\$ORIGIN/../lib/rocinante-repo-analyzer" <<<"$rpath"
       - name: Verify DuckDB is inside the macOS app bundle with a relocatable loader path
         if: runner.os == 'macOS'
         run: |
