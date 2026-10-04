@@ -226,6 +226,35 @@ checks the pinned archive and native-library SHA-256 values; the Cargo feature
 guard rejects DuckDB source-build features. Installer commands below also
 stage the runtime beside the built shell executable.
 
+Before starting Tauri or the standalone shell, set `RUNICIPAL_TOKEN_SECRET` in
+the process environment. `app_state()` validates it during startup, so setting
+it only before scanning is too late. It must be at least 32 bytes, and the admin
+JWT must be signed with the same secret. For an interactive Bash session, enter
+the secret without echoing it or placing it in shell history:
+
+```bash
+read -r -s -p "RUNICIPAL_TOKEN_SECRET (32+ bytes): " RUNICIPAL_TOKEN_SECRET
+export RUNICIPAL_TOKEN_SECRET
+printf '\n'
+```
+
+For PowerShell, enter the secret through a hidden prompt:
+
+```powershell
+$secureSecret = Read-Host "RUNICIPAL_TOKEN_SECRET (32+ bytes)" -AsSecureString
+$secretPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret)
+try {
+  $env:RUNICIPAL_TOKEN_SECRET = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($secretPointer)
+} finally {
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($secretPointer)
+}
+```
+
+Use the same secret in the admin token signer. The per-user installers below do
+not provision credentials to desktop-launched processes, so launch the app
+from a process with this variable set until secure per-platform credential
+setup tracked by BI-061 is available.
+
 ```bash
 python3 scripts/provision_duckdb.py
 ```
@@ -288,14 +317,11 @@ powershell -ExecutionPolicy Bypass -File `
   src-tauri/target/release/rocinante-desktop-shell.exe
 ```
 
-Before scanning, configure `RUNICIPAL_TOKEN_SECRET` with at least 32 bytes and
-use an admin JWT signed by that secret. The current per-user installers do not
-provision credentials to desktop-launched processes; secure per-platform GUI
-credential setup is tracked by BI-061. Do not place production secrets in shell
-history or commit them. Choose a repository folder, enter a release and admin
-JWT, then analyze it. The shell can reload metrics already stored for the
-selected repository tree and release without rescanning. Repository metrics
-retain a sanitized directory label followed by a stable hash of the canonical
+Do not commit production secrets. Choose a repository folder, enter a release
+and an admin JWT signed by the configured secret, then analyze it. The shell
+can reload metrics already stored for the selected repository tree and release
+without rescanning. Repository metrics retain a sanitized directory label
+followed by a stable hash of the canonical
 local repository path, so selecting the same repository from a different scan
 root or alongside same-named repositories reaches the same saved metrics. This
 changes the value format of the existing repo_name field; consumers that
