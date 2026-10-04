@@ -7,7 +7,9 @@ use repo_analyzer_core::storage::{
     IngestionBackendConfig, IngestionBackendKind, RetentionPolicy, StorageRoute,
 };
 use repo_analyzer_core::types::{AdminQuery, CommitIngestionEvent, ScoringWeights, TelemetryPoint};
+use rusqlite::Connection as SqliteConnection;
 use std::fs;
+use std::path::Path;
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tempfile::tempdir;
@@ -30,6 +32,26 @@ fn now_ts_for_test() -> i64 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs() as i64)
         .unwrap_or(0)
+}
+
+fn write_raw_event(kv_path: &Path, key: &[u8], payload: &[u8]) {
+    fs::create_dir_all(kv_path).expect("create SQLite ingestion directory");
+    let connection = SqliteConnection::open(kv_path.join("ingestion.sqlite3"))
+        .expect("open SQLite ingestion database");
+    connection
+        .execute_batch(
+            "CREATE TABLE IF NOT EXISTS ingestion_kv (
+                key BLOB PRIMARY KEY NOT NULL,
+                value BLOB NOT NULL
+            ) WITHOUT ROWID;",
+        )
+        .expect("create ingestion table");
+    connection
+        .execute(
+            "INSERT OR REPLACE INTO ingestion_kv (key, value) VALUES (?1, ?2)",
+            rusqlite::params![key, payload],
+        )
+        .expect("insert raw event");
 }
 
 fn sample_event(id: &str) -> CommitIngestionEvent {
@@ -203,10 +225,20 @@ fn stores_raw_events_with_sharded_keys() {
             .expect("ingest");
     }
 
-    let db = sled::open(&kv).expect("open kv");
-    let mut keys = db.scan_prefix("evt:").filter_map(|e| e.ok());
-    let key = keys.next().expect("raw key").0.to_vec();
-    assert!(keys.next().is_none(), "only one raw event expected");
+    let db = SqliteConnection::open(kv.join("ingestion.sqlite3")).expect("open kv");
+    let mut statement = db
+        .prepare("SELECT key FROM ingestion_kv WHERE key >= ?1 AND key < ?2 ORDER BY key")
+        .expect("prepare raw key query");
+    let keys = statement
+        .query_map(
+            rusqlite::params![b"evt:".as_slice(), b"evu:".as_slice()],
+            |row| row.get::<_, Vec<u8>>(0),
+        )
+        .expect("query raw keys")
+        .collect::<Result<Vec<_>, _>>()
+        .expect("read raw keys");
+    assert_eq!(keys.len(), 1, "only one raw event expected");
+    let key = keys[0].clone();
 
     let key = String::from_utf8(key).expect("utf-8 key");
     let parts: Vec<&str> = key.split(':').collect();
@@ -247,7 +279,6 @@ fn prunes_expired_raw_events_and_counts_pruned_events() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
-    let db = sled::open(&kv).expect("open kv");
     let event = CommitIngestionEvent {
         commit_id: "same".to_string(),
         repo_name: "repo-b".to_string(),
@@ -263,12 +294,8 @@ fn prunes_expired_raw_events_and_counts_pruned_events() {
     let payload = serde_json::to_vec(&event).expect("serialize");
     let old_key = format!("evt:{}:aa:old", 100);
     let fresh_key = format!("evt:{}:ab:fresh", 180);
-    db.insert(old_key.as_bytes(), payload.clone())
-        .expect("insert old");
-    db.insert(fresh_key.as_bytes(), payload)
-        .expect("insert fresh");
-    db.flush().expect("flush raw events");
-    drop(db);
+    write_raw_event(&kv, old_key.as_bytes(), &payload);
+    write_raw_event(&kv, fresh_key.as_bytes(), &payload);
 
     let store = DualLayerStore::open(
         kv.to_str().expect("kv path"),
@@ -490,10 +517,7 @@ fn async_ingestion_engine_applies_retention_before_promotion() {
     let old_payload = serde_json::to_vec(&expired).expect("serialize legacy event");
     let old_key = format!("evt:{}:aa:legacy", now_ts_for_test().saturating_sub(120));
     {
-        let db = sled::open(&kv).expect("open kv");
-        db.insert(old_key.as_bytes(), old_payload)
-            .expect("insert legacy event");
-        db.flush().expect("flush legacy event");
+        write_raw_event(&kv, old_key.as_bytes(), &old_payload);
     }
 
     let store = DualLayerStore::open(

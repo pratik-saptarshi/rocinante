@@ -24,7 +24,6 @@ thiserror = "2"
 walkdir = "2"
 rusqlite = { version = "0.40", features = ["bundled"] }
 tauri = { version = "2", default-features = false, features = ["wry"] }
-sled = { version = "0.34", optional = true }
 duckdb = { version = "=1.10506.0", default-features = false, optional = true }
 base64 = "0.23"
 hmac = "0.13"
@@ -32,7 +31,7 @@ sha2 = "0.11"
 
 [features]
 default = ["analytics"]
-analytics = ["rocinante-storage/analytics", "dep:sled", "dep:duckdb"]
+analytics = ["rocinante-storage/analytics", "dep:duckdb"]
 
 [dev-dependencies]
 tempfile = "3"

@@ -64,12 +64,9 @@ pub fn default_scoring_paths() -> (String, String) {
 
 pub fn default_ingestion_backend_config() -> storage::IngestionBackendConfig {
     storage::IngestionBackendConfig {
-        kind: storage::IngestionBackendKind::BadgerSidecar,
-        strict_badger_required: true,
-        endpoint: Some(
-            std::env::var("ROCINANTE_BADGER_SIDECAR_ENDPOINT")
-                .unwrap_or_else(|_| "unix:///var/run/badger.sock".into()),
-        ),
+        kind: storage::IngestionBackendKind::SqliteWal,
+        strict_badger_required: false,
+        endpoint: None,
     }
 }
 
@@ -247,7 +244,16 @@ pub fn reseed_release_baseline(
 
 #[cfg(test)]
 mod tests {
-    use super::storage::BaselineStore;
+    use super::storage::{BaselineStore, IngestionBackendKind};
+
+    #[test]
+    fn default_ingestion_backend_uses_sqlite_without_sidecar_configuration() {
+        let config = super::default_ingestion_backend_config();
+        assert_eq!(config.kind, IngestionBackendKind::SqliteWal);
+        assert!(!config.strict_badger_required);
+        assert!(config.endpoint.is_none());
+        assert!(config.validate().is_ok());
+    }
 
     #[cfg(feature = "analytics")]
     #[test]

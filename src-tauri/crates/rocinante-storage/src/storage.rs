@@ -9,21 +9,22 @@ use duckdb::{params, Connection};
 use fs2::FileExt;
 #[cfg(feature = "analytics")]
 use rocinante_core::baseline::{score_baseline_components, BaselineScoreInput};
+use rusqlite::{params as sqlite_params, Connection as SqliteConnection};
 use serde::{Deserialize, Serialize};
-use sled::Db;
 use std::fs;
 use std::fs::OpenOptions;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, RecvTimeoutError, SyncSender};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, MutexGuard, RwLock};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 #[cfg(unix)]
 use std::{io::Write, os::unix::net::UnixStream};
 
 type QueuedIngestionEvent = (CommitIngestionEvent, Instant);
+type IngestionKvEntry = (Vec<u8>, Vec<u8>);
 
 fn update_max_u64(metric: &AtomicU64, value: u64) {
     let mut observed = metric.load(Ordering::Acquire);
@@ -197,7 +198,10 @@ impl RetentionPolicy {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum IngestionBackendKind {
     BadgerSidecar,
+    /// Accepted for existing Rust callers; writes now use the SQLite store.
     SledTransitional,
+    /// Embedded SQLite WAL ingestion backend.
+    SqliteWal,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -209,6 +213,12 @@ pub struct IngestionBackendConfig {
 
 impl IngestionBackendConfig {
     pub fn validate(&self) -> Result<(), AnalyzerError> {
+        if self.kind == IngestionBackendKind::SledTransitional {
+            return Err(AnalyzerError::Db(
+                "Sled transitional ingestion has been removed; configure the SQLite WAL backend"
+                    .to_string(),
+            ));
+        }
         if self.strict_badger_required && self.kind != IngestionBackendKind::BadgerSidecar {
             return Err(AnalyzerError::Db(
                 "Badger sidecar backend is required in strict mode".to_string(),
@@ -231,9 +241,167 @@ impl IngestionBackendConfig {
     }
 }
 
+struct SqliteIngestionDb {
+    connection: Mutex<SqliteConnection>,
+}
+
+impl SqliteIngestionDb {
+    fn open(kv_path: &str) -> Result<Self, AnalyzerError> {
+        let root = Path::new(kv_path);
+        if let Some(parent) = root
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+        {
+            fs::create_dir_all(parent).map_err(|error| {
+                AnalyzerError::Io(format!(
+                    "failed to prepare SQLite ingestion directory: {error}"
+                ))
+            })?;
+        }
+        fs::create_dir_all(root).map_err(|error| {
+            AnalyzerError::Io(format!(
+                "failed to create SQLite ingestion directory: {error}"
+            ))
+        })?;
+
+        let database_path = root.join("ingestion.sqlite3");
+        if !database_path.exists() && (root.join("conf").exists() || root.join("db").exists()) {
+            return Err(AnalyzerError::Db(format!(
+                "legacy Sled ingestion data detected at {}; migrate it before starting SQLite ingestion",
+                root.display()
+            )));
+        }
+        let connection = SqliteConnection::open(&database_path)
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        connection
+            .busy_timeout(Duration::from_secs(5))
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        connection
+            .pragma_update(None, "journal_mode", "WAL")
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        connection
+            .pragma_update(None, "synchronous", "FULL")
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        connection
+            .execute_batch(
+                "CREATE TABLE IF NOT EXISTS ingestion_kv (
+                    key BLOB PRIMARY KEY NOT NULL,
+                    value BLOB NOT NULL
+                ) WITHOUT ROWID;",
+            )
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+
+        Ok(Self {
+            connection: Mutex::new(connection),
+        })
+    }
+
+    fn connection(&self) -> Result<MutexGuard<'_, SqliteConnection>, AnalyzerError> {
+        self.connection.lock().map_err(|error| {
+            AnalyzerError::Db(format!(
+                "SQLite ingestion connection lock poisoned: {error}"
+            ))
+        })
+    }
+
+    fn insert(&self, key: &[u8], value: &[u8]) -> Result<(), AnalyzerError> {
+        let mut connection = self.connection()?;
+        let transaction = connection
+            .transaction()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        transaction
+            .execute(
+                "INSERT OR REPLACE INTO ingestion_kv (key, value) VALUES (?1, ?2)",
+                sqlite_params![key, value],
+            )
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        transaction
+            .commit()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))
+    }
+
+    fn scan_prefix(&self, prefix: &[u8]) -> Result<Vec<IngestionKvEntry>, AnalyzerError> {
+        let connection = self.connection()?;
+        let mut rows = Vec::new();
+        if let Some(end) = prefix_successor(prefix) {
+            let mut statement = connection
+                .prepare(
+                    "SELECT key, value FROM ingestion_kv WHERE key >= ?1 AND key < ?2 ORDER BY key ASC",
+                )
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+            let mut result = statement
+                .query(sqlite_params![prefix, end])
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+            while let Some(row) = result
+                .next()
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?
+            {
+                rows.push((
+                    row.get(0)
+                        .map_err(|error| AnalyzerError::Db(error.to_string()))?,
+                    row.get(1)
+                        .map_err(|error| AnalyzerError::Db(error.to_string()))?,
+                ));
+            }
+        } else {
+            let mut statement = connection
+                .prepare("SELECT key, value FROM ingestion_kv WHERE key >= ?1 ORDER BY key ASC")
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+            let mut result = statement
+                .query(sqlite_params![prefix])
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+            while let Some(row) = result
+                .next()
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?
+            {
+                rows.push((
+                    row.get(0)
+                        .map_err(|error| AnalyzerError::Db(error.to_string()))?,
+                    row.get(1)
+                        .map_err(|error| AnalyzerError::Db(error.to_string()))?,
+                ));
+            }
+        }
+        Ok(rows)
+    }
+
+    fn remove_many(&self, keys: &[Vec<u8>]) -> Result<(), AnalyzerError> {
+        if keys.is_empty() {
+            return Ok(());
+        }
+        let mut connection = self.connection()?;
+        let transaction = connection
+            .transaction()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        for key in keys {
+            transaction
+                .execute(
+                    "DELETE FROM ingestion_kv WHERE key = ?1",
+                    sqlite_params![key],
+                )
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        }
+        transaction
+            .commit()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))
+    }
+}
+
+fn prefix_successor(prefix: &[u8]) -> Option<Vec<u8>> {
+    let mut next = prefix.to_vec();
+    for index in (0..next.len()).rev() {
+        if next[index] != u8::MAX {
+            next[index] += 1;
+            next.truncate(index + 1);
+            return Some(next);
+        }
+    }
+    None
+}
+
 #[derive(Clone)]
 pub struct DualLayerStore {
-    kv: Arc<Db>,
+    kv: Arc<SqliteIngestionDb>,
     columnar_path: String,
     _kv_lock: Arc<std::fs::File>,
     promotion_barrier: Arc<RwLock<()>>,
@@ -425,15 +593,15 @@ impl DualLayerStore {
         Ok(this)
     }
 
-    fn open_kv_with_retry(kv_path: &str) -> Result<Db, AnalyzerError> {
+    fn open_kv_with_retry(kv_path: &str) -> Result<SqliteIngestionDb, AnalyzerError> {
         let mut last_error = None;
 
         for attempt in 0..5 {
-            match sled::open(kv_path) {
+            match SqliteIngestionDb::open(kv_path) {
                 Ok(db) => return Ok(db),
                 Err(err) => {
                     if !Self::is_transient_kv_lock_error(&err) {
-                        return Err(AnalyzerError::Db(err.to_string()));
+                        return Err(err);
                     }
                     last_error = Some(err);
                     if attempt < 4 {
@@ -445,14 +613,15 @@ impl DualLayerStore {
 
         Err(AnalyzerError::Db(
             last_error
-                .map(|err| err.to_string())
-                .unwrap_or_else(|| "failed to open sled database".to_string()),
+                .map(|error| error.to_string())
+                .unwrap_or_else(|| "failed to open SQLite ingestion database".to_string()),
         ))
     }
 
-    fn is_transient_kv_lock_error(err: &sled::Error) -> bool {
+    fn is_transient_kv_lock_error(err: &AnalyzerError) -> bool {
         let message = err.to_string();
-        message.contains("could not acquire lock")
+        message.contains("database is locked")
+            || message.contains("database is busy")
             || message.contains("Resource temporarily unavailable")
             || message.contains("WouldBlock")
     }
@@ -553,6 +722,9 @@ impl DualLayerStore {
               approval_fidelity DOUBLE,
               rank_score DOUBLE
             );
+            CREATE TABLE IF NOT EXISTS promoted_event_receipts (
+              event_key TEXT PRIMARY KEY
+            );
             ",
         )
         .map_err(|e| AnalyzerError::Db(e.to_string()))?;
@@ -618,13 +790,7 @@ impl DualLayerStore {
 
         let key = Self::event_prefix(ts, &clean.commit_id);
         let bytes = serde_json::to_vec(&clean).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        self.kv
-            .insert(key.as_bytes(), bytes)
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        self.kv
-            .flush()
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        Ok(())
+        self.kv.insert(key.as_bytes(), &bytes)
     }
 
     pub fn ingest_commit_event_with_backend(
@@ -646,7 +812,11 @@ impl DualLayerStore {
         Self::enforce_ingest_route(route)?;
         backend.validate()?;
         match backend.kind {
-            IngestionBackendKind::SledTransitional => self.ingest_commit_event(event),
+            IngestionBackendKind::SqliteWal => self.ingest_commit_event(event),
+            IngestionBackendKind::SledTransitional => Err(AnalyzerError::Db(
+                "Sled transitional ingestion has been removed; configure the SQLite WAL backend"
+                    .to_string(),
+            )),
             IngestionBackendKind::BadgerSidecar => {
                 let endpoint = backend
                     .endpoint
@@ -691,25 +861,17 @@ impl DualLayerStore {
         policy: &RetentionPolicy,
         now_ts: i64,
     ) -> Result<usize, AnalyzerError> {
-        let mut pruned = 0usize;
-
-        for row in self.kv.scan_prefix("evt:") {
-            let (k, _) = row.map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            let key = String::from_utf8_lossy(&k).to_string();
-
+        let mut expired_keys = Vec::new();
+        for (key_bytes, _) in self.kv.scan_prefix(b"evt:")? {
+            let key = String::from_utf8_lossy(&key_bytes).to_string();
             if let Some(event_ts) = Self::parse_event_timestamp(&key) {
                 if policy.is_raw_event_expired(event_ts, now_ts) {
-                    self.kv
-                        .remove(&k)
-                        .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-                    pruned += 1;
+                    expired_keys.push(key_bytes);
                 }
             }
         }
-
-        self.kv
-            .flush()
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let pruned = expired_keys.len();
+        self.kv.remove_many(&expired_keys)?;
         Ok(pruned)
     }
 
@@ -825,70 +987,9 @@ impl DualLayerStore {
 
     #[cfg(feature = "analytics")]
     fn promote_to_columnar_no_lock(&self) -> Result<LifecycleStats, AnalyzerError> {
-        let promoted = {
-            let conn = Connection::open(&self.columnar_path)
-                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            let mut promoted = 0usize;
-
-            for row in self.kv.scan_prefix("evt:") {
-                let (k, v) = row.map_err(|e| AnalyzerError::Db(e.to_string()))?;
-                let key = String::from_utf8_lossy(&k).to_string();
-                let ts = Self::parse_event_timestamp(&key).unwrap_or_else(now_ts);
-                let event: CommitIngestionEvent =
-                    serde_json::from_slice(&v).map_err(|e| AnalyzerError::Db(e.to_string()))?;
-
-                for point in &event.telemetry {
-                    conn.execute(
-                        "INSERT INTO telemetry_history
-                    (ts, repo_name, release, committer, plugin, metric_key, metric_value, details)
-                    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                        params![
-                            ts,
-                            event.repo_name,
-                            event.release,
-                            event.committer,
-                            point.plugin,
-                            point.metric_key,
-                            point.metric_value,
-                            point.details
-                        ],
-                    )
-                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-                }
-
-                // Seed baseline complexity for fair delta-based scoring.
-                let baseline_exists: i64 = conn
-                    .query_row(
-                        "SELECT COUNT(*) FROM repo_baseline WHERE repo_name = ?1",
-                        params![event.repo_name],
-                        |r| r.get(0),
-                    )
-                    .unwrap_or(0);
-                if baseline_exists == 0 {
-                    let initial_complexity = event
-                        .telemetry
-                        .iter()
-                        .find(|t| t.metric_key == "estimated_cyclomatic_complexity")
-                        .map(|t| t.metric_value)
-                        .unwrap_or(0.0);
-                    conn.execute(
-                        "INSERT INTO repo_baseline (repo_name, baseline_complexity) VALUES (?1, ?2)",
-                        params![event.repo_name, initial_complexity],
-                    )
-                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-                }
-
-                self.kv
-                    .remove(k)
-                    .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-                promoted += 1;
-            }
-
-            self.kv
-                .flush()
-                .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-            promoted
-        };
+        let pending = self.kv.scan_prefix(b"evt:")?;
+        let (acknowledged_keys, promoted) = self.commit_pending_events_to_columnar(&pending)?;
+        self.kv.remove_many(&acknowledged_keys)?;
 
         let snapshot_id = Self::next_snapshot_id();
         if self.validate_and_publish_snapshot(snapshot_id, promoted)? {
@@ -902,6 +1003,95 @@ impl DualLayerStore {
             promoted_events: promoted,
             pruned_events: 0,
         })
+    }
+
+    #[cfg(feature = "analytics")]
+    fn commit_pending_events_to_columnar(
+        &self,
+        pending: &[IngestionKvEntry],
+    ) -> Result<(Vec<Vec<u8>>, usize), AnalyzerError> {
+        if pending.is_empty() {
+            return Ok((Vec::new(), 0));
+        }
+
+        let mut connection = Connection::open(&self.columnar_path)
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        let transaction = connection
+            .transaction()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        let mut acknowledged_keys = Vec::with_capacity(pending.len());
+        let mut promoted = 0usize;
+
+        for (key_bytes, value_bytes) in pending {
+            let key = std::str::from_utf8(key_bytes)
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+            let timestamp = Self::parse_event_timestamp(key).unwrap_or_else(now_ts);
+            let event: CommitIngestionEvent = serde_json::from_slice(value_bytes)
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+
+            let is_new_event = transaction
+                .execute(
+                    "INSERT OR IGNORE INTO promoted_event_receipts (event_key) VALUES (?1)",
+                    params![key],
+                )
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?
+                > 0;
+
+            if is_new_event {
+                promoted += 1;
+                for point in &event.telemetry {
+                    transaction
+                        .execute(
+                            "INSERT INTO telemetry_history
+                            (ts, repo_name, release, committer, plugin, metric_key, metric_value, details)
+                            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                            params![
+                                timestamp,
+                                event.repo_name,
+                                event.release,
+                                event.committer,
+                                point.plugin,
+                                point.metric_key,
+                                point.metric_value,
+                                point.details
+                            ],
+                        )
+                        .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+                }
+
+                let baseline_exists: i64 = transaction
+                    .query_row(
+                        "SELECT COUNT(*) FROM repo_baseline WHERE repo_name = ?1",
+                        params![event.repo_name],
+                        |row| row.get(0),
+                    )
+                    .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+                if baseline_exists == 0 {
+                    let initial_complexity = event
+                        .telemetry
+                        .iter()
+                        .find(|point| point.metric_key == "estimated_cyclomatic_complexity")
+                        .map(|point| point.metric_value)
+                        .unwrap_or(0.0);
+                    transaction
+                        .execute(
+                            "INSERT INTO repo_baseline (repo_name, baseline_complexity) VALUES (?1, ?2)",
+                            params![event.repo_name, initial_complexity],
+                        )
+                        .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+                }
+            }
+
+            acknowledged_keys.push(key_bytes.clone());
+        }
+
+        transaction
+            .commit()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        connection
+            .execute("CHECKPOINT", [])
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        Ok((acknowledged_keys, promoted))
     }
 
     #[cfg(not(feature = "analytics"))]
@@ -1447,5 +1637,174 @@ mod queue_lag_tests {
             duration_to_millis_ceil(Duration::from_secs(u64::MAX)),
             u64::MAX
         );
+    }
+}
+
+#[cfg(test)]
+mod sqlite_ingestion_tests {
+    use super::{prefix_successor, CommitIngestionEvent, DualLayerStore, SqliteIngestionDb};
+    use crate::types::TelemetryPoint;
+    use duckdb::Connection as DuckConnection;
+    use std::thread;
+    use tempfile::tempdir;
+
+    fn event(commit_id: &str) -> CommitIngestionEvent {
+        CommitIngestionEvent {
+            commit_id: commit_id.to_string(),
+            repo_name: "repo-a".to_string(),
+            release: "v1.0.0".to_string(),
+            committer: "alice".to_string(),
+            telemetry: vec![TelemetryPoint {
+                plugin: "complexity".to_string(),
+                metric_key: "estimated_cyclomatic_complexity".to_string(),
+                metric_value: 8.0,
+                details: "ok".to_string(),
+            }],
+        }
+    }
+
+    #[test]
+    fn prefix_successor_carries_and_handles_unbounded_binary_prefixes() {
+        assert_eq!(prefix_successor(&[0x12, 0x34]), Some(vec![0x12, 0x35]));
+        assert_eq!(prefix_successor(&[0x12, 0xff]), Some(vec![0x13]));
+        assert_eq!(prefix_successor(&[0xff, 0xff]), None);
+        assert_eq!(prefix_successor(&[]), None);
+    }
+
+    #[test]
+    fn sqlite_prefix_scan_orders_binary_keys_and_survives_restart() {
+        let dir = tempdir().expect("temporary directory");
+        let path = dir.path().join("kv");
+        let path = path.to_str().expect("path");
+
+        {
+            let db = SqliteIngestionDb::open(path).expect("open SQLite ingestion DB");
+            db.insert(&[0xab, 0xff], b"second").expect("insert second");
+            db.insert(&[0xac], b"outside").expect("insert outside");
+            db.insert(&[0xab, 0x00], b"first").expect("insert first");
+
+            let rows = db.scan_prefix(&[0xab]).expect("binary prefix scan");
+            assert_eq!(
+                rows,
+                vec![
+                    (vec![0xab, 0x00], b"first".to_vec()),
+                    (vec![0xab, 0xff], b"second".to_vec())
+                ]
+            );
+            db.remove_many(&[vec![0xab, 0x00]])
+                .expect("transactional delete");
+        }
+
+        let db = SqliteIngestionDb::open(path).expect("reopen SQLite ingestion DB");
+        assert_eq!(
+            db.scan_prefix(&[0xab]).expect("prefix scan after restart"),
+            vec![(vec![0xab, 0xff], b"second".to_vec())]
+        );
+    }
+
+    #[test]
+    fn concurrent_writers_persist_distinct_events() {
+        let dir = tempdir().expect("temporary directory");
+        let path = dir.path().join("kv");
+        let path = path.to_str().expect("path").to_string();
+        let db = std::sync::Arc::new(SqliteIngestionDb::open(&path).expect("open DB"));
+        let workers: Vec<_> = (0..8)
+            .map(|index| {
+                let db = std::sync::Arc::clone(&db);
+                thread::spawn(move || {
+                    let key = format!("evt:{index:02}");
+                    db.insert(key.as_bytes(), &[index as u8])
+                        .expect("insert concurrent event");
+                })
+            })
+            .collect();
+        for worker in workers {
+            worker.join().expect("writer thread");
+        }
+
+        assert_eq!(db.scan_prefix(b"evt:").expect("scan events").len(), 8);
+    }
+
+    #[test]
+    fn refuses_to_open_legacy_sled_store_without_migration() {
+        let dir = tempdir().expect("temporary directory");
+        let path = dir.path().join("kv");
+        std::fs::create_dir_all(path.join("db")).expect("create legacy Sled database marker");
+        std::fs::write(path.join("conf"), b"legacy Sled configuration")
+            .expect("create legacy Sled configuration marker");
+
+        let error = SqliteIngestionDb::open(path.to_str().expect("path"))
+            .err()
+            .expect("legacy store must require migration");
+        assert!(error
+            .to_string()
+            .contains("legacy Sled ingestion data detected"));
+        assert!(!path.join("ingestion.sqlite3").exists());
+    }
+
+    #[test]
+    fn rejects_legacy_sled_backend_configuration_with_migration_hint() {
+        let config = super::IngestionBackendConfig {
+            kind: super::IngestionBackendKind::SledTransitional,
+            strict_badger_required: false,
+            endpoint: None,
+        };
+        let error = config
+            .validate()
+            .expect_err("legacy backend must be rejected");
+        assert!(error
+            .to_string()
+            .contains("configure the SQLite WAL backend"));
+    }
+
+    #[test]
+    fn duckdb_receipt_prevents_duplicate_after_commit_before_sqlite_ack() {
+        let dir = tempdir().expect("temporary directory");
+        let kv_path = dir.path().join("kv");
+        let columnar_path = dir.path().join("analytics.duckdb");
+        let store = DualLayerStore::open(
+            kv_path.to_str().expect("kv path"),
+            columnar_path.to_str().expect("columnar path"),
+        )
+        .expect("open dual layer store");
+        store
+            .ingest_commit_event(&event("restart-replay"))
+            .expect("ingest event");
+
+        let pending = store.kv.scan_prefix(b"evt:").expect("pending events");
+        let (acknowledged, promoted_before_crash) = store
+            .commit_pending_events_to_columnar(&pending)
+            .expect("commit DuckDB transaction");
+        assert_eq!(acknowledged.len(), 1);
+        assert_eq!(promoted_before_crash, 1);
+        // Leave the SQLite event unacknowledged to model a crash after DuckDB commits.
+        drop(store);
+
+        let store = DualLayerStore::open(
+            kv_path.to_str().expect("kv path"),
+            columnar_path.to_str().expect("columnar path"),
+        )
+        .expect("reopen after restart");
+        let replay = store.promote_to_columnar().expect("replay after restart");
+        assert_eq!(replay.promoted_events, 0);
+        assert!(store
+            .kv
+            .scan_prefix(b"evt:")
+            .expect("pending after replay")
+            .is_empty());
+
+        let connection = DuckConnection::open(&columnar_path).expect("open DuckDB");
+        let history_rows: i64 = connection
+            .query_row("SELECT COUNT(*) FROM telemetry_history", [], |row| {
+                row.get(0)
+            })
+            .expect("count history rows");
+        let receipt_rows: i64 = connection
+            .query_row("SELECT COUNT(*) FROM promoted_event_receipts", [], |row| {
+                row.get(0)
+            })
+            .expect("count promotion receipts");
+        assert_eq!(history_rows, 1);
+        assert_eq!(receipt_rows, 1);
     }
 }
