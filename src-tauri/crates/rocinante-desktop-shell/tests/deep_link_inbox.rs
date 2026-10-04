@@ -112,7 +112,7 @@ fn linux_installer_registers_binary_and_uri_handler_in_user_scope() {
         .expect("installed desktop entry");
     assert!(desktop_entry.contains("MimeType=x-scheme-handler/rocinante;"));
     assert!(desktop_entry.contains("rocinante-desktop-shell\" %u"));
-    assert!(desktop_entry.contains("home with \\\"quote \\$space"));
+    assert!(desktop_entry.contains("home with \\\"quote \\\\$space"));
     assert!(desktop_entry.contains("%%u"));
     assert!(desktop_entry.contains("\\\\\\\\back/.local"));
     assert!(

@@ -30,7 +30,7 @@ install -m 0755 "$source_binary" "$installed_binary"
 install -m 0644 "$script_directory/../icons/rocinante.png" "$icon_directory/rocinante.png"
 
 # Escape reserved characters for the quoted executable field in a .desktop file.
-escaped_binary=$(printf '%s' "$installed_binary" | sed 's/\\/\\\\\\\\/g; s/["`$]/\\&/g; s/%/%%/g')
+escaped_binary=$(printf '%s' "$installed_binary" | sed 's/\\/\\\\\\\\/g; s/["`]/\\&/g; s/\$/\\\\$/g; s/%/%%/g')
 escaped_try_exec=$(printf '%s' "$installed_binary" | sed 's/\\/\\\\/g; s/ /\\s/g')
 temporary_entry=$(mktemp "$application_directory/.rocinante.desktop.XXXXXX")
 trap 'rm -f "$temporary_entry"' EXIT HUP INT TERM

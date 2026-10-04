@@ -8,6 +8,7 @@ $testId = [guid]::NewGuid().ToString('N')
 $testRoot = Join-Path $env:RUNNER_TEMP "rocinante-url-acceptance-$testId"
 $appData = Join-Path $testRoot 'app-data'
 $stateFile = Join-Path $appData 'shell-state.ron'
+$stateJsonFile = Join-Path $appData 'shell-state.json'
 $witness = Join-Path $testRoot 'applied-state.txt'
 $forwardWitness = Join-Path $testRoot 'forward-attempt.txt'
 $quitFile = Join-Path $testRoot 'request-clean-quit'
@@ -97,9 +98,12 @@ try {
     Set-Content -LiteralPath $quitFile -Value 'quit' -NoNewline
     $primary = Get-Process -Id $primaryPid -ErrorAction SilentlyContinue
     if ($primary -and -not $primary.WaitForExit(60000)) { throw 'The app did not exit cleanly after the acceptance quit request.' }
-    Remove-Item -LiteralPath $quitFile -Force
+    Remove-Item -LiteralPath $quitFile -Force -ErrorAction SilentlyContinue
     if (-not (Test-Path -LiteralPath $stateFile -PathType Leaf)) {
         throw "The app did not persist eframe state before exit. Forwarding witness: $(if (Test-Path -LiteralPath $forwardWitness) { Get-Content -LiteralPath $forwardWitness -Raw } else { '<no secondary process forwarding witness>' })"
+    }
+    if (-not (Test-Path -LiteralPath $stateJsonFile -PathType Leaf)) {
+        throw 'The app did not persist its restart state before exit.'
     }
     Write-Output "Persisted shell state: $(Get-Content -LiteralPath $stateFile -Raw)"
 

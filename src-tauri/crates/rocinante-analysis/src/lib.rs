@@ -17,7 +17,14 @@ use types::{AdminQuery, AnalysisMetric, RepoTarget};
 
 pub fn default_telemetry_db_path() -> PathBuf {
     if let Some(path) = std::env::var_os("ROCINANTE_TELEMETRY_DB") {
-        return PathBuf::from(path);
+        let path = PathBuf::from(path);
+        return if path.is_absolute() {
+            path
+        } else {
+            std::env::current_dir()
+                .unwrap_or_else(|_| PathBuf::from("."))
+                .join(path)
+        };
     }
 
     #[cfg(target_os = "macos")]
@@ -143,6 +150,12 @@ fn scan_and_persist(
     let principal = auth::decode_principal(token)?;
     auth::require_admin(&principal)?;
     let repositories = uniquely_named_repositories(root);
+    if repositories.is_empty() {
+        return Err(AnalyzerError::Io(format!(
+            "no Git repositories found under {}",
+            root.display()
+        )));
+    }
     let pipeline = Pipeline::default();
     let mut records = Vec::with_capacity(repositories.len());
 

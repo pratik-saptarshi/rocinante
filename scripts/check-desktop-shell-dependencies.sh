@@ -12,7 +12,7 @@ dependency_tree="$(cargo tree \
   --prefix none \
   --format '{p}')"
 
-if grep -En '^(gtk|glib|tauri|wry) v' <<< "$dependency_tree"; then
+if grep -En '^(gtk|gtk4|glib|gobject|gio|pango|atk)(-[[:alnum:]_-]+)? v|^(tauri|wry) v' <<< "$dependency_tree"; then
   echo "error: native desktop shell dependency tree contains a forbidden host dependency" >&2
   exit 1
 fi

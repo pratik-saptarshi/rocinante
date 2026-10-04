@@ -405,6 +405,7 @@ mod native_ui {
 
     struct RocinanteApp {
         state: ShellState,
+        persistence_path: PathBuf,
         profile: WindowProfile,
         release: String,
         scan_token: String,
@@ -441,6 +442,8 @@ mod native_ui {
         fn new(
             creation_context: &eframe::CreationContext<'_>,
             link_inbox: DeepLinkInbox,
+            persistence_path: PathBuf,
+            restored_state: Option<ShellState>,
             initial_links: Vec<String>,
             url_event_receiver: Receiver<String>,
             #[cfg(target_os = "macos")] url_event_handler: super::macos_url::UrlEventHandler,
@@ -452,15 +455,17 @@ mod native_ui {
             if let Ok(mut repaint_slot) = repaint_context.lock() {
                 *repaint_slot = Some(creation_context.egui_ctx.clone());
             }
-            let mut state: ShellState = creation_context
-                .storage
-                .and_then(|storage| {
-                    storage
-                        .get_string("rocinante_shell_state_json")
-                        .and_then(|saved| serde_json::from_str(&saved).ok())
-                        .or_else(|| eframe::get_value(storage, "rocinante_shell_state"))
-                })
-                .unwrap_or_default();
+            let mut state: ShellState = restored_state.unwrap_or_else(|| {
+                creation_context
+                    .storage
+                    .and_then(|storage| {
+                        storage
+                            .get_string("rocinante_shell_state_json")
+                            .and_then(|saved| serde_json::from_str(&saved).ok())
+                            .or_else(|| eframe::get_value(storage, "rocinante_shell_state"))
+                    })
+                    .unwrap_or_default()
+            });
             for link in initial_links {
                 if let Some(target) = parse_deep_link(&link) {
                     state.apply_deep_link(target);
@@ -487,6 +492,7 @@ mod native_ui {
             record_acceptance_state(&state, tray_icon.is_some());
             Self {
                 state,
+                persistence_path,
                 profile: WindowProfile::default(),
                 release: String::new(),
                 scan_token: String::new(),
@@ -886,7 +892,10 @@ mod native_ui {
         fn save(&mut self, storage: &mut dyn eframe::Storage) {
             eframe::set_value(storage, "rocinante_shell_state", &self.state);
             if let Ok(saved) = serde_json::to_string(&self.state) {
-                storage.set_string("rocinante_shell_state_json", saved);
+                storage.set_string("rocinante_shell_state_json", saved.clone());
+                if let Err(error) = std::fs::write(&self.persistence_path, saved) {
+                    eprintln!("failed to persist shell state: {error}");
+                }
             }
         }
 
@@ -1824,6 +1833,10 @@ mod native_ui {
                 return Err(error.into());
             }
         };
+        let persistence_path = data_dir.join("shell-state.json");
+        let restored_state = std::fs::read(&persistence_path)
+            .ok()
+            .and_then(|saved| serde_json::from_slice::<ShellState>(&saved).ok());
         #[cfg(feature = "acceptance-witness")]
         if link_inbox.is_primary() && !initial_links.is_empty() {
             if let Some(witness) = option_env!("ROCINANTE_ACCEPTANCE_FORWARD_WITNESS") {
@@ -1898,6 +1911,8 @@ mod native_ui {
                 Ok(Box::new(RocinanteApp::new(
                     creation_context,
                     link_inbox,
+                    persistence_path,
+                    restored_state,
                     initial_links,
                     url_event_receiver,
                     #[cfg(target_os = "macos")]
@@ -1913,7 +1928,8 @@ mod native_ui {
     #[cfg(test)]
     mod tests {
         use super::{
-            apply_tray_menu_action, deep_link_changes_repository, tray_menu_action, TrayMenuAction,
+            apply_tray_menu_action, deep_link_changes_repository, tray_menu_action, DeepLinkTarget,
+            ShellState, TrayMenuAction,
         };
         use std::path::{Path, PathBuf};
 
@@ -1939,6 +1955,19 @@ mod native_ui {
                 Path::new("/workspace/two")
             ));
             assert!(deep_link_changes_repository(None, selected.as_path()));
+        }
+
+        #[test]
+        fn saved_shell_json_restores_repository_selection() {
+            let repository = PathBuf::from("/tmp/rocinante-saved-repository");
+            let mut state = ShellState::default();
+            state.apply_deep_link(DeepLinkTarget::OpenRepository(repository.clone()));
+
+            let saved = serde_json::to_vec(&state).expect("serialize shell state");
+            let restored: ShellState = serde_json::from_slice(&saved).expect("restore shell state");
+
+            assert_eq!(restored.page(), super::ShellPage::Repositories);
+            assert_eq!(restored.selected_repository(), Some(repository));
         }
 
         #[test]

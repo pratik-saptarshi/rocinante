@@ -153,9 +153,8 @@ pnpm run build
 ### 3) Build and run backend/app shell
 
 ```bash
-cd ../src-tauri
-cargo test --workspace --locked --manifest-path Cargo.toml # test Tauri and extracted crates
-cargo run --manifest-path Cargo.toml
+(cd src-tauri && cargo test --workspace --locked --manifest-path Cargo.toml) # test Tauri and extracted crates
+(cd src-tauri && cargo run --manifest-path Cargo.toml)
 ```
 
 The GTK-free native shell can also be launched independently:
@@ -182,9 +181,13 @@ powershell -ExecutionPolicy Bypass -File `
   src-tauri/target/release/rocinante-desktop-shell.exe
 ```
 
-Choose a repository folder, enter a release and admin JWT, then analyze it. The
-shell can reload metrics already stored for the selected repository tree and
-release without rescanning. Scan completion requests a success or failure
+Before scanning, configure `RUNICIPAL_TOKEN_SECRET` with at least 32 bytes and
+use an admin JWT signed by that secret. The current per-user installers do not
+provision credentials to desktop-launched processes; secure per-platform GUI
+credential setup is tracked by BI-061. Do not place production secrets in shell
+history or commit them. Choose a repository folder, enter a release and admin
+JWT, then analyze it. The shell can reload metrics already stored for the
+selected repository tree and release without rescanning. Scan completion requests a success or failure
 desktop notification; delivery still needs runtime validation per platform. It
 shows the selected repository and release context, metric and analyzer counts,
 and the recorded values/details after a scan or saved-metric reload. It

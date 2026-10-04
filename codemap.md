@@ -32,7 +32,9 @@ roadmap artifacts.
 - `src-tauri/crates/rocinante-storage/src/lib.rs`: shared Sled/DuckDB persistence
   and admin-authorized release-baseline operations used by Tauri and the shell.
 - `src-tauri/crates/rocinante-desktop-shell/src/main.rs`: GTK-free native shell
-  entry point using eframe/winit, with native UI work tracked by BI-049.
+  entry point using eframe/winit; navigation state is also persisted as JSON in
+  the per-user app-data directory for cross-process restart restoration, with
+  broader host, data-migration, and operation-locking work tracked by BI-056 through BI-061.
 - `src-tauri/src/ci_gate.rs`: PR-risk CI comment formatter and merge-block
   decision helper.
 - `src-tauri/src/incident_feedback.rs`: incident and annotation feedback ledger

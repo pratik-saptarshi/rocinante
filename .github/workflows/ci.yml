@@ -138,7 +138,6 @@ jobs:
           RUN_RUST_COVERAGE_LANES=false
           RUST_TEST_LANES='["core"]'
           SCOPE_PROFILE=docs-only-tweak
-          ONLY_NON_RUST=true
 
           while IFS= read -r path; do
             [[ -z "$path" ]] && continue
@@ -149,7 +148,6 @@ jobs:
               RUN_RUST_COVERAGE_LANES=true
               RUST_TEST_LANES='["core","storage"]'
               SCOPE_PROFILE=code-surface-touched
-              ONLY_NON_RUST=false
               break
                 ;;
               docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*|.github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock|*.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico)
@@ -160,7 +158,6 @@ jobs:
               RUN_RUST_COVERAGE_LANES=true
               RUST_TEST_LANES='["core","storage"]'
               SCOPE_PROFILE=code-surface-touched
-              ONLY_NON_RUST=false
               break
                 ;;
               *)
@@ -169,7 +166,6 @@ jobs:
               RUN_RUST_COVERAGE_LANES=true
               RUST_TEST_LANES='["core","storage"]'
               SCOPE_PROFILE=code-surface-touched
-              ONLY_NON_RUST=false
               break
                 ;;
             esac
@@ -183,11 +179,6 @@ jobs:
             if [[ "$SCOPE_PROFILE" == "docs-only-tweak" ]]; then
               SCOPE_PROFILE=release-docs-tweak
             fi
-          elif [[ "$ONLY_NON_RUST" == "true" ]]; then
-            NEEDS_RUST=true
-            RUN_RUST_STORAGE_LANES=false
-            RUN_RUST_COVERAGE_LANES=false
-            RUST_TEST_LANES='["core"]'
           fi
 
           {

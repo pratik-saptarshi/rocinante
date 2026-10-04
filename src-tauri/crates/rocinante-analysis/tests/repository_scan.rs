@@ -75,14 +75,30 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
     assert!(metrics
         .iter()
         .any(|metric| metric.repo_name == "group-b/shared"));
-    assert!(metrics.iter().all(|metric| metric.release.is_empty()));
+    assert!(metrics.iter().any(|metric| metric.release.is_empty()));
     assert!(metrics
         .iter()
         .all(|metric| metric.key != "similar_repo_metric"));
     assert!(metrics
         .iter()
-        .all(|metric| metric.key != "old_release_metric"));
+        .any(|metric| { metric.repo_name == "repo-one" && metric.key == "old_release_metric" }));
     assert_eq!(stored_metrics, metrics);
+}
+
+#[test]
+fn scan_rejects_a_directory_without_discovered_repositories() {
+    std::env::set_var(
+        "RUNICIPAL_TOKEN_SECRET",
+        "test-secret-for-repository-scan-32-bytes",
+    );
+    let root = tempfile::tempdir().expect("root directory");
+    let database = NamedTempFile::new().expect("database file");
+    let token = issue_test_token("scan-admin", &["admin"], 300);
+
+    let error = run_scan_with_metrics(&token, root.path(), "", database.path())
+        .expect_err("empty repository selection must fail");
+
+    assert!(error.to_string().contains("no Git repositories found"));
 }
 
 #[test]

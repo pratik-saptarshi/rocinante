@@ -19,7 +19,7 @@ CARGO_TREE_FIXTURE="$temporary_root/clean-tree" \
 PATH="$temporary_root/bin:$PATH" \
   bash "$repo_root/scripts/check-desktop-shell-dependencies.sh" >/dev/null
 
-for dependency in gtk glib tauri wry; do
+for dependency in gtk gtk4 gtk-sys gtk4-sys glib glib-sys gobject-sys gio-sys pango-sys atk-sys tauri wry; do
   printf '%s v1.0.0\n' "$dependency" > "$temporary_root/forbidden-tree"
   if CARGO_TREE_FIXTURE="$temporary_root/forbidden-tree" \
     PATH="$temporary_root/bin:$PATH" \
@@ -35,4 +35,4 @@ for dependency in gtk glib tauri wry; do
   fi
 done
 
-echo "pass: native shell dependency guard accepts clean trees and rejects gtk, glib, tauri, and wry"
+echo "pass: native shell dependency guard accepts clean trees and rejects GTK/GLib bindings, tauri, and wry"

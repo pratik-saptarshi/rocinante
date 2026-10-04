@@ -8,6 +8,7 @@ installer="$repo_root/src-tauri/crates/rocinante-desktop-shell/packaging/linux/i
 test_root="$(mktemp -d "${TMPDIR:-/tmp}/rocinante-linux-url-acceptance.XXXXXX")"
 app_data="$test_root/app-data"
 state_file="$app_data/shell-state.ron"
+state_json_file="$app_data/shell-state.json"
 witness="$test_root/applied-state.txt"
 quit_file="$test_root/request-clean-quit"
 notification_log="$test_root/notification-log.txt"
@@ -91,7 +92,7 @@ if [[ ! -x "$shell_binary" ]]; then
   exit 1
 fi
 
-export HOME="$test_root/home"
+export HOME="$test_root/home\$with-dollar"
 export XDG_DATA_HOME="$test_root/xdg-data"
 export XDG_CONFIG_HOME="$test_root/xdg-config"
 export XDG_CACHE_HOME="$test_root/xdg-cache"
@@ -100,6 +101,7 @@ export WGPU_BACKEND=gl
 export LIBGL_ALWAYS_SOFTWARE=1
 mkdir -p "$HOME" "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME"
 "$installer" "$shell_binary"
+desktop-file-validate "$XDG_DATA_HOME/applications/rocinante.desktop"
 installed_binary="$HOME/.local/bin/rocinante-desktop-shell"
 if [[ "$(xdg-mime query default x-scheme-handler/rocinante)" != "rocinante.desktop" ]]; then
   echo "The per-user desktop database did not select rocinante.desktop for the URI scheme" >&2
@@ -213,6 +215,10 @@ if [[ ! -s "$state_file" ]]; then
   echo "The app did not persist eframe state before exit" >&2
   exit 1
 fi
+if [[ ! -s "$state_json_file" ]]; then
+  echo "The app did not persist its restart state before exit" >&2
+  exit 1
+fi
 echo "Persisted shell state: $(cat "$state_file")"
 
 : > "$witness"
@@ -220,7 +226,7 @@ echo "Persisted shell state: $(cat "$state_file")"
 wait_for_applied_path "$warm_path"
 restarted_pid="$(sed -n 's/^pid=//p' "$witness")"
 if [[ -z "$restarted_pid" || "$restarted_pid" == "$test_pid" ]]; then
-  echo "The installed shell did not restore saved state in a new process" >&2
+  echo "The installed shell did not restore saved state in a new process. Witness: $(cat "$witness" 2>/dev/null || echo '<no witness>')" >&2
   exit 1
 fi
 test_pid="$restarted_pid"

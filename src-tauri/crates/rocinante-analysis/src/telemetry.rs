@@ -153,8 +153,8 @@ impl TelemetryStore {
         let mut stmt = self.conn.prepare(
             "SELECT repo_name, release, plugin, metric_key, metric_value, details
              FROM telemetry
-             WHERE repo_name = ?1 AND release = ?2
-             ORDER BY repo_name, plugin, metric_key",
+             WHERE repo_name = ?1 AND (?2 = '' OR release = ?2)
+             ORDER BY repo_name, release, plugin, metric_key",
         )?;
         let mut out = Vec::new();
         for name in repo_names {

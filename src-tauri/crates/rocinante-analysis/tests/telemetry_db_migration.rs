@@ -7,6 +7,12 @@ fn migrates_a_live_legacy_database_through_sqlite_backup() {
     let prior_database_setting = std::env::var_os("ROCINANTE_TELEMETRY_DB");
     std::env::set_current_dir(temporary.path()).expect("switch to isolated current directory");
 
+    std::env::set_var("ROCINANTE_TELEMETRY_DB", "relative-telemetry.db");
+    assert_eq!(
+        rocinante_analysis::default_telemetry_db_path(),
+        temporary.path().join("relative-telemetry.db")
+    );
+
     let legacy_path = temporary.path().join("telemetry.db");
     let source = Connection::open(&legacy_path).expect("open legacy database");
     source
