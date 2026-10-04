@@ -17,7 +17,10 @@ use std::time::Duration;
 use telemetry::{TelemetryImportSummary, TelemetryStore};
 use types::{AdminQuery, AnalysisMetric, RepoTarget};
 
-type RepositoryIdentity = (String, String);
+struct RepositoryIdentity {
+    stable_name: String,
+    legacy_names: Vec<String>,
+}
 type RepositoryIdentities = Vec<RepositoryIdentity>;
 type ScanAndPersistResult =
     Result<(TelemetryImportSummary, RepositoryIdentities, TelemetryStore), AnalyzerError>;
@@ -191,7 +194,7 @@ fn query_repository_metrics_for_identities(
 ) -> Result<Vec<types::RepositoryMetric>, AnalyzerError> {
     let stable_names = identities
         .iter()
-        .map(|(stable_name, _)| stable_name.clone())
+        .map(|identity| identity.stable_name.clone())
         .collect::<Vec<_>>();
     let mut metrics = store.query_repositories(&stable_names, release)?;
     let stable_releases_by_name = metrics.iter().fold(
@@ -205,28 +208,61 @@ fn query_repository_metrics_for_identities(
         },
     );
 
-    for (stable_name, legacy_name) in identities {
-        let stable_releases = stable_releases_by_name.get(stable_name);
+    let mut stable_releases_by_legacy_name = HashMap::<String, HashSet<String>>::new();
+    let mut ordered_legacy_names = Vec::new();
+    let mut seen_legacy_names = HashSet::new();
+    for identity in identities {
+        for legacy_name in &identity.legacy_names {
+            if seen_legacy_names.insert(legacy_name.clone()) {
+                ordered_legacy_names.push(legacy_name.clone());
+            }
+            let releases = stable_releases_by_legacy_name
+                .entry(legacy_name.clone())
+                .or_default();
+            if let Some(stable_releases) = stable_releases_by_name.get(&identity.stable_name) {
+                releases.extend(stable_releases.iter().cloned());
+            }
+        }
+    }
+
+    // Older telemetry may only have the repository basename. If multiple
+    // discovered repositories share it, query that ambiguous alias once and
+    // suppress only releases already represented by any matching stable row.
+    for legacy_name in ordered_legacy_names {
+        let stable_releases = &stable_releases_by_legacy_name[&legacy_name];
         let legacy_metrics =
-            store.query_repositories(std::slice::from_ref(legacy_name), release)?;
-        metrics.extend(legacy_metrics.into_iter().filter(|metric| {
-            stable_releases.is_none_or(|releases| !releases.contains(&metric.release))
-        }));
+            store.query_repositories(std::slice::from_ref(&legacy_name), release)?;
+        metrics.extend(
+            legacy_metrics
+                .into_iter()
+                .filter(|metric| !stable_releases.contains(&metric.release)),
+        );
     }
     Ok(metrics)
 }
 
 fn repositories_with_identities(root: &Path) -> (Vec<RepoTarget>, RepositoryIdentities) {
     let mut repositories = discover_repositories_path(root);
+    let original_names = repositories
+        .iter()
+        .map(|repository| repository.name.clone())
+        .collect::<Vec<_>>();
     let mut legacy_repositories = repositories.clone();
     disambiguate_duplicate_names(root, &mut legacy_repositories);
     let identities = repositories
         .iter_mut()
         .zip(legacy_repositories)
-        .map(|(repository, legacy)| {
-            let legacy_name = legacy.name;
+        .zip(original_names)
+        .map(|((repository, legacy), original_name)| {
+            let mut legacy_names = vec![legacy.name];
+            if !legacy_names.contains(&original_name) {
+                legacy_names.push(original_name);
+            }
             repository.name = stable_repository_name(&repository.path, &repository.name);
-            (repository.name.clone(), legacy_name)
+            RepositoryIdentity {
+                stable_name: repository.name.clone(),
+                legacy_names,
+            }
         })
         .collect();
     (repositories, identities)

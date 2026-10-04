@@ -51,7 +51,7 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
             }],
         })
         .expect("insert unrelated historic metric");
-    for repo_name in ["repo-one", "group-a/shared"] {
+    for repo_name in ["repo-one", "group-a/shared", "shared"] {
         store
             .insert_record(&AnalysisRecord {
                 repo_name: repo_name.into(),
@@ -127,6 +127,17 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
     assert!(historic_metrics.iter().any(|metric| {
         metric.repo_name == "group-a/shared" && metric.key == "legacy_metric_group-a/shared"
     }));
+    assert_eq!(
+        historic_metrics
+            .iter()
+            .filter(|metric| metric.repo_name == "shared" && metric.key == "legacy_metric_shared")
+            .count(),
+        1,
+        "ambiguous basename telemetry should remain visible once at workspace scope"
+    );
+    assert!(!stored_metrics
+        .iter()
+        .any(|metric| metric.key == "legacy_stale_metric_shared"));
     assert!(metrics.iter().all(|metric| stored_metrics.contains(metric)));
 
     for path in [
