@@ -21,6 +21,7 @@ $previousQuitFile = $env:ROCINANTE_ACCEPTANCE_QUIT_FILE
 $previousForwardWitness = $env:ROCINANTE_ACCEPTANCE_FORWARD_WITNESS
 $previousLocalAppData = $env:LOCALAPPDATA
 $previousAppData = $env:APPDATA
+$script:warmLaunch = $null
 $testPids = [System.Collections.Generic.HashSet[int]]::new()
 
 if (Test-Path -LiteralPath $schemeKey) {
@@ -49,7 +50,13 @@ function Wait-ForAppliedPath([string] $expectedPath) {
     }
     $snapshot = if (Test-Path -LiteralPath $witness) { Get-Content -LiteralPath $witness -Raw } else { '<no witness>' }
     $forwardSnapshot = if (Test-Path -LiteralPath $forwardWitness) { Get-Content -LiteralPath $forwardWitness -Raw } else { '<no secondary process forwarding witness>' }
-    throw "The bundled app did not apply URI target '$expectedPath'. Witness: $snapshot Forwarding: $forwardSnapshot"
+    if ($script:warmLaunch) {
+        $script:warmLaunch.Refresh()
+        $warmStatus = if ($script:warmLaunch.HasExited) { "pid=$($script:warmLaunch.Id) exit=$($script:warmLaunch.ExitCode)" } else { "pid=$($script:warmLaunch.Id) still-running" }
+    } else {
+        $warmStatus = '<not-started>'
+    }
+    throw "The bundled app did not apply URI target '$expectedPath'. Witness: $snapshot Forwarding: $forwardSnapshot Warm launch: $warmStatus"
 }
 
 function New-RepositoryUri([string] $path) {
@@ -80,7 +87,9 @@ try {
     $primaryPid = [int]((Get-Content -LiteralPath $witness | Where-Object { $_ -like 'pid=*' }) -replace '^pid=', '')
     if (-not $primaryPid) { throw 'Cold launch did not report a process id.' }
 
-    Start-Process -FilePath $installedBinary -ArgumentList (New-RepositoryUri $warmPath) | Out-Null
+    if (Test-Path -LiteralPath $forwardWitness) { Remove-Item -LiteralPath $forwardWitness -Force }
+    $script:warmLaunch = Start-Process -FilePath $installedBinary -ArgumentList (New-RepositoryUri $warmPath) -PassThru
+    [void]$testPids.Add([int]$script:warmLaunch.Id)
     Wait-ForAppliedPath $warmPath
     $warmPid = [int]((Get-Content -LiteralPath $witness | Where-Object { $_ -like 'pid=*' }) -replace '^pid=', '')
     if ($warmPid -ne $primaryPid) { throw "Warm URI started or reached a different process ($warmPid; expected $primaryPid)." }

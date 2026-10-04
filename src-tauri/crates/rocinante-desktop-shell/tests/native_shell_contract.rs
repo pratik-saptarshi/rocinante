@@ -3,7 +3,27 @@ use rocinante_desktop_shell::{
     navigation_shortcut, window_close_behavior, NavigationAction, ShellLifecycle, ShellPage,
     ShellState, ShortcutKey, WindowCloseBehavior, WindowProfile,
 };
+use std::collections::HashMap;
 use std::path::PathBuf;
+
+#[derive(Default)]
+struct MemoryStorage(HashMap<String, String>);
+
+impl eframe::Storage for MemoryStorage {
+    fn get_string(&self, key: &str) -> Option<String> {
+        self.0.get(key).cloned()
+    }
+
+    fn set_string(&mut self, key: &str, value: String) {
+        self.0.insert(key.to_owned(), value);
+    }
+
+    fn remove_string(&mut self, key: &str) {
+        self.0.remove(key);
+    }
+
+    fn flush(&mut self) {}
+}
 
 #[test]
 fn native_shell_navigation_is_explicit_and_preserves_route_state() {
@@ -68,6 +88,20 @@ fn repository_selection_is_saved_and_restored_with_shell_state() {
         restored.selected_repository(),
         Some(PathBuf::from("/work/project"))
     );
+}
+
+#[test]
+fn repository_selection_roundtrips_through_eframe_ron_storage() {
+    let mut shell = ShellState::default();
+    shell.select_repository(Some(PathBuf::from("/work/project with spaces")));
+
+    let mut storage = MemoryStorage::default();
+    eframe::set_value(&mut storage, "rocinante_shell_state", &shell);
+    let restored: ShellState = eframe::get_value(&storage, "rocinante_shell_state")
+        .expect("restore shell state from eframe RON storage");
+
+    assert_eq!(restored.page(), shell.page());
+    assert_eq!(restored.selected_repository(), shell.selected_repository());
 }
 
 #[cfg(unix)]

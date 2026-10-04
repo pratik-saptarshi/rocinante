@@ -146,67 +146,140 @@ impl ShellState {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
-enum StoredPath {
-    Legacy(String),
-    Unix { unix_bytes: Vec<u8> },
-    Windows { windows_wide: Vec<u16> },
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize)]
+struct StoredPath {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    legacy: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    unix_bytes: Option<Vec<u8>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    windows_wide: Option<Vec<u16>>,
+}
+
+impl<'de> serde::Deserialize<'de> for StoredPath {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct StoredPathVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for StoredPathVisitor {
+            type Value = StoredPath;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                formatter.write_str("a legacy path string or a platform path map")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(StoredPath {
+                    legacy: Some(value.to_owned()),
+                    ..StoredPath::default()
+                })
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                self.visit_str(&value)
+            }
+
+            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+            where
+                M: serde::de::MapAccess<'de>,
+            {
+                let mut path = StoredPath::default();
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_str() {
+                        "legacy" => path.legacy = map.next_value()?,
+                        "unix_bytes" => path.unix_bytes = map.next_value()?,
+                        "windows_wide" => path.windows_wide = map.next_value()?,
+                        _ => {
+                            let _: serde::de::IgnoredAny = map.next_value()?;
+                        }
+                    }
+                }
+                if path.legacy.is_none() && path.unix_bytes.is_none() && path.windows_wide.is_none()
+                {
+                    return Err(serde::de::Error::custom("platform path data is missing"));
+                }
+                Ok(path)
+            }
+        }
+
+        deserializer.deserialize_any(StoredPathVisitor)
+    }
 }
 
 impl StoredPath {
     #[cfg(unix)]
     fn from_path(path: &Path) -> Self {
-        Self::Unix {
-            unix_bytes: path.as_os_str().as_bytes().to_vec(),
+        Self {
+            unix_bytes: Some(path.as_os_str().as_bytes().to_vec()),
+            ..Self::default()
         }
     }
 
     #[cfg(windows)]
     fn from_path(path: &Path) -> Self {
-        Self::Windows {
-            windows_wide: path.as_os_str().encode_wide().collect(),
+        Self {
+            windows_wide: Some(path.as_os_str().encode_wide().collect()),
+            ..Self::default()
         }
     }
 
     #[cfg(not(any(unix, windows)))]
     fn from_path(path: &Path) -> Self {
-        Self::Legacy(path.to_string_lossy().into_owned())
+        Self {
+            legacy: Some(path.to_string_lossy().into_owned()),
+            ..Self::default()
+        }
     }
 
     #[cfg(unix)]
     fn to_path_buf(&self) -> PathBuf {
-        match self {
-            Self::Unix { unix_bytes } => {
-                PathBuf::from(std::ffi::OsString::from_vec(unix_bytes.clone()))
-            }
-            Self::Windows { windows_wide } => PathBuf::from(String::from_utf16_lossy(windows_wide)),
-            Self::Legacy(path) => PathBuf::from(path),
+        if let Some(unix_bytes) = &self.unix_bytes {
+            return PathBuf::from(std::ffi::OsString::from_vec(unix_bytes.clone()));
         }
+        if let Some(windows_wide) = &self.windows_wide {
+            return PathBuf::from(String::from_utf16_lossy(windows_wide));
+        }
+        self.legacy
+            .as_deref()
+            .map(PathBuf::from)
+            .unwrap_or_default()
     }
 
     #[cfg(windows)]
     fn to_path_buf(&self) -> PathBuf {
-        match self {
-            Self::Windows { windows_wide } => {
-                PathBuf::from(std::ffi::OsString::from_wide(windows_wide))
-            }
-            Self::Unix { unix_bytes } => {
-                PathBuf::from(String::from_utf8_lossy(unix_bytes).into_owned())
-            }
-            Self::Legacy(path) => PathBuf::from(path),
+        if let Some(windows_wide) = &self.windows_wide {
+            return PathBuf::from(std::ffi::OsString::from_wide(windows_wide));
         }
+        if let Some(unix_bytes) = &self.unix_bytes {
+            return PathBuf::from(String::from_utf8_lossy(unix_bytes).into_owned());
+        }
+        self.legacy
+            .as_deref()
+            .map(PathBuf::from)
+            .unwrap_or_default()
     }
 
     #[cfg(not(any(unix, windows)))]
     fn to_path_buf(&self) -> PathBuf {
-        match self {
-            Self::Legacy(path) => PathBuf::from(path),
-            Self::Unix { unix_bytes } => {
-                PathBuf::from(String::from_utf8_lossy(unix_bytes).into_owned())
-            }
-            Self::Windows { windows_wide } => PathBuf::from(String::from_utf16_lossy(windows_wide)),
+        if let Some(legacy) = &self.legacy {
+            return PathBuf::from(legacy);
         }
+        if let Some(unix_bytes) = &self.unix_bytes {
+            return PathBuf::from(String::from_utf8_lossy(unix_bytes).into_owned());
+        }
+        self.windows_wide
+            .as_deref()
+            .map(String::from_utf16_lossy)
+            .map(PathBuf::from)
+            .unwrap_or_default()
     }
 }
 
@@ -1727,7 +1800,34 @@ mod native_ui {
                 })?
                 .to_path_buf()
         };
-        let link_inbox = DeepLinkInbox::open(&data_dir)?;
+        let link_inbox = match DeepLinkInbox::open(&data_dir) {
+            Ok(link_inbox) => link_inbox,
+            Err(error) => {
+                #[cfg(feature = "acceptance-witness")]
+                if let Some(witness) = option_env!("ROCINANTE_ACCEPTANCE_FORWARD_WITNESS") {
+                    let _ = std::fs::write(
+                        witness,
+                        format!(
+                            "pid={}\nphase=open-inbox\nlinks={initial_links:?}\nerror={error}\n",
+                            std::process::id()
+                        ),
+                    );
+                }
+                return Err(error.into());
+            }
+        };
+        #[cfg(feature = "acceptance-witness")]
+        if link_inbox.is_primary() && !initial_links.is_empty() {
+            if let Some(witness) = option_env!("ROCINANTE_ACCEPTANCE_FORWARD_WITNESS") {
+                let _ = std::fs::write(
+                    witness,
+                    format!(
+                        "pid={}\nrole=primary\nlinks={initial_links:?}\n",
+                        std::process::id()
+                    ),
+                );
+            }
+        }
         if !link_inbox.is_primary() {
             let forward_result = if initial_links.is_empty() {
                 link_inbox.activate()
