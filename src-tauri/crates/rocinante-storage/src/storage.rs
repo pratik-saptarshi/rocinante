@@ -994,7 +994,7 @@ impl DualLayerStore {
         let pending = self.kv.scan_prefix(b"evt:")?;
         let (acknowledged_keys, promoted) = self.commit_pending_events_to_columnar(&pending)?;
         self.kv.remove_many(&acknowledged_keys)?;
-        self.retire_promoted_event_receipts()?;
+        self.prune_expired_promoted_event_receipts(now_ts())?;
 
         let snapshot_id = Self::next_snapshot_id();
         if self.validate_and_publish_snapshot(snapshot_id, promoted)? {
@@ -1011,14 +1011,25 @@ impl DualLayerStore {
     }
 
     #[cfg(feature = "analytics")]
-    fn retire_promoted_event_receipts(&self) -> Result<(), AnalyzerError> {
+    fn prune_expired_promoted_event_receipts(
+        &self,
+        current_timestamp: i64,
+    ) -> Result<(), AnalyzerError> {
         let mut connection = Connection::open(&self.columnar_path)
             .map_err(|error| AnalyzerError::Db(error.to_string()))?;
         let transaction = connection
             .transaction()
             .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        // Event keys use Unix-second buckets. Keep the current bucket so a
+        // same-second delivery retry still finds its receipt, and retire older
+        // receipts once their source rows have been acknowledged by SQLite.
         transaction
-            .execute("DELETE FROM promoted_event_receipts", [])
+            .execute(
+                "DELETE FROM promoted_event_receipts
+                 WHERE TRY_CAST(SPLIT_PART(event_key, ':', 2) AS BIGINT) IS NULL
+                    OR TRY_CAST(SPLIT_PART(event_key, ':', 2) AS BIGINT) < ?1",
+                params![current_timestamp],
+            )
             .map_err(|error| AnalyzerError::Db(error.to_string()))?;
         transaction
             .commit()
@@ -1666,7 +1677,9 @@ mod queue_lag_tests {
 
 #[cfg(test)]
 mod sqlite_ingestion_tests {
-    use super::{prefix_successor, CommitIngestionEvent, DualLayerStore, SqliteIngestionDb};
+    use super::{
+        now_ts, prefix_successor, CommitIngestionEvent, DualLayerStore, SqliteIngestionDb,
+    };
     use crate::types::TelemetryPoint;
     use duckdb::Connection as DuckConnection;
     use std::thread;
@@ -1782,7 +1795,7 @@ mod sqlite_ingestion_tests {
     }
 
     #[test]
-    fn successful_promotion_retires_receipts_after_source_acknowledgement() {
+    fn same_second_redelivery_uses_receipt_then_expired_receipt_is_pruned() {
         let dir = tempdir().expect("temporary directory");
         let kv_path = dir.path().join("kv");
         let columnar_path = dir.path().join("analytics.duckdb");
@@ -1791,9 +1804,14 @@ mod sqlite_ingestion_tests {
             columnar_path.to_str().expect("columnar path"),
         )
         .expect("open dual layer store");
+        let event = event("receipt-retirement");
+        let event_timestamp = now_ts() + 10;
+        let event_key = DualLayerStore::event_prefix(event_timestamp, &event.commit_id);
+        let event_bytes = serde_json::to_vec(&event).expect("serialize event");
         store
-            .ingest_commit_event(&event("receipt-retirement"))
-            .expect("ingest event");
+            .kv
+            .insert(event_key.as_bytes(), &event_bytes)
+            .expect("insert event with a deterministic replay bucket");
 
         let promoted = store.promote_to_columnar().expect("promote event");
         assert_eq!(promoted.promoted_events, 1);
@@ -1809,6 +1827,36 @@ mod sqlite_ingestion_tests {
                 row.get(0)
             })
             .expect("count promotion receipts");
+        assert_eq!(receipt_rows, 1);
+        drop(connection);
+
+        store
+            .kv
+            .insert(event_key.as_bytes(), &event_bytes)
+            .expect("redeliver the same event key");
+        let retried = store
+            .promote_to_columnar()
+            .expect("promote same-second delivery retry");
+        assert_eq!(retried.promoted_events, 0);
+
+        let connection = DuckConnection::open(&columnar_path).expect("reopen DuckDB");
+        let history_rows: i64 = connection
+            .query_row("SELECT COUNT(*) FROM telemetry_history", [], |row| {
+                row.get(0)
+            })
+            .expect("count telemetry rows after retry");
+        assert_eq!(history_rows, 1);
+        drop(connection);
+
+        store
+            .prune_expired_promoted_event_receipts(event_timestamp + 1)
+            .expect("prune expired receipt bucket");
+        let connection = DuckConnection::open(&columnar_path).expect("reopen DuckDB");
+        let receipt_rows: i64 = connection
+            .query_row("SELECT COUNT(*) FROM promoted_event_receipts", [], |row| {
+                row.get(0)
+            })
+            .expect("count promotion receipts after expiry");
         assert_eq!(receipt_rows, 0);
     }
 
@@ -1822,9 +1870,13 @@ mod sqlite_ingestion_tests {
             columnar_path.to_str().expect("columnar path"),
         )
         .expect("open dual layer store");
+        let event = event("restart-replay");
+        let event_key = DualLayerStore::event_prefix(now_ts() - 10, &event.commit_id);
+        let event_bytes = serde_json::to_vec(&event).expect("serialize event");
         store
-            .ingest_commit_event(&event("restart-replay"))
-            .expect("ingest event");
+            .kv
+            .insert(event_key.as_bytes(), &event_bytes)
+            .expect("ingest event with an expired timestamp bucket");
 
         let pending = store.kv.scan_prefix(b"evt:").expect("pending events");
         let (acknowledged, promoted_before_crash) = store
