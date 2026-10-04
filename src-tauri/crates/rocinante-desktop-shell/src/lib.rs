@@ -817,7 +817,7 @@ mod native_ui {
     impl RocinanteApp {
         fn persist_shell_state(&mut self, frame: &mut eframe::Frame) {
             if let Some(storage) = frame.storage_mut() {
-                self.save(storage);
+                eframe::App::save(self, storage);
                 storage.flush();
             }
         }
