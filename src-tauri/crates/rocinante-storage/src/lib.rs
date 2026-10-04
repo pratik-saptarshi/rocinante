@@ -27,6 +27,7 @@ pub mod risk_contract {
 }
 
 pub mod admin;
+pub mod ingestion_schema;
 pub mod scoring;
 pub mod storage;
 

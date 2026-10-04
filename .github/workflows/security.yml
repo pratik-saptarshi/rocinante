@@ -73,4 +73,6 @@ jobs:
         with:
           tool: cargo-audit
       - name: Audit Rust dependencies
-        run: cargo audit --file src-tauri/Cargo.lock --deny warnings
+        run: |
+          cargo audit --file src-tauri/Cargo.lock --deny warnings
+          cargo audit --file tools/sled-migration/Cargo.lock --deny warnings

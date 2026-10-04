@@ -1,4 +1,5 @@
 use crate::errors::AnalyzerError;
+use crate::ingestion_schema::{has_completed_legacy_sled_migration, initialize_ingestion_schema};
 use crate::plugins::sanitizer::scrub_text;
 use crate::types::{
     AdminQuery, CommitIngestionEvent, CommitterScore, PrCandidate, PrRanking, ScoringWeights,
@@ -265,9 +266,10 @@ impl SqliteIngestionDb {
         })?;
 
         let database_path = root.join("ingestion.sqlite3");
-        if !database_path.exists() && (root.join("conf").exists() || root.join("db").exists()) {
+        let legacy_sled_detected = root.join("conf").exists() || root.join("db").exists();
+        if legacy_sled_detected && !database_path.exists() {
             return Err(AnalyzerError::Db(format!(
-                "legacy Sled ingestion data detected at {}; migrate it before starting SQLite ingestion",
+                "legacy Sled ingestion data detected at {}; run rocinante-sled-migration before starting SQLite ingestion",
                 root.display()
             )));
         }
@@ -282,13 +284,24 @@ impl SqliteIngestionDb {
         connection
             .pragma_update(None, "synchronous", "FULL")
             .map_err(|error| AnalyzerError::Db(error.to_string()))?;
-        connection
-            .execute_batch(
-                "CREATE TABLE IF NOT EXISTS ingestion_kv (
-                    key BLOB PRIMARY KEY NOT NULL,
-                    value BLOB NOT NULL
-                ) WITHOUT ROWID;",
-            )
+
+        if legacy_sled_detected
+            && !has_completed_legacy_sled_migration(&connection)
+                .map_err(|error| AnalyzerError::Db(error.to_string()))?
+        {
+            return Err(AnalyzerError::Db(format!(
+                "legacy Sled ingestion data detected at {}; run rocinante-sled-migration before starting SQLite ingestion",
+                root.display()
+            )));
+        }
+
+        let schema_transaction = connection
+            .unchecked_transaction()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        initialize_ingestion_schema(&schema_transaction)
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        schema_transaction
+            .commit()
             .map_err(|error| AnalyzerError::Db(error.to_string()))?;
 
         Ok(Self {
@@ -311,7 +324,8 @@ impl SqliteIngestionDb {
             .map_err(|error| AnalyzerError::Db(error.to_string()))?;
         transaction
             .execute(
-                "INSERT OR REPLACE INTO ingestion_kv (key, value) VALUES (?1, ?2)",
+                "INSERT OR REPLACE INTO ingestion_kv (tree_kind, tree_name, key, value)
+                 VALUES (0, X'', ?1, ?2)",
                 sqlite_params![key, value],
             )
             .map_err(|error| AnalyzerError::Db(error.to_string()))?;
@@ -326,7 +340,9 @@ impl SqliteIngestionDb {
         if let Some(end) = prefix_successor(prefix) {
             let mut statement = connection
                 .prepare(
-                    "SELECT key, value FROM ingestion_kv WHERE key >= ?1 AND key < ?2 ORDER BY key ASC",
+                    "SELECT key, value FROM ingestion_kv
+                     WHERE tree_kind = 0 AND tree_name = X'' AND key >= ?1 AND key < ?2
+                     ORDER BY key ASC",
                 )
                 .map_err(|error| AnalyzerError::Db(error.to_string()))?;
             let mut result = statement
@@ -345,7 +361,10 @@ impl SqliteIngestionDb {
             }
         } else {
             let mut statement = connection
-                .prepare("SELECT key, value FROM ingestion_kv WHERE key >= ?1 ORDER BY key ASC")
+                .prepare(
+                    "SELECT key, value FROM ingestion_kv
+                     WHERE tree_kind = 0 AND tree_name = X'' AND key >= ?1 ORDER BY key ASC",
+                )
                 .map_err(|error| AnalyzerError::Db(error.to_string()))?;
             let mut result = statement
                 .query(sqlite_params![prefix])
@@ -376,7 +395,8 @@ impl SqliteIngestionDb {
         for key in keys {
             transaction
                 .execute(
-                    "DELETE FROM ingestion_kv WHERE key = ?1",
+                    "DELETE FROM ingestion_kv
+                     WHERE tree_kind = 0 AND tree_name = X'' AND key = ?1",
                     sqlite_params![key],
                 )
                 .map_err(|error| AnalyzerError::Db(error.to_string()))?;
@@ -1777,6 +1797,29 @@ mod sqlite_ingestion_tests {
             .to_string()
             .contains("legacy Sled ingestion data detected"));
         assert!(!path.join("ingestion.sqlite3").exists());
+    }
+
+    #[test]
+    fn refuses_existing_sqlite_database_without_completed_sled_migration_marker() {
+        let dir = tempdir().expect("temporary directory");
+        let path = dir.path().join("kv");
+        std::fs::create_dir_all(path.join("db")).expect("create legacy Sled database marker");
+        let sqlite_path = path.join("ingestion.sqlite3");
+        let connection = rusqlite::Connection::open(&sqlite_path).expect("create SQLite file");
+        connection
+            .execute_batch(
+                "CREATE TABLE ingestion_kv (
+                    key BLOB PRIMARY KEY NOT NULL,
+                    value BLOB NOT NULL
+                ) WITHOUT ROWID;",
+            )
+            .expect("create existing SQLite schema without migration marker");
+        drop(connection);
+
+        let error = SqliteIngestionDb::open(path.to_str().expect("path"))
+            .err()
+            .expect("legacy store must remain gated without migration marker");
+        assert!(error.to_string().contains("run rocinante-sled-migration"));
     }
 
     #[test]

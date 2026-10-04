@@ -30,6 +30,9 @@ assert_scope() {
 assert_scope "src-tauri/Cargo.toml" false true code-surface-touched
 assert_scope "src-tauri/Cargo.lock" false true code-surface-touched
 assert_scope "src-tauri/crates/rocinante-storage/Cargo.toml" false true code-surface-touched
+assert_scope "tools/sled-migration/Cargo.toml" false true code-surface-touched
+assert_scope "tools/sled-migration/Cargo.lock" false true code-surface-touched
+assert_scope "tools/sled-migration/src/lib.rs" false true code-surface-touched
 assert_scope "rust-toolchain.toml" false true code-surface-touched
 assert_scope ".cargo/config.toml" false true code-surface-touched
 assert_scope ".cargo/config" false true code-surface-touched

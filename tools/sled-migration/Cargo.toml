@@ -1,0 +1,28 @@
+[package]
+name = "rocinante-sled-migration"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.96.1"
+publish = false
+
+[workspace]
+members = ["."]
+exclude = ["vendor/sled"]
+
+[dependencies]
+fs2 = "0.4"
+rocinante-storage = { path = "../../src-tauri/crates/rocinante-storage", default-features = false }
+rusqlite = { version = "0.40", features = ["bundled"] }
+sha2 = "0.11"
+sled = "=0.34.7"
+tempfile = "3"
+
+[[bin]]
+name = "rocinante-sled-migration"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[patch.crates-io]
+sled = { path = "vendor/sled" }
