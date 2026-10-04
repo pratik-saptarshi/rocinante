@@ -809,6 +809,12 @@ mod native_ui {
             eframe::set_value(storage, "rocinante_shell_state", &self.state);
         }
 
+        fn persist_egui_memory(&self) -> bool {
+            true
+        }
+    }
+
+    impl RocinanteApp {
         fn persist_shell_state(&mut self, frame: &mut eframe::Frame) {
             if let Some(storage) = frame.storage_mut() {
                 self.save(storage);
@@ -816,12 +822,6 @@ mod native_ui {
             }
         }
 
-        fn persist_egui_memory(&self) -> bool {
-            true
-        }
-    }
-
-    impl RocinanteApp {
         fn open_repository_folder(&mut self) {
             if let Some(path) = rfd::FileDialog::new().pick_folder() {
                 self.clear_displayed_results();
