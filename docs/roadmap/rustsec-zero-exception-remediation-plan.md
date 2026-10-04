@@ -114,8 +114,17 @@ prebuilt before the Cargo build, stages it in Tauri's bundle resource path,
 rewrites Linux/macOS loader paths, and leaves the Windows DLL beside the app
 executable. A required matrix builds Linux `.deb`, macOS `.app`, and Windows
 NSIS packages and inspects each for its runtime. Local contract tests pass
-6/6, and actionlint passes; the review thread stays open until this hosted
+7/7, and actionlint passes; the review thread stays open until this hosted
 matrix passes on the updated branch head.
+
+**README follow-up (2026-10-04; PR head `f160d27`):** review thread
+[`discussion_r4177394737`](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4177394737)
+found that the native-shell installer examples provisioned DuckDB into Cargo's
+cache without staging the runtime beside each release binary. The Linux,
+macOS, and Windows examples now include `--stage-runtime-for-binary`, and the
+packaging contract checks the documented build/stage/install order. This
+follow-up is locally validated and included on the PR branch; the P1 package
+matrix remains the release check for the Tauri finding.
 
 Hosted CI run [37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846)
 is terminal. Workflow parsing, UI quality, Linux/macOS/Windows lifecycle

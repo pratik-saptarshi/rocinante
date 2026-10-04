@@ -180,8 +180,9 @@ and an in-progress GTK-free native desktop host.
   remains open and relevant against `main` at `cdd29b9`; the prior 30 review
   threads are resolved. A new P1 finding identified missing DuckDB in
   production Tauri installers; a packaging fix is in progress and its new
-  hosted validation is not yet terminal. Use the dated RustSec zero-exception
-  plan for phase order and current exit evidence.
+  hosted validation is not yet terminal. A second README staging finding has
+  been fixed in the current worktree. Use the dated RustSec zero-exception plan
+  for phase order and current exit evidence.
 - A refreshed 2026-10-04 RustSec database retained revision
   `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03). The unfiltered
   audit finds no vulnerability-class reports and four warnings: GLib,

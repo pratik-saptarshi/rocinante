@@ -203,10 +203,11 @@ pnpm run build
 
 ### 3) Build and run backend/app shell
 
-Before any Cargo command that builds analytics or the desktop shell, stage the
-official prebuilt DuckDB library for the current target. The provisioner checks
-the pinned archive and native-library SHA-256 values; the Cargo feature guard
-rejects DuckDB source-build features.
+Before any Cargo command that builds analytics or the desktop shell, provision
+the official prebuilt DuckDB library for the current target. The provisioner
+checks the pinned archive and native-library SHA-256 values; the Cargo feature
+guard rejects DuckDB source-build features. Installer commands below also
+stage the runtime beside the built shell executable.
 
 ```bash
 python3 scripts/provision_duckdb.py
@@ -237,11 +238,23 @@ The GTK-free native shell can also be launched independently:
 cargo run --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell
 ```
 
+On Linux, install the shell and register its URL handler for the current user:
+
+```bash
+cargo build --release --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell
+python3 scripts/provision_duckdb.py --stage-runtime-for-binary \
+  src-tauri/target/release/rocinante-desktop-shell
+sh src-tauri/crates/rocinante-desktop-shell/packaging/linux/install-user.sh \
+  src-tauri/target/release/rocinante-desktop-shell
+```
+
 On macOS, install a built shell as a per-user app bundle and register its URL
 scheme with Launch Services:
 
 ```bash
 cargo build --release --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell
+python3 scripts/provision_duckdb.py --stage-runtime-for-binary \
+  src-tauri/target/release/rocinante-desktop-shell
 sh src-tauri/crates/rocinante-desktop-shell/packaging/macos/install-user.sh \
   src-tauri/target/release/rocinante-desktop-shell
 ```
@@ -251,6 +264,8 @@ current user with:
 
 ```powershell
 cargo build --release --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell
+python scripts/provision_duckdb.py --stage-runtime-for-binary `
+  src-tauri/target/release/rocinante-desktop-shell.exe
 powershell -ExecutionPolicy Bypass -File `
   src-tauri/crates/rocinante-desktop-shell/packaging/windows/install-user.ps1 `
   src-tauri/target/release/rocinante-desktop-shell.exe
@@ -276,6 +291,8 @@ the current user on Linux, build and install it with:
 
 ```bash
 cargo build --release --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell
+python3 scripts/provision_duckdb.py --stage-runtime-for-binary \
+  src-tauri/target/release/rocinante-desktop-shell
 sh src-tauri/crates/rocinante-desktop-shell/packaging/linux/install-user.sh \
   src-tauri/target/release/rocinante-desktop-shell
 ```

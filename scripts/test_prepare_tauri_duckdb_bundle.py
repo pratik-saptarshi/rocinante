@@ -128,6 +128,27 @@ class BundlePreparationTests(unittest.TestCase):
             "python ../scripts/prepare-tauri-duckdb-bundle.py",
         )
 
+    def test_readme_stages_runtime_after_each_native_shell_release_build(self) -> None:
+        readme = (SCRIPT.parent.parent / "README.md").read_text()
+        build_command = "cargo build --release --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell"
+        stage_command = "--stage-runtime-for-binary"
+
+        self.assertEqual(readme.count(build_command), 4)
+        self.assertEqual(readme.count(stage_command), 4)
+
+        lines = readme.splitlines()
+        build_line_numbers = [index for index, line in enumerate(lines) if build_command in line]
+        for build_line in build_line_numbers:
+            next_platform_install = next(
+                (index for index in range(build_line + 1, len(lines)) if "install-user." in lines[index]),
+                None,
+            )
+            self.assertIsNotNone(next_platform_install)
+            self.assertTrue(
+                any(stage_command in lines[index] for index in range(build_line + 1, next_platform_install)),
+                f"Missing staged DuckDB command after README build example on line {build_line + 1}",
+            )
+
     @staticmethod
     def make_binary_and_library(root: Path, library_name: str) -> tuple[Path, Path]:
         binary = root / "rocinante-repo-analyzer"
