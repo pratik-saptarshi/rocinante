@@ -202,7 +202,7 @@ fn repo_pins_the_rust_toolchain_to_a_specific_stable_release() {
     let toolchain = read_repo_file("../rust-toolchain.toml");
     let manifest = read_repo_file("Cargo.toml");
 
-    assert!(toolchain.contains("channel = \"1.96.1\""));
+    assert!(toolchain.contains("channel = \"1.99.0\""));
     assert!(toolchain.contains("profile = \"minimal\""));
     assert!(toolchain.contains("\"clippy\""));
     assert!(toolchain.contains("\"rustfmt\""));

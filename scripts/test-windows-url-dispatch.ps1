@@ -86,7 +86,9 @@ try {
     Start-Process -FilePath (New-RepositoryUri $coldPath) | Out-Null
     Wait-ForAppliedPath $coldPath
     $primaryPid = [int]((Get-Content -LiteralPath $witness | Where-Object { $_ -like 'pid=*' }) -replace '^pid=', '')
+    $primaryInstance = ((Get-Content -LiteralPath $witness | Where-Object { $_ -like 'instance=*' }) -replace '^instance=', '')
     if (-not $primaryPid) { throw 'Cold launch did not report a process id.' }
+    if (-not $primaryInstance) { throw 'Cold launch did not report an instance id.' }
 
     if (Test-Path -LiteralPath $forwardWitness) { Remove-Item -LiteralPath $forwardWitness -Force }
     $script:warmLaunch = Start-Process -FilePath $installedBinary -ArgumentList (New-RepositoryUri $warmPath) -PassThru
@@ -111,7 +113,8 @@ try {
     Start-Process -FilePath $installedBinary | Out-Null
     Wait-ForAppliedPath $warmPath
     $restartedPid = [int]((Get-Content -LiteralPath $witness | Where-Object { $_ -like 'pid=*' }) -replace '^pid=', '')
-    if (-not $restartedPid -or $restartedPid -eq $primaryPid) { throw 'Restart did not restore state in a new process.' }
+    $restartedInstance = ((Get-Content -LiteralPath $witness | Where-Object { $_ -like 'instance=*' }) -replace '^instance=', '')
+    if (-not $restartedPid -or -not $restartedInstance -or $restartedInstance -eq $primaryInstance) { throw 'Restart did not restore state in a new process.' }
 
     Write-Output "Windows cold/warm URL delivery and saved-state restart passed (pid $restartedPid)."
 }

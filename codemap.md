@@ -48,7 +48,7 @@ roadmap artifacts.
   the Tauri test lanes.
 - `ui/src/App.tsx`: dashboard shell and admin bridge consumer.
 - `ui/src/admin-bridge-panel.tsx`: extracted command-bridge control block.
-- `ui/package.json`: `pnpm@12.8.2` UI manifest and test/build entry points.
+- `ui/package.json`: `pnpm@12.9.0` UI manifest and test/build entry points.
 - `docs/feature-list.html`: feature backlog with acceptance criteria and bead linkage.
 - `docs/product-roadmap.html`: stage ordering and release-gate sequencing.
 - `docs/roadmap/bead-issue-tracker.html`: execution ledger for active bead issues.

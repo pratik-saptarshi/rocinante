@@ -189,8 +189,13 @@ if ! grep -F -x "request_succeeded=true" "$notification_result" >/dev/null 2>&1;
 fi
 assert_notification_is_displayed
 test_pid="$(sed -n 's/^pid=//p' "$witness")"
+test_instance="$(sed -n 's/^instance=//p' "$witness")"
 if [[ -z "$test_pid" ]]; then
   echo "The cold-launched shell did not report its process id" >&2
+  exit 1
+fi
+if [[ -z "$test_instance" ]]; then
+  echo "The cold-launched shell did not report its instance id" >&2
   exit 1
 fi
 
@@ -225,7 +230,8 @@ echo "Persisted shell state: $(cat "$state_file")"
 "$installed_binary" >/dev/null 2>&1 &
 wait_for_applied_path "$warm_path"
 restarted_pid="$(sed -n 's/^pid=//p' "$witness")"
-if [[ -z "$restarted_pid" || "$restarted_pid" == "$test_pid" ]]; then
+restarted_instance="$(sed -n 's/^instance=//p' "$witness")"
+if [[ -z "$restarted_pid" || -z "$restarted_instance" || "$restarted_instance" == "$test_instance" ]]; then
   echo "The installed shell did not restore saved state in a new process. Witness: $(cat "$witness" 2>/dev/null || echo '<no witness>')" >&2
   exit 1
 fi
