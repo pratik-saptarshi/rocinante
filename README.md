@@ -57,8 +57,19 @@ The default backend is SQLite WAL. Explicit Badger sidecar configuration remains
 available for existing deployments; the retired `SledTransitional` setting now
 returns an actionable configuration error. Existing Sled data is preserved, and
 startup refuses to create a new SQLite store when it detects an unmigrated Sled
-directory. Complete the audited legacy-store migration in the RustSec roadmap
-before upgrading an installation that contains Sled data.
+directory. Before upgrading an installation that contains Sled data, stop
+Rocinante and run the isolated migrator against the directory containing its
+`conf` and `db` markers (normally `ROCINANTE_KV_PATH`):
+
+```sh
+cargo run --locked --manifest-path tools/sled-migration/Cargo.toml -- /path/to/rocinante-kv
+```
+
+The migrator acquires the storage lock, leaves the Sled source intact, writes
+and verifies `ingestion.sqlite3` beside it, and reports the record and tree
+counts. Restart Rocinante only after it reports success. The migration does not
+touch DuckDB files; DuckDB continues to use the checksum-verified official
+prebuilt binary.
 
 ### 4) Audit and explainability outputs
 

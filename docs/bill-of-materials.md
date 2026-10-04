@@ -12,10 +12,10 @@ _Captured: 2026-10-04_
 
 ## Branch and Sync State
 
-- PR #108 is open and mergeable on `fix/rocinante-readiness-remediation` at
-  latest code-validation head `de72423`, based on `main` at `cdd29b9` (71 commits ahead,
-  zero behind). The latest refreshed review listing has 43 inline threads and
-  all are resolved.
+- PR #108 is open and blocked on `fix/rocinante-readiness-remediation` at
+  published head `c0c3158`, based on `main` at `cdd29b9`. All 45 inline
+  review threads are resolved. Its required CI aggregate remains blocked by
+  the 17 overdue security exception reviews.
 - The complete phase sequence and exit evidence are in
   `docs/roadmap/rustsec-zero-exception-remediation-plan.md`.
 - Lane-scope refinement now keeps docs-only and non-functional edits out of storage/coverage-heavy lanes while preserving core rust gate visibility.
@@ -28,6 +28,8 @@ _Captured: 2026-10-04_
 - Shared authenticated repository analysis: `src-tauri/crates/rocinante-analysis/`
 - Frontend: `ui/package.json`, `ui/src/**`, `ui/e2e/**`
 - Automation: `.github/workflows/*.yml`, `scripts/*.sh`, `scripts/*.mjs`
+- One-time legacy-store migration: isolated `tools/sled-migration/` workspace
+  and lockfile; Sled is not in the application dependency graph.
 - Governance artifacts: `docs/bill-of-materials.html`, `docs/publish-readiness-checklist.html`,
   `docs/roadmap/*`, `README.md`, `SECURITY.md`
 
@@ -59,7 +61,7 @@ _Captured: 2026-10-04_
   binary before Cargo. DuckDB source-build features are forbidden by a tested
   feature-graph guard. Tauri production bundles now use verified per-platform
   resources and loader paths. All three package inspections pass on the
-  current PR head in hosted run `37217565425`; the required governance lane
+  published PR head in hosted run `37223225217`; the required governance lane
   fails on the 17 overdue exception reviews.
 - The provisioner contract tests (9), DuckDB feature-guard contract, CI-scope
   contract, macOS installer contract, and Linux installer/deep-link contract
@@ -68,12 +70,12 @@ _Captured: 2026-10-04_
   `@executable_path/../Frameworks` run path. The full installed macOS lifecycle
   also passes cold/warm Launch Services URLs, tray behavior, notification
   request, and saved-state restart. Hosted run
-  [37217565425](https://github.com/pratik-saptarshi/rocinante/actions/runs/37217565425)
+  [37223225217](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225217)
   passes Linux/macOS/Windows URL and saved-state restart acceptance, the
   three-platform Tauri DuckDB bundle checks, and Linux visible notification
   delivery. All hosted Rust lint and test shards also passed.
-- The hosted full-workspace test lane passed on current head `de72423` in run
-  `37217565425`. The workspace test run excluding the Tauri adapter passes all 83 tests,
+- The hosted full-workspace test lane passed on published head `c0c3158` in run
+  `37223225217`. The workspace test run excluding the Tauri adapter passes all 83 tests,
   including SQLite persistence, prefix ordering, concurrent writes, legacy
   Sled refusal, and replay receipts. Strict Clippy passes for every
   `rocinante-storage` target. The root storage, transport, backend,
@@ -81,22 +83,25 @@ _Captured: 2026-10-04_
   5, and 1 tests with the verified DuckDB runtime. `cargo check --tests` passes
   for all root test targets. Current local follow-up validation also passes
   all 9 analysis crate tests and analysis Clippy without warnings.
-- The updated 715-package lockfile no longer contains `sled`, `fxhash`, or
-  `instant`. The refreshed unfiltered audit against RustSec revision
-  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` reports no vulnerability
-  findings and two warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`) with
-  an empty ignore list; it exits nonzero with `--deny warnings`.
+- The application lockfile (715 packages at the last audit) no longer contains
+  `sled`, `fxhash`, or `instant`. The separate
+  `tools/sled-migration/Cargo.lock` contains the patched Sled reader, but no
+  `fxhash` or `instant`. Its unfiltered audit reports zero findings and
+  warnings against cached RustSec revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; refresh the database before
+  claiming fresh release evidence. The app audit against that revision reports
+  two warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`) and an empty ignore
+  list; it exits nonzero with `--deny warnings`.
   No advisory dates have been renewed; governance remains fail-closed on all 17
   overdue entries.
-- Current CI run `37217565425` completed with all package, lifecycle, UI,
-  build-seed, workspace-test, format, and Clippy jobs passed. The aggregate
-  failed because `security-exception-governance` found all 17 review dates
-  overdue. Current Security run `37217565444` passed secret scan,
-  repository-configured Rust audit, and CodeQL. Dependency Review
-  `37217565427` passed. These checks do not prove the
+- Published-head CI run `37223225217` completed with all code, UI, platform,
+  package, workspace-test, format, Clippy, and contract jobs passed. The
+  aggregate failed because `security-exception-governance` found all 17 review
+  dates overdue. Security run `37223225310` and Dependency Review
+  `37223225181` passed. These checks do not prove the
   zero-exception RustSec requirement.
-- PR #108's required `tauri-runtime-bundle` passed on current head `de72423` in
-  run `37217565425`: Linux `.deb`, macOS `.app`, and Windows NSIS packages all
+- PR #108's required `tauri-runtime-bundle` passed on published head `c0c3158`
+  in run `37223225217`: Linux `.deb`, macOS `.app`, and Windows NSIS packages all
   contain the verified DuckDB runtime. The macOS check also rejects any
   remaining `duckdb-download` Cargo-cache RPATH. The aggregate remains blocked
   by the separate advisory governance failure.
@@ -117,6 +122,7 @@ _Captured: 2026-10-04_
 ## Validation Entry Points (Publish Gating)
 
 - `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
+- `cargo fmt --manifest-path tools/sled-migration/Cargo.toml --all -- --check`
 - `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code` (warnings logged; dead-code allowed in-place)
 - `cargo test --manifest-path src-tauri/Cargo.toml`
 - `pnpm -C ui exec tsc -b`
@@ -148,10 +154,12 @@ _Captured: 2026-10-04_
   owner acceptance statements have been fabricated. The phased zero-exception
   remediation sequence is documented in the roadmap plan.
 - The dependency-floor and exception-registry phase is not complete. The last
-  terminal aggregate, `37198628846`, predates the latest published head and the
-  current local SQLite work. The current worktree has two cached-database
-  RustSec warnings and 17 overdue registry entries; the database refresh and
-  final hosted aggregate remain required.
+  terminal aggregate on the published head, `37223225217`, passes all code
+  lanes but fails the required gate because 17 registry reviews are overdue.
+  The current local work adds the isolated legacy Sled migrator; focused tool
+  and storage tests, full-workspace Clippy, and the full workspace test (254
+  tests across 60 suites) pass. Its new hosted CI run is pending. Do not record
+  owner acceptance or renew any review date without the actual disposition.
 
 ## Release Artifacts
 

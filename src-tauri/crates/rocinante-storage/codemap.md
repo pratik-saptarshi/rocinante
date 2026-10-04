@@ -3,13 +3,16 @@
 ## Responsibility
 
 Host-neutral admin/service and persistence layer shared by the Tauri app and
-the GTK-free native shell. It owns the Sled/DuckDB store, scoring operations,
-and the companion admin command bridge.
+the GTK-free native shell. It owns SQLite ingestion, DuckDB analytics, scoring
+operations, and the companion admin command bridge. Legacy Sled reading is
+isolated in `tools/sled-migration`; this crate never opens or links Sled.
 
 ## Modules and contracts
 
-- `src/storage.rs` contains the storage engine, Sled ownership lock, DuckDB
-  lifecycle/snapshot management, and `BaselineStore` adapter.
+- `src/storage.rs` contains the SQLite ingestion engine, shared DuckDB
+  lifecycle/snapshot management, and `BaselineStore` adapter. It refuses
+  startup while Sled markers exist unless the migration completion marker is
+  valid.
 - `src/admin.rs` contains shared authorization, storage, scoring, and risk
   command services. `execute_admin_bridge_command` dispatches the eight
   companion command names using editable JSON payloads.
@@ -25,3 +28,7 @@ and the companion admin command bridge.
   on the shared adapter.
 - Tauri integration tests continue to cover authorized baseline commands and
   rejection of non-admin principals.
+- `tools/sled-migration` owns the isolated legacy reader, its separate lockfile,
+  format/lint/test CI lane, and dependency graph audit. Run it before upgrading
+  a store with Sled `conf`/`db` markers; it preserves the original files and
+  writes the verified records to SQLite.

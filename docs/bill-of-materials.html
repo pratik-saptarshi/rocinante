@@ -13,10 +13,9 @@ then release from the merged tip.
 - Primary integration branch: `main`
 - Remote: `origin`
 - Current work is on PR #108's remediation branch,
-  `fix/rocinante-readiness-remediation`, at code-validation commit `de72423`. The PR
-  remains open, relevant, mergeable, and based on `main` at `cdd29b9` (71
-  commits ahead, zero behind). The latest refreshed review listing contains 43
-  inline threads, all resolved.
+  `fix/rocinante-readiness-remediation`, at published head `c0c3158`. The PR
+  remains open and relevant, and is blocked by the required governance gate;
+  its base is `main` at `cdd29b9`. All 45 inline threads are resolved.
 - Product: Rust shared-service workspace with current Tauri integration, an
   in-progress GTK-free native desktop host, and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -99,10 +98,13 @@ Core runtime and support crates in `src-tauri/Cargo.toml`:
 - `walkdir`
 - `rusqlite` with `bundled`
 - `tauri` with `wry`
-- `sled`
 - `duckdb` `1.10506.0`, dynamically linked to official prebuilt DuckDB
   `1.5.6`, the current stable release on 2026-10-04
-  ([upstream release](https://github.com/duckdb/duckdb/releases/tag/v1.5.6))
+([upstream release](https://github.com/duckdb/duckdb/releases/tag/v1.5.6))
+
+Legacy Sled reading is isolated in `tools/sled-migration/`, with its own
+manifest, lockfile, CI tests, dependency check, and audit. The application
+workspace does not depend on Sled.
 - `base64`
 - `hmac`
 - `sha2`
@@ -196,12 +198,14 @@ Packages declared in `ui/package.json`:
 - The esbuild alert closed in PR #59; its unrelated historic Dependabot and
   hosted-audit snapshots above are superseded by the current lockfiles and
   checks. Query live GitHub state before making any new alert-closure claim.
-- The updated 715-package lockfile no longer contains `sled`, `fxhash`, or
-  `instant`. An unfiltered audit against the cached RustSec database revision
-  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03) reports no
-  vulnerability findings and two warnings: `glib 0.18.5` and
-  `proc-macro-error 1.0.4`. The authorized database refresh could not reach
-  GitHub, and the fail-closed governance gate still reports 17 overdue entries.
+- The application lockfile (715 packages at its last audit) has no `sled`,
+  `fxhash`, or `instant`. The separate migrator lockfile contains the patched
+  Sled source but excludes `fxhash` and `instant`; its audit has zero findings
+  or warnings against cached RustSec revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`. The app audit against that
+  revision has no vulnerability findings and two warnings: `glib 0.18.5` and
+  `proc-macro-error 1.0.4`. The fail-closed governance gate reports 17 overdue
+  entries; no dates or owner decisions have been fabricated.
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 - `test` aggregate job in `.github/workflows/ci.yml` is the merge gate for protected-branch checks and depends on parse/scope/lint/test/coverage jobs.
@@ -254,20 +258,26 @@ reports 17 overdue registry entries. The Tauri package-runtime review thread
 is resolved after the Linux/macOS/Windows package matrix passed on the current
 review head.
 
-Current validation snapshot (2026-10-04; published head `de72423`): all 9
+Current validation snapshot (2026-10-04; published head `c0c3158`): all 9
 `rocinante-analysis` tests pass locally; analysis Clippy reports no issues;
 formatting, actionlint, and the eight-case Tauri bundle contract pass. Hosted
-run [37217565425](https://github.com/pratik-saptarshi/rocinante/actions/runs/37217565425)
+run [37223225217](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225217)
 passes UI quality, full workspace tests, Linux/macOS/Windows URL lifecycle
 acceptance, the Linux/macOS/Windows Tauri bundle inspections, build seed, and
-Rust format/Clippy/test lanes. The aggregate is blocked by advisory governance's
-17 overdue records. Current Security run `37217565444` passed secret scan,
+Rust format/Clippy/test lanes on the published head. The aggregate is blocked by advisory governance's
+17 overdue records. Current Security run `37223225310` passed secret scan,
 repository-configured Rust audit, and CodeQL. Dependency Review
-`37217565427` passed. The refreshed unfiltered 715-package audit reports zero
+`37223225181` passed. The app audit reports zero
 vulnerability findings and two warnings (`glib 0.18.5` and
 `proc-macro-error 1.0.4`) with an empty ignore list. All inline review
 findings are resolved on this head; do not infer owner dispositions or renew
 exception dates.
+
+The current follow-up adds the audited Sled-to-SQLite migrator. Its focused
+tests, strict Clippy, formatting, and dependency contracts pass locally. The
+full-workspace Clippy reports no issues, and the full Cargo workspace test
+passes 254 tests across 60 suites after recovering disk space and restoring
+the verified DuckDB prebuilt. Hosted validation for that worktree is pending.
 
 Historical CI recovery evidence on `feat/bi-056-timeout-contract` is green and
 merged; BI-047 is also merged on PR run `28988956969`. Neither historic run is

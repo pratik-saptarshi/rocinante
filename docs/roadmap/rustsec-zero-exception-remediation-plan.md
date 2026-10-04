@@ -1,22 +1,34 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status (2026-10-04; PR head `76acd9a`):** Phase 0 review findings are resolved
-on PR #108: all 45 inline threads are resolved, and the automated review of
-this head found no new findings. Phase 1's verified DuckDB prebuilt packaging
-and Phase 2's SQLite ingestion work pass hosted platform and workspace tests.
-CI run [`37221587094`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37221587094)
-passed Rust formatting, Clippy, workspace and crate tests, UI quality, Linux,
-macOS, and Windows lifecycle checks, and all three Tauri package inspections.
-The aggregate fails only because fail-closed governance rejects all 17 overdue
-entries. Security run [`37221587091`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37221587091)
-and Dependency Review run [`37221587113`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37221587113)
-passed. A refreshed unfiltered audit of the 715-package lockfile at RustSec
-revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee` found zero vulnerability
-reports, two warnings (`glib` and `proc-macro-error`), and an empty ignore
-list. `instant` and `fxhash` are absent from the current lockfile. No owner
-dispositions or review-date renewals were invented. Phase 3, the audited
-legacy-Sled migration utility, is next; existing Sled stores must complete it
-before upgrade.
+**Status (2026-10-04; published PR head `c0c3158`):** PR #108 remains relevant
+and open on `fix/rocinante-readiness-remediation`; all 45 inline review threads
+are resolved. Hosted run
+[`37223225217`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225217)
+passes the code, UI, Rust, platform lifecycle, package, and contract lanes.
+The required aggregate is blocked by the fail-closed governance check for the
+17 overdue review dates, and `test` fails as a consequence. Security run
+[`37223225310`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225310)
+and Dependency Review
+[`37223225181`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225181)
+passed. No exception dates or owner dispositions have been fabricated.
+
+Phase 3 is implemented locally in `tools/sled-migration`: its separate
+lockfile retains the official Sled package identity, its patched graph removes
+`fxhash` and `instant`, and the application workspace remains free of Sled.
+Focused migrator and storage tests, migrator Clippy, formatting, and dependency
+contracts pass locally. Full workspace Clippy reports no issues, and the full
+Cargo workspace test passed 254 tests across 60 suites after generated build
+files were cleared when the first attempt exhausted disk space. Hosted
+hosted validation on the follow-up head is pending.
+The migrator audit reports no findings or warnings against cached
+RustSec database revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; this is
+not a newly refreshed database result.
+
+The app lockfile's last unfiltered audit reports no vulnerability findings and
+two warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`), with no ignores.
+Phase 4 must remove those Tauri/GTK paths. The governance job also requires
+current dispositions for all 17 registry entries; do not remove or renew an
+entry until its risk is gone or its security-owner review is recorded.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -282,21 +294,26 @@ remain unverified for the current worktree.
 
 ### Phase 3 — Preserve legacy Sled data with an isolated audited reader
 
-Add the one-time migration utility, retaining legacy stores read-only and
-preserving existing DuckDB history. Keep the Sled package's true identity and
-provenance in the audited workspace, but patch its obsolete hashers and lock
-implementation so the migration graph contains neither `fxhash` nor
-`instant`; never suppress the affected advisories or rename the package.
+The isolated one-time migration utility is implemented in
+`tools/sled-migration`. It retains legacy stores read-only, preserves existing
+DuckDB history, and keeps the Sled package's true identity and provenance in a
+separate audited workspace. Its narrow source patch replaces obsolete hashers
+and the lock implementation so the migration graph contains neither
+`fxhash` nor `instant`; it does not suppress advisories or rename the package.
 
 **Validation:** compare sorted, length-delimited hashes of every tree/key/value
 record; check SQLite integrity; test binary keys, multiple and empty trees,
 retry, interruption, corruption, conflicting target data, backup preservation,
-and rollback/recovery. Show the migration utility alone depends on Sled and its
-resolved graph is clean under fresh `cargo audit --deny warnings`.
+and rollback/recovery. Local focused tests cover those cases, and the migrator
+dependency contract confirms Sled is confined to the tool graph while
+`fxhash` and `instant` are absent. Its unfiltered audit has zero findings and
+warnings against the cached database revision. A fresh-database audit and
+hosted CI run for the updated branch remain required.
 
 **Exit gate:** the source store remains intact, the migration is repeatable and
 recoverable, migrated records and DuckDB history are preserved, and the
-audited migration graph has no RustSec findings.
+audited migration graph passes a fresh `cargo audit --deny warnings` with no
+RustSec findings or warnings.
 
 ### Phase 4 — Finish native-shell parity and retire Tauri/GTK
 
@@ -519,7 +536,7 @@ verified prebuilt DuckDB artifacts on every supported platform, and green
 required CI/security gates. Scheduled audits must block releases if new
 advisories invalidate this state.
 
-## Latest verification update (2026-10-04; PR head `de72423`)
+## Historical verification update (2026-10-04; PR head `de72423`)
 
 The duplicate-basename legacy-history review finding is fixed. Workspace reads
 retain both the tree-relative alias and original basename, query repeated
@@ -549,7 +566,7 @@ all review dates remain overdue pending reviewed dispositions or removal of
 the affected host path. Phase 4 and Phase 5 remain required before the
 zero-exception exit gate can pass.
 
-## Latest review and readiness update (2026-10-04; PR head `76acd9a`)
+## Historical review and readiness update (2026-10-04; PR head `76acd9a`)
 
 PR #108 remains relevant, open, and mergeable on the existing remediation
 branch, targeting `main` at `cdd29b9`. The duplicate-basename history finding
@@ -574,3 +591,32 @@ vulnerability findings, two warnings (`glib 0.18.5` and
 and Cargo ignores remain unchanged because no security-owner dispositions
 were provided. DuckDB remains the official checksum-verified prebuilt and is
 not compiled from source.
+
+## Phase 3 local verification and PR blocker update (2026-10-04)
+
+The live PR review query confirms PR #108 is open and relevant on the expected
+branch, with all 45 review threads resolved and none open. Published-head CI
+run `37223225217` passed every code lane. Only
+`security-exception-governance` and its dependent `test` aggregate failed.
+The workflow log lists all 17 registry entries as overdue since 2026-08-06.
+No review dates or registry contents were changed because no owner dispositions
+are recorded. Keep the required gate fail-closed; the review suggestion to
+avoid failing CI cannot be implemented without contradicting the zero-exception
+release policy.
+
+Phase 3's local implementation passes the full Cargo workspace test
+(254 tests across 60 suites), full-workspace Clippy, all 7 migrator tests,
+all 15 storage tests, isolated migrator Clippy, both-workspace formatting,
+the CI-scope and migration dependency contracts, and roadmap/publish document
+contracts. The application audit at cached RustSec revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee` reports no vulnerability findings
+but retains `glib 0.18.5` and `proc-macro-error 1.0.4` warnings; the isolated
+migrator lockfile reports none. These database contents are dated 2026-10-03,
+so repeat the audit against the next RustSec database revision before release.
+
+The initial full test run stopped with `ENOSPC`; clearing 37.8 GiB of generated
+Cargo output and re-staging the SHA-256-verified official DuckDB 1.5.6 prebuilt
+allowed the complete suite to pass. DuckDB was not compiled from source.
+Require hosted checks on the follow-up head after publishing to PR #108's
+existing branch. The governance blocker still requires current disposition for
+each exception or evidence that its affected path has been removed.
