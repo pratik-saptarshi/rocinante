@@ -41,14 +41,17 @@ Repository operating rules documented | [x] | `docs/project-rules.html`
 Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
 Current local snapshot (2026-10-04): PR #108 remains open on
-`fix/rocinante-readiness-remediation`, based on `main` at `cdd29b9`, and is
-blocked by its required governance check. Validated source head `d703a4a` has 46
-resolved inline review threads and no unresolved threads. CI run
-`37233328503` passed all code, UI, Rust, native lifecycle, platform package,
-and workflow-contract lanes. Its aggregate failed because all 17 advisory
-review dates are overdue. Security run `37233328497` and Dependency Review
-`37233328573` passed. Hosted validation of the isolated audited Sled migrator,
-including the 1 MiB blob-backed value regression, passed on this source head.
+`fix/rocinante-readiness-remediation`, based on `main` at `cdd29b9`. The latest
+hosted validation head `1be093a` has 47 resolved inline review threads and no
+unresolved threads. CI run `37235903810` passed code, UI, Rust, native
+lifecycle, platform package, and workflow-contract lanes. Its aggregate failed
+because the registry at that head still contained 17 overdue entries. Security
+run `37235903812` and Dependency Review `37235903871` passed. Since that run,
+the local registry and Cargo audit ignores were reduced to two live findings:
+eight advisories are withdrawn upstream and seven affected packages are absent
+from both supported lockfiles. Evidence is in
+`docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`; CI for the
+updated registry and its contract change is pending.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -58,7 +61,7 @@ Secret scan is enabled in GitHub Actions | [x] | `.github/workflows/security.yml
 Dependency review is enabled for pull requests | [x] | `.github/workflows/dependency-review.yml`
 CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL analysis
 Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
-Dependency audit exceptions are current and registry-backed | [ ] | `.cargo/audit.toml`, `docs/roadmap/security-advisory-exceptions.json`, and `scripts/check-security-advisory-exceptions.py`; all 17 review dates (2026-08-06) are overdue as of 2026-10-04 and no risk-owner acceptance is recorded. Do not renew dates without review.
+Dependency audit exceptions are current and registry-backed | [ ] | `.cargo/audit.toml` and `docs/roadmap/security-advisory-exceptions.json` now contain only `RUSTSEC-2024-0370` and `RUSTSEC-2024-0429`; both existing review dates (2026-08-06) are overdue and await security-owner dispositions. The other 15 entries were closed using withdrawal/lockfile evidence in `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`. Do not renew dates without review.
 Open Dependabot alerts are closed or formally accepted | [ ] | Live GitHub query on 2026-10-04 found six alerts open on `main`: #13/#14 (`@vitest/mocker`/`vitest`, fixed in 4.1.11), #12 (`serde_with`, fixed in 3.21.0), #10/#7 (`postcss`, fixed in 8.5.23/8.5.18), and #1 (`glib`, fixed in 0.20.0). The esbuild alert remains closed.
 Previously recorded evidence (2026-09-30):
 
@@ -86,7 +89,7 @@ checks pass under the existing ignore configuration; the fail-closed
 governance job blocks the aggregate until owner-reviewed dispositions remove
 or justify each applicable exception. No dates or acceptance were inferred.
 
-Published-head verification (2026-10-04): pnpm `12.9.1` frozen install,
+Published-head verification (2026-10-04; source head `1be093a`): pnpm `12.9.1` frozen install,
 TypeScript check, all 62 Vitest tests, and production build passed on hosted run
 `37212976724`; the same UI job passed on source head `d703a4a` in run
 `37233328503`. The source head's full workspace tests, core/storage test
@@ -95,8 +98,10 @@ three-platform Tauri package matrix all passed. For the current follow-up, all 9
 `rocinante-analysis` tests pass, analysis Clippy reports no issues,
 formatting and actionlint pass, and the Tauri bundle contract passes 8/8. DuckDB
 `1.10506.0` / engine `1.5.6` remains an official SHA-pinned prebuilt; no build
-from source is enabled. The fail-closed governance check still reports 17
-overdue entries; no owner dispositions or date renewals are recorded.
+from source is enabled. At that hosted source head, the fail-closed governance
+check reported 17 overdue entries; no owner dispositions or date renewals were
+recorded. The subsequent local registry update leaves two overdue entries and
+awaits a hosted rerun.
 
 Open Dependabot alerts are verified in CI on release lane | [ ] | `scripts/check-dependabot-esbuild-alert.sh` executes on `main` pushes in `.github/workflows/ci.yml`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
@@ -151,9 +156,9 @@ Sync local `main` to merged remote tip | [x] | `git merge --no-ff origin/main`
 
 Criterion | Status | Evidence
 ---|---|---
-CI workflow is monitored until terminal state | [x] | Source-head run `37233328503` completed; all code lanes passed, and aggregate CI failed on the 17 overdue exception records.
-Security workflow is monitored until terminal state | [x] | Source-head run `37233328497`: secret scan, Rust audit, and CodeQL passed.
-Dependency review is monitored until terminal state | [x] | Source-head run `37233328573` passed.
+CI workflow is monitored until terminal state | [x] | Source-head run `37235903810` completed; all code lanes passed, and aggregate CI failed on the then-current 17 overdue exception records. The local 2-entry update is awaiting a new run.
+Security workflow is monitored until terminal state | [x] | Source-head run `37235903812`: secret scan, Rust audit, and CodeQL passed.
+Dependency review is monitored until terminal state | [x] | Source-head run `37235903871` passed.
 Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `rust-coverage-lcov` from CI job `rust-coverage`
 
 ## 7) Publish decision

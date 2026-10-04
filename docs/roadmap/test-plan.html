@@ -212,7 +212,7 @@
 - `T-048` Security advisory exception registry and dependency-floor proof tests:
   - `src-tauri/tests/security_advisory_exception_tests.rs`
   - `scripts/check-security-advisory-exceptions.py` and its shell contract test validate date syntax and expiry; required CI job `security-exception-governance` runs the checker against the current date and keeps the aggregate `test` gate blocked while reviews are overdue.
-  - Audit ignores stay mapped one-to-one to the exception registry. All 17 current review dates are overdue as of 2026-09-30; the release stays blocked until the floor is retired or formally accepted.
+  - Audit ignores stay mapped one-to-one to the exception registry. The latest hosted run was against the earlier 17-entry registry and failed closed. The 2026-10-04 local update removes 15 entries using upstream withdrawal or supported-lockfile absence evidence; two live findings remain overdue pending owner dispositions. See `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
 
 - `T-049` Parity matrix and host-decision tests:
   - `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`
@@ -392,7 +392,7 @@
 - Local verification passes 84 non-root workspace tests, eight analysis identity and scan tests, the storage app-data path test, the macOS signing contract, strict Clippy for analysis/storage/desktop-shell, root Tauri cargo check for all test targets, formatting, actionlint, roadmap/CI-scope contracts, seven Tauri package contracts, nine DuckDB provisioner tests, and the DuckDB source-build guard.
 - Full root Tauri tests and hosted checks on the updated branch are pending. The advisory registry is unchanged; no security-owner disposition or review-date renewal has been recorded.
 
-## Current PR #108 Review Follow-up — 2026-10-04 (validated source head `d703a4a`)
+## Hosted PR #108 Review Snapshot — 2026-10-04 (validated source head `d703a4a`)
 
 - PR #108 remains relevant and open on `fix/rocinante-readiness-remediation`,
   based on current `main` tip `cdd29b9`. GitHub reports the PR blocked. All 46 inline
@@ -447,3 +447,23 @@
 - The migration leaves Sled source files untouched, preserves every tree/key/
   value record in `ingestion.sqlite3`, and does not read or modify DuckDB
   history. DuckDB is supplied only by the verified official prebuilt binary.
+
+## RustSec Exception Reclassification Follow-up (2026-10-04)
+
+- The user authorized closing 15 of the former 17 registry entries using
+  current evidence. Eight advisories are marked withdrawn in RustSec database
+  revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; seven affected packages
+  are absent from both supported Cargo lockfiles. The complete advisory and
+  package list is in
+  `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
+- `.cargo/audit.toml` and
+  `docs/roadmap/security-advisory-exceptions.json` now contain only
+  `RUSTSEC-2024-0370` and `RUSTSEC-2024-0429`. Their existing review dates
+  remain overdue. The owner dispositions are pending; no dates were extended
+  and no risk acceptance was inferred.
+- The advisory shell contract now derives its overdue entry count from the
+  registry rather than assuming 17. The local contract and roadmap document
+  contracts pass. The configured cargo-audit checks pass with the two current
+  exceptions; the unfiltered application audit still reports those two
+  warnings, and the fail-closed governance checker still exits nonzero. Hosted
+  CI for this local update is pending.

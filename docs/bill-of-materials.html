@@ -13,9 +13,11 @@ then release from the merged tip.
 - Primary integration branch: `main`
 - Remote: `origin`
 - Current work is on PR #108's remediation branch,
-  `fix/rocinante-readiness-remediation`, at validated source head `d703a4a`. The PR
-  remains open and relevant, and is blocked by the required governance gate;
-  its base is `main` at `cdd29b9`. All 45 inline threads are resolved.
+  `fix/rocinante-readiness-remediation`. Its latest hosted validation head is
+  `1be093a`; the PR remains open and relevant, based on `main` at `cdd29b9`.
+  All 47 inline threads are resolved. The latest hosted aggregate failed on
+  the then-current 17 overdue entries; the local two-entry registry update is
+  awaiting hosted validation.
 - Product: Rust shared-service workspace with current Tauri integration, an
   in-progress GTK-free native desktop host, and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -188,8 +190,10 @@ Packages declared in `ui/package.json`:
 - CodeQL is enabled for the Rust codebase
 - RustSec dependency audit is enforced through `cargo-audit`
 - Advisory exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`
-- All 17 advisory exception review dates are overdue as of 2026-10-04; none
-  was renewed or accepted in this update.
+- Fifteen entries have been removed based on eight upstream withdrawals and
+  seven affected packages absent from both supported lockfiles. The two live
+  entries remain overdue; neither date was renewed or accepted. See
+  `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
 - `scripts/dependency-floor-proof.sh` records the current GTK/GLib floor
 - `scripts/check-esbuild-lock.mjs` enforces UI lockfile floor `esbuild >= 0.28.1`
 - Local `ui/pnpm-lock.yaml` resolves `esbuild@0.28.2`; the Node floor check
@@ -204,8 +208,9 @@ Packages declared in `ui/package.json`:
   or warnings against cached RustSec revision
   `ef6173cbc5c50ec8166f9a5b28f07834144373ee`. The app audit against that
   revision has no vulnerability findings and two warnings: `glib 0.18.5` and
-  `proc-macro-error 1.0.4`. The fail-closed governance gate reports 17 overdue
-  entries; no dates or owner decisions have been fabricated.
+  `proc-macro-error 1.0.4`. These are the two retained exceptions and await
+  security-owner dispositions. The governance gate remains fail-closed because
+  their existing review dates are overdue; no owner decisions were fabricated.
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 - `test` aggregate job in `.github/workflows/ci.yml` is the merge gate for protected-branch checks and depends on parse/scope/lint/test/coverage jobs.
@@ -258,22 +263,23 @@ reports 17 overdue registry entries. The Tauri package-runtime review thread
 is resolved after the Linux/macOS/Windows package matrix passed on the current
 review head.
 
-Current validation snapshot (2026-10-04; validated source head `d703a4a`): all 9
-`rocinante-analysis` tests pass locally; analysis Clippy reports no issues;
-formatting, actionlint, and the eight-case Tauri bundle contract pass. Hosted
-run [37233328503](https://github.com/pratik-saptarshi/rocinante/actions/runs/37233328503)
-passes UI quality, full workspace tests, Linux/macOS/Windows URL lifecycle
-acceptance, the Linux/macOS/Windows Tauri bundle inspections, build seed, and
-Rust format/Clippy/test lanes on the published head. The aggregate is blocked by advisory governance's
-17 overdue records. Current Security run `37233328497` passed secret scan,
-repository-configured Rust audit, and CodeQL. Dependency Review
-`37233328573` passed. Fetching RustSec on 2026-10-04 returned revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee`, timestamped 2026-10-03. The
-unfiltered app audit reports zero vulnerability findings and two warnings
-(`glib 0.18.5` and `proc-macro-error 1.0.4`) with an empty ignore list; the
-82-package migrator audit reports no findings or warnings. All inline review
-findings are resolved on this head; do not infer owner dispositions or renew
-exception dates.
+Latest validation snapshot (2026-10-04; hosted source head `1be093a`): hosted
+run [37235903810](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903810)
+passed UI quality, full workspace tests, Linux/macOS/Windows URL lifecycle
+acceptance, Linux/macOS/Windows Tauri bundle inspections, build seed, and Rust
+format/Clippy/test lanes. Its aggregate failed on the then-current 17 overdue
+registry entries. Security run
+[`37235903812`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903812)
+passed secret scan, configured Rust audit, and CodeQL. Dependency Review
+[`37235903871`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903871)
+passed. All 47 review threads are resolved. The local follow-up removes eight
+withdrawn advisories and seven entries whose affected packages are absent from
+both supported lockfiles; hosted validation of the resulting two-entry
+registry is pending. The unfiltered 715-package app audit has zero vulnerability
+findings and two warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`); the
+82-package migrator audit has no findings or warnings. Database revision is
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee`. Do not infer owner dispositions or
+renew the remaining exception dates.
 
 The current follow-up adds the audited Sled-to-SQLite migrator. It copies
 `conf`, `db`, and `blobs/` under the storage lock; the 1 MiB off-log-value

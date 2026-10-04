@@ -1,16 +1,22 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status (2026-10-04; validated source head `d703a4a`):** PR #108 remains relevant
-and open on `fix/rocinante-readiness-remediation`; all 46 inline review threads
-are resolved and none are open. Hosted CI run
-[`37233328503`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37233328503)
-passed its code, UI, Rust, platform lifecycle, package, and contract lanes. The
-required aggregate is blocked by the fail-closed governance check for the 17
-overdue review dates, and `test` fails as a consequence. Security run
-[`37233328497`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37233328497)
+**Current status (2026-10-04):** PR #108 remains relevant and open on
+`fix/rocinante-readiness-remediation`. The latest hosted code-validation head is
+`1be093a`; all 47 inline review threads are resolved. CI run
+[`37235903810`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903810)
+passed its Rust, UI, platform lifecycle, package, and contract lanes. Its
+aggregate failed because the then-current registry still had 17 overdue
+entries. Security run
+[`37235903812`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903812)
 and Dependency Review
-[`37233328573`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37233328573)
-passed. No exception dates or owner dispositions have been fabricated.
+[`37235903871`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903871)
+passed. A local follow-up now closes 15 entries based on the current RustSec
+database and supported lockfiles; hosted validation of that change is pending.
+The two active findings remain pending security-owner dispositions, with their
+existing overdue review dates unchanged.
+
+The 2026-10-04 closure evidence is recorded in
+[`rustsec-exception-closure-evidence-2026-10-04.md`](rustsec-exception-closure-evidence-2026-10-04.md).
 
 Phase 3 is implemented locally in `tools/sled-migration`: its separate
 lockfile retains the official Sled package identity, its patched graph removes
@@ -30,11 +36,13 @@ RustSec revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`, timestamped
 audit reports the two warnings below. No newer upstream database revision was
 available during this check.
 
-The app lockfile's last unfiltered audit reports no vulnerability findings and
-two warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`), with no ignores.
-Phase 4 must remove those Tauri/GTK paths. The governance job also requires
-current dispositions for all 17 registry entries; do not remove or renew an
-entry until its risk is gone or its security-owner review is recorded.
+The latest unfiltered app audit reports no vulnerability findings and two
+warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`). The local ignore and
+registry lists now contain only those two live findings. Phase 4 must remove
+those Tauri/GTK paths; the two overdue entries remain fail-closed pending
+security-owner dispositions. The other 15 entries were closed under the
+evidence and maintainer authorization recorded in the closure document. Do not
+remove or renew the two remaining entries without reviewed dispositions.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -341,11 +349,13 @@ command and payload contracts remain stable.
 
 ### Phase 5 — Remove obsolete governance records and enforce zero exceptions
 
-After Phases 2–4 close, write evidence-backed dispositions for all 17 original
-registry records. Remove withdrawn/absent advisories based on refreshed
-RustSec metadata and every supported lockfile; remove active records only
-after their package paths are gone. Then remove all audit ignores and make the
-checker enforce an empty exception registry.
+Record evidence-backed dispositions for all 17 original registry records.
+Eight withdrawn records and seven records whose packages are absent from both
+supported lockfiles are now closed locally, with exact evidence documented in
+`rustsec-exception-closure-evidence-2026-10-04.md`. The two active records
+remain until their dependency paths are removed or security-owner dispositions
+are recorded. Then remove all audit ignores and make the checker enforce an
+empty exception registry.
 
 **Validation:** run the governance checker and its contract tests against
 withdrawn, absent, newly introduced, malformed, stale, empty-registry, and
@@ -356,7 +366,9 @@ exceptions.
 
 **Exit gate:** all 17 dispositions cite evidence; both governance stores are
 empty; refreshed, unfiltered audits pass for all supported lockfiles; the
-fail-closed governance and cargo-audit CI jobs pass.
+fail-closed governance and cargo-audit CI jobs pass. Current status: 15
+evidence-backed closures are recorded locally, while the two active entries
+await owner dispositions and hosted validation of the updated registry.
 
 ### Phase 6 — Full release-readiness verification and documentation closeout
 
@@ -636,3 +648,29 @@ Hosted checks on the follow-up head are terminal and passed all code lanes. The
 governance blocker still requires current owner-reviewed disposition for each
 exception or verified evidence that its affected risk has been removed. Do not
 renew dates, invent acceptance, or weaken the required gate.
+
+## Current local advisory reconciliation (2026-10-04)
+
+The current hosted code-validation head is `1be093a`. Run `37235903810` passed
+Rust, UI, lifecycle, package, and contract lanes, but the aggregate failed on
+the 17 overdue entries that were present at that head. All 47 review threads
+are resolved. Security run `37235903812` and Dependency Review run
+`37235903871` passed at that source revision. Hosted validation of the
+following registry update is pending.
+
+With the owner's authorization, the local registry and audit-ignore list now
+contain only `RUSTSEC-2024-0370` and `RUSTSEC-2024-0429`. The other eight
+entries are withdrawn in RustSec database revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee`; seven remaining advisory packages
+are absent from both supported Cargo lockfiles. The closure evidence is
+recorded in `rustsec-exception-closure-evidence-2026-10-04.md`. The two
+remaining review dates stay `2026-08-06` and are overdue pending the
+security-owner dispositions the user will provide.
+
+The local advisory contract now derives its expected overdue count from the
+registry instead of requiring 17. The configured `cargo audit --deny warnings`
+checks pass for both lockfiles with only the two pending exceptions configured.
+The unfiltered app audit has zero vulnerability findings and exactly the two
+warnings; the unfiltered migrator audit has no findings or warnings. The
+governance checker validates the two-entry mapping and exits nonzero because
+both owner reviews are overdue. The gate remains fail-closed.

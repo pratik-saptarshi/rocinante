@@ -12,10 +12,11 @@ _Captured: 2026-10-04_
 
 ## Branch and Sync State
 
-- PR #108 is open and blocked on `fix/rocinante-readiness-remediation` at
-  validated source head `d703a4a`, based on current `main` tip `cdd29b9`. All 46 inline
-  review threads are resolved. Its required CI aggregate remains blocked by
-  the 17 overdue security exception reviews.
+- PR #108 is open on `fix/rocinante-readiness-remediation`; its latest hosted
+  validation head is `1be093a`, based on `main` tip `cdd29b9`. All 47 inline
+  review threads are resolved. The latest hosted aggregate failed on the then
+  17 overdue security exception entries. A local evidence-backed update now
+  retains two live entries; CI for that update is pending.
 - The complete phase sequence and exit evidence are in
   `docs/roadmap/rustsec-zero-exception-remediation-plan.md`.
 - Lane-scope refinement now keeps docs-only and non-functional edits out of storage/coverage-heavy lanes while preserving core rust gate visibility.
@@ -38,7 +39,7 @@ _Captured: 2026-10-04_
 ## Active Governance and Planned Slices
 
 - `BI-047` — F-047 Desktop parity evaluation and host decision (completed on PR run `28988956969`)
-- `BI-046` — F-046 GTK/glib dependency-floor governance (in progress; 17 exception reviews overdue since 2026-08-06)
+- `BI-046` — F-046 GTK/glib dependency-floor governance (in progress; two live exception reviews overdue since 2026-08-06)
 - `BI-048` — F-048 Core extraction and host-agnostic contract (completed locally; nine contract tests pass)
 - `BI-049` — F-049 GTK-free native desktop MVP (in progress; eframe/winit shell with lossless paths, authenticated scans, saved-metric reload, and desktop notification requests)
 - `BI-052` — F-052 Dependabot esbuild remediation (tracked esbuild alert confirmed closed by live query on 2026-09-30; other release blockers remain)
@@ -62,9 +63,9 @@ _Captured: 2026-10-04_
   `scripts/duckdb-prebuilt-artifacts.json`; build lanes verify and stage the
   binary before Cargo. DuckDB source-build features are forbidden by a tested
   feature-graph guard. Tauri production bundles now use verified per-platform
-  resources and loader paths. All three package inspections pass on the
-  validated source head in hosted run `37233328503`; the required governance lane
-  fails on the 17 overdue exception reviews.
+  resources and loader paths. All three package inspections passed on hosted
+  source head `1be093a` in run `37235903810`; at that source head the required
+  governance lane failed on the then-current 17 overdue exception reviews.
 - The provisioner contract tests (9), DuckDB feature-guard contract, CI-scope
   contract, macOS installer contract, and Linux installer/deep-link contract
   pass locally. An actual macOS shell build was packaged into an `.app`; `otool`
@@ -72,7 +73,7 @@ _Captured: 2026-10-04_
   `@executable_path/../Frameworks` run path. The full installed macOS lifecycle
   also passes cold/warm Launch Services URLs, tray behavior, notification
   request, and saved-state restart. Hosted run
-  [37233328503](https://github.com/pratik-saptarshi/rocinante/actions/runs/37233328503)
+  [37235903810](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903810)
   passes Linux/macOS/Windows URL and saved-state restart acceptance, the
   three-platform Tauri DuckDB bundle checks, and Linux visible notification
   delivery. All hosted Rust lint and test shards also passed.
@@ -93,17 +94,20 @@ _Captured: 2026-10-04_
   (last updated 2026-10-03; a 2026-10-04 refresh returned no newer revision).
   The app audit against that revision reports
   two warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`) and an empty ignore
-  list; it exits nonzero with `--deny warnings`.
-  No advisory dates have been renewed; governance remains fail-closed on all 17
-  overdue entries.
-- Published-head CI run `37233328503` completed with all code, UI, platform,
-  package, workspace-test, format, Clippy, and contract jobs passed. The
-  aggregate failed because `security-exception-governance` found all 17 review
-  dates overdue. Security run `37233328497` and Dependency Review
-  `37233328573` passed. These checks do not prove the
-  zero-exception RustSec requirement.
-- PR #108's required `tauri-runtime-bundle` passed on source head `d703a4a`
-  in run `37233328503`: Linux `.deb`, macOS `.app`, and Windows NSIS packages all
+  list; it exits nonzero with `--deny warnings`. The configured audit and
+  registry now contain only those two live warnings. Eight withdrawn advisory
+  records and seven entries whose packages are absent from both supported
+  lockfiles were removed with evidence recorded in
+  `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`. The two
+  remaining reviews are overdue; their dates were not renewed.
+- Hosted CI run `37235903810` on `1be093a` completed with code, UI, platform,
+  package, workspace-test, format, Clippy, and contract jobs passed. Its
+  aggregate failed because the registry at that source head still had 17
+  overdue review dates. Security run `37235903812` and Dependency Review
+  `37235903871` passed. CI for the local two-entry registry update is pending;
+  these prior runs do not establish the zero-exception RustSec requirement.
+- PR #108's required `tauri-runtime-bundle` passed on source head `1be093a`
+  in run `37235903810`: Linux `.deb`, macOS `.app`, and Windows NSIS packages all
   contain the verified DuckDB runtime. The macOS check also rejects any
   remaining `duckdb-download` Cargo-cache RPATH. The aggregate remains blocked
   by the separate advisory governance failure.
@@ -151,19 +155,17 @@ _Captured: 2026-10-04_
 - DuckDB prebuilt provisioning and installed app packaging are validated
   locally and in the hosted Linux, macOS, and Windows lifecycle jobs. Rust test
   jobs also stage the verified runtime in Cargo's `debug/deps` directory.
-- The advisory gate is intentionally blocked by 17 overdue registry
-  dispositions and two current-worktree audit warnings. No review dates or
-  owner acceptance statements have been fabricated. The phased zero-exception
-  remediation sequence is documented in the roadmap plan.
+- The advisory gate remains intentionally blocked by two overdue live
+  dispositions and two app audit warnings. The other 15 registry entries were
+  removed only after withdrawal or supported-lockfile absence evidence; no
+  review dates or owner acceptance statements were fabricated. The phased
+  zero-exception remediation sequence is documented in the roadmap plan.
 - The dependency-floor and exception-registry phase is not complete. The last
-  terminal aggregate on the validated source head, `37233328503`, passes all code
-  lanes but fails the required gate because 17 registry reviews are overdue.
-  The current local work adds the isolated legacy Sled migrator; focused tool
-  and storage tests, full-workspace Clippy, and the full workspace test (254
-  tests across 60 suites) pass. Hosted checks on source head `d703a4a` are terminal;
-  all code lanes pass and only the fail-closed governance and dependent
-  aggregate checks fail. Do not record owner acceptance or renew any review
-  date without the actual disposition.
+  terminal aggregate on the latest hosted validation head, `37235903810`, passed
+  all code lanes but failed the required gate because the registry at that head
+  had 17 reviews overdue. The local registry reclassification and its contract
+  test are not hosted-validated yet. Do not record owner acceptance or renew
+  either remaining review date without the actual disposition.
 
 ## Release Artifacts
 

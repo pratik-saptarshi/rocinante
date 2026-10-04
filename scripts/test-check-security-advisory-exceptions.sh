@@ -3,6 +3,15 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 checker="$repo_root/scripts/check-security-advisory-exceptions.py"
+registry="$repo_root/docs/roadmap/security-advisory-exceptions.json"
+entry_count="$(python3 - "$registry" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+print(len(json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))))
+PY
+)"
 before_deadline="$(python3 "$checker" --as-of 2026-08-06)"
 if [[ "$before_deadline" != *"No review dates are overdue."* ]]; then
   echo "review date should remain valid on its due date" >&2
@@ -18,8 +27,8 @@ if [[ $status -ne 1 ]]; then
   printf '%s\n' "$after_deadline" >&2
   exit 1
 fi
-if [[ "$after_deadline" != *"17 exception review dates are overdue:"* ]]; then
-  echo "expected all current exceptions to be reported as overdue" >&2
+if [[ "$after_deadline" != *"$entry_count exception review dates are overdue:"* ]]; then
+  echo "expected all current exceptions to be reported as overdue ($entry_count)" >&2
   printf '%s\n' "$after_deadline" >&2
   exit 1
 fi
