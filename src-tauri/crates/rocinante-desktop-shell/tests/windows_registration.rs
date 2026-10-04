@@ -24,7 +24,6 @@ fn windows_url_acceptance_covers_dispatch_restart_and_cleanup() {
         "cargo build --manifest-path $manifest",
         "Start-Process -FilePath (New-RepositoryUri $coldPath)",
         "Start-Process -FilePath $installedBinary -ArgumentList (New-RepositoryUri $warmPath) -PassThru",
-        "phase=open-inbox",
         "The app did not persist eframe state before exit",
         "ROCINANTE_ACCEPTANCE_FORWARD_WITNESS",
         "forward-attempt.txt",

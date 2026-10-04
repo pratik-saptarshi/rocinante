@@ -454,7 +454,12 @@ mod native_ui {
             }
             let mut state: ShellState = creation_context
                 .storage
-                .and_then(|storage| eframe::get_value(storage, "rocinante_shell_state"))
+                .and_then(|storage| {
+                    storage
+                        .get_string("rocinante_shell_state_json")
+                        .and_then(|saved| serde_json::from_str(&saved).ok())
+                        .or_else(|| eframe::get_value(storage, "rocinante_shell_state"))
+                })
                 .unwrap_or_default();
             for link in initial_links {
                 if let Some(target) = parse_deep_link(&link) {
@@ -880,6 +885,9 @@ mod native_ui {
 
         fn save(&mut self, storage: &mut dyn eframe::Storage) {
             eframe::set_value(storage, "rocinante_shell_state", &self.state);
+            if let Ok(saved) = serde_json::to_string(&self.state) {
+                storage.set_string("rocinante_shell_state_json", saved);
+            }
         }
 
         fn persist_egui_memory(&self) -> bool {

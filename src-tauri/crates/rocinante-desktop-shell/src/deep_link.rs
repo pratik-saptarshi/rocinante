@@ -13,6 +13,8 @@ pub const MAX_DEEP_LINK_BYTES: usize = 8 * 1024;
 pub const MAX_PENDING_DEEP_LINKS: usize = 64;
 #[cfg(feature = "native-ui")]
 const ACTIVATE_MESSAGE: &[u8] = b"rocinante:activate:v1";
+#[cfg(all(feature = "native-ui", windows))]
+const ERROR_LOCK_VIOLATION: i32 = 33;
 #[cfg(feature = "native-ui")]
 static NEXT_MESSAGE_ID: AtomicU64 = AtomicU64::new(0);
 
@@ -49,7 +51,7 @@ impl DeepLinkInbox {
             .open(directory.join("instance.lock"))?;
         let primary = match fs2::FileExt::try_lock_exclusive(&lock_file) {
             Ok(()) => true,
-            Err(error) if error.kind() == io::ErrorKind::WouldBlock => false,
+            Err(error) if instance_lock_is_contended(&error) => false,
             Err(error) => return Err(error),
         };
         Ok(Self {
@@ -194,6 +196,18 @@ impl DeepLinkInbox {
 }
 
 #[cfg(feature = "native-ui")]
+fn instance_lock_is_contended(error: &io::Error) -> bool {
+    if error.kind() == io::ErrorKind::WouldBlock {
+        return true;
+    }
+    #[cfg(windows)]
+    if error.raw_os_error() == Some(ERROR_LOCK_VIOLATION) {
+        return true;
+    }
+    false
+}
+
+#[cfg(feature = "native-ui")]
 fn pending_sequence(file_name: &std::ffi::OsStr) -> u64 {
     parse_pending_sequence(file_name).unwrap_or(u64::MAX)
 }
@@ -274,5 +288,14 @@ fn hex_value(value: u8) -> Option<u8> {
         b'a'..=b'f' => Some(value - b'a' + 10),
         b'A'..=b'F' => Some(value - b'A' + 10),
         _ => None,
+    }
+}
+
+#[cfg(all(test, feature = "native-ui", windows))]
+mod windows_lock_tests {
+    #[test]
+    fn lock_file_violation_means_another_instance_is_primary() {
+        let error = std::io::Error::from_raw_os_error(super::ERROR_LOCK_VIOLATION);
+        assert!(super::instance_lock_is_contended(&error));
     }
 }
