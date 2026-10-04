@@ -23,7 +23,8 @@ fn windows_url_acceptance_covers_dispatch_restart_and_cleanup() {
     for required in [
         "cargo build --manifest-path $manifest",
         "Start-Process -FilePath (New-RepositoryUri $coldPath)",
-        "Start-Process -FilePath (New-RepositoryUri $warmPath)",
+        "Start-Process -FilePath $installedBinary -ArgumentList (New-RepositoryUri $warmPath)",
+        "The app did not persist eframe state before exit",
         "ROCINANTE_ACCEPTANCE_FORWARD_WITNESS",
         "forward-attempt.txt",
         "if ($warmPid -ne $primaryPid)",

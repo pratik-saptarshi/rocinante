@@ -76,7 +76,9 @@ roadmap artifacts.
 - `scripts/test-linux-url-dispatch.sh`: Ubuntu acceptance for installed cold/warm
   URI delivery, notification display, and saved-state process restart.
 - `scripts/test-macos-url-dispatch.sh` and `scripts/test-windows-url-dispatch.ps1`:
-  installed cold/warm URL dispatch and new-process saved-state acceptance.
+  installed cold URI dispatch, warm secondary-process delivery, and new-process
+  saved-state acceptance. Windows uses the registered URI handler for cold
+  launch and starts the installed binary with the URI for warm forwarding.
 - `scripts/macos-window-state.m`: macOS acceptance witness for window visibility,
   frontmost state, AppKit activation policy, and AppKit active state.
 - `scripts/generate-desktop-icons.sh` and `.swift`: regenerate the shared native

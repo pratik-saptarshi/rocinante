@@ -33,6 +33,7 @@ fn linux_url_acceptance_exercises_registered_cold_warm_and_restart_flow() {
         "if [[ \"$(sed -n 's/^pid=//p' \"$witness\")\" != \"$test_pid\" ]]",
         "touch \"$quit_file\"",
         "rm -f \"$quit_file\"",
+        "The app did not persist eframe state before exit",
         "\"$installed_binary\" >/dev/null 2>&1 &",
         "Linux registered cold/warm URI delivery and saved-state restart passed",
     ] {

@@ -7,6 +7,7 @@ shell_binary="$repo_root/src-tauri/target/debug/rocinante-desktop-shell"
 installer="$repo_root/src-tauri/crates/rocinante-desktop-shell/packaging/linux/install-user.sh"
 test_root="$(mktemp -d "${TMPDIR:-/tmp}/rocinante-linux-url-acceptance.XXXXXX")"
 app_data="$test_root/app-data"
+state_file="$app_data/shell-state.ron"
 witness="$test_root/applied-state.txt"
 quit_file="$test_root/request-clean-quit"
 notification_log="$test_root/notification-log.txt"
@@ -208,6 +209,11 @@ if proc_matches_binary "$test_pid"; then
   exit 1
 fi
 rm -f "$quit_file"
+if [[ ! -s "$state_file" ]]; then
+  echo "The app did not persist eframe state before exit" >&2
+  exit 1
+fi
+echo "Persisted shell state: $(cat "$state_file")"
 
 : > "$witness"
 "$installed_binary" >/dev/null 2>&1 &

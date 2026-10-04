@@ -7,6 +7,7 @@ $installer = Join-Path $repoRoot 'src-tauri\crates\rocinante-desktop-shell\packa
 $testId = [guid]::NewGuid().ToString('N')
 $testRoot = Join-Path $env:RUNNER_TEMP "rocinante-url-acceptance-$testId"
 $appData = Join-Path $testRoot 'app-data'
+$stateFile = Join-Path $appData 'shell-state.ron'
 $witness = Join-Path $testRoot 'applied-state.txt'
 $forwardWitness = Join-Path $testRoot 'forward-attempt.txt'
 $quitFile = Join-Path $testRoot 'request-clean-quit'
@@ -79,7 +80,7 @@ try {
     $primaryPid = [int]((Get-Content -LiteralPath $witness | Where-Object { $_ -like 'pid=*' }) -replace '^pid=', '')
     if (-not $primaryPid) { throw 'Cold launch did not report a process id.' }
 
-    Start-Process -FilePath (New-RepositoryUri $warmPath) | Out-Null
+    Start-Process -FilePath $installedBinary -ArgumentList (New-RepositoryUri $warmPath) | Out-Null
     Wait-ForAppliedPath $warmPath
     $warmPid = [int]((Get-Content -LiteralPath $witness | Where-Object { $_ -like 'pid=*' }) -replace '^pid=', '')
     if ($warmPid -ne $primaryPid) { throw "Warm URI started or reached a different process ($warmPid; expected $primaryPid)." }
@@ -88,6 +89,10 @@ try {
     $primary = Get-Process -Id $primaryPid -ErrorAction SilentlyContinue
     if ($primary -and -not $primary.WaitForExit(60000)) { throw 'The app did not exit cleanly after the acceptance quit request.' }
     Remove-Item -LiteralPath $quitFile -Force
+    if (-not (Test-Path -LiteralPath $stateFile -PathType Leaf)) {
+        throw "The app did not persist eframe state before exit. Forwarding witness: $(if (Test-Path -LiteralPath $forwardWitness) { Get-Content -LiteralPath $forwardWitness -Raw } else { '<no secondary process forwarding witness>' })"
+    }
+    Write-Output "Persisted shell state: $(Get-Content -LiteralPath $stateFile -Raw)"
 
     Clear-Content -LiteralPath $witness
     Start-Process -FilePath $installedBinary | Out-Null
