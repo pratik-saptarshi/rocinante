@@ -45,7 +45,7 @@ fn windows_url_acceptance_covers_dispatch_restart_and_cleanup() {
             .find("Remove-Item -LiteralPath $quitFile -Force")
             .unwrap()
             < acceptance
-                .find("Start-Process -FilePath $installedBinary")
+                .rfind("Start-Process -FilePath $installedBinary")
                 .unwrap(),
         "the restarted process must not inherit the previous process's clean-quit request"
     );
