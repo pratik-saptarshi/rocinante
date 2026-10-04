@@ -73,6 +73,9 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
 
     let stored_metrics = query_repository_metrics(&token, root.path(), "", database.path())
         .expect("query stored repository metrics");
+    let historic_metrics =
+        query_repository_metrics(&token, root.path(), "previous-release", database.path())
+            .expect("query legacy identities for a release with no stable rows");
 
     assert_eq!(result.records_processed, 4);
     assert!(result.rows_inserted >= 1);
@@ -90,10 +93,17 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
     assert!(metrics
         .iter()
         .all(|metric| metric.key != "similar_repo_metric"));
-    assert!(stored_metrics.iter().any(|metric| {
+    assert!(!stored_metrics.is_empty());
+    assert!(stored_metrics
+        .iter()
+        .all(|metric| metric.repo_name.contains(' ')));
+    assert!(!stored_metrics
+        .iter()
+        .any(|metric| metric.key.starts_with("legacy_metric_")));
+    assert!(historic_metrics.iter().any(|metric| {
         metric.repo_name == "repo-one" && metric.key == "legacy_metric_repo-one"
     }));
-    assert!(stored_metrics.iter().any(|metric| {
+    assert!(historic_metrics.iter().any(|metric| {
         metric.repo_name == "group-a/shared" && metric.key == "legacy_metric_group-a/shared"
     }));
     assert!(metrics.iter().all(|metric| stored_metrics.contains(metric)));

@@ -11,11 +11,16 @@ use errors::AnalyzerError;
 use git::discover_repositories_path;
 use plugins::sanitizer::scrub_text;
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use telemetry::{TelemetryImportSummary, TelemetryStore};
 use types::{AdminQuery, AnalysisMetric, RepoTarget};
+
+type RepositoryIdentity = (String, String);
+type RepositoryIdentities = Vec<RepositoryIdentity>;
+type ScanAndPersistResult =
+    Result<(TelemetryImportSummary, RepositoryIdentities, TelemetryStore), AnalyzerError>;
 
 pub fn default_telemetry_db_path() -> PathBuf {
     if let Some(path) = std::env::var_os("ROCINANTE_TELEMETRY_DB") {
@@ -126,8 +131,8 @@ pub fn run_scan_with_metrics(
     release: &str,
     db_path: &Path,
 ) -> Result<(TelemetryImportSummary, Vec<types::RepositoryMetric>), AnalyzerError> {
-    let (summary, names, store) = scan_and_persist(token, root, release, db_path)?;
-    let metrics = store.query_repositories(&names, release)?;
+    let (summary, identities, store) = scan_and_persist(token, root, release, db_path)?;
+    let metrics = query_repository_metrics_for_identities(&store, &identities, release)?;
     Ok((summary, metrics))
 }
 
@@ -140,21 +145,15 @@ pub fn query_repository_metrics(
     auth::require_configured_token_secret()?;
     let principal = auth::decode_principal(token)?;
     auth::require_admin(&principal)?;
-    let repositories = uniquely_named_repositories(root);
-    if repositories.is_empty() {
+    let (_, identities) = repositories_with_identities(root);
+    if identities.is_empty() {
         return Err(AnalyzerError::Io(format!(
             "no Git repositories found under {}",
             root.display()
         )));
     }
-    let mut names = repositories
-        .into_iter()
-        .map(|repository| repository.name)
-        .collect::<Vec<_>>();
-    names.extend(legacy_repository_names(root));
-    names.sort_unstable();
-    names.dedup();
-    TelemetryStore::open(db_path)?.query_repositories(&names, release)
+    let store = TelemetryStore::open(db_path)?;
+    query_repository_metrics_for_identities(&store, &identities, release)
 }
 
 fn scan_and_persist(
@@ -162,11 +161,11 @@ fn scan_and_persist(
     root: &Path,
     release: &str,
     db_path: &Path,
-) -> Result<(TelemetryImportSummary, Vec<String>, TelemetryStore), AnalyzerError> {
+) -> ScanAndPersistResult {
     auth::require_configured_token_secret()?;
     let principal = auth::decode_principal(token)?;
     auth::require_admin(&principal)?;
-    let repositories = uniquely_named_repositories(root);
+    let (repositories, identities) = repositories_with_identities(root);
     if repositories.is_empty() {
         return Err(AnalyzerError::Io(format!(
             "no Git repositories found under {}",
@@ -180,33 +179,51 @@ fn scan_and_persist(
         records.push(pipeline.analyze_repo(repository, release)?);
     }
 
-    let mut names = records
-        .iter()
-        .map(|record| record.repo_name.clone())
-        .collect::<Vec<_>>();
-    names.extend(legacy_repository_names(root));
-    names.sort_unstable();
-    names.dedup();
     let store = TelemetryStore::open(db_path)?;
     let summary = store.insert_records(&records, release)?;
-    Ok((summary, names, store))
+    Ok((summary, identities, store))
 }
 
-fn uniquely_named_repositories(root: &Path) -> Vec<RepoTarget> {
-    let mut repositories = discover_repositories_path(root);
-    for repository in &mut repositories {
-        repository.name = stable_repository_name(&repository.path, &repository.name);
+fn query_repository_metrics_for_identities(
+    store: &TelemetryStore,
+    identities: &[RepositoryIdentity],
+    release: &str,
+) -> Result<Vec<types::RepositoryMetric>, AnalyzerError> {
+    let stable_names = identities
+        .iter()
+        .map(|(stable_name, _)| stable_name.clone())
+        .collect::<Vec<_>>();
+    let mut metrics = store.query_repositories(&stable_names, release)?;
+    let stable_names_with_metrics = metrics
+        .iter()
+        .map(|metric| metric.repo_name.as_str())
+        .collect::<HashSet<_>>();
+    let legacy_names = identities
+        .iter()
+        .filter(|(stable_name, _)| !stable_names_with_metrics.contains(stable_name.as_str()))
+        .map(|(_, legacy_name)| legacy_name.clone())
+        .collect::<Vec<_>>();
+
+    if !legacy_names.is_empty() {
+        metrics.extend(store.query_repositories(&legacy_names, release)?);
     }
-    repositories
+    Ok(metrics)
 }
 
-fn legacy_repository_names(root: &Path) -> Vec<String> {
+fn repositories_with_identities(root: &Path) -> (Vec<RepoTarget>, RepositoryIdentities) {
     let mut repositories = discover_repositories_path(root);
-    disambiguate_duplicate_names(root, &mut repositories);
-    repositories
-        .into_iter()
-        .map(|repository| repository.name)
-        .collect()
+    let mut legacy_repositories = repositories.clone();
+    disambiguate_duplicate_names(root, &mut legacy_repositories);
+    let identities = repositories
+        .iter_mut()
+        .zip(legacy_repositories)
+        .map(|(repository, legacy)| {
+            let legacy_name = legacy.name;
+            repository.name = stable_repository_name(&repository.path, &repository.name);
+            (repository.name.clone(), legacy_name)
+        })
+        .collect();
+    (repositories, identities)
 }
 
 fn disambiguate_duplicate_names(root: &Path, repositories: &mut [RepoTarget]) {
