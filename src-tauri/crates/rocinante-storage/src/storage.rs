@@ -46,7 +46,7 @@ fn update_max_usize(metric: &AtomicUsize, value: usize) {
 }
 
 fn duration_to_millis_ceil(duration: Duration) -> u64 {
-    let fractional_millisecond = duration.subsec_nanos() % 1_000_000 != 0;
+    let fractional_millisecond = !duration.subsec_nanos().is_multiple_of(1_000_000);
     duration
         .as_millis()
         .saturating_add(if fractional_millisecond { 1 } else { 0 })

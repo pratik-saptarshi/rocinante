@@ -8,9 +8,11 @@ fn migrates_a_live_legacy_database_through_sqlite_backup() {
     std::env::set_current_dir(temporary.path()).expect("switch to isolated current directory");
 
     std::env::set_var("ROCINANTE_TELEMETRY_DB", "relative-telemetry.db");
+    let isolated_current_directory =
+        std::env::current_dir().expect("resolve isolated current directory");
     assert_eq!(
         rocinante_analysis::default_telemetry_db_path(),
-        temporary.path().join("relative-telemetry.db")
+        isolated_current_directory.join("relative-telemetry.db")
     );
 
     let legacy_path = temporary.path().join("telemetry.db");

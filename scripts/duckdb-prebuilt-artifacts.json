@@ -1,0 +1,41 @@
+{
+  "duckdb_rs_version": "1.10506.0",
+  "duckdb_version": "1.5.6",
+  "release_url": "https://github.com/duckdb/duckdb/releases/download/v1.5.6",
+  "license": "MIT",
+  "targets": {
+    "x86_64-unknown-linux-gnu": {
+      "archive": "libduckdb-linux-amd64.zip",
+      "archive_sha256": "b845005f5132a7d8180057c35e14a7626632258782f871a90861b19c1c03841b",
+      "files": {
+        "libduckdb.so": "3f4962cdd266eab2b479a5b5a4a6d063d279b2954ae814ed00385d553b747633",
+        "duckdb.h": "e85f70155b5948c8575e59f66e60d43575cec8b252293534c9e8598eb313a293"
+      }
+    },
+    "x86_64-apple-darwin": {
+      "archive": "libduckdb-osx-universal.zip",
+      "archive_sha256": "e0bc007d9b0094c0970ac1847a8601d10aad07cbd2910ce586ec810f77b638d6",
+      "files": {
+        "libduckdb.dylib": "75a519cb914ae36ca22cff0995a8a2e8c9a46990b8c0a479514f741a0d93f344",
+        "duckdb.h": "e85f70155b5948c8575e59f66e60d43575cec8b252293534c9e8598eb313a293"
+      }
+    },
+    "aarch64-apple-darwin": {
+      "archive": "libduckdb-osx-universal.zip",
+      "archive_sha256": "e0bc007d9b0094c0970ac1847a8601d10aad07cbd2910ce586ec810f77b638d6",
+      "files": {
+        "libduckdb.dylib": "75a519cb914ae36ca22cff0995a8a2e8c9a46990b8c0a479514f741a0d93f344",
+        "duckdb.h": "e85f70155b5948c8575e59f66e60d43575cec8b252293534c9e8598eb313a293"
+      }
+    },
+    "x86_64-pc-windows-msvc": {
+      "archive": "libduckdb-windows-amd64.zip",
+      "archive_sha256": "44cf59583f9951d2cb09b1bf115a63ecb2d8901e363903029d86c7d8683fe96a",
+      "files": {
+        "duckdb.dll": "7e90bdef028d57b45490d6f53530e3c012a5d9abdc4c6723449200663dc84ed0",
+        "duckdb.lib": "af327b20424cc94e8a3fec6ff1998ef80da142abba6432b2cfbd1949e8aa592b",
+        "duckdb.h": "11aa58cb81c1ab8174c5fdb6738f034a9790b91310c1028b20f9a9e4096645b8"
+      }
+    }
+  }
+}
