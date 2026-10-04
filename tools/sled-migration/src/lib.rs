@@ -44,8 +44,9 @@ struct TreeSnapshot {
 /// Migrate the Sled store under `root` into `root/ingestion.sqlite3`.
 ///
 /// The storage lock used by the desktop application is acquired first. Only
-/// Sled's `conf` and `db` entries are copied into a temporary directory; Sled
-/// opens and recovers that copy, while the original store remains untouched.
+/// Sled's `conf`, `db`, and `blobs` entries are copied into a temporary
+/// directory; Sled opens and recovers that copy, while the original store
+/// remains untouched.
 pub fn migrate_legacy_sled_store(root: impl AsRef<Path>) -> MigrationResult<MigrationReport> {
     migrate_with_interrupt_after(root.as_ref(), None)
 }
@@ -73,6 +74,7 @@ fn migrate_with_interrupt_after(
     fs::create_dir(&copy_root)?;
     copy_sled_entry(root, &copy_root, "conf")?;
     copy_sled_entry(root, &copy_root, "db")?;
+    copy_sled_entry(root, &copy_root, "blobs")?;
 
     let db = sled::open(&copy_root)?;
     db.flush()?;
@@ -472,7 +474,7 @@ mod tests {
 
     fn snapshot_legacy_store(root: &Path) -> Vec<(PathBuf, Vec<u8>)> {
         let mut files = Vec::new();
-        for name in ["conf", "db"] {
+        for name in ["conf", "db", "blobs"] {
             let path = root.join(name);
             if path.exists() {
                 snapshot_entry(&path, root, &mut files);
@@ -536,6 +538,37 @@ mod tests {
                 .expect("analytics path"),
         )
         .expect("application accepts the completed migration marker");
+    }
+
+    #[test]
+    fn migrates_off_log_blob_values_from_the_complete_sled_snapshot() {
+        let root = tempdir().expect("create migration root");
+        let legacy = root.path().join("legacy");
+        let large_value = vec![0x5a; 1024 * 1024];
+        let db = sled::open(&legacy).expect("create legacy Sled store");
+        db.insert(b"large-value", large_value.as_slice())
+            .expect("insert value that Sled stores as a blob");
+        db.flush().expect("flush legacy Sled store");
+        drop(db);
+
+        let blob_dir = legacy.join("blobs");
+        let blob_files = fs::read_dir(&blob_dir)
+            .expect("large Sled value creates blob storage")
+            .collect::<io::Result<Vec<_>>>()
+            .expect("list blob files");
+        assert!(!blob_files.is_empty(), "fixture must exercise off-log data");
+        let original_files = snapshot_legacy_store(&legacy);
+
+        let report = migrate_legacy_sled_store(&legacy).expect("migrate blob-backed store");
+        assert_eq!(report.record_count, 1);
+        assert_eq!(snapshot_legacy_store(&legacy), original_files);
+
+        let connection = Connection::open(legacy.join(SQLITE_NAME)).expect("open migrated DB");
+        assert_eq!(
+            rows(&connection, 0, b""),
+            vec![(b"large-value".to_vec(), large_value)]
+        );
+        check_integrity(&connection).expect("check migrated DB");
     }
 
     #[test]
