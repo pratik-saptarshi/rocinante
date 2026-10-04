@@ -51,6 +51,14 @@ jobs:
         run: bash scripts/test-check-security-advisory-exceptions.sh
       - name: Test native shell dependency guard contract
         run: bash scripts/test-check-desktop-shell-dependencies.sh
+      - name: Test DuckDB prebuilt artifact provisioner
+        run: python3 scripts/test_provision_duckdb.py
+      - name: Test DuckDB source-build feature guard
+        run: bash scripts/test-check-duckdb-features.sh
+      - name: Verify resolved DuckDB feature graph
+        run: bash scripts/check-duckdb-features.sh
+      - name: Test Rust CI scope contract
+        run: bash scripts/test-ci-scope-contract.sh
       - name: Set up Node for dependency-floor check
         uses: actions/setup-node@v4
         with:
@@ -84,7 +92,7 @@ jobs:
           fetch-depth: 1
       - uses: pnpm/action-setup@v4
         with:
-          version: 12.9.0
+          version: 12.9.1
           run_install: false
       - uses: actions/setup-node@v4
         with:
@@ -138,62 +146,12 @@ jobs:
             exit 0
           fi
 
-          CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
-          NEEDS_RUST=false
-          RUN_RUST_STORAGE_LANES=false
-          RUN_RUST_COVERAGE_LANES=false
-          RUST_TEST_LANES='["core"]'
-          SCOPE_PROFILE=docs-only-tweak
-
-          while IFS= read -r path; do
-            [[ -z "$path" ]] && continue
-            case "$path" in
-              .github/workflows/ci.yml)
-              NEEDS_RUST=true
-              RUN_RUST_STORAGE_LANES=true
-              RUN_RUST_COVERAGE_LANES=true
-              RUST_TEST_LANES='["core","storage"]'
-              SCOPE_PROFILE=code-surface-touched
-              break
-                ;;
-              docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*|.github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock|*.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico)
-                ;;
-              src-tauri/*)
-              NEEDS_RUST=true
-              RUN_RUST_STORAGE_LANES=true
-              RUN_RUST_COVERAGE_LANES=true
-              RUST_TEST_LANES='["core","storage"]'
-              SCOPE_PROFILE=code-surface-touched
-              break
-                ;;
-              *)
-              NEEDS_RUST=true
-              RUN_RUST_STORAGE_LANES=true
-              RUN_RUST_COVERAGE_LANES=true
-              RUST_TEST_LANES='["core","storage"]'
-              SCOPE_PROFILE=code-surface-touched
-              break
-                ;;
-            esac
-          done <<< "$CHANGED_FILES"
-
+          FORCE_RUST=false
           if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ startsWith(github.ref, 'refs/heads/release/') }}" == "true" ]]; then
-            NEEDS_RUST=true
-            RUN_RUST_STORAGE_LANES=true
-            RUN_RUST_COVERAGE_LANES=true
-            RUST_TEST_LANES='["core","storage"]'
-            if [[ "$SCOPE_PROFILE" == "docs-only-tweak" ]]; then
-              SCOPE_PROFILE=release-docs-tweak
-            fi
+            FORCE_RUST=true
           fi
 
-          {
-            echo "needs_rust=$NEEDS_RUST"
-            echo "scope_profile=$SCOPE_PROFILE"
-            echo "run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES"
-            echo "run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES"
-            echo "rust_test_lanes=$RUST_TEST_LANES"
-          } >> "$GITHUB_OUTPUT"
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | bash scripts/detect-ci-scope.sh "$FORCE_RUST" >> "$GITHUB_OUTPUT"
 
   windows-registration:
     needs: [ci-workflow-parse]
@@ -208,6 +166,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+      - name: Verify and stage prebuilt DuckDB
+        shell: pwsh
+        run: python scripts/provision_duckdb.py
       - name: Exercise per-user URI registration installer
         shell: pwsh
         run: ./scripts/test-windows-registration.ps1
@@ -254,6 +215,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+      - name: Verify and stage prebuilt DuckDB
+        run: python3 scripts/provision_duckdb.py
       - name: Lint full Rust workspace
         run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --workspace --all-targets -- -A dead_code
       - name: Test full Rust workspace
@@ -272,6 +235,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+      - name: Verify and stage prebuilt DuckDB
+        run: python3 scripts/provision_duckdb.py
       - name: Verify bundled cold and warm URL dispatch
         run: bash scripts/test-macos-url-dispatch.sh
 
@@ -305,12 +270,15 @@ jobs:
             libxkbcommon-x11-0 \
             libxrandr-dev \
             mesa-vulkan-drivers \
+            patchelf \
             xvfb \
             xdg-utils
       - uses: dtolnay/rust-toolchain@1.99.0
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+      - name: Verify and stage prebuilt DuckDB
+        run: python3 scripts/provision_duckdb.py
       - name: Verify native shell dependency floor
         run: bash scripts/check-desktop-shell-dependencies.sh
       - name: Verify registered URL dispatch and notification delivery
@@ -363,6 +331,8 @@ jobs:
           prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2
           save-if: |
             ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}
+      - name: Verify and stage prebuilt DuckDB
+        run: python3 scripts/provision_duckdb.py
       - name: Release build seed
         if: ${{ steps.build-scope.outputs.scope == 'release' }}
         run: |
@@ -433,6 +403,8 @@ jobs:
           workspaces: src-tauri
           prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2
           save-if: false
+      - name: Verify and stage prebuilt DuckDB
+        run: python3 scripts/provision_duckdb.py
       - name: CI gate contract
         run: |
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
@@ -487,6 +459,8 @@ jobs:
           workspaces: src-tauri
           prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2
           save-if: false
+      - name: Verify and stage prebuilt DuckDB
+        run: python3 scripts/provision_duckdb.py
       - name: Format check
         if: matrix.lane == 'fmt'
         run: timeout 900s cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
@@ -551,6 +525,8 @@ jobs:
           workspaces: src-tauri
           prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2
           save-if: false
+      - name: Verify and stage prebuilt DuckDB
+        run: python3 scripts/provision_duckdb.py
       - name: Test
         run: |
           TEST_START_TS=$(date +%s)
@@ -649,6 +625,8 @@ jobs:
           workspaces: src-tauri
           prefix-key: rust-cache-release-v2
           save-if: false
+      - name: Verify and stage prebuilt DuckDB
+        run: python3 scripts/provision_duckdb.py
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2.87.23
         with:
