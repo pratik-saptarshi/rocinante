@@ -9,6 +9,7 @@ import json
 import zipfile
 from pathlib import Path
 from subprocess import CompletedProcess
+from unittest import mock
 
 
 SCRIPT = Path(__file__).with_name("prepare-tauri-duckdb-bundle.py")
@@ -72,6 +73,60 @@ class BundlePreparationTests(unittest.TestCase):
             bundle.patch_binary_loader("x86_64-pc-windows-msvc", binary, library, self.runner)
 
         self.assertEqual(self.commands, [])
+
+    def test_universal_macos_uses_prebuilt_artifact_and_universal_output_directory(self) -> None:
+        target = "universal-apple-darwin"
+        artifact_target = "aarch64-apple-darwin"
+        manifest = bundle.provisioner.load_manifest(bundle.provisioner.DEFAULT_MANIFEST)
+        self.assertEqual(bundle._artifact_target_for_bundle(target), artifact_target)
+        self.assertEqual(
+            manifest["targets"][artifact_target]["archive"],
+            manifest["targets"]["x86_64-apple-darwin"]["archive"],
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            target_directory = Path(directory)
+            executable = (
+                target_directory
+                / target
+                / "release"
+                / "rocinante-repo-analyzer"
+            )
+            executable.parent.mkdir(parents=True)
+            executable.write_bytes(b"binary")
+            cache_directory = target_directory / "cache"
+            staged_library = target_directory / "tauri-resources" / "libduckdb.dylib"
+
+            with (
+                mock.patch.object(bundle.provisioner, "load_manifest", return_value=manifest),
+                mock.patch.object(
+                    bundle.provisioner,
+                    "provision_target",
+                    return_value=cache_directory,
+                ) as provision,
+                mock.patch.object(
+                    bundle.provisioner,
+                    "stage_runtime_to_directory",
+                    return_value=staged_library,
+                ) as stage,
+                mock.patch.object(bundle, "patch_binary_loader") as patch_loader,
+            ):
+                result = bundle.prepare_bundle(target, target_directory)
+
+        provision.assert_called_once_with(manifest, artifact_target, target_directory)
+        stage.assert_called_once_with(
+            manifest,
+            artifact_target,
+            cache_directory,
+            bundle.TAURI_ROOT / "tauri-resources",
+        )
+        patch_loader.assert_called_once_with(
+            target,
+            executable,
+            staged_library,
+            bundle._run,
+        )
+        self.assertEqual(result, staged_library)
 
     def test_staging_checks_the_expected_runtime_hash(self) -> None:
         runtime = b"verified DuckDB runtime"

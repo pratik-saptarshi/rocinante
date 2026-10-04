@@ -28,6 +28,8 @@ class BundlePreparationError(RuntimeError):
 
 
 CommandRunner = Callable[[Sequence[str]], subprocess.CompletedProcess[str]]
+UNIVERSAL_MACOS_TARGET = "universal-apple-darwin"
+UNIVERSAL_MACOS_ARTIFACT_TARGET = "aarch64-apple-darwin"
 
 
 def _run(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
@@ -124,12 +126,20 @@ def _target_directory() -> Path:
     return TAURI_ROOT / "target"
 
 
+def _artifact_target_for_bundle(target: str) -> str:
+    if target == UNIVERSAL_MACOS_TARGET:
+        # Both architecture entries reference the same verified universal dylib.
+        return UNIVERSAL_MACOS_ARTIFACT_TARGET
+    return target
+
+
 def prepare_bundle(target: str, target_directory: Path, runner: CommandRunner = _run) -> Path:
     manifest = provisioner.load_manifest(provisioner.DEFAULT_MANIFEST)
-    cache_directory = provisioner.provision_target(manifest, target, target_directory)
+    artifact_target = _artifact_target_for_bundle(target)
+    cache_directory = provisioner.provision_target(manifest, artifact_target, target_directory)
     resource_directory = TAURI_ROOT / "tauri-resources"
     staged_library = provisioner.stage_runtime_to_directory(
-        manifest, target, cache_directory, resource_directory
+        manifest, artifact_target, cache_directory, resource_directory
     )
 
     executable_name = "rocinante-repo-analyzer.exe" if target.endswith("-pc-windows-msvc") else "rocinante-repo-analyzer"
