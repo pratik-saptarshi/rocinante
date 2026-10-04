@@ -28,10 +28,11 @@ fn windows_url_acceptance_covers_dispatch_restart_and_cleanup() {
         "ROCINANTE_ACCEPTANCE_FORWARD_WITNESS",
         "forward-attempt.txt",
         "if ($warmPid -ne $primaryPid)",
+        "$primaryInstance = ((Get-Content -LiteralPath $witness | Where-Object { $_ -like 'instance=*' }) -replace '^instance=', '')",
         "request-clean-quit",
         "Remove-Item -LiteralPath $quitFile -Force",
         "Start-Process -FilePath $installedBinary",
-        "if (-not $restartedPid -or $restartedPid -eq $primaryPid)",
+        "if (-not $restartedPid -or -not $restartedInstance -or $restartedInstance -eq $primaryInstance)",
         "HKCU:\\Software\\Classes\\rocinante",
         "Stop-Process -Id $processId -Force",
     ] {
