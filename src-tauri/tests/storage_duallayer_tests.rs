@@ -11,7 +11,7 @@ use rusqlite::Connection as SqliteConnection;
 use std::fs;
 use std::path::Path;
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tempfile::tempdir;
 
 fn enqueue_with_backpressure(engine: &AsyncIngestionEngine, evt: CommitIngestionEvent) {
@@ -542,15 +542,14 @@ fn async_ingestion_engine_applies_retention_before_promotion() {
         sample_event_with_release("active", "active-retention"),
     );
 
-    let mut promoted = false;
-    for _ in 0..20 {
-        if engine.promotion_count() > 0 {
-            promoted = true;
-            break;
-        }
+    let promotion_deadline = Instant::now() + Duration::from_secs(10);
+    while engine.promotion_count() == 0 && Instant::now() < promotion_deadline {
         thread::sleep(Duration::from_millis(50));
     }
-    assert!(promoted);
+    assert!(
+        engine.promotion_count() > 0,
+        "background ingestion did not complete a promotion before the timeout"
+    );
 
     let legacy_hits = store
         .aggregate_by_query(&AdminQuery {
