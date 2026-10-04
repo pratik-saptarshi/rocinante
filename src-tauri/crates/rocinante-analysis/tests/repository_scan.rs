@@ -102,6 +102,23 @@ fn scan_rejects_a_directory_without_discovered_repositories() {
 }
 
 #[test]
+fn loading_metrics_rejects_a_directory_without_discovered_repositories() {
+    std::env::set_var(
+        "RUNICIPAL_TOKEN_SECRET",
+        "test-secret-for-repository-scan-32-bytes",
+    );
+    let root = tempfile::tempdir().expect("root directory");
+    let database = root.path().join("must-not-be-created.db");
+    let token = issue_test_token("scan-admin", &["admin"], 300);
+
+    let error = query_repository_metrics(&token, root.path(), "", &database)
+        .expect_err("empty repository selection must fail");
+
+    assert!(error.to_string().contains("no Git repositories found"));
+    assert!(!database.exists());
+}
+
+#[test]
 fn scan_requires_a_valid_admin_token_before_opening_the_database() {
     let root = tempfile::tempdir().expect("root directory");
     let database = root.path().join("must-not-be-created.db");

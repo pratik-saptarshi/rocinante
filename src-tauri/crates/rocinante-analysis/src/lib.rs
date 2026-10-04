@@ -131,6 +131,12 @@ pub fn query_repository_metrics(
     let principal = auth::decode_principal(token)?;
     auth::require_admin(&principal)?;
     let repositories = uniquely_named_repositories(root);
+    if repositories.is_empty() {
+        return Err(AnalyzerError::Io(format!(
+            "no Git repositories found under {}",
+            root.display()
+        )));
+    }
     let mut names = repositories
         .into_iter()
         .map(|repository| repository.name)
