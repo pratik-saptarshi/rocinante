@@ -95,7 +95,7 @@ def patch_binary_loader(target: str, binary: Path, library: Path, runner: Comman
             [
                 "patchelf",
                 "--set-rpath",
-                "$ORIGIN/../lib/rocinante-repo-analyzer",
+                "$ORIGIN/../lib/Rocinante Repo Analyzer",
                 str(binary),
             ]
         )

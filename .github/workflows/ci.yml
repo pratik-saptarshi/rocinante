@@ -216,6 +216,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+      - name: Stage verified DuckDB before loading Tauri resources
+        if: runner.os != 'Windows'
+        run: python3 scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle
+      - name: Stage verified DuckDB before loading Tauri resources on Windows
+        if: runner.os == 'Windows'
+        run: python scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle
       - name: Build production Tauri bundle
         working-directory: src-tauri
         run: pnpm dlx @tauri-apps/cli@2.12.0 build --bundles ${{ matrix.bundle }}
@@ -226,7 +232,7 @@ jobs:
           test -n "$package"
           package_root="$RUNNER_TEMP/rocinante-tauri-deb"
           dpkg-deb -x "$package" "$package_root"
-          duckdb_library="$package_root/usr/lib/rocinante-repo-analyzer/libduckdb.so"
+          duckdb_library="$package_root/usr/lib/Rocinante Repo Analyzer/libduckdb.so"
           if [[ ! -f "$duckdb_library" ]]; then
             echo "DuckDB runtime missing from the Tauri resource directory; package files:"
             find "$package_root/usr/lib" -maxdepth 4 -type f -print
@@ -234,7 +240,7 @@ jobs:
           fi
           rpath=$(patchelf --print-rpath "$package_root/usr/bin/rocinante-repo-analyzer")
           echo "Tauri executable RPATH: $rpath"
-          grep -F "\$ORIGIN/../lib/rocinante-repo-analyzer" <<<"$rpath"
+          grep -F "\$ORIGIN/../lib/Rocinante Repo Analyzer" <<<"$rpath"
       - name: Verify DuckDB is inside the macOS app bundle with a relocatable loader path
         if: runner.os == 'macOS'
         run: |
@@ -252,7 +258,9 @@ jobs:
           $sevenZip = Join-Path $env:ProgramFiles '7-Zip\7z.exe'
           if (-not (Test-Path $sevenZip)) { throw '7-Zip is required to inspect the Tauri installer' }
           $contents = & $sevenZip l $installer.FullName
-          if ($LASTEXITCODE -ne 0 -or $contents -notmatch 'duckdb\.dll') {
+          if ($LASTEXITCODE -ne 0) { throw 'Could not list the Tauri NSIS installer contents' }
+          if ($contents -notmatch 'duckdb\.dll') {
+            Write-Output $contents
             throw 'The Tauri NSIS installer does not contain duckdb.dll'
           }
 

@@ -41,7 +41,7 @@ class BundlePreparationTests(unittest.TestCase):
             bundle.patch_binary_loader("x86_64-unknown-linux-gnu", binary, library, self.runner)
 
         self.assertIn(
-            ["patchelf", "--set-rpath", "$ORIGIN/../lib/rocinante-repo-analyzer", str(binary)],
+            ["patchelf", "--set-rpath", "$ORIGIN/../lib/Rocinante Repo Analyzer", str(binary)],
             self.commands,
         )
 
@@ -113,6 +113,7 @@ class BundlePreparationTests(unittest.TestCase):
         tauri_root = SCRIPT.parent.parent / "src-tauri"
         config = json.loads((tauri_root / "tauri.conf.json").read_text())
         windows_config = json.loads((tauri_root / "tauri.windows.conf.json").read_text())
+        workflow = (SCRIPT.parent.parent / ".github/workflows/ci.yml").read_text()
 
         self.assertEqual(config["bundle"]["resources"], {"tauri-resources/": ""})
         self.assertEqual(
@@ -125,6 +126,11 @@ class BundlePreparationTests(unittest.TestCase):
         )
         for icon in config["bundle"]["icon"]:
             self.assertTrue((tauri_root / icon).is_file(), f"Missing Tauri bundle icon {icon}")
+        stage_runtime_step = workflow.index("Stage verified DuckDB before loading Tauri resources")
+        build_bundle_step = workflow.index("Build production Tauri bundle")
+        self.assertLess(stage_runtime_step, build_bundle_step)
+        self.assertIn("python3 scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle", workflow)
+        self.assertIn("python scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle", workflow)
         self.assertTrue((tauri_root / "tauri-resources" / "README.txt").is_file())
         self.assertEqual(
             config["build"]["beforeBuildCommand"],
