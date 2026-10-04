@@ -217,6 +217,20 @@ python3 scripts/provision_duckdb.py
 (cd src-tauri && cargo run --manifest-path Cargo.toml)
 ```
 
+For a production Tauri installer, run the pinned Tauri CLI from `src-tauri`:
+
+```bash
+cd src-tauri
+pnpm dlx @tauri-apps/cli@2.12.0 build --bundles deb # Linux
+pnpm dlx @tauri-apps/cli@2.12.0 build --bundles app # macOS
+pnpm dlx @tauri-apps/cli@2.12.0 build --bundles nsis # Windows
+```
+
+The Tauri hooks verify the official DuckDB archive before Cargo builds, stage
+the matching prebuilt library into the installer resources, and set a
+platform-relative loader path. The app does not rely on a library in a local
+Cargo cache, and DuckDB is never compiled from source.
+
 The GTK-free native shell can also be launched independently:
 
 ```bash

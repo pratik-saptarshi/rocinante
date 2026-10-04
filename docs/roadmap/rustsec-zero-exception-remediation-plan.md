@@ -1,9 +1,11 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status:** Phase 0 review comments are resolved. Phase 1 packaging and test
-runtime checks pass in hosted CI. Zero-exception RustSec remediation remains in
-progress; the required governance gate is still fail-closed on 17 overdue
-entries and the unfiltered audit still reports four warnings.
+**Status:** The earlier Phase 0 review comments are resolved. A new P1 Tauri
+DuckDB installer finding was reported on 2026-10-04; a packaging fix and
+three-platform bundle job are now in the branch, pending hosted results.
+Zero-exception RustSec remediation remains in progress; the required
+governance gate is still fail-closed on 17 overdue entries and the unfiltered
+audit still reports four warnings.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -103,6 +105,18 @@ root workspace tests previously failed at runtime because the staged DuckDB
 library was not in Cargo's `debug/deps`; the provisioner and four CI test jobs
 now stage the verified runtime there, guarded by the CI scope contract.
 
+**New review finding (2026-10-04; PR head `038f7c4`):** the subsequent review
+opened P1 thread
+[`discussion_r4177301463`](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4177301463)
+on `src-tauri/Cargo.toml`: a production Tauri installer did not bundle the
+dynamically linked DuckDB runtime. The branch now provisions the verified
+prebuilt before the Cargo build, stages it in Tauri's bundle resource path,
+rewrites Linux/macOS loader paths, and leaves the Windows DLL beside the app
+executable. A required matrix builds Linux `.deb`, macOS `.app`, and Windows
+NSIS packages and inspects each for its runtime. Local contract tests pass
+6/6, and actionlint passes; the review thread stays open until this hosted
+matrix passes on the updated branch head.
+
 Hosted CI run [37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846)
 is terminal. Workflow parsing, UI quality, Linux/macOS/Windows lifecycle
 acceptance, full workspace tests, build seed, Rust quality gates, core/storage
@@ -147,7 +161,9 @@ the provisioner for missing, corrupt, wrong-version, and valid artifacts; in a
 clean cache capture compiler invocations and prove no DuckDB C/C++ translation
 unit is compiled; query the linked engine version; build and run storage tests
 on Linux, macOS, and Windows; launch installed apps with developer library-path
-variables removed.
+variables removed. Build the Tauri `.deb`, `.app`, and NSIS installer from the
+verified prebuilt, inspect each package for its platform library, and confirm
+the installed binary's loader path resolves to that packaged file.
 
 **Exit gate:** all supported target artifacts have official URLs and checked-in
 SHA-256 values, all builds use only those verified artifacts, and installed

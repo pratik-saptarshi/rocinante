@@ -45,7 +45,8 @@ and an in-progress GTK-free native desktop host.
 - `.github/workflows/ci.yml`: CI contract for Rust formatting, linting,
   checking, full-workspace crate tests, current advisory exception review-date enforcement,
   Linux URI/notification acceptance plus Windows and macOS URL/restart acceptance jobs,
-  required `rust-workspace-tests` and `ui-quality` gates, and informational
+  Linux/macOS/Windows Tauri installer packaging checks for the prebuilt DuckDB
+  runtime, required `rust-workspace-tests` and `ui-quality` gates, and informational
   backend Rust coverage via `rust-coverage`. Rust build lanes stage DuckDB
   releases before Cargo, and installed-app acceptance covers app-relative
   `.so`, bundled `.dylib`, and colocated `.dll` loading. The `ci-workflow-parse` job also
@@ -95,6 +96,10 @@ and an in-progress GTK-free native desktop host.
 - `scripts/provision_duckdb.py` and `scripts/duckdb-prebuilt-artifacts.json`:
   stage official DuckDB shared-library releases after SHA-256 verification;
   source-build features are rejected by `scripts/check-duckdb-features.sh`.
+- `scripts/prepare-tauri-duckdb-bundle.py` and
+  `src-tauri/tauri.conf.json`: stage the verified prebuilt DuckDB runtime into
+  the Tauri installer resource directory and set an app-relative loader path;
+  CI builds and inspects Linux, macOS, and Windows packages.
 - `scripts/detect-ci-scope.sh`: routes Rust manifest, lockfile, and workflow
   changes to the Rust workspace lanes; `scripts/test-ci-scope-contract.sh`
   covers those path classifications.
@@ -171,9 +176,12 @@ and an in-progress GTK-free native desktop host.
 ## Governance and Execution Snapshot
 
 - Active work is on PR #108 branch `fix/rocinante-readiness-remediation`,
-  published head `b991f99`. PR #108 remains open and relevant against `main`
-  at `cdd29b9`; all 30 inline review threads are resolved. Use the dated
-  RustSec zero-exception plan for phase order and current exit evidence.
+  published head `038f7c4` at the start of the current remediation. PR #108
+  remains open and relevant against `main` at `cdd29b9`; the prior 30 review
+  threads are resolved. A new P1 finding identified missing DuckDB in
+  production Tauri installers; a packaging fix is in progress and its new
+  hosted validation is not yet terminal. Use the dated RustSec zero-exception
+  plan for phase order and current exit evidence.
 - A refreshed 2026-10-04 RustSec database retained revision
   `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03). The unfiltered
   audit finds no vulnerability-class reports and four warnings: GLib,

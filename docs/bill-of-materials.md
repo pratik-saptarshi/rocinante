@@ -56,7 +56,9 @@ _Captured: 2026-10-04_
   library, and headers are SHA-256 pinned in
   `scripts/duckdb-prebuilt-artifacts.json`; build lanes verify and stage the
   binary before Cargo. DuckDB source-build features are forbidden by a tested
-  feature-graph guard.
+  feature-graph guard. Tauri production bundles now use verified per-platform
+  resources and loader paths; the new three-platform bundle gate must pass on
+  the current PR head before installed Tauri packaging is considered verified.
 - The provisioner contract tests (9), DuckDB feature-guard contract, CI-scope
   contract, macOS installer contract, and Linux installer/deep-link contract
   pass locally. An actual macOS shell build was packaged into an `.app`; `otool`
@@ -82,6 +84,10 @@ _Captured: 2026-10-04_
   lists all 17 review dates as overdue. The security workflow and Dependency
   Review pass under the existing exception configuration; neither proves the
   zero-exception RustSec requirement.
+- PR #108 now includes `tauri-runtime-bundle`, which creates Linux `.deb`,
+  macOS `.app`, and Windows NSIS packages and checks for their DuckDB runtime.
+  This was added in response to a new P1 review finding; record the check's
+  terminal result and resolve its thread only after the package evidence passes.
 
 ## Dependency Controls and Security Gate Stack
 

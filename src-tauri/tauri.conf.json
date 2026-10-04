@@ -6,7 +6,8 @@
   "build": {
     "frontendDist": "../ui",
     "beforeDevCommand": "",
-    "beforeBuildCommand": ""
+    "beforeBuildCommand": "python3 ../scripts/provision_duckdb.py",
+    "beforeBundleCommand": "python3 ../scripts/prepare-tauri-duckdb-bundle.py"
   },
   "app": {
     "windows": [
@@ -19,6 +20,11 @@
     ],
     "security": {
       "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "resources": {
+      "target/tauri-resources/*": ""
     }
   }
 }
