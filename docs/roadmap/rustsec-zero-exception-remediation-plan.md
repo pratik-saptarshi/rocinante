@@ -1,7 +1,7 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status:** Phase 0 is validated locally; Phase 1 is in progress pending
-cross-platform hosted artifact and runtime checks.
+**Status:** Phase 0 review is in progress; Phase 1 implementation is present,
+with current hosted package checks needing a rerun after local fixes.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -29,12 +29,20 @@ the work; do not renew or invent advisory acceptance.
 
 Record the current supported lockfiles, resolved dependency paths, RustSec
 database revision, unfiltered audit output, PR check state, and unresolved
-review threads. Address the three live PR #108 review threads:
+review threads. Review the open PR #108 threads and handle their findings:
 
 - [Governance must not make every PR fail](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4172600314): keep the required gate and clear the obsolete exception entries only when withdrawal or package-absence evidence is recorded and the remaining package paths are actually removed.
-- [Cargo manifests must run the Rust lanes](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4176536547): classify `src-tauri/**` before generic manifest/metadata patterns and add a contract check proving manifest and lockfile changes select Rust validation.
+- [Cargo manifests must run the Rust lanes](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4176536547): classify `src-tauri/**` before generic manifest/metadata patterns and add a contract check proving manifest and lockfile changes select Rust validation. This is implemented and the standalone classifier contract passes.
 - [The public scan example must match the authenticated API](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4176644619): correct the README example or preserve a compatible wrapper, and verify the documented call compiles.
+- [Stage the Windows installer DLL fixture](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4177140136): copy the provisioned, hash-verified DLL into the test fixture. The Windows registration and cold/warm/restart job passed on the current PR head.
+- [Populate CI scope fallback outputs](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4177150369): delegate fallback output generation to the scope classifier in forced-Rust mode, and contract-test that the workflow uses that path.
+- The metrics-read lock and graceful-shutdown concern is already tracked as BI-060 in `docs/roadmap/bead-issue-tracker.html`, following the author's request to handle it as a distinct feature.
 - The UI pin was `pnpm@12.9.0`; the current npm stable registry reports `12.9.1`. Keep `ui/package.json`, the CI action, lockfile metadata, README, bill of materials, and codemap synchronized to that version.
+
+Keep the governance review thread open until the registry and affected
+dependency graphs are actually clean. The fail-closed gate is intentional:
+do not weaken it to make this PR green, renew dates, or represent an owner
+disposition that was not provided.
 
 **Validation:** inventory every Cargo lockfile; run `cargo tree` for the four
 live package paths; refresh and run cargo-audit from outside the repository's
@@ -46,19 +54,45 @@ pin. Compile the README/API example in the Rust integration suite after
 Phase 1 stages the verified DuckDB binary; never invoke Cargo against a
 bundled DuckDB source-build graph.
 
-**Exit gate:** baseline facts are reproducible; the three review threads are
-addressed or explicitly tracked; and changing any Rust manifest/lockfile makes
-the Rust build, lint, and workspace-test lanes run.
+**Exit gate:** baseline facts are reproducible; each code finding is fixed and
+its review thread is resolved or explicitly tracked; the security review
+thread has a documented decision response while the fail-closed gate remains
+red until the dependency and registry evidence is complete; changing any Rust
+manifest/lockfile makes the Rust build, lint, and workspace-test lanes run.
 
 **Local progress (2026-10-04):** the path-classification contract passes for
 Rust manifests, lockfiles, and workflow changes. The README admin example now
-uses the authenticated four-argument scan API and the complete documented API
-calls compile in `readme_admin_api_contract`. UI checks pass under pnpm
+uses the authenticated four-argument scan API, and the
+`readme_admin_api_contract` compile-contract test covers that documented call.
+The local targeted root test has not returned a terminal result. UI checks pass under pnpm
 `12.9.1` (typecheck, 62 unit tests, build; Vite reports a 506 KB chunk-size
 advisory). A refreshed, unfiltered RustSec audit reports zero vulnerability
 findings, four warnings, and an empty ignore list. The governance gate remains
 fail-closed on the 17 overdue entries; no owner acceptance or date extension
-was invented.
+was invented. PR #108 remains relevant: it is open and mergeable, its head is
+the current remediation branch, and its base matches `main` at `cdd29b9`.
+Hosted CI run [37195996758](https://github.com/pratik-saptarshi/rocinante/actions/runs/37195996758)
+is terminal and failed. Workflow parsing, scope detection, UI quality,
+Windows registration plus cold/warm/restart URL delivery, and the build-seed
+job passed. Linux and macOS acceptance could not find the staged DuckDB runtime
+beside the Cargo output binary; root workspace tests and the Rust quality gate
+failed three contract assertions that still expected the old inline scope
+logic; governance rejected the 17 overdue exception records. Security run
+[37195996741](https://github.com/pratik-saptarshi/rocinante/actions/runs/37195996741)
+passed Rust audit, secret scan, and CodeQL, but the audit still uses the current
+exceptions. Dependency Review run `37195996688` also passed.
+
+The working tree now stages the checksum-verified DuckDB runtime into the
+binary's sibling `deps` directory before macOS/Linux packaging acceptance,
+updates the root Rust contracts to inspect the extracted scope classifier,
+and routes the baseline-missing CI fallback through that classifier in
+forced-Rust mode so every scope output is populated. The standalone
+CI-scope contract and provisioner suite (7/7), Rust formatting check, and
+`git diff --check` pass. The local staging command verified the pinned macOS
+runtime and its SHA-256. The targeted root Rust test did not produce a
+terminal result during this run, and the macOS GUI acceptance could not scan
+its temporary bundle through Launch Services in this sandbox. Neither is
+claimed as a pass; the fixed code is awaiting hosted reruns.
 
 ### Phase 1 — Provision DuckDB only from verified prebuilt artifacts
 
@@ -90,7 +124,7 @@ SHA-256 values, all builds use only those verified artifacts, and installed
 apps load the packaged library on each OS.
 
 **Local progress (2026-10-04):** the official macOS archive and extracted
-library hashes validate; the five provisioner tests, DuckDB source-build
+library hashes validate; the seven provisioner tests, DuckDB source-build
 feature contract, resolved feature-graph check, and engine `SELECT version()`
 test pass. The analysis/core/storage/desktop-shell workspace suite passes all
 75 tests, including a macOS-portable SQLite migration-path check. Strict
@@ -99,9 +133,14 @@ tests did not return a terminal result on this Mac; the root test build stopped
 producing target artifacts for 16 minutes before interruption, so these gates
 remain pending hosted CI. Shell installer contracts pass on this host. A
 real macOS app bundle loads DuckDB from `Contents/Frameworks`, and the full
-local lifecycle passes cold/warm Launch Services delivery, tray actions,
-notification request, and saved-state restart. Linux and Windows package/runtime
-evidence remains pending in their hosted jobs.
+local lifecycle passed cold/warm Launch Services delivery, tray actions,
+notification request, and saved-state restart in a prior run. The current
+hosted Windows installer and URI lifecycle job passed. The macOS and Linux
+acceptance jobs failed in run `37195996758` because the scripts did not stage
+the verified library into the build output's sibling `deps` directory. That
+packaging gap is fixed in the working tree and awaits a hosted rerun. A local
+GUI revalidation is unverified because this sandbox could not scan the
+temporary app bundle through Launch Services.
 
 ### Phase 2 — Replace Sled ingestion with SQLite without changing contracts
 
