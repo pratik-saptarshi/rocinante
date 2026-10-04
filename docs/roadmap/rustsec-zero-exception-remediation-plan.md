@@ -1,15 +1,15 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status (2026-10-04; published PR head `c0c3158`):** PR #108 remains relevant
+**Status (2026-10-04; published PR head `3cd8bf9`):** PR #108 remains relevant
 and open on `fix/rocinante-readiness-remediation`; all 45 inline review threads
-are resolved. Hosted run
-[`37223225217`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225217)
-passes the code, UI, Rust, platform lifecycle, package, and contract lanes.
-The required aggregate is blocked by the fail-closed governance check for the
-17 overdue review dates, and `test` fails as a consequence. Security run
-[`37223225310`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225310)
+are resolved and none are open. Hosted CI run
+[`37230918166`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918166)
+passed its code, UI, Rust, platform lifecycle, package, and contract lanes. The
+required aggregate is blocked by the fail-closed governance check for the 17
+overdue review dates, and `test` fails as a consequence. Security run
+[`37230918173`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918173)
 and Dependency Review
-[`37223225181`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225181)
+[`37230918190`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918190)
 passed. No exception dates or owner dispositions have been fabricated.
 
 Phase 3 is implemented locally in `tools/sled-migration`: its separate
@@ -19,10 +19,13 @@ Focused migrator and storage tests, migrator Clippy, formatting, and dependency
 contracts pass locally. Full workspace Clippy reports no issues, and the full
 Cargo workspace test passed 254 tests across 60 suites after generated build
 files were cleared when the first attempt exhausted disk space. Hosted
-hosted validation on the follow-up head is pending.
-The migrator audit reports no findings or warnings against cached
-RustSec database revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; this is
-not a newly refreshed database result.
+hosted validation on the follow-up head passed, including the full workspace,
+core/storage shards, Linux/macOS/Windows URL lifecycle, Linux notification,
+and three-platform Tauri package checks. A database refresh fetched the same
+RustSec revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`, timestamped
+2026-10-03; the migrator audit reports no findings or warnings, while the app
+audit reports the two warnings below. No newer upstream database revision was
+available during this check.
 
 The app lockfile's last unfiltered audit reports no vulnerability findings and
 two warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`), with no ignores.
@@ -584,39 +587,46 @@ The aggregate fails only because governance reports 17 review dates overdue
 as of 2026-10-04. Security run `37221587091` passed Rust audit, secret scan,
 and CodeQL; Dependency Review run `37221587113` passed.
 
-The PR body records the current audit evidence: RustSec database revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee`, 715 locked packages, zero
-vulnerability findings, two warnings (`glib 0.18.5` and
-`proc-macro-error 1.0.4`), and an empty ignore list. The 17 registry entries
-and Cargo ignores remain unchanged because no security-owner dispositions
-were provided. DuckDB remains the official checksum-verified prebuilt and is
-not compiled from source.
+The PR body records the current audit evidence: the 2026-10-04 refresh returned
+RustSec revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`, last updated
+2026-10-03; the 715-package app graph has zero vulnerability findings and two
+warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`) with an empty ignore list.
+The 82-package migrator graph has no findings or warnings. The 17 registry
+entries and Cargo ignores remain unchanged because no security-owner
+dispositions were provided. DuckDB remains the official checksum-verified
+prebuilt and is not compiled from source.
 
 ## Phase 3 local verification and PR blocker update (2026-10-04)
 
 The live PR review query confirms PR #108 is open and relevant on the expected
-branch, with all 45 review threads resolved and none open. Published-head CI
-run `37223225217` passed every code lane. Only
+branch, at published head `3cd8bf9`, with all 45 review threads resolved and
+none open. CI run `37230918166` completed: Rust workspace, core/storage shards,
+formatting, Clippy, UI quality, Linux/macOS/Windows URL lifecycle, and all
+three Tauri package lanes passed. Security run `37230918173`, CodeQL, secret
+scan, and Dependency Review run `37230918190` passed. Only
 `security-exception-governance` and its dependent `test` aggregate failed.
 The workflow log lists all 17 registry entries as overdue since 2026-08-06.
-No review dates or registry contents were changed because no owner dispositions
-are recorded. Keep the required gate fail-closed; the review suggestion to
-avoid failing CI cannot be implemented without contradicting the zero-exception
-release policy.
+No registry entries or review dates were changed because no security-owner
+dispositions are recorded. Keep the required gate fail-closed; the review
+suggestion to avoid failing CI cannot be implemented without contradicting the
+zero-exception release policy.
 
 Phase 3's local implementation passes the full Cargo workspace test
 (254 tests across 60 suites), full-workspace Clippy, all 7 migrator tests,
 all 15 storage tests, isolated migrator Clippy, both-workspace formatting,
 the CI-scope and migration dependency contracts, and roadmap/publish document
-contracts. The application audit at cached RustSec revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee` reports no vulnerability findings
-but retains `glib 0.18.5` and `proc-macro-error 1.0.4` warnings; the isolated
-migrator lockfile reports none. These database contents are dated 2026-10-03,
-so repeat the audit against the next RustSec database revision before release.
+contracts. On 2026-10-04, `cargo audit` fetched the currently available RustSec
+database, which remained at revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee` (timestamp 2026-10-03). The
+unfiltered 715-package app audit reports no vulnerability findings and two
+warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`); the unfiltered 82-package
+migrator audit reports no findings or warnings. No newer database revision
+was available during this check.
 
 The initial full test run stopped with `ENOSPC`; clearing 37.8 GiB of generated
 Cargo output and re-staging the SHA-256-verified official DuckDB 1.5.6 prebuilt
 allowed the complete suite to pass. DuckDB was not compiled from source.
-Require hosted checks on the follow-up head after publishing to PR #108's
-existing branch. The governance blocker still requires current disposition for
-each exception or evidence that its affected path has been removed.
+Hosted checks on the follow-up head are terminal and passed all code lanes. The
+governance blocker still requires current owner-reviewed disposition for each
+exception or verified evidence that its affected risk has been removed. Do not
+renew dates, invent acceptance, or weaken the required gate.

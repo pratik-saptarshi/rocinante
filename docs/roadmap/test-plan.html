@@ -392,33 +392,35 @@
 - Local verification passes 84 non-root workspace tests, eight analysis identity and scan tests, the storage app-data path test, the macOS signing contract, strict Clippy for analysis/storage/desktop-shell, root Tauri cargo check for all test targets, formatting, actionlint, roadmap/CI-scope contracts, seven Tauri package contracts, nine DuckDB provisioner tests, and the DuckDB source-build guard.
 - Full root Tauri tests and hosted checks on the updated branch are pending. The advisory registry is unchanged; no security-owner disposition or review-date renewal has been recorded.
 
-## Current PR #108 Review Follow-up — 2026-10-04 (published head `c0c3158`)
+## Current PR #108 Review Follow-up — 2026-10-04 (published head `3cd8bf9`)
 
 - PR #108 remains relevant and open on `fix/rocinante-readiness-remediation`,
   based on `main` at `cdd29b9`. GitHub reports the PR blocked. All 45 inline
   review threads are resolved; none remain open. The automated review of
-  `c0c3158` completed without a new finding.
+  `3cd8bf9` completed without a new finding.
 - The duplicate-basename finding is fixed in `de72423`: identities preserve
   both the tree-relative alias and original basename, workspace queries read an
   ambiguous basename once, retain older history, and suppress rows only for
   releases represented by stable rows.
 - Published-head CI run
-  [37223225217](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225217)
+  [37230918166](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918166)
   passed UI quality, full workspace/core/storage tests, formatting, Clippy,
   Linux/macOS/Windows URL lifecycle acceptance, all three Tauri package
   inspections, and build seed. The required aggregate fails on the 17 overdue
   governance records. Security run
-  [37223225310](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225310)
+  [37230918173](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918173)
   and Dependency Review
-  [37223225181](https://github.com/pratik-saptarshi/rocinante/actions/runs/37223225181)
+  [37230918190](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918190)
   passed.
 - The application audit of 715 locked packages reports no vulnerability
   findings and two warnings (`glib 0.18.5`, `proc-macro-error 1.0.4`) with an
-  empty ignore list. `instant` and `fxhash` are absent from that lockfile.
-  Do not change registry dates or claim owner acceptance without reviewed
-  dispositions.
+  empty ignore list. The migrator audit of its 82-package lockfile reports no
+  findings or warnings. Fetching RustSec on 2026-10-04 returned revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`, timestamped 2026-10-03.
+  `instant` and `fxhash` are absent from both lockfiles. Do not change registry
+  dates or claim owner acceptance without reviewed dispositions.
 
-## Phase 3 legacy Sled migration follow-up — 2026-10-04 (based on head `c0c3158`)
+## Phase 3 legacy Sled migration follow-up — 2026-10-04 (based on head `3cd8bf9`)
 
 - The one-time reader lives in `tools/sled-migration`, with a separate
   lockfile, copied Sled 0.34.7 source provenance, and CI format/lint/test/audit
@@ -426,14 +428,16 @@
 - Local evidence: migrator tests 7/7, storage tests 15/15, migrator Clippy
   without warnings, both-workspace formatting, CI-scope contract, and
   migration dependency contract pass. Full-workspace Clippy reports no issues.
-  The tool audit against cached RustSec
-  revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee` reports zero findings
-  and warnings; a fresh-database audit is still required.
+  The tool audit against RustSec revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` reports zero findings and
+  warnings. Fetching the database on 2026-10-04 returned this same revision,
+  timestamped 2026-10-03; repeat after a newer revision is available.
 - The first full-workspace test attempt failed because the filesystem had no
   space left. Its generated `src-tauri/target` files were cleaned and the
   full test then passed 254 tests across 60 suites after provisioning the
   official DuckDB 1.5.6 binary through its SHA-256 verifier. Hosted checks for
-  this worktree must finish before this phase is marked complete.
+  this head passed in CI run `37230918166`; the only remaining CI blocker is
+  the fail-closed exception-governance check.
 - The migration leaves Sled source files untouched, preserves every tree/key/
   value record in `ingestion.sqlite3`, and does not read or modify DuckDB
   history. DuckDB is supplied only by the verified official prebuilt binary.
