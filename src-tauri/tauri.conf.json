@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../ui",
     "beforeDevCommand": "",
-    "beforeBuildCommand": "python3 ../scripts/provision_duckdb.py",
-    "beforeBundleCommand": "python3 ../scripts/prepare-tauri-duckdb-bundle.py"
+    "beforeBuildCommand": "python3 scripts/provision_duckdb.py",
+    "beforeBundleCommand": "python3 scripts/prepare-tauri-duckdb-bundle.py"
   },
   "app": {
     "windows": [

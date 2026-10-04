@@ -115,17 +115,17 @@ class BundlePreparationTests(unittest.TestCase):
         windows_config = json.loads((tauri_root / "tauri.windows.conf.json").read_text())
 
         self.assertEqual(config["bundle"]["resources"], {"target/tauri-resources/*": ""})
-        self.assertEqual(config["build"]["beforeBuildCommand"], "python3 ../scripts/provision_duckdb.py")
+        self.assertEqual(config["build"]["beforeBuildCommand"], "python3 scripts/provision_duckdb.py")
         self.assertEqual(
             config["build"]["beforeBundleCommand"],
-            "python3 ../scripts/prepare-tauri-duckdb-bundle.py",
+            "python3 scripts/prepare-tauri-duckdb-bundle.py",
         )
         self.assertEqual(
-            windows_config["build"]["beforeBuildCommand"], "python ../scripts/provision_duckdb.py"
+            windows_config["build"]["beforeBuildCommand"], "python scripts/provision_duckdb.py"
         )
         self.assertEqual(
             windows_config["build"]["beforeBundleCommand"],
-            "python ../scripts/prepare-tauri-duckdb-bundle.py",
+            "python scripts/prepare-tauri-duckdb-bundle.py",
         )
 
     def test_readme_stages_runtime_after_each_native_shell_release_build(self) -> None:

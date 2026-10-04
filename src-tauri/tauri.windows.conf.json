@@ -1,6 +1,6 @@
 {
   "build": {
-    "beforeBuildCommand": "python ../scripts/provision_duckdb.py",
-    "beforeBundleCommand": "python ../scripts/prepare-tauri-duckdb-bundle.py"
+    "beforeBuildCommand": "python scripts/provision_duckdb.py",
+    "beforeBundleCommand": "python scripts/prepare-tauri-duckdb-bundle.py"
   }
 }
