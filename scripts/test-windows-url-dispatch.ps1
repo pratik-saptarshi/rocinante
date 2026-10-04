@@ -3,6 +3,12 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $manifest = Join-Path $repoRoot 'src-tauri\crates\rocinante-desktop-shell\Cargo.toml'
 $sourceBinary = Join-Path $repoRoot 'src-tauri\target\debug\rocinante-desktop-shell.exe'
+$provisioner = Join-Path $repoRoot 'scripts\provision_duckdb.py'
+$targetDirectory = if ($env:CARGO_TARGET_DIR) {
+    $env:CARGO_TARGET_DIR
+} else {
+    Join-Path $repoRoot 'src-tauri\target'
+}
 $installer = Join-Path $repoRoot 'src-tauri\crates\rocinante-desktop-shell\packaging\windows\install-user.ps1'
 $testId = [guid]::NewGuid().ToString('N')
 $testRoot = Join-Path $env:RUNNER_TEMP "rocinante-url-acceptance-$testId"
@@ -77,6 +83,8 @@ try {
     & cargo build --manifest-path $manifest --bin rocinante-desktop-shell --features acceptance-witness --locked
     if ($LASTEXITCODE -ne 0) { throw "Cargo build failed with exit code $LASTEXITCODE." }
     if (-not (Test-Path -LiteralPath $sourceBinary -PathType Leaf)) { throw "Build did not produce $sourceBinary" }
+    & python $provisioner --target x86_64-pc-windows-msvc --target-dir $targetDirectory --stage-runtime-for-binary $sourceBinary
+    if ($LASTEXITCODE -ne 0) { throw "Could not stage the verified DuckDB runtime beside $sourceBinary." }
     & $installer -Executable $sourceBinary
     $installedDuckdb = Join-Path (Split-Path -Parent $installedBinary) 'duckdb.dll'
     if (-not (Test-Path -LiteralPath $installedDuckdb -PathType Leaf)) {

@@ -28,6 +28,7 @@ fn windows_url_acceptance_covers_dispatch_restart_and_cleanup() {
 
     for required in [
         "cargo build --manifest-path $manifest",
+        "--target x86_64-pc-windows-msvc --target-dir $targetDirectory --stage-runtime-for-binary $sourceBinary",
         "Start-Process -FilePath (New-RepositoryUri $coldPath)",
         "Start-Process -FilePath $installedBinary -ArgumentList (New-RepositoryUri $warmPath) -PassThru",
         "The app did not persist eframe state before exit",
@@ -47,6 +48,15 @@ fn windows_url_acceptance_covers_dispatch_restart_and_cleanup() {
             "missing acceptance step: {required}"
         );
     }
+    assert!(
+        acceptance
+            .find("--stage-runtime-for-binary $sourceBinary")
+            .unwrap()
+            < acceptance
+                .find("& $installer -Executable $sourceBinary")
+                .unwrap(),
+        "the verified DuckDB runtime must be staged before the installer runs"
+    );
     assert!(
         acceptance
             .find("Remove-Item -LiteralPath $quitFile -Force")
