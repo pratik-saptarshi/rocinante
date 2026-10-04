@@ -3,6 +3,7 @@
 #[test]
 fn windows_installer_registers_current_user_url_handler() {
     let installer = include_str!("../packaging/windows/install-user.ps1");
+    let acceptance = include_str!("../../../../scripts/test-windows-registration.ps1");
 
     assert!(installer.contains("HKCU:\\Software\\Classes\\rocinante"));
     assert!(installer.contains("URL Protocol"));
@@ -13,6 +14,11 @@ fn windows_installer_registers_current_user_url_handler() {
     assert!(installer.contains("CreateShortcut($shortcutPath)"));
     assert!(installer.contains("$shortcut.IconLocation = $iconLocation"));
     assert!(installer.contains("$command = '\"' + $installedBinary + '\" \"%1\"'"));
+    assert!(installer.contains("$sourceDirectory 'deps\\duckdb.dll'"));
+    assert!(installer.contains("duckdb.dll"));
+    assert!(acceptance.contains("scripts\\provision_duckdb.py"));
+    assert!(acceptance.contains("x86_64-pc-windows-msvc"));
+    assert!(acceptance.contains("Get-FileHash -LiteralPath $installedDuckdb -Algorithm SHA256"));
     assert!(!installer.contains("HKLM:"));
 }
 
