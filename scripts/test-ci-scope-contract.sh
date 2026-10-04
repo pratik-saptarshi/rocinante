@@ -41,4 +41,24 @@ if [[ "$workflow_contents" != *'bash scripts/detect-ci-scope.sh true >> "$GITHUB
   exit 1
 fi
 
+assert_cargo_test_runtime_staging() {
+  local job_name="$1"
+  local job_body
+
+  job_body="$(awk -v job_name="$job_name" '
+    $0 == "  " job_name ":" { in_job = 1; next }
+    in_job && /^  [[:alnum:]_-]+:$/ { exit }
+    in_job { print }
+  ' "$workflow")"
+
+  if [[ "$job_body" != *'python3 scripts/provision_duckdb.py --stage-runtime-for-cargo-tests'* ]]; then
+    printf 'Rust test job `%s` does not stage DuckDB in Cargo\x27s debug/deps directory.\n' "$job_name" >&2
+    exit 1
+  fi
+}
+
+for job in rust-workspace-tests rust-quality-gates rust-tests rust-coverage; do
+  assert_cargo_test_runtime_staging "$job"
+done
+
 echo "Rust CI scope contract passed."

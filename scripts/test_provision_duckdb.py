@@ -116,6 +116,52 @@ class DuckDbProvisioningTests(unittest.TestCase):
             self.assertEqual(staged.read_bytes(), b"native")
             self.assertEqual(provisioner.sha256_file(staged), files["libduckdb.so"])
 
+    def test_verified_runtime_is_staged_for_cargo_test_executables(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            folder = Path(temp_dir)
+            archive, files = self.make_archive(folder, {"libduckdb.so": b"native"})
+            target_dir = folder / "target"
+            manifest = self.make_manifest(archive, files)
+            cache_dir = provisioner.provision_target(
+                manifest, "test-target", target_dir, archive_override=archive
+            )
+
+            staged = provisioner.stage_runtime_for_cargo_tests(
+                manifest, "test-target", cache_dir, target_dir
+            )
+
+            self.assertEqual(staged, target_dir / "debug" / "deps" / "libduckdb.so")
+            self.assertEqual(staged.read_bytes(), b"native")
+            self.assertEqual(provisioner.sha256_file(staged), files["libduckdb.so"])
+
+    def test_verified_runtime_uses_cargo_target_triple_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            folder = Path(temp_dir)
+            archive, files = self.make_archive(folder, {"libduckdb.so": b"native"})
+            target_dir = folder / "target"
+            manifest = self.make_manifest(archive, files)
+            cache_dir = provisioner.provision_target(
+                manifest,
+                "test-target",
+                target_dir,
+                cargo_target_layout=True,
+                archive_override=archive,
+            )
+
+            staged = provisioner.stage_runtime_for_cargo_tests(
+                manifest,
+                "test-target",
+                cache_dir,
+                target_dir,
+                cargo_target_layout=True,
+            )
+
+            self.assertEqual(
+                staged,
+                target_dir / "test-target" / "debug" / "deps" / "libduckdb.so",
+            )
+            self.assertEqual(provisioner.sha256_file(staged), files["libduckdb.so"])
+
     def test_runtime_staging_rejects_corrupt_cached_library(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             folder = Path(temp_dir)

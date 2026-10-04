@@ -214,7 +214,7 @@ jobs:
         with:
           workspaces: src-tauri
       - name: Verify and stage prebuilt DuckDB
-        run: python3 scripts/provision_duckdb.py
+        run: python3 scripts/provision_duckdb.py --stage-runtime-for-cargo-tests
       - name: Lint full Rust workspace
         run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --workspace --all-targets -- -A dead_code
       - name: Test full Rust workspace
@@ -402,7 +402,7 @@ jobs:
           prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2
           save-if: false
       - name: Verify and stage prebuilt DuckDB
-        run: python3 scripts/provision_duckdb.py
+        run: python3 scripts/provision_duckdb.py --stage-runtime-for-cargo-tests
       - name: CI gate contract
         run: |
           if [[ "$CI_RUST_BUILD_SCOPE" == "release" ]]; then
@@ -524,7 +524,7 @@ jobs:
           prefix-key: rust-cache-${{ steps.build-scope.outputs.scope }}-v2
           save-if: false
       - name: Verify and stage prebuilt DuckDB
-        run: python3 scripts/provision_duckdb.py
+        run: python3 scripts/provision_duckdb.py --stage-runtime-for-cargo-tests
       - name: Test
         run: |
           TEST_START_TS=$(date +%s)
@@ -624,7 +624,7 @@ jobs:
           prefix-key: rust-cache-release-v2
           save-if: false
       - name: Verify and stage prebuilt DuckDB
-        run: python3 scripts/provision_duckdb.py
+        run: python3 scripts/provision_duckdb.py --stage-runtime-for-cargo-tests
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2.87.23
         with:
