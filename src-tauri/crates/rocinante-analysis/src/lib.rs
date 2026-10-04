@@ -9,6 +9,8 @@ pub mod types;
 use engine::Pipeline;
 use errors::AnalyzerError;
 use git::discover_repositories_path;
+use plugins::sanitizer::scrub_text;
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -61,6 +63,14 @@ pub fn default_telemetry_db_path() -> PathBuf {
     std::env::current_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
         .join("telemetry.db")
+}
+
+/// Return the per-user data directory shared by telemetry and application stores.
+pub fn default_application_data_dir() -> PathBuf {
+    default_telemetry_db_path()
+        .parent()
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
 }
 
 pub fn resolve_telemetry_db_path() -> Result<PathBuf, AnalyzerError> {
@@ -141,6 +151,7 @@ pub fn query_repository_metrics(
         .into_iter()
         .map(|repository| repository.name)
         .collect::<Vec<_>>();
+    names.extend(legacy_repository_names(root));
     names.sort_unstable();
     names.dedup();
     TelemetryStore::open(db_path)?.query_repositories(&names, release)
@@ -173,6 +184,7 @@ fn scan_and_persist(
         .iter()
         .map(|record| record.repo_name.clone())
         .collect::<Vec<_>>();
+    names.extend(legacy_repository_names(root));
     names.sort_unstable();
     names.dedup();
     let store = TelemetryStore::open(db_path)?;
@@ -182,8 +194,19 @@ fn scan_and_persist(
 
 fn uniquely_named_repositories(root: &Path) -> Vec<RepoTarget> {
     let mut repositories = discover_repositories_path(root);
+    for repository in &mut repositories {
+        repository.name = stable_repository_name(&repository.path, &repository.name);
+    }
+    repositories
+}
+
+fn legacy_repository_names(root: &Path) -> Vec<String> {
+    let mut repositories = discover_repositories_path(root);
     disambiguate_duplicate_names(root, &mut repositories);
     repositories
+        .into_iter()
+        .map(|repository| repository.name)
+        .collect()
 }
 
 fn disambiguate_duplicate_names(root: &Path, repositories: &mut [RepoTarget]) {
@@ -209,6 +232,20 @@ fn disambiguate_duplicate_names(root: &Path, repositories: &mut [RepoTarget]) {
             repository.name = path_identity(&relative_path);
         }
     }
+}
+
+fn stable_repository_name(path: &Path, display_name: &str) -> String {
+    let stable_path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+    let encoded_path = path_identity(&stable_path);
+    let digest = Sha256::digest(encoded_path.as_bytes());
+    let mut stable_suffix = String::with_capacity(32);
+    for byte in digest.iter().take(16) {
+        stable_suffix.push(char::from(b'a' + (byte >> 4)));
+        stable_suffix.push(char::from(b'a' + (byte & 0x0f)));
+    }
+    // A local path hash stays stable across scan-root changes without
+    // persisting the absolute repository path in telemetry.
+    format!("{} {stable_suffix}", scrub_text(display_name))
 }
 
 #[cfg(unix)]
@@ -266,39 +303,41 @@ pub fn query_metrics(
 
 #[cfg(test)]
 mod repository_identity_tests {
-    use super::disambiguate_duplicate_names;
-    use crate::types::RepoTarget;
+    use super::stable_repository_name;
 
     #[cfg(unix)]
     #[test]
-    fn duplicate_repository_names_preserve_non_utf8_path_identity() {
+    fn repository_identity_is_unique_stable_and_hides_non_utf8_paths() {
         use std::os::unix::ffi::OsStringExt;
 
         let root = tempfile::tempdir().expect("workspace root");
-        let mut repositories = [0xfe, 0xff]
+        let paths = [0xfe, 0xff]
             .into_iter()
             .map(|byte| {
                 let parent =
                     std::ffi::OsString::from_vec(vec![b'g', b'r', b'o', b'u', b'p', b'-', byte]);
-                RepoTarget {
-                    name: "shared".into(),
-                    path: root.path().join(parent).join("shared"),
-                }
+                root.path().join(parent).join("shared")
             })
             .collect::<Vec<_>>();
-        repositories.push(RepoTarget {
-            name: "shared".into(),
-            path: root.path().join("group-%FE").join("shared"),
-        });
-        disambiguate_duplicate_names(root.path(), &mut repositories);
-        let mut names = repositories
+        let escaped_looking_path = root.path().join("group-%FE").join("shared");
+        let paths = paths
             .into_iter()
-            .map(|repository| repository.name)
+            .chain(std::iter::once(escaped_looking_path))
             .collect::<Vec<_>>();
-        names.sort_unstable();
+        let names = paths
+            .iter()
+            .map(|path| stable_repository_name(path, "shared"))
+            .collect::<Vec<_>>();
         assert_eq!(
-            names,
-            ["group-%25FE/shared", "group-%FE/shared", "group-%FF/shared"]
+            names.iter().collect::<std::collections::HashSet<_>>().len(),
+            paths.len()
+        );
+        assert!(names.iter().all(|name| name.starts_with("shared ")));
+        assert!(names.iter().all(|name| !name.contains('%')));
+        assert_eq!(
+            stable_repository_name(&paths[0], "shared"),
+            names[0],
+            "the same repository must keep its identity when selected from a different scan root"
         );
     }
 }

@@ -48,17 +48,32 @@ pub const ADMIN_BRIDGE_COMMANDS: [&str; 8] = [
 /// Return the exact default paths used by the existing Tauri host. Both hosts
 /// can override these locations with the same environment variables.
 pub fn default_analytics_store_paths() -> (String, String) {
-    let kv = std::env::var("ROCINANTE_KV_PATH").unwrap_or_else(|_| "telemetry-kv".into());
-    let columnar =
-        std::env::var("ROCINANTE_COLUMNAR_PATH").unwrap_or_else(|_| "analytics.duckdb".into());
+    let data_dir = rocinante_analysis::default_application_data_dir();
+    let kv = std::env::var("ROCINANTE_KV_PATH")
+        .unwrap_or_else(|_| data_dir.join("telemetry-kv").to_string_lossy().into_owned());
+    let columnar = std::env::var("ROCINANTE_COLUMNAR_PATH").unwrap_or_else(|_| {
+        data_dir
+            .join("analytics.duckdb")
+            .to_string_lossy()
+            .into_owned()
+    });
     (kv, columnar)
 }
 
 pub fn default_scoring_paths() -> (String, String) {
-    let weights = std::env::var("ROCINANTE_SCORING_WEIGHTS_PATH")
-        .unwrap_or_else(|_| "scoring-weights.json".into());
-    let audit = std::env::var("ROCINANTE_SCORING_AUDIT_PATH")
-        .unwrap_or_else(|_| "scoring-audit.jsonl".into());
+    let data_dir = rocinante_analysis::default_application_data_dir();
+    let weights = std::env::var("ROCINANTE_SCORING_WEIGHTS_PATH").unwrap_or_else(|_| {
+        data_dir
+            .join("scoring-weights.json")
+            .to_string_lossy()
+            .into_owned()
+    });
+    let audit = std::env::var("ROCINANTE_SCORING_AUDIT_PATH").unwrap_or_else(|_| {
+        data_dir
+            .join("scoring-audit.jsonl")
+            .to_string_lossy()
+            .into_owned()
+    });
     (weights, audit)
 }
 
@@ -245,6 +260,36 @@ pub fn reseed_release_baseline(
 #[cfg(test)]
 mod tests {
     use super::storage::{BaselineStore, IngestionBackendKind};
+
+    #[test]
+    fn application_store_defaults_share_the_stable_per_user_data_directory() {
+        let data_dir = rocinante_analysis::default_application_data_dir();
+        let (kv_path, columnar_path) = super::default_analytics_store_paths();
+        let (weights_path, audit_path) = super::default_scoring_paths();
+
+        for (value, variable, filename) in [
+            (kv_path, "ROCINANTE_KV_PATH", "telemetry-kv"),
+            (columnar_path, "ROCINANTE_COLUMNAR_PATH", "analytics.duckdb"),
+            (
+                weights_path,
+                "ROCINANTE_SCORING_WEIGHTS_PATH",
+                "scoring-weights.json",
+            ),
+            (
+                audit_path,
+                "ROCINANTE_SCORING_AUDIT_PATH",
+                "scoring-audit.jsonl",
+            ),
+        ] {
+            if let Some(override_path) = std::env::var_os(variable) {
+                assert_eq!(value, override_path.to_string_lossy());
+            } else {
+                let path = std::path::PathBuf::from(value);
+                assert!(path.is_absolute(), "{path:?} should be absolute");
+                assert_eq!(path, data_dir.join(filename));
+            }
+        }
+    }
 
     #[test]
     fn default_ingestion_backend_uses_sqlite_without_sidecar_configuration() {

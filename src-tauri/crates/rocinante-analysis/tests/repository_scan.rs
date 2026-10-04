@@ -39,50 +39,79 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
 
     let database = NamedTempFile::new().expect("database file");
     let store = TelemetryStore::open(database.path()).expect("open telemetry database");
-    for (repo_name, release, key) in [
-        ("repo-one-shadow", "", "similar_repo_metric"),
-        ("repo-one", "previous-release", "old_release_metric"),
-    ] {
+    store
+        .insert_record(&AnalysisRecord {
+            repo_name: "repo-one-shadow".into(),
+            release: String::new(),
+            metrics: vec![AnalysisMetric {
+                plugin: "test".into(),
+                key: "similar_repo_metric".into(),
+                value: 1.0,
+                details: String::new(),
+            }],
+        })
+        .expect("insert unrelated historic metric");
+    for repo_name in ["repo-one", "group-a/shared"] {
         store
             .insert_record(&AnalysisRecord {
                 repo_name: repo_name.into(),
-                release: release.into(),
+                release: "previous-release".into(),
                 metrics: vec![AnalysisMetric {
                     plugin: "test".into(),
-                    key: key.into(),
+                    key: format!("legacy_metric_{repo_name}"),
                     value: 1.0,
                     details: String::new(),
                 }],
             })
-            .expect("insert unrelated historic metric");
+            .expect("insert legacy repository identity");
     }
     drop(store);
 
     let token = issue_test_token("scan-admin", &["admin"], 300);
     let (result, metrics) = run_scan_with_metrics(&token, root.path(), "", database.path())
         .expect("repository scan and query");
+
     let stored_metrics = query_repository_metrics(&token, root.path(), "", database.path())
         .expect("query stored repository metrics");
 
     assert_eq!(result.records_processed, 4);
     assert!(result.rows_inserted >= 1);
     assert_eq!(result.duplicate_source_keys, 0);
-    assert!(metrics.iter().any(|metric| metric.repo_name == "repo-one"));
-    assert!(metrics.iter().any(|metric| metric.repo_name == "repo-two"));
-    assert!(metrics
-        .iter()
-        .any(|metric| metric.repo_name == "group-a/shared"));
-    assert!(metrics
-        .iter()
-        .any(|metric| metric.repo_name == "group-b/shared"));
+    assert_eq!(
+        metrics
+            .iter()
+            .filter(|metric| metric.repo_name.contains(' '))
+            .map(|metric| metric.repo_name.as_str())
+            .collect::<std::collections::HashSet<_>>()
+            .len(),
+        4
+    );
     assert!(metrics.iter().any(|metric| metric.release.is_empty()));
     assert!(metrics
         .iter()
         .all(|metric| metric.key != "similar_repo_metric"));
-    assert!(metrics
-        .iter()
-        .any(|metric| { metric.repo_name == "repo-one" && metric.key == "old_release_metric" }));
-    assert_eq!(stored_metrics, metrics);
+    assert!(stored_metrics.iter().any(|metric| {
+        metric.repo_name == "repo-one" && metric.key == "legacy_metric_repo-one"
+    }));
+    assert!(stored_metrics.iter().any(|metric| {
+        metric.repo_name == "group-a/shared" && metric.key == "legacy_metric_group-a/shared"
+    }));
+    assert!(metrics.iter().all(|metric| stored_metrics.contains(metric)));
+
+    for path in [
+        root.path().join("group-a/shared"),
+        root.path().join("group-b/shared"),
+        root.path().join("repo-one"),
+    ] {
+        let selected_metrics = query_repository_metrics(&token, &path, "", database.path())
+            .expect("query a repository selected by its own directory");
+        assert!(!selected_metrics.is_empty());
+        assert!(selected_metrics.iter().all(|selected| {
+            stored_metrics.iter().any(|scanned| {
+                scanned.repo_name == selected.repo_name && scanned.key == selected.key
+            })
+        }));
+    }
 }
 
 #[test]
