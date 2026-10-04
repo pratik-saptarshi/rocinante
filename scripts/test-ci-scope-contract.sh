@@ -30,6 +30,9 @@ assert_scope() {
 assert_scope "src-tauri/Cargo.toml" false true code-surface-touched
 assert_scope "src-tauri/Cargo.lock" false true code-surface-touched
 assert_scope "src-tauri/crates/rocinante-storage/Cargo.toml" false true code-surface-touched
+assert_scope "rust-toolchain.toml" false true code-surface-touched
+assert_scope ".cargo/config.toml" false true code-surface-touched
+assert_scope ".cargo/config" false true code-surface-touched
 assert_scope "docs/roadmap/readiness.md" false false docs-only-tweak
 assert_scope "README.md" false false docs-only-tweak
 assert_scope "docs/roadmap/readiness.md" true true release-docs-tweak
@@ -38,6 +41,20 @@ assert_scope ".github/workflows/ci.yml" false true code-surface-touched
 workflow_contents="$(<"$workflow")"
 if [[ "$workflow_contents" != *'bash scripts/detect-ci-scope.sh true >> "$GITHUB_OUTPUT"'* ]]; then
   echo "Missing complete conservative scope outputs in the CI fallback path." >&2
+  exit 1
+fi
+
+test_job_contents="$(awk '
+  $0 == "  test:" { in_job = 1; next }
+  in_job && /^  [[:alnum:]_-]+:$/ { exit }
+  in_job { print }
+' "$workflow")"
+if [[ "$test_job_contents" != *"- tauri-runtime-bundle"* ]]; then
+  echo "The aggregate test job must depend on the Tauri runtime bundle matrix." >&2
+  exit 1
+fi
+if [[ "$test_job_contents" != *'needs.tauri-runtime-bundle.result'* || "$test_job_contents" != *'!= "success"'* ]]; then
+  echo "The aggregate test job must fail unless all Tauri bundle matrix legs succeed." >&2
   exit 1
 fi
 

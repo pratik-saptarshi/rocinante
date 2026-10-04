@@ -739,6 +739,7 @@ jobs:
       - rust-lint
       - rust-tests
       - rust-coverage
+      - tauri-runtime-bundle
     runs-on: ubuntu-latest
     if: ${{ always() }}
     timeout-minutes: 5
@@ -748,6 +749,11 @@ jobs:
         run: |
           if [[ "${{ needs.ci-workflow-parse.result }}" != "success" ]]; then
             echo "workflow parse failed or was skipped unexpectedly"
+            exit 1
+          fi
+
+          if [[ "${{ needs.tauri-runtime-bundle.result }}" != "success" ]]; then
+            echo "one or more production Tauri bundle checks failed or were skipped unexpectedly"
             exit 1
           fi
 
