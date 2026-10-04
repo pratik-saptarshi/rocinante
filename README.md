@@ -160,22 +160,23 @@ pnpm run build
 The GTK-free native shell can also be launched independently:
 
 ```bash
-cargo run --manifest-path Cargo.toml -p rocinante-desktop-shell
+cargo run --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell
 ```
 
 On macOS, install a built shell as a per-user app bundle and register its URL
 scheme with Launch Services:
 
 ```bash
-cd src-tauri
-cargo build --release -p rocinante-desktop-shell
-sh crates/rocinante-desktop-shell/packaging/macos/install-user.sh \
-  target/release/rocinante-desktop-shell
+cargo build --release --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell
+sh src-tauri/crates/rocinante-desktop-shell/packaging/macos/install-user.sh \
+  src-tauri/target/release/rocinante-desktop-shell
 ```
 
-On Windows, register the URL handler for the current user with:
+On Windows, build the release shell and register its URL handler for the
+current user with:
 
 ```powershell
+cargo build --release --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell
 powershell -ExecutionPolicy Bypass -File `
   src-tauri/crates/rocinante-desktop-shell/packaging/windows/install-user.ps1 `
   src-tauri/target/release/rocinante-desktop-shell.exe
@@ -200,10 +201,9 @@ second-instance URI delivery are in place. To install the GTK-free shell for
 the current user on Linux, build and install it with:
 
 ```bash
-cd src-tauri
-cargo build --release -p rocinante-desktop-shell
-sh crates/rocinante-desktop-shell/packaging/linux/install-user.sh \
-  target/release/rocinante-desktop-shell
+cargo build --release --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell
+sh src-tauri/crates/rocinante-desktop-shell/packaging/linux/install-user.sh \
+  src-tauri/target/release/rocinante-desktop-shell
 ```
 
 This installs the binary under `~/.local/bin`, registers the desktop entry and

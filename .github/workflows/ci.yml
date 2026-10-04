@@ -51,6 +51,12 @@ jobs:
         run: bash scripts/test-check-security-advisory-exceptions.sh
       - name: Test native shell dependency guard contract
         run: bash scripts/test-check-desktop-shell-dependencies.sh
+      - name: Set up Node for dependency-floor check
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify UI esbuild floor
+        run: node scripts/check-esbuild-lock.mjs
 
   security-exception-governance:
     needs: [ci-workflow-parse]
@@ -335,8 +341,6 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf
-      - name: Verify UI esbuild floor
-        run: node scripts/check-esbuild-lock.mjs
       - name: Verify open esbuild Dependabot alert is closed
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
