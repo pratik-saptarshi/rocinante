@@ -248,6 +248,11 @@ def main() -> int:
         action="store_true",
         help="Copy the verified native runtime into Cargo's debug/deps directory for test executables",
     )
+    parser.add_argument(
+        "--stage-runtime-for-tauri-bundle",
+        action="store_true",
+        help="Copy the verified native runtime into Tauri's configured resource directory",
+    )
     args = parser.parse_args()
 
     try:
@@ -273,6 +278,13 @@ def main() -> int:
                 cache_dir,
                 target_dir,
                 cargo_target_layout=args.cargo_target_layout,
+            )
+        if args.stage_runtime_for_tauri_bundle:
+            staged_runtime = stage_runtime_to_directory(
+                manifest,
+                target,
+                cache_dir,
+                REPO_ROOT / "src-tauri" / "tauri-resources",
             )
     except (ProvisionError, KeyError, OSError) as error:
         print(f"DuckDB provisioning failed: {error}", file=sys.stderr)

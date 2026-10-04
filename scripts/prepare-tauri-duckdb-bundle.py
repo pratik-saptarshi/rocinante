@@ -124,7 +124,7 @@ def _target_directory() -> Path:
 def prepare_bundle(target: str, target_directory: Path, runner: CommandRunner = _run) -> Path:
     manifest = provisioner.load_manifest(provisioner.DEFAULT_MANIFEST)
     cache_directory = provisioner.provision_target(manifest, target, target_directory)
-    resource_directory = TAURI_ROOT / "target" / "tauri-resources"
+    resource_directory = TAURI_ROOT / "tauri-resources"
     staged_library = provisioner.stage_runtime_to_directory(
         manifest, target, cache_directory, resource_directory
     )

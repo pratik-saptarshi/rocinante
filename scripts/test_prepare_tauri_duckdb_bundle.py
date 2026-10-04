@@ -81,7 +81,7 @@ class BundlePreparationTests(unittest.TestCase):
                 manifest,
                 "test-target",
                 cache_directory,
-                root / "target" / "tauri-resources",
+                root / "tauri-resources",
             )
 
             self.assertEqual(staged.read_bytes(), runtime)
@@ -106,7 +106,7 @@ class BundlePreparationTests(unittest.TestCase):
                     manifest,
                     "test-target",
                     cache_directory,
-                    root / "target" / "tauri-resources",
+                    root / "tauri-resources",
                 )
 
     def test_tauri_config_bundles_runtime_and_runs_platform_hooks(self) -> None:
@@ -114,14 +114,19 @@ class BundlePreparationTests(unittest.TestCase):
         config = json.loads((tauri_root / "tauri.conf.json").read_text())
         windows_config = json.loads((tauri_root / "tauri.windows.conf.json").read_text())
 
-        self.assertEqual(config["bundle"]["resources"], {"target/tauri-resources/*": ""})
-        self.assertEqual(config["build"]["beforeBuildCommand"], "python3 scripts/provision_duckdb.py")
+        self.assertEqual(config["bundle"]["resources"], {"tauri-resources/*": ""})
+        self.assertTrue((tauri_root / "tauri-resources" / "README.txt").is_file())
+        self.assertEqual(
+            config["build"]["beforeBuildCommand"],
+            "python3 scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle",
+        )
         self.assertEqual(
             config["build"]["beforeBundleCommand"],
             "python3 scripts/prepare-tauri-duckdb-bundle.py",
         )
         self.assertEqual(
-            windows_config["build"]["beforeBuildCommand"], "python scripts/provision_duckdb.py"
+            windows_config["build"]["beforeBuildCommand"],
+            "python scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle",
         )
         self.assertEqual(
             windows_config["build"]["beforeBundleCommand"],

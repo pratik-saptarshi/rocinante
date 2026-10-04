@@ -6,7 +6,7 @@
   "build": {
     "frontendDist": "../ui",
     "beforeDevCommand": "",
-    "beforeBuildCommand": "python3 scripts/provision_duckdb.py",
+    "beforeBuildCommand": "python3 scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle",
     "beforeBundleCommand": "python3 scripts/prepare-tauri-duckdb-bundle.py"
   },
   "app": {
@@ -24,7 +24,7 @@
   },
   "bundle": {
     "resources": {
-      "target/tauri-resources/*": ""
+      "tauri-resources/*": ""
     }
   }
 }
