@@ -259,7 +259,8 @@ jobs:
           if (-not (Test-Path $sevenZip)) { throw '7-Zip is required to inspect the Tauri installer' }
           $contents = & $sevenZip l $installer.FullName
           if ($LASTEXITCODE -ne 0) { throw 'Could not list the Tauri NSIS installer contents' }
-          if ($contents -notmatch 'duckdb\.dll') {
+          $duckdbEntries = $contents | Where-Object { $_ -match 'duckdb\.dll' }
+          if (-not $duckdbEntries) {
             Write-Output $contents
             throw 'The Tauri NSIS installer does not contain duckdb.dll'
           }

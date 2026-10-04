@@ -131,6 +131,7 @@ class BundlePreparationTests(unittest.TestCase):
         self.assertLess(stage_runtime_step, build_bundle_step)
         self.assertIn("python3 scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle", workflow)
         self.assertIn("python scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle", workflow)
+        self.assertIn(r"$contents | Where-Object { $_ -match 'duckdb\.dll' }", workflow)
         self.assertTrue((tauri_root / "tauri-resources" / "README.txt").is_file())
         self.assertEqual(
             config["build"]["beforeBuildCommand"],
