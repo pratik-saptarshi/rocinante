@@ -13,7 +13,7 @@ _Captured: 2026-10-04_
 ## Branch and Sync State
 
 - PR #108 is open and blocked on `fix/rocinante-readiness-remediation` at
-  published head `3cd8bf9`, based on `main` at `cdd29b9`. All 45 inline
+  validated source head `d703a4a`, based on current `main` tip `cdd29b9`. All 46 inline
   review threads are resolved. Its required CI aggregate remains blocked by
   the 17 overdue security exception reviews.
 - The complete phase sequence and exit evidence are in
@@ -29,7 +29,9 @@ _Captured: 2026-10-04_
 - Frontend: `ui/package.json`, `ui/src/**`, `ui/e2e/**`
 - Automation: `.github/workflows/*.yml`, `scripts/*.sh`, `scripts/*.mjs`
 - One-time legacy-store migration: isolated `tools/sled-migration/` workspace
-  and lockfile; Sled is not in the application dependency graph.
+  and lockfile; Sled is not in the application dependency graph. The migration
+  snapshot copies `conf`, `db`, and `blobs/` under the storage lock; the 1 MiB
+  off-log-value regression is included in its 8-test suite.
 - Governance artifacts: `docs/bill-of-materials.html`, `docs/publish-readiness-checklist.html`,
   `docs/roadmap/*`, `README.md`, `SECURITY.md`
 
@@ -61,7 +63,7 @@ _Captured: 2026-10-04_
   binary before Cargo. DuckDB source-build features are forbidden by a tested
   feature-graph guard. Tauri production bundles now use verified per-platform
   resources and loader paths. All three package inspections pass on the
-  published PR head in hosted run `37230918166`; the required governance lane
+  validated source head in hosted run `37233328503`; the required governance lane
   fails on the 17 overdue exception reviews.
 - The provisioner contract tests (9), DuckDB feature-guard contract, CI-scope
   contract, macOS installer contract, and Linux installer/deep-link contract
@@ -70,12 +72,12 @@ _Captured: 2026-10-04_
   `@executable_path/../Frameworks` run path. The full installed macOS lifecycle
   also passes cold/warm Launch Services URLs, tray behavior, notification
   request, and saved-state restart. Hosted run
-  [37230918166](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918166)
+  [37233328503](https://github.com/pratik-saptarshi/rocinante/actions/runs/37233328503)
   passes Linux/macOS/Windows URL and saved-state restart acceptance, the
   three-platform Tauri DuckDB bundle checks, and Linux visible notification
   delivery. All hosted Rust lint and test shards also passed.
-- The hosted full-workspace test lane passed on published head `3cd8bf9` in run
-  `37230918166`. The workspace test run excluding the Tauri adapter passes all 83 tests,
+- The hosted full-workspace test lane passed on source head `d703a4a` in run
+  `37233328503`. The workspace test run excluding the Tauri adapter passes all 83 tests,
   including SQLite persistence, prefix ordering, concurrent writes, legacy
   Sled refusal, and replay receipts. Strict Clippy passes for every
   `rocinante-storage` target. The root storage, transport, backend,
@@ -94,14 +96,14 @@ _Captured: 2026-10-04_
   list; it exits nonzero with `--deny warnings`.
   No advisory dates have been renewed; governance remains fail-closed on all 17
   overdue entries.
-- Published-head CI run `37230918166` completed with all code, UI, platform,
+- Published-head CI run `37233328503` completed with all code, UI, platform,
   package, workspace-test, format, Clippy, and contract jobs passed. The
   aggregate failed because `security-exception-governance` found all 17 review
-  dates overdue. Security run `37230918173` and Dependency Review
-  `37230918190` passed. These checks do not prove the
+  dates overdue. Security run `37233328497` and Dependency Review
+  `37233328573` passed. These checks do not prove the
   zero-exception RustSec requirement.
-- PR #108's required `tauri-runtime-bundle` passed on published head `3cd8bf9`
-  in run `37230918166`: Linux `.deb`, macOS `.app`, and Windows NSIS packages all
+- PR #108's required `tauri-runtime-bundle` passed on source head `d703a4a`
+  in run `37233328503`: Linux `.deb`, macOS `.app`, and Windows NSIS packages all
   contain the verified DuckDB runtime. The macOS check also rejects any
   remaining `duckdb-download` Cargo-cache RPATH. The aggregate remains blocked
   by the separate advisory governance failure.
@@ -154,11 +156,11 @@ _Captured: 2026-10-04_
   owner acceptance statements have been fabricated. The phased zero-exception
   remediation sequence is documented in the roadmap plan.
 - The dependency-floor and exception-registry phase is not complete. The last
-  terminal aggregate on the published head, `37230918166`, passes all code
+  terminal aggregate on the validated source head, `37233328503`, passes all code
   lanes but fails the required gate because 17 registry reviews are overdue.
   The current local work adds the isolated legacy Sled migrator; focused tool
   and storage tests, full-workspace Clippy, and the full workspace test (254
-  tests across 60 suites) pass. Hosted checks on head `3cd8bf9` are terminal;
+  tests across 60 suites) pass. Hosted checks on source head `d703a4a` are terminal;
   all code lanes pass and only the fail-closed governance and dependent
   aggregate checks fail. Do not record owner acceptance or renew any review
   date without the actual disposition.

@@ -13,7 +13,7 @@ then release from the merged tip.
 - Primary integration branch: `main`
 - Remote: `origin`
 - Current work is on PR #108's remediation branch,
-  `fix/rocinante-readiness-remediation`, at published head `3cd8bf9`. The PR
+  `fix/rocinante-readiness-remediation`, at validated source head `d703a4a`. The PR
   remains open and relevant, and is blocked by the required governance gate;
   its base is `main` at `cdd29b9`. All 45 inline threads are resolved.
 - Product: Rust shared-service workspace with current Tauri integration, an
@@ -258,16 +258,16 @@ reports 17 overdue registry entries. The Tauri package-runtime review thread
 is resolved after the Linux/macOS/Windows package matrix passed on the current
 review head.
 
-Current validation snapshot (2026-10-04; published head `3cd8bf9`): all 9
+Current validation snapshot (2026-10-04; validated source head `d703a4a`): all 9
 `rocinante-analysis` tests pass locally; analysis Clippy reports no issues;
 formatting, actionlint, and the eight-case Tauri bundle contract pass. Hosted
-run [37230918166](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918166)
+run [37233328503](https://github.com/pratik-saptarshi/rocinante/actions/runs/37233328503)
 passes UI quality, full workspace tests, Linux/macOS/Windows URL lifecycle
 acceptance, the Linux/macOS/Windows Tauri bundle inspections, build seed, and
 Rust format/Clippy/test lanes on the published head. The aggregate is blocked by advisory governance's
-17 overdue records. Current Security run `37230918173` passed secret scan,
+17 overdue records. Current Security run `37233328497` passed secret scan,
 repository-configured Rust audit, and CodeQL. Dependency Review
-`37230918190` passed. Fetching RustSec on 2026-10-04 returned revision
+`37233328573` passed. Fetching RustSec on 2026-10-04 returned revision
 `ef6173cbc5c50ec8166f9a5b28f07834144373ee`, timestamped 2026-10-03. The
 unfiltered app audit reports zero vulnerability findings and two warnings
 (`glib 0.18.5` and `proc-macro-error 1.0.4`) with an empty ignore list; the
@@ -275,13 +275,14 @@ unfiltered app audit reports zero vulnerability findings and two warnings
 findings are resolved on this head; do not infer owner dispositions or renew
 exception dates.
 
-The current follow-up adds the audited Sled-to-SQLite migrator. Its focused
-tests, strict Clippy, formatting, and dependency contracts pass locally. The
+The current follow-up adds the audited Sled-to-SQLite migrator. It copies
+`conf`, `db`, and `blobs/` under the storage lock; the 1 MiB off-log-value
+regression test passes. Its focused tests, strict Clippy, formatting, and dependency contracts pass locally. The
 full-workspace Clippy reports no issues, and the full Cargo workspace test
 passes 254 tests across 60 suites after recovering disk space and restoring
 the verified DuckDB prebuilt. Hosted full-workspace tests, core/storage shards,
 UI quality, Rust quality, platform lifecycle, and all three Tauri package
-inspections passed on this published head.
+inspections passed on source head `d703a4a` in run `37233328503`.
 
 Historical CI recovery evidence on `feat/bi-056-timeout-contract` is green and
 merged; BI-047 is also merged on PR run `28988956969`. Neither historic run is

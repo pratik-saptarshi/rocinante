@@ -1,25 +1,28 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status (2026-10-04; published PR head `3cd8bf9`):** PR #108 remains relevant
-and open on `fix/rocinante-readiness-remediation`; all 45 inline review threads
+**Status (2026-10-04; validated source head `d703a4a`):** PR #108 remains relevant
+and open on `fix/rocinante-readiness-remediation`; all 46 inline review threads
 are resolved and none are open. Hosted CI run
-[`37230918166`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918166)
+[`37233328503`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37233328503)
 passed its code, UI, Rust, platform lifecycle, package, and contract lanes. The
 required aggregate is blocked by the fail-closed governance check for the 17
 overdue review dates, and `test` fails as a consequence. Security run
-[`37230918173`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918173)
+[`37233328497`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37233328497)
 and Dependency Review
-[`37230918190`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37230918190)
+[`37233328573`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37233328573)
 passed. No exception dates or owner dispositions have been fabricated.
 
 Phase 3 is implemented locally in `tools/sled-migration`: its separate
 lockfile retains the official Sled package identity, its patched graph removes
 `fxhash` and `instant`, and the application workspace remains free of Sled.
+The migration snapshot copies Sled's `conf`, `db`, and `blobs` entries while
+holding the storage lock; an 8-test migrator suite includes a 1 MiB off-log
+blob fixture and checks that the source store remains unchanged.
 Focused migrator and storage tests, migrator Clippy, formatting, and dependency
 contracts pass locally. Full workspace Clippy reports no issues, and the full
 Cargo workspace test passed 254 tests across 60 suites after generated build
 files were cleared when the first attempt exhausted disk space. Hosted
-hosted validation on the follow-up head passed, including the full workspace,
+validation on the follow-up head passed, including the full workspace,
 core/storage shards, Linux/macOS/Windows URL lifecycle, Linux notification,
 and three-platform Tauri package checks. A database refresh fetched the same
 RustSec revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`, timestamped
@@ -599,11 +602,14 @@ prebuilt and is not compiled from source.
 ## Phase 3 local verification and PR blocker update (2026-10-04)
 
 The live PR review query confirms PR #108 is open and relevant on the expected
-branch, at published head `3cd8bf9`, with all 45 review threads resolved and
-none open. CI run `37230918166` completed: Rust workspace, core/storage shards,
+branch, at validated source head `d703a4a`, with all 46 review threads resolved
+and none open. The P1 review finding at
+[`discussion_r4179217497`](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4179217497)
+is resolved by copying the Sled `blobs/` directory and testing a 1 MiB value.
+CI run `37233328503` completed: Rust workspace, core/storage shards,
 formatting, Clippy, UI quality, Linux/macOS/Windows URL lifecycle, and all
-three Tauri package lanes passed. Security run `37230918173`, CodeQL, secret
-scan, and Dependency Review run `37230918190` passed. Only
+three Tauri package lanes passed. Security run `37233328497`, CodeQL, secret
+scan, and Dependency Review run `37233328573` passed. Only
 `security-exception-governance` and its dependent `test` aggregate failed.
 The workflow log lists all 17 registry entries as overdue since 2026-08-06.
 No registry entries or review dates were changed because no security-owner
