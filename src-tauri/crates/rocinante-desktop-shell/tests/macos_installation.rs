@@ -9,6 +9,7 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     let tools = temp.path().join("tools");
     let registration_log = temp.path().join("registration.log");
     let install_name_log = temp.path().join("install-name-tool.log");
+    let codesign_log = temp.path().join("codesign.log");
     std::fs::create_dir_all(&home).expect("create temporary home");
     std::fs::create_dir_all(&tools).expect("create command shims");
     let duckdb_library = temp.path().join("deps/libduckdb.dylib");
@@ -43,6 +44,15 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     std::fs::set_permissions(&lsregister, std::fs::Permissions::from_mode(0o755))
         .expect("make Launch Services shim executable");
 
+    let codesign = tools.join("codesign");
+    std::fs::write(
+        &codesign,
+        "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$ROCINANTE_CODESIGN_LOG\"\n",
+    )
+    .expect("write codesign shim");
+    std::fs::set_permissions(&codesign, std::fs::Permissions::from_mode(0o755))
+        .expect("make codesign shim executable");
+
     let binary = temp.path().join("rocinante-desktop-shell");
     std::fs::write(&binary, "#!/bin/sh\nexit 0\n").expect("write fake desktop binary");
     std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o755))
@@ -61,6 +71,8 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
         .env("ROCINANTE_LSREGISTER", &lsregister)
         .env("ROCINANTE_LSREGISTER_LOG", &registration_log)
         .env("ROCINANTE_INSTALL_NAME_LOG", &install_name_log)
+        .env("ROCINANTE_CODESIGN_LOG", &codesign_log)
+        .env("ROCINANTE_CODESIGN_IDENTITY", "contract-identity")
         .env(
             "ROCINANTE_FAKE_DUCKDB_LOAD_NAME",
             "/tmp/cache/duckdb-download/x86_64-apple-darwin/1.5.6/libduckdb.dylib",
@@ -198,4 +210,22 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     assert!(install_name_calls.contains(
         "-rpath /tmp/cache/duckdb-download/x86_64-apple-darwin/1.5.6 @executable_path/../Frameworks"
     ));
+
+    let codesign_calls = std::fs::read_to_string(codesign_log)
+        .expect("read codesign calls")
+        .lines()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    assert_eq!(codesign_calls.len(), 4, "{codesign_calls:?}");
+    assert!(codesign_calls[0]
+        .contains("--force --options runtime --sign contract-identity --timestamp "));
+    assert!(codesign_calls[0].ends_with(app_duckdb.to_str().unwrap()));
+    assert!(codesign_calls[1]
+        .contains("--force --options runtime --sign contract-identity --timestamp "));
+    assert!(codesign_calls[1].ends_with(app_binary.to_str().unwrap()));
+    assert!(codesign_calls[2]
+        .contains("--force --options runtime --sign contract-identity --timestamp "));
+    assert!(codesign_calls[2].ends_with(bundle.to_str().unwrap()));
+    assert!(codesign_calls[3].starts_with("--verify --deep --strict "));
+    assert!(codesign_calls[3].ends_with(bundle.to_str().unwrap()));
 }

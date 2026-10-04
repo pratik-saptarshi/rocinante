@@ -27,12 +27,13 @@ if [ ! -f "$duckdb_library" ]; then
     echo "verified prebuilt DuckDB shared library is missing: $duckdb_library" >&2
     exit 1
 fi
-for tool in install_name_tool otool; do
+for tool in install_name_tool otool codesign; do
     if ! command -v "$tool" >/dev/null 2>&1; then
-        echo "$tool is required to make the app's DuckDB library relocatable" >&2
+        echo "$tool is required to build and sign the app bundle" >&2
         exit 1
     fi
 done
+code_sign_identity=${ROCINANTE_CODESIGN_IDENTITY:--}
 script_directory=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 mkdir -p "$contents/MacOS" "$contents/Resources" "$contents/Frameworks"
 installed_binary=$contents/MacOS/rocinante-desktop-shell
@@ -79,3 +80,18 @@ sed "s|<string>dev.rocinante.desktop-shell</string>|<string>$bundle_identifier</
     "$script_directory/Info.plist" > "$contents/Info.plist"
 install -m 0644 "$script_directory/../icons/Rocinante.icns" "$contents/Resources/Rocinante.icns"
 printf 'APPL????' > "$contents/PkgInfo"
+
+sign_code() {
+    if [ "$code_sign_identity" = "-" ]; then
+        codesign --force --sign "$code_sign_identity" --timestamp=none "$1"
+    else
+        codesign --force --options runtime --sign "$code_sign_identity" --timestamp "$1"
+    fi
+}
+
+# install_name_tool changes Mach-O signatures, so sign every nested code object
+# and the completed bundle after all loader paths and bundle metadata are final.
+sign_code "$installed_duckdb"
+sign_code "$installed_binary"
+sign_code "$output_app"
+codesign --verify --deep --strict "$output_app"
