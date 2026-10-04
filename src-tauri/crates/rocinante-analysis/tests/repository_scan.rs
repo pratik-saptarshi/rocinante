@@ -64,6 +64,18 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
                 }],
             })
             .expect("insert legacy repository identity");
+        store
+            .insert_record(&AnalysisRecord {
+                repo_name: repo_name.into(),
+                release: String::new(),
+                metrics: vec![AnalysisMetric {
+                    plugin: "test".into(),
+                    key: format!("legacy_stale_metric_{repo_name}"),
+                    value: 0.0,
+                    details: String::new(),
+                }],
+            })
+            .expect("insert same-release legacy snapshot to be replaced");
     }
     drop(store);
 
@@ -94,12 +106,21 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
         .iter()
         .all(|metric| metric.key != "similar_repo_metric"));
     assert!(!stored_metrics.is_empty());
-    assert!(stored_metrics
-        .iter()
-        .all(|metric| metric.repo_name.contains(' ')));
+    assert_eq!(
+        stored_metrics
+            .iter()
+            .filter(|metric| metric.release.is_empty() && metric.repo_name.contains(' '))
+            .map(|metric| metric.repo_name.as_str())
+            .collect::<std::collections::HashSet<_>>()
+            .len(),
+        4
+    );
+    assert!(stored_metrics.iter().any(|metric| {
+        metric.release == "previous-release" && metric.key.starts_with("legacy_metric_")
+    }));
     assert!(!stored_metrics
         .iter()
-        .any(|metric| metric.key.starts_with("legacy_metric_")));
+        .any(|metric| metric.key.starts_with("legacy_stale_metric_")));
     assert!(historic_metrics.iter().any(|metric| {
         metric.repo_name == "repo-one" && metric.key == "legacy_metric_repo-one"
     }));

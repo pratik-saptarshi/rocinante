@@ -194,18 +194,24 @@ fn query_repository_metrics_for_identities(
         .map(|(stable_name, _)| stable_name.clone())
         .collect::<Vec<_>>();
     let mut metrics = store.query_repositories(&stable_names, release)?;
-    let stable_names_with_metrics = metrics
-        .iter()
-        .map(|metric| metric.repo_name.as_str())
-        .collect::<HashSet<_>>();
-    let legacy_names = identities
-        .iter()
-        .filter(|(stable_name, _)| !stable_names_with_metrics.contains(stable_name.as_str()))
-        .map(|(_, legacy_name)| legacy_name.clone())
-        .collect::<Vec<_>>();
+    let stable_releases_by_name = metrics.iter().fold(
+        HashMap::<String, HashSet<String>>::new(),
+        |mut releases_by_name, metric| {
+            releases_by_name
+                .entry(metric.repo_name.clone())
+                .or_default()
+                .insert(metric.release.clone());
+            releases_by_name
+        },
+    );
 
-    if !legacy_names.is_empty() {
-        metrics.extend(store.query_repositories(&legacy_names, release)?);
+    for (stable_name, legacy_name) in identities {
+        let stable_releases = stable_releases_by_name.get(stable_name);
+        let legacy_metrics =
+            store.query_repositories(std::slice::from_ref(legacy_name), release)?;
+        metrics.extend(legacy_metrics.into_iter().filter(|metric| {
+            stable_releases.is_none_or(|releases| !releases.contains(&metric.release))
+        }));
     }
     Ok(metrics)
 }
