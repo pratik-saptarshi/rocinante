@@ -1,19 +1,22 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status (2026-10-04):** The prior Phase 0 package, CI routing, signing, path,
-repository identity, release-history, and ambiguous-basename review findings
-are fixed on PR #108. The latest code-validation head is `de72423`; all 43 inline review
-threads are resolved. CI run `37217565425` passed UI quality, Rust workspace
-and crate tests, Rust formatting and lint, Linux/macOS/Windows lifecycle
-acceptance, and all three Tauri package inspections. Its aggregate fails only
-because the fail-closed governance check rejects all 17 overdue entries.
-Security run `37217565444` and Dependency Review run `37217565427` passed.
-A refreshed unfiltered audit inspected the current 715-package lockfile at
-RustSec revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`: zero vulnerability
-findings, two warnings (`glib` and `proc-macro-error`), and an empty ignore
+**Status (2026-10-04; PR head `76acd9a`):** Phase 0 review findings are resolved
+on PR #108: all 45 inline threads are resolved, and the automated review of
+this head found no new findings. Phase 1's verified DuckDB prebuilt packaging
+and Phase 2's SQLite ingestion work pass hosted platform and workspace tests.
+CI run [`37221587094`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37221587094)
+passed Rust formatting, Clippy, workspace and crate tests, UI quality, Linux,
+macOS, and Windows lifecycle checks, and all three Tauri package inspections.
+The aggregate fails only because fail-closed governance rejects all 17 overdue
+entries. Security run [`37221587091`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37221587091)
+and Dependency Review run [`37221587113`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37221587113)
+passed. A refreshed unfiltered audit of the 715-package lockfile at RustSec
+revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee` found zero vulnerability
+reports, two warnings (`glib` and `proc-macro-error`), and an empty ignore
 list. `instant` and `fxhash` are absent from the current lockfile. No owner
-dispositions or review-date renewals were invented. Existing Sled stores must
-complete Phase 3 before upgrade.
+dispositions or review-date renewals were invented. Phase 3, the audited
+legacy-Sled migration utility, is next; existing Sled stores must complete it
+before upgrade.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -545,3 +548,29 @@ The 17-entry governance registry and Cargo ignore list remain unchanged, and
 all review dates remain overdue pending reviewed dispositions or removal of
 the affected host path. Phase 4 and Phase 5 remain required before the
 zero-exception exit gate can pass.
+
+## Latest review and readiness update (2026-10-04; PR head `76acd9a`)
+
+PR #108 remains relevant, open, and mergeable on the existing remediation
+branch, targeting `main` at `cdd29b9`. The duplicate-basename history finding
+is fixed in `de72423`. Promotion receipts now retire only after SQLite source
+acknowledgement and remain through the key's current Unix-second retry bucket;
+older buckets are pruned. The regression covers same-key redelivery, bounded
+cleanup, and crash replay. Local storage tests pass 15/15; Clippy, rustfmt,
+and `git diff --check` pass. All 45 review threads are resolved, and the
+automated review of `76acd9a` completed without new findings.
+
+Hosted CI run `37221587094` is terminal. Rust workspace tests, Clippy,
+formatting, UI quality, Linux/macOS/Windows lifecycle acceptance, Windows
+registration, all three Tauri package checks, and workflow contracts passed.
+The aggregate fails only because governance reports 17 review dates overdue
+as of 2026-10-04. Security run `37221587091` passed Rust audit, secret scan,
+and CodeQL; Dependency Review run `37221587113` passed.
+
+The PR body records the current audit evidence: RustSec database revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee`, 715 locked packages, zero
+vulnerability findings, two warnings (`glib 0.18.5` and
+`proc-macro-error 1.0.4`), and an empty ignore list. The 17 registry entries
+and Cargo ignores remain unchanged because no security-owner dispositions
+were provided. DuckDB remains the official checksum-verified prebuilt and is
+not compiled from source.
