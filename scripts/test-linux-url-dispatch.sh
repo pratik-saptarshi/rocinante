@@ -36,10 +36,10 @@ binary_process_ids() {
 }
 
 cleanup() {
-  local process_id process_ids
-  process_ids="$test_pid $(binary_process_ids)"
+  local exit_code=$? process_id process_ids
+  process_ids="$test_pid $(binary_process_ids || true)"
   if [[ -n "$installed_binary" ]]; then
-    touch "$quit_file"
+    touch "$quit_file" || true
     for process_id in $process_ids; do
       [[ -n "$process_id" ]] || continue
       for _ in {1..20}; do
@@ -60,7 +60,8 @@ cleanup() {
     kill "$dunst_pid" 2>/dev/null || true
     wait "$dunst_pid" 2>/dev/null || true
   fi
-  rm -rf "$test_root"
+  rm -rf "$test_root" || true
+  return "$exit_code"
 }
 trap cleanup EXIT
 
