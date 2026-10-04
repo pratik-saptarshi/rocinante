@@ -403,6 +403,7 @@ fn ci_workflow_has_offline_workflow_parseability_gate() {
 #[test]
 fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let scope_classifier = read_repo_file("../scripts/detect-ci-scope.sh");
 
     assert!(workflow.contains("ci-scope:"));
     assert!(workflow.contains("id: detect"));
@@ -410,40 +411,40 @@ fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
     assert!(workflow.contains("scope-profile"));
     assert!(workflow.contains("run-rust-storage-lanes"));
     assert!(workflow.contains("run-rust-coverage-lanes"));
-    assert!(workflow.contains("NEEDS_RUST=false"));
-    assert!(workflow.contains("echo \"needs_rust=$NEEDS_RUST\""));
-    assert!(workflow.contains("echo \"scope_profile=$SCOPE_PROFILE\""));
-    assert!(workflow.contains("echo \"run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES\""));
-    assert!(workflow.contains("echo \"run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES\""));
-    assert!(workflow.contains("SCOPE_PROFILE=docs-only-tweak"));
-    assert!(workflow.contains("RUN_RUST_STORAGE_LANES=true"));
-    assert!(workflow.contains("RUN_RUST_COVERAGE_LANES=true"));
+    assert_step_run_contains_all(
+        &workflow,
+        "Detect CI scope",
+        &[
+            "bash scripts/detect-ci-scope.sh true >> \"$GITHUB_OUTPUT\"",
+            "echo \"scope_reason=baseline-fallback\" >> \"$GITHUB_OUTPUT\"",
+            "git diff --name-only",
+            "bash scripts/detect-ci-scope.sh \"$FORCE_RUST\"",
+        ],
+    );
 
-    assert!(workflow.contains("case \"$path\" in"));
-    assert!(workflow.contains(
-        "docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*",
-    ));
-    assert!(workflow.contains(".github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock"));
-    assert!(workflow.contains("src-tauri/*"));
+    assert!(scope_classifier.contains("needs_rust=false"));
+    assert!(scope_classifier.contains("scope_profile=docs-only-tweak"));
+    assert!(scope_classifier.contains("case \"$path\" in"));
+    assert!(scope_classifier.contains("docs/*|README.md|README.*"));
+    assert!(scope_classifier.contains(".github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock"));
+    assert!(scope_classifier.contains(".github/workflows/ci.yml|src-tauri/*"));
 }
 
 #[test]
 fn ci_workflow_has_scope_profile_outputs_for_lane_planning() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let scope_classifier = read_repo_file("../scripts/detect-ci-scope.sh");
 
     assert_step_run_contains_all(
         &workflow,
         "Detect CI scope",
-        &[
-            "SCOPE_PROFILE=docs-only-tweak",
-            "{",
-            "echo \"needs_rust=$NEEDS_RUST\"",
-            "echo \"scope_profile=$SCOPE_PROFILE\"",
-            "echo \"run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES\"",
-            "echo \"run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES\"",
-            "} >> \"$GITHUB_OUTPUT\"",
-        ],
+        &["bash scripts/detect-ci-scope.sh \"$FORCE_RUST\" >> \"$GITHUB_OUTPUT\""],
     );
+    assert!(scope_classifier.contains("scope_profile=docs-only-tweak"));
+    assert!(scope_classifier.contains("printf 'needs_rust=%s\\n' \"$needs_rust\""));
+    assert!(scope_classifier.contains("printf 'scope_profile=%s\\n' \"$scope_profile\""));
+    assert!(scope_classifier.contains("printf 'run_rust_storage_lanes=%s\\n'"));
+    assert!(scope_classifier.contains("printf 'run_rust_coverage_lanes=%s\\n'"));
     assert!(workflow.contains("scope-profile: ${{ steps.detect.outputs.scope_profile }}"));
     assert!(workflow
         .contains("run-rust-storage-lanes: ${{ steps.detect.outputs.run_rust_storage_lanes }}"));
@@ -590,12 +591,13 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
 #[test]
 fn ci_workflow_materializes_delta_test_lanes_from_scope_outputs() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let scope_classifier = read_repo_file("../scripts/detect-ci-scope.sh");
 
     assert!(workflow.contains("rust-tests:"));
     assert!(workflow.contains("lane: ${{ fromJSON(needs.ci-scope.outputs.rust-test-lanes) }}"));
     assert!(workflow.contains("rust-test-lanes: ${{ steps.detect.outputs.rust_test_lanes }}"));
-    assert!(workflow.contains("RUST_TEST_LANES='[\"core\",\"storage\"]'"));
-    assert!(workflow.contains("echo \"rust_test_lanes=$RUST_TEST_LANES\""));
+    assert!(scope_classifier.contains("rust_test_lanes='[\"core\",\"storage\"]'"));
+    assert!(scope_classifier.contains("printf 'rust_test_lanes=%s\\n' \"$rust_test_lanes\""));
 }
 
 #[test]

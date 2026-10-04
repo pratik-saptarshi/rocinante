@@ -89,8 +89,9 @@ ROCINANTE_ACCEPTANCE_QUIT_FILE="$quit_file" \
 ROCINANTE_ACCEPTANCE_CLOSE_FILE="$close_file" \
 ROCINANTE_ACCEPTANCE_SHOW_FILE="$show_file" \
 ROCINANTE_ACCEPTANCE_MINIMIZE_FILE="$minimize_file" \
-  cargo build --manifest-path "$shell_manifest" --bin rocinante-desktop-shell \
+cargo build --manifest-path "$shell_manifest" --bin rocinante-desktop-shell \
     --features acceptance-witness --locked
+python3 "$repo_root/scripts/provision_duckdb.py" --stage-runtime-for-binary "$shell_binary"
 ROCINANTE_INSTALL_BUNDLE="$bundle" \
 ROCINANTE_BUNDLE_IDENTIFIER="$bundle_identifier" \
   sh "$repo_root/src-tauri/crates/rocinante-desktop-shell/packaging/macos/install-user.sh" \

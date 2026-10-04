@@ -160,6 +160,41 @@ def provision_target(
     return cache_dir
 
 
+def stage_runtime_for_binary(
+    manifest: dict[str, Any],
+    target: str,
+    cache_dir: Path,
+    binary_path: Path,
+) -> Path:
+    asset = manifest["targets"][target]
+    runtime_names = [
+        name for name in ("libduckdb.so", "libduckdb.dylib", "duckdb.dll")
+        if name in asset["files"]
+    ]
+    if len(runtime_names) != 1:
+        raise ProvisionError(f"Expected exactly one DuckDB runtime artifact for target {target}")
+
+    runtime_name = runtime_names[0]
+    source = cache_dir / runtime_name
+    expected_sha256 = asset["files"][runtime_name]
+    if not source.is_file() or sha256_file(source) != expected_sha256:
+        raise ProvisionError(f"Verified DuckDB runtime is missing or corrupt: {source}")
+
+    destination_directory = Path(binary_path).resolve().parent / "deps"
+    destination = destination_directory / runtime_name
+    temporary = destination.with_name(f".{destination.name}.staging")
+    destination_directory.mkdir(parents=True, exist_ok=True)
+    try:
+        shutil.copyfile(source, temporary)
+        if sha256_file(temporary) != expected_sha256:
+            raise ProvisionError(f"Staged DuckDB runtime failed checksum verification: {temporary}")
+        os.replace(temporary, destination)
+    except OSError as error:
+        temporary.unlink(missing_ok=True)
+        raise ProvisionError(f"Could not stage DuckDB runtime beside {binary_path}: {error}") from error
+    return destination
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
@@ -171,6 +206,13 @@ def main() -> int:
         help="Stage under target-dir/<triple> for cargo commands using --target <triple>",
     )
     parser.add_argument("--print-dir", action="store_true", help="Print only the verified cache directory")
+    parser.add_argument(
+        "--stage-runtime-for-binary",
+        type=Path,
+        default=None,
+        metavar="BINARY",
+        help="Copy the verified native runtime to BINARY's sibling deps directory",
+    )
     args = parser.parse_args()
 
     try:
@@ -186,6 +228,9 @@ def main() -> int:
             target_dir,
             cargo_target_layout=args.cargo_target_layout,
         )
+        staged_runtime = None
+        if args.stage_runtime_for_binary is not None:
+            staged_runtime = stage_runtime_for_binary(manifest, target, cache_dir, args.stage_runtime_for_binary)
     except (ProvisionError, KeyError, OSError) as error:
         print(f"DuckDB provisioning failed: {error}", file=sys.stderr)
         return 1
@@ -194,6 +239,8 @@ def main() -> int:
         print(cache_dir)
     else:
         print(f"Verified DuckDB {manifest['duckdb_version']} prebuilt for {target}: {cache_dir}")
+        if staged_runtime is not None:
+            print(f"Staged verified DuckDB runtime beside desktop binary: {staged_runtime}")
     return 0
 
 

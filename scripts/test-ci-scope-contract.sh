@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 classifier="$repo_root/scripts/detect-ci-scope.sh"
+workflow="$repo_root/.github/workflows/ci.yml"
 
 assert_scope() {
   local paths="$1"
@@ -33,5 +34,11 @@ assert_scope "docs/roadmap/readiness.md" false false docs-only-tweak
 assert_scope "README.md" false false docs-only-tweak
 assert_scope "docs/roadmap/readiness.md" true true release-docs-tweak
 assert_scope ".github/workflows/ci.yml" false true code-surface-touched
+
+workflow_contents="$(<"$workflow")"
+if [[ "$workflow_contents" != *'bash scripts/detect-ci-scope.sh true >> "$GITHUB_OUTPUT"'* ]]; then
+  echo "Missing complete conservative scope outputs in the CI fallback path." >&2
+  exit 1
+fi
 
 echo "Rust CI scope contract passed."

@@ -88,6 +88,7 @@ ROCINANTE_ACCEPTANCE_NOTIFICATION=1 \
 ROCINANTE_ACCEPTANCE_NOTIFICATION_RESULT="$notification_result" \
   cargo build --manifest-path "$shell_manifest" --bin rocinante-desktop-shell \
     --features acceptance-witness --locked
+python3 "$repo_root/scripts/provision_duckdb.py" --stage-runtime-for-binary "$shell_binary"
 if [[ ! -x "$shell_binary" ]]; then
   echo "Build did not produce executable $shell_binary" >&2
   exit 1

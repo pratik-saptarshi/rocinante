@@ -99,6 +99,38 @@ class DuckDbProvisioningTests(unittest.TestCase):
 
             self.assertEqual((result / "libduckdb.so").read_bytes(), b"native")
 
+    def test_verified_runtime_is_staged_beside_desktop_binary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            folder = Path(temp_dir)
+            archive, files = self.make_archive(folder, {"libduckdb.so": b"native", "duckdb.h": b"header"})
+            target_dir = folder / "target"
+            manifest = self.make_manifest(archive, files)
+            cache_dir = provisioner.provision_target(
+                manifest, "test-target", target_dir, archive_override=archive
+            )
+            binary = folder / "target" / "debug" / "rocinante-desktop-shell"
+
+            staged = provisioner.stage_runtime_for_binary(manifest, "test-target", cache_dir, binary)
+
+            self.assertEqual(staged, binary.parent.resolve() / "deps" / "libduckdb.so")
+            self.assertEqual(staged.read_bytes(), b"native")
+            self.assertEqual(provisioner.sha256_file(staged), files["libduckdb.so"])
+
+    def test_runtime_staging_rejects_corrupt_cached_library(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            folder = Path(temp_dir)
+            archive, files = self.make_archive(folder, {"libduckdb.so": b"native"})
+            manifest = self.make_manifest(archive, files)
+            cache_dir = provisioner.provision_target(
+                manifest, "test-target", folder / "target", archive_override=archive
+            )
+            (cache_dir / "libduckdb.so").write_bytes(b"tampered")
+
+            with self.assertRaisesRegex(provisioner.ProvisionError, "missing or corrupt"):
+                provisioner.stage_runtime_for_binary(
+                    manifest, "test-target", cache_dir, folder / "debug" / "rocinante-desktop-shell"
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
