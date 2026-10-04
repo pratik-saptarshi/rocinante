@@ -13,8 +13,8 @@ _Captured: 2026-10-04_
 ## Branch and Sync State
 
 - PR #108 is open and mergeable on `fix/rocinante-readiness-remediation` at
-  published head `0fe0e04`, based on `main` at `cdd29b9` (69 commits ahead,
-  zero behind). The latest refreshed review listing has 42 inline threads and
+  latest code-validation head `de72423`, based on `main` at `cdd29b9` (71 commits ahead,
+  zero behind). The latest refreshed review listing has 43 inline threads and
   all are resolved.
 - The complete phase sequence and exit evidence are in
   `docs/roadmap/rustsec-zero-exception-remediation-plan.md`.
@@ -59,7 +59,7 @@ _Captured: 2026-10-04_
   binary before Cargo. DuckDB source-build features are forbidden by a tested
   feature-graph guard. Tauri production bundles now use verified per-platform
   resources and loader paths. All three package inspections pass on the
-  current PR head in hosted run `37215719759`; the required governance lane
+  current PR head in hosted run `37217565425`; the required governance lane
   fails on the 17 overdue exception reviews.
 - The provisioner contract tests (9), DuckDB feature-guard contract, CI-scope
   contract, macOS installer contract, and Linux installer/deep-link contract
@@ -68,12 +68,12 @@ _Captured: 2026-10-04_
   `@executable_path/../Frameworks` run path. The full installed macOS lifecycle
   also passes cold/warm Launch Services URLs, tray behavior, notification
   request, and saved-state restart. Hosted run
-  [37215719759](https://github.com/pratik-saptarshi/rocinante/actions/runs/37215719759)
+  [37217565425](https://github.com/pratik-saptarshi/rocinante/actions/runs/37217565425)
   passes Linux/macOS/Windows URL and saved-state restart acceptance, the
   three-platform Tauri DuckDB bundle checks, and Linux visible notification
   delivery. All hosted Rust lint and test shards also passed.
-- The hosted full-workspace test lane passed on current head `0fe0e04` in run
-  `37215719759`. The workspace test run excluding the Tauri adapter passes all 83 tests,
+- The hosted full-workspace test lane passed on current head `de72423` in run
+  `37217565425`. The workspace test run excluding the Tauri adapter passes all 83 tests,
   including SQLite persistence, prefix ordering, concurrent writes, legacy
   Sled refusal, and replay receipts. Strict Clippy passes for every
   `rocinante-storage` target. The root storage, transport, backend,
@@ -84,19 +84,19 @@ _Captured: 2026-10-04_
 - The updated 715-package lockfile no longer contains `sled`, `fxhash`, or
   `instant`. The refreshed unfiltered audit against RustSec revision
   `ef6173cbc5c50ec8166f9a5b28f07834144373ee` reports no vulnerability
-  findings and four warnings (`glib`, `proc-macro-error`, `instant`, and
-  `fxhash`) with an empty ignore list; it exits nonzero with `--deny warnings`.
+  findings and two warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`) with
+  an empty ignore list; it exits nonzero with `--deny warnings`.
   No advisory dates have been renewed; governance remains fail-closed on all 17
   overdue entries.
-- Current CI run `37215719759` completed with all package, lifecycle, UI,
+- Current CI run `37217565425` completed with all package, lifecycle, UI,
   build-seed, workspace-test, format, and Clippy jobs passed. The aggregate
   failed because `security-exception-governance` found all 17 review dates
-  overdue. Current Security run `37215719790` passed secret scan,
+  overdue. Current Security run `37217565444` passed secret scan,
   repository-configured Rust audit, and CodeQL. Dependency Review
-  `37215719745` passed. These checks do not prove the
+  `37217565427` passed. These checks do not prove the
   zero-exception RustSec requirement.
-- PR #108's required `tauri-runtime-bundle` passed on current head `0fe0e04` in
-  run `37215719759`: Linux `.deb`, macOS `.app`, and Windows NSIS packages all
+- PR #108's required `tauri-runtime-bundle` passed on current head `de72423` in
+  run `37217565425`: Linux `.deb`, macOS `.app`, and Windows NSIS packages all
   contain the verified DuckDB runtime. The macOS check also rejects any
   remaining `duckdb-download` Cargo-cache RPATH. The aggregate remains blocked
   by the separate advisory governance failure.

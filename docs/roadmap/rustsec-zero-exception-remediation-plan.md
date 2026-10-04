@@ -1,17 +1,19 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status:** The prior Phase 0 package, CI routing, signing, path, and repository
-identity findings are fixed. The current review follow-up also removes duplicate
-legacy telemetry rows and strips DuckDB Cargo-cache RPATH entries from macOS
-Tauri bundles. Commit `0fe0e04` also makes legacy telemetry fallback release
-aware, retaining older history while suppressing same-release legacy
-snapshots. The latest pushed head is `0fe0e04`; CI run `37215719759` has passed
-UI quality, Rust workspace tests and lint, Linux/macOS/Windows lifecycle
-acceptance, and all three Tauri package inspections. Its fail-closed governance
-check rejects all 17 overdue entries. A refreshed unfiltered audit reports zero vulnerability
-findings, four warnings (`glib`, `proc-macro-error`, `instant`, and `fxhash`),
-and an empty ignore list. No owner dispositions or review-date renewals were
-invented. Existing Sled stores must complete Phase 3 before upgrade.
+**Status (2026-10-04):** The prior Phase 0 package, CI routing, signing, path,
+repository identity, release-history, and ambiguous-basename review findings
+are fixed on PR #108. The latest code-validation head is `de72423`; all 43 inline review
+threads are resolved. CI run `37217565425` passed UI quality, Rust workspace
+and crate tests, Rust formatting and lint, Linux/macOS/Windows lifecycle
+acceptance, and all three Tauri package inspections. Its aggregate fails only
+because the fail-closed governance check rejects all 17 overdue entries.
+Security run `37217565444` and Dependency Review run `37217565427` passed.
+A refreshed unfiltered audit inspected the current 715-package lockfile at
+RustSec revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`: zero vulnerability
+findings, two warnings (`glib` and `proc-macro-error`), and an empty ignore
+list. `instant` and `fxhash` are absent from the current lockfile. No owner
+dispositions or review-date renewals were invented. Existing Sled stores must
+complete Phase 3 before upgrade.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -91,10 +93,12 @@ manifest/lockfile makes the Rust build, lint, and workspace-test lanes run.
 Rust manifests, lockfiles, and workflow changes. The README admin example now
 uses the authenticated four-argument scan API, and the
 `readme_admin_api_contract` compile-contract test covers that documented call.
-The local targeted root test has not returned a terminal result. UI checks pass under pnpm
-`12.9.1` (typecheck, 62 unit tests, build; Vite reports a 506 KB chunk-size
-advisory). A refreshed, unfiltered RustSec audit reports zero vulnerability
-findings, four warnings, and an empty ignore list. The governance gate remains
+The local targeted root test had not returned a terminal result at that point.
+UI checks pass under pnpm `12.9.1` (typecheck, 62 unit tests, build; Vite
+reports a 506 KB chunk-size advisory). The audit then reported zero
+vulnerability findings and four warnings in the earlier 722-package lockfile.
+The later 715-package audit has only the two GTK/GLib-path warnings recorded
+above. The governance gate remains
 fail-closed on the 17 overdue entries; no owner acceptance or date extension
 was invented. PR #108 remains relevant: it is open and mergeable, its head is
 the current remediation branch, and its base matches `main` at `cdd29b9`.
@@ -511,3 +515,33 @@ exceptions or audit ignores, preserved legacy data, validated desktop parity,
 verified prebuilt DuckDB artifacts on every supported platform, and green
 required CI/security gates. Scheduled audits must block releases if new
 advisories invalidate this state.
+
+## Latest verification update (2026-10-04; PR head `de72423`)
+
+The duplicate-basename legacy-history review finding is fixed. Workspace reads
+retain both the tree-relative alias and original basename, query repeated
+ambiguous basenames once, preserve older history, and suppress legacy rows only
+for releases already represented by stable rows. The analysis tests pass 9/9;
+analysis Clippy, formatting, and `git diff --check` pass. Hosted CI run
+[`37217565425`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37217565425)
+passed every code, UI, Rust, native lifecycle, package, and workflow-contract
+lane. Its aggregate fails only on the 17 overdue exception dates, all due
+2026-08-06. Security run
+[`37217565444`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37217565444)
+and Dependency Review
+[`37217565427`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37217565427)
+passed. The automated review reported no new finding, and all 43 inline
+threads are resolved.
+
+The authorized RustSec refresh completed from outside the repository audit
+configuration using `rtk cargo audit`; upstream remained at revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03). The unfiltered report
+checked 715 locked packages with an empty ignore list and zero vulnerability
+findings. `cargo audit --deny warnings` still exits 1 for exactly
+RUSTSEC-2024-0429 (`glib 0.18.5`) and RUSTSEC-2024-0370
+(`proc-macro-error 1.0.4`). `cargo tree --all-features --target all` traces both
+through the retained Tauri/Wry GTK host; `instant` and `fxhash` are absent.
+The 17-entry governance registry and Cargo ignore list remain unchanged, and
+all review dates remain overdue pending reviewed dispositions or removal of
+the affected host path. Phase 4 and Phase 5 remain required before the
+zero-exception exit gate can pass.

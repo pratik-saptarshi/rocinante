@@ -13,9 +13,9 @@ then release from the merged tip.
 - Primary integration branch: `main`
 - Remote: `origin`
 - Current work is on PR #108's remediation branch,
-  `fix/rocinante-readiness-remediation`, at published commit `0fe0e04`. The PR
-  remains open, relevant, mergeable, and based on `main` at `cdd29b9` (69
-  commits ahead, zero behind). The latest refreshed review listing contains 42
+  `fix/rocinante-readiness-remediation`, at code-validation commit `de72423`. The PR
+  remains open, relevant, mergeable, and based on `main` at `cdd29b9` (71
+  commits ahead, zero behind). The latest refreshed review listing contains 43
   inline threads, all resolved.
 - Product: Rust shared-service workspace with current Tauri integration, an
   in-progress GTK-free native desktop host, and a frontend dashboard surface
@@ -254,17 +254,18 @@ reports 17 overdue registry entries. The Tauri package-runtime review thread
 is resolved after the Linux/macOS/Windows package matrix passed on the current
 review head.
 
-Current validation snapshot (2026-10-04; published head `0fe0e04`): all 9
+Current validation snapshot (2026-10-04; published head `de72423`): all 9
 `rocinante-analysis` tests pass locally; analysis Clippy reports no issues;
 formatting, actionlint, and the eight-case Tauri bundle contract pass. Hosted
-run [37215719759](https://github.com/pratik-saptarshi/rocinante/actions/runs/37215719759)
+run [37217565425](https://github.com/pratik-saptarshi/rocinante/actions/runs/37217565425)
 passes UI quality, full workspace tests, Linux/macOS/Windows URL lifecycle
 acceptance, the Linux/macOS/Windows Tauri bundle inspections, build seed, and
 Rust format/Clippy/test lanes. The aggregate is blocked by advisory governance's
-17 overdue records. Current Security run `37215719790` passed secret scan,
+17 overdue records. Current Security run `37217565444` passed secret scan,
 repository-configured Rust audit, and CodeQL. Dependency Review
-`37215719745` passed. The unfiltered audit
-still reports four warnings and has an empty ignore list. All inline review
+`37217565427` passed. The refreshed unfiltered 715-package audit reports zero
+vulnerability findings and two warnings (`glib 0.18.5` and
+`proc-macro-error 1.0.4`) with an empty ignore list. All inline review
 findings are resolved on this head; do not infer owner dispositions or renew
 exception dates.
 

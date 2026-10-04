@@ -41,14 +41,14 @@ Repository operating rules documented | [x] | `docs/project-rules.html`
 Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
 Current local snapshot (2026-10-04): PR #108 remains open and mergeable on
-`fix/rocinante-readiness-remediation`, based on `main` at `cdd29b9` (69 commits
-ahead, zero behind). The latest pushed head is `0fe0e04`; CI run `37215719759`
+`fix/rocinante-readiness-remediation`, based on `main` at `cdd29b9` (71 commits
+ahead, zero behind). The latest code-validation head is `de72423`; CI run `37217565425`
 completed with all code, UI, Rust, native lifecycle, platform package, and
 workflow-contract lanes passing. Its aggregate failed because all 17 advisory
-review dates are overdue. Security run `37215719790` passed secret scanning,
+review dates are overdue. Security run `37217565444` passed secret scanning,
 configured Rust audit, and CodeQL. Dependency Review
-`37215719745` passed. All 42 inline review threads are resolved, including the
-release-aware legacy telemetry fix.
+`37217565427` passed. All 43 inline review threads are resolved, including the
+duplicate-basename legacy-history fix.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -88,8 +88,8 @@ or justify each applicable exception. No dates or acceptance were inferred.
 
 Current local verification (2026-10-04): pnpm `12.9.1` frozen install,
 TypeScript check, all 62 Vitest tests, and production build passed on hosted run
-`37212976724`; the same UI job passed on current head `0fe0e04` in run
-`37215719759`. The current head's full workspace tests, core/storage test
+`37212976724`; the same UI job passed on current head `de72423` in run
+`37217565425`. The current head's full workspace tests, core/storage test
 shards, Rust format/Clippy, quality contracts, platform lifecycle checks, and
 three-platform Tauri package matrix all passed. For the current follow-up, all 9
 `rocinante-analysis` tests pass, analysis Clippy reports no issues,
@@ -120,18 +120,18 @@ Roadmap/test traceability is present | [x] | `docs/roadmap/test-plan.html`, `doc
 Criterion | Status | Evidence
 ---|---|---
 Rust formatting passes | [x] | Current local `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` (2026-10-04)
-Rust lint status policy | [x] | Hosted current-head run `37215719759`: formatting, Clippy, and Rust quality contracts passed.
-Rust tests pass | [x] | Hosted current-head run `37215719759`: full workspace, core, and storage test lanes passed.
-Full Cargo workspace tests pass | [x] | Hosted run `37215719759` passed the full workspace test lane on `0fe0e04`.
+Rust lint status policy | [x] | Hosted current-head run `37217565425`: formatting, Clippy, and Rust quality contracts passed.
+Rust tests pass | [x] | Hosted current-head run `37217565425`: full workspace, core, and storage test lanes passed.
+Full Cargo workspace tests pass | [x] | Hosted run `37217565425` passed the full workspace test lane on `de72423`.
 DuckDB cannot build from source and has SHA-pinned native artifacts | [x] | `scripts/check-duckdb-features.sh`, its contract test, and `scripts/test_provision_duckdb.py` pass locally; see `scripts/duckdb-prebuilt-artifacts.json`
-Installed app loads the verified DuckDB library on all supported OSes | [x] | Linux, macOS, and Windows Tauri package checks passed on current head `0fe0e04` in run `37215719759`, including the macOS cache-RPATH rejection.
+Installed app loads the verified DuckDB library on all supported OSes | [x] | Linux, macOS, and Windows Tauri package checks passed on current head `de72423` in run `37217565425`, including the macOS cache-RPATH rejection.
 Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
 Merge gate (`test`) exists and depends on required CI lanes | [x] | `.github/workflows/ci.yml` `test` job now requires the Tauri bundle matrix; local CI-scope contract passes
-UI unit tests pass | [x] | Hosted UI lane on current head `0fe0e04` passed with pnpm `12.9.1` (62 tests).
-UI typecheck passes | [x] | Hosted UI lane on current head `0fe0e04` passed with pnpm `12.9.1`.
-UI production build passes | [x] | Hosted UI lane on current head `0fe0e04` passed; Vite emits a 506 KB chunk-size advisory.
+UI unit tests pass | [x] | Hosted UI lane on current head `de72423` passed with pnpm `12.9.1` (62 tests).
+UI typecheck passes | [x] | Hosted UI lane on current head `de72423` passed with pnpm `12.9.1`.
+UI production build passes | [x] | Hosted UI lane on current head `de72423` passed; Vite emits a 506 KB chunk-size advisory.
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
 Coverage floor target (informational, enforce in next release) | [ ] | Branch: 85%; Unit: 85%; Integration: 85%; E2E: 85%; target to be promoted to hard fail on a stable CI release lane
 
@@ -151,9 +151,9 @@ Sync local `main` to merged remote tip | [x] | `git merge --no-ff origin/main`
 
 Criterion | Status | Evidence
 ---|---|---
-CI workflow is monitored until terminal state | [x] | Current-head run `37215719759` completed; all code lanes passed, and aggregate CI failed on the 17 overdue exception records.
-Security workflow is monitored until terminal state | [x] | Current-head run `37215719790`: secret scan, Rust audit, and CodeQL passed.
-Dependency review is monitored until terminal state | [x] | Current-head run `37215719745` passed.
+CI workflow is monitored until terminal state | [x] | Current-head run `37217565425` completed; all code lanes passed, and aggregate CI failed on the 17 overdue exception records.
+Security workflow is monitored until terminal state | [x] | Current-head run `37217565444`: secret scan, Rust audit, and CodeQL passed.
+Dependency review is monitored until terminal state | [x] | Current-head run `37217565427` passed.
 Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `rust-coverage-lcov` from CI job `rust-coverage`
 
 ## 7) Publish decision

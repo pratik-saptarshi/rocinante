@@ -392,26 +392,31 @@
 - Local verification passes 84 non-root workspace tests, eight analysis identity and scan tests, the storage app-data path test, the macOS signing contract, strict Clippy for analysis/storage/desktop-shell, root Tauri cargo check for all test targets, formatting, actionlint, roadmap/CI-scope contracts, seven Tauri package contracts, nine DuckDB provisioner tests, and the DuckDB source-build guard.
 - Full root Tauri tests and hosted checks on the updated branch are pending. The advisory registry is unchanged; no security-owner disposition or review-date renewal has been recorded.
 
-## Current PR #108 Review Follow-up — 2026-10-04 (head `0fe0e04`)
+## Current PR #108 Review Follow-up — 2026-10-04 (head `de72423`)
 
-- PR #108 remains open, mergeable, and current with `main` at `cdd29b9` (69
-  commits ahead, none behind). The current review listing has 42 inline threads;
-  all are resolved.
-- The newest review finding is fixed in `0fe0e04`: all-release queries preserve
-  older legacy releases and suppress legacy snapshots only for releases already
-  present under a repository's stable identity. MacOS Tauri packaging removes
-  DuckDB Cargo-cache RPATHs and rejects any remaining `duckdb-download` entry.
+- PR #108 remains open and mergeable, based on `main` at `cdd29b9` (71 commits
+  ahead, none behind). The latest review listing has 43 inline threads; all
+  are resolved. The automated review of `de72423` completed without new
+  findings.
+- The duplicate-basename finding is fixed in `de72423`: identities preserve
+  both the tree-relative alias and original basename, workspace queries read an
+  ambiguous basename once, retain older history, and suppress rows only for
+  releases represented by stable rows.
 - Local evidence: `rocinante-analysis` tests pass 9/9, its Clippy check reports
-  no issues, `cargo fmt --check` and actionlint pass, and the Tauri bundle
-  contract passes 8/8.
+  no issues, formatting and `git diff --check` pass.
 - Hosted CI run
-  [37215719759](https://github.com/pratik-saptarshi/rocinante/actions/runs/37215719759)
+  [37217565425](https://github.com/pratik-saptarshi/rocinante/actions/runs/37217565425)
   passes UI quality, full workspace/core/storage tests, formatting, Clippy,
   Linux/macOS/Windows URL lifecycle acceptance, all three Tauri package
   inspections, and build seed. Governance fails closed on the 17 overdue
   reviews, so the aggregate gate remains blocked.
-- Security run `37215719790` passed secret scanning, configured Rust audit,
-  and CodeQL. Dependency Review `37215719745` passed.
-  A fresh unfiltered audit still has four warnings (`glib`, `proc-macro-error`,
-  `instant`, `fxhash`) and an empty ignore list. Do not change registry dates
-  or claim owner acceptance without reviewed dispositions.
+- Security run
+  [37217565444](https://github.com/pratik-saptarshi/rocinante/actions/runs/37217565444)
+  passed secret scanning, configured Rust audit, and CodeQL. Dependency Review
+  [37217565427](https://github.com/pratik-saptarshi/rocinante/actions/runs/37217565427)
+  passed.
+- A refreshed unfiltered audit of 715 locked packages reports no vulnerability
+  findings and two warnings (`glib 0.18.5`, `proc-macro-error 1.0.4`) with an
+  empty ignore list. `instant` and `fxhash` are absent from the current lockfile.
+  Do not change registry dates or claim owner acceptance without reviewed
+  dispositions.
