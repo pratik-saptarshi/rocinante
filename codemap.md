@@ -177,40 +177,25 @@ and an in-progress GTK-free native desktop host.
 
 ## Governance and Execution Snapshot
 
-- Active work is on PR #108 branch `fix/rocinante-readiness-remediation`,
-  published head `d2f77a1` before the current local SQLite changes. PR #108
-  remains the relevant review path against `main` at `cdd29b9`. Earlier review
-  threads are resolved except the P1 Tauri package-runtime finding, which stays
-  open pending the required Linux/macOS/Windows package matrix. The README
-  staging finding is resolved. The current SQLite changes have local evidence
-  recorded in the dated zero-exception plan but are not yet published or covered
-  by hosted CI. GitHub could not be reached to refresh current review/check data.
-- The latest cached RustSec database revision is
-  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03). On the updated
-  715-package lockfile, an unfiltered no-fetch audit reports no vulnerability
-  findings and two warnings: GLib and proc-macro-error. `sled`, `fxhash`, and
-  `instant` are absent. GitHub could not be reached to refresh the database;
-  the fail-closed governance check still sees 17 overdue registry entries.
-- Hosted CI run `37198628846` passed workflow parsing, UI quality,
-  Linux/macOS/Windows lifecycle acceptance, full workspace tests, build seed,
-  Rust quality gates, core/storage lanes, formatting, and Clippy. The
-  aggregate failed only at advisory governance. Security and Dependency Review
-  runs `37198628844` and `37198628881` passed under current configuration.
-- The UI uses pinned pnpm `12.9.1`, the upstream latest stable on 2026-10-04.
-  Frozen installation, typecheck, 62 unit tests, and production build pass;
-  esbuild is `0.28.2`. The build reports a 506 KB chunk-size advisory.
-- DuckDB is pinned to binding `1.10506.0` / engine `1.5.6`; the official
-  release artifact hashes are in `scripts/duckdb-prebuilt-artifacts.json`.
-  Provisioner tests pass 9/9, source-build feature contracts pass, and
-  hosted lifecycle acceptance passes on all three platforms. Rust test jobs
-  stage the verified runtime under Cargo's `debug/deps` directory.
-- Historical status: BI-047 merged on PR #85; the CI recovery and lane slices
-  passed PR run `28987645462`. These older results do not establish readiness
-  for PR #108's current head. Publish remains blocked until all four live
-  RustSec warnings are removed, the 17 records have evidence-backed closure,
-  and the required aggregate gate is green.
+- PR #108 branch `fix/rocinante-readiness-remediation` remains the active review branch against main at cdd29b9.
+- PR #108 is open on the existing branch fix/rocinante-readiness-remediation against main at cdd29b9. The published head is 07fe913; six local review-remediation findings are implemented but not yet pushed.
+- Hosted CI run 37204604888 on 07fe913 failed. Advisory governance reported all 17 review dates overdue. The three Tauri runtime package jobs and Rust build/test jobs failed because the configured resource glob had no matching file at Cargo build-script time; the aggregate job failed as well. This run predates the local tracked resource marker, pre-build staging, and aggregate-gate updates.
+- Local verification for the follow-up passes: 84 tests across the non-root Rust workspace; analysis repository identity tests; storage per-user path test; macOS installer signing contract; strict Clippy for analysis, storage, and desktop shell; root Tauri cargo check with --no-default-features --tests; formatting; actionlint; roadmap, publish, and CI-scope contracts; DuckDB bundle and provisioner contracts; and the source-build guard. The root Tauri test suite and hosted rerun are still pending.
+- DuckDB stays on the official checksum-verified prebuilt artifacts. The build hook stages the native binary before resource validation, and the Rust feature guard rejects DuckDB source-build features.
+- The 17 exception records remain overdue and unchanged because no security-owner dispositions were provided. The cached no-fetch audit reports zero vulnerability findings and two warnings for glib and proc-macro-error; a fresh advisory database result is still required.
+- The pinned UI tool is pnpm 12.9.1. Previous UI install, typecheck, 62 unit tests, and production build passed on 2026-10-04.
+- Historical status: BI-047 merged on PR #85; the CI recovery and lane slices passed PR run 28987645462. These results do not establish readiness for PR #108.
+- Release readiness remains blocked until the updated Linux, macOS, and Windows Tauri package matrix passes, the current aggregate result is reviewed, and the advisory governance entries receive evidence-backed dispositions.
 
 ## Design Patterns
+
+Recent PR #108 review fixes also route the Tauri runtime bundle matrix through
+the aggregate gate, route Rust toolchain and Cargo config edits to Rust checks,
+stage the checksum-verified DuckDB binary before Tauri resource validation,
+sign the macOS app after loader rewrites, use per-user defaults for desktop
+stores, and key stored repository metrics with a sanitized label plus stable
+local path hash. Reads include legacy basename or tree-relative aliases so
+existing telemetry remains available in its previous selection context.
 
 - Command facade for Tauri invocation.
 - Service layer separation between command wrappers and storage logic.

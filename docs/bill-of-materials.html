@@ -14,8 +14,9 @@ then release from the merged tip.
 - Remote: `origin`
 - Current work is on PR #108's remediation branch,
   `fix/rocinante-readiness-remediation`, currently at published commit
-  `b991f99`. The PR is open, relevant, and based on `main` at `cdd29b9`; all
-  30 inline review threads are resolved.
+  `07fe913`. The PR is open, relevant, and based on `main` at `cdd29b9`.
+  Six review threads were open at that published head; the local changeset now
+  addresses all six and awaits hosted validation.
 - Product: Rust shared-service workspace with current Tauri integration, an
   in-progress GTK-free native desktop host, and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -237,7 +238,7 @@ Before any release reaches `origin/main`, the repository should satisfy:
 7. The final publish uses a protected-branch-safe squash or PR merge.
 8. `origin/main` remains the source of truth; local and remote must be reconciled through merge checkpoints.
 
-Current validation snapshot (2026-10-04; published PR head `d2f77a1` before the
+Historical validation snapshot (2026-10-04; published PR head `d2f77a1` before the
 local SQLite changes): Rust formatting, the nine DuckDB provisioner cases, the
 DuckDB feature graph and guard, the CI-scope contract, native-shell installer
 contracts, and the macOS installed lifecycle pass. The DuckDB engine-version
@@ -251,7 +252,20 @@ zero vulnerability findings and two warnings; its refresh and current hosted
 validation remain open. The
 fail-closed governance job still reports 17 overdue registry entries. The P1
 Tauri package-runtime review thread remains open until its Linux/macOS/Windows
-package matrix passes on the pushed final head.
+ package matrix passes on the pushed final head.
+
+Current local validation snapshot (2026-10-04; based on published head 07fe913,
+local remediation not yet pushed): 84 tests pass across the non-root Rust
+workspace; eight analysis identity/scan tests, the storage app-data test, and
+the macOS installer-signing contract pass. Strict Clippy passes for analysis,
+storage, and desktop-shell. Root Tauri cargo check compiles all test targets
+with three existing dead-code warnings in the disabled analytics feature.
+Actionlint, formatting, roadmap contracts, CI-scope contract, seven Tauri
+bundle contracts, nine DuckDB provisioner tests, and the source-build guard
+pass. The root Tauri test suite and hosted rerun remain pending. Six inline
+threads are locally addressed; the package-runtime thread remains open until
+the hosted Linux/macOS/Windows matrix passes. The advisory gate still reports
+17 overdue entries with no owner dispositions.
 
 Historical CI recovery evidence on `feat/bi-056-timeout-contract` is green and
 merged; BI-047 is also merged on PR run `28988956969`. Neither historic run is

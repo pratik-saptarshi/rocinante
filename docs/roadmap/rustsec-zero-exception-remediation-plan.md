@@ -1,8 +1,11 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status:** The earlier Phase 0 review comments are resolved. The P1 Tauri
-DuckDB installer finding has a packaging fix and three-platform bundle job;
-the last observed hosted run was still in progress. The local storage phase now
+**Status:** The previous Phase 0 findings are resolved. The current PR review
+round found a Tauri resource-glob failure, an aggregate-gate omission, Rust
+scope misclassification, missing macOS post-link signing, launcher-relative
+storage paths, and scan-root-dependent repository names. Local fixes are
+implemented and targeted contracts pass; hosted rerun 37204604888 predates
+these fixes. The local storage phase now
 removes Sled from the application lockfile and adds SQLite WAL ingestion with
 replay receipts. Its local audit against the cached 2026-10-03 RustSec database
 reports two remaining warnings (`glib` and `proc-macro-error`); a fresh database
@@ -49,6 +52,23 @@ The governance decision thread is resolved with an explicit policy response.
 The fail-closed gate remains required until the registry and affected
 dependency graphs are actually clean. Do not weaken it to make this PR green,
 renew dates, or represent an owner disposition that was not provided.
+
+The latest review round is also part of Phase 0. Make the Tauri runtime bundle
+matrix a required dependency of the aggregate gate and fail if any matrix leg
+is skipped or fails. Stage the SHA-verified DuckDB binary into an existing
+resource directory before Tauri's Cargo build-script validation, while keeping
+the post-build loader rewrite before packaging. Route rust-toolchain.toml,
+.cargo/config.toml, and .cargo/config changes through Rust validation.
+Sign the macOS library, executable, and final bundle after all Mach-O edits,
+then verify the signature. Default admin stores must share the stable
+per-user data directory used by telemetry. Use a path-derived identity for
+repository metrics so changing scan roots and duplicate basenames do not
+change the persisted key; document the repo_name value-format compatibility
+change. Do not close the DuckDB packaging thread until the hosted Linux,
+macOS, and Windows installer matrix passes on the updated head.
+Historical telemetry rows remain queryable through the previous root-derived
+aliases without rewriting stored records; retain coverage for basename and
+duplicate-name legacy aliases while stable hashed IDs are used for new rows.
 
 **Validation:** inventory every Cargo lockfile; run `cargo tree` for the four
 live package paths; refresh and run cargo-audit from outside the repository's

@@ -164,6 +164,13 @@
   - Missing-file fallback behavior.
 ## Existing Test Coverage Additions
 
+- PR #108 review regressions:
+  - The analysis scan tests check path-stable repository IDs across workspace and direct-folder selection, distinguish duplicate basenames, and return legacy basename and tree-relative telemetry aliases.
+  - The storage test checks shared per-user defaults for ingestion, analytics, and scoring paths while preserving explicit environment overrides.
+  - The macOS installer test records nested signing order and verifies the final app bundle after Mach-O edits.
+  - The CI scope contract selects Rust checks for toolchain and Cargo config paths and requires successful Linux, macOS, and Windows Tauri bundle jobs at the aggregate gate.
+  - The Tauri bundle contract checks the tracked resource marker and checksum-verified pre-build staging hook.
+
 - `T-047` Bulk-import worker evidence and summary telemetry (`F-033`):
   - Historical commit import coverage target.
   - Prior telemetry migration coverage target.
@@ -375,3 +382,10 @@
   - `ui/vite.config.ts`
   - `ui/test:e2e`
   - Ensure Vitest excludes `e2e/**` and the Playwright runner keeps owning browser coverage.
+
+## PR #108 Review Blocker Follow-up — 2026-10-04
+
+- The latest hosted run available before these changes was 37204604888 on head 07fe913. It failed because the configured Tauri DuckDB resource glob had no matching file at Cargo build-script time; the Tauri package matrix, Rust build/test jobs, and aggregate job failed. The governance check also reported all 17 advisory exceptions overdue.
+- The working tree adds a tracked Tauri resource marker and stages the checksum-verified DuckDB binary before Cargo resource validation. It makes the Linux, macOS, and Windows bundle matrix required by the aggregate gate, sends root Rust toolchain/config changes through Rust checks, signs the macOS app after loader edits, moves default stores under shared per-user app-data, and gives repository metrics a scan-root-stable path hash. Queries include legacy names to preserve previous saved telemetry.
+- Local verification passes 84 non-root workspace tests, eight analysis identity and scan tests, the storage app-data path test, the macOS signing contract, strict Clippy for analysis/storage/desktop-shell, root Tauri cargo check for all test targets, formatting, actionlint, roadmap/CI-scope contracts, seven Tauri package contracts, nine DuckDB provisioner tests, and the DuckDB source-build guard.
+- Full root Tauri tests and hosted checks on the updated branch are pending. The advisory registry is unchanged; no security-owner disposition or review-date renewal has been recorded.

@@ -283,8 +283,20 @@ provision credentials to desktop-launched processes; secure per-platform GUI
 credential setup is tracked by BI-061. Do not place production secrets in shell
 history or commit them. Choose a repository folder, enter a release and admin
 JWT, then analyze it. The shell can reload metrics already stored for the
-selected repository tree and release without rescanning. Scan completion requests a success or failure
-desktop notification; delivery still needs runtime validation per platform. It
+selected repository tree and release without rescanning. Repository metrics
+retain a sanitized directory label followed by a stable hash of the canonical
+local repository path, so selecting the same repository from a different scan
+root or alongside same-named repositories reaches the same saved metrics. This
+changes the value format of the existing repo_name field; consumers that
+assume it contains only a repository basename should accept the hash suffix.
+Legacy telemetry rows remain stored and are queried through their prior
+root-derived names. Repositories with duplicate basenames may need to be
+selected from the same parent tree used when their legacy rows were written.
+Default telemetry, ingestion, analytics, and scoring files share the
+platform-specific per-user Rocinante data directory; the existing
+ROCINANTE_*_PATH variables still override individual files. Scan completion
+requests a success or failure desktop notification; delivery still needs
+runtime validation per platform. It
 shows the selected repository and release context, metric and analyzer counts,
 and the recorded values/details after a scan or saved-metric reload. It
 parses cold-launch arguments using:
