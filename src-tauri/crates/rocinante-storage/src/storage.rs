@@ -777,6 +777,10 @@ impl DualLayerStore {
     }
 
     pub fn ingest_commit_event(&self, event: &CommitIngestionEvent) -> Result<(), AnalyzerError> {
+        let _ingest_lock = self
+            .promotion_barrier
+            .read()
+            .unwrap_or_else(|e| e.into_inner());
         let ts = now_ts();
         let mut clean = event.clone();
         clean.repo_name = scrub_text(&clean.repo_name);
@@ -990,6 +994,7 @@ impl DualLayerStore {
         let pending = self.kv.scan_prefix(b"evt:")?;
         let (acknowledged_keys, promoted) = self.commit_pending_events_to_columnar(&pending)?;
         self.kv.remove_many(&acknowledged_keys)?;
+        self.retire_promoted_event_receipts()?;
 
         let snapshot_id = Self::next_snapshot_id();
         if self.validate_and_publish_snapshot(snapshot_id, promoted)? {
@@ -1003,6 +1008,25 @@ impl DualLayerStore {
             promoted_events: promoted,
             pruned_events: 0,
         })
+    }
+
+    #[cfg(feature = "analytics")]
+    fn retire_promoted_event_receipts(&self) -> Result<(), AnalyzerError> {
+        let mut connection = Connection::open(&self.columnar_path)
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        let transaction = connection
+            .transaction()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        transaction
+            .execute("DELETE FROM promoted_event_receipts", [])
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        transaction
+            .commit()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        connection
+            .execute("CHECKPOINT", [])
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        Ok(())
     }
 
     #[cfg(feature = "analytics")]
@@ -1758,6 +1782,37 @@ mod sqlite_ingestion_tests {
     }
 
     #[test]
+    fn successful_promotion_retires_receipts_after_source_acknowledgement() {
+        let dir = tempdir().expect("temporary directory");
+        let kv_path = dir.path().join("kv");
+        let columnar_path = dir.path().join("analytics.duckdb");
+        let store = DualLayerStore::open(
+            kv_path.to_str().expect("kv path"),
+            columnar_path.to_str().expect("columnar path"),
+        )
+        .expect("open dual layer store");
+        store
+            .ingest_commit_event(&event("receipt-retirement"))
+            .expect("ingest event");
+
+        let promoted = store.promote_to_columnar().expect("promote event");
+        assert_eq!(promoted.promoted_events, 1);
+        assert!(store
+            .kv
+            .scan_prefix(b"evt:")
+            .expect("pending events")
+            .is_empty());
+
+        let connection = DuckConnection::open(&columnar_path).expect("open DuckDB");
+        let receipt_rows: i64 = connection
+            .query_row("SELECT COUNT(*) FROM promoted_event_receipts", [], |row| {
+                row.get(0)
+            })
+            .expect("count promotion receipts");
+        assert_eq!(receipt_rows, 0);
+    }
+
+    #[test]
     fn duckdb_receipt_prevents_duplicate_after_commit_before_sqlite_ack() {
         let dir = tempdir().expect("temporary directory");
         let kv_path = dir.path().join("kv");
@@ -1785,6 +1840,15 @@ mod sqlite_ingestion_tests {
             columnar_path.to_str().expect("columnar path"),
         )
         .expect("reopen after restart");
+        let connection = DuckConnection::open(&columnar_path).expect("open DuckDB");
+        let receipts_before_replay: i64 = connection
+            .query_row("SELECT COUNT(*) FROM promoted_event_receipts", [], |row| {
+                row.get(0)
+            })
+            .expect("count receipts before replay");
+        assert_eq!(receipts_before_replay, 1);
+        drop(connection);
+
         let replay = store.promote_to_columnar().expect("replay after restart");
         assert_eq!(replay.promoted_events, 0);
         assert!(store
@@ -1805,6 +1869,6 @@ mod sqlite_ingestion_tests {
             })
             .expect("count promotion receipts");
         assert_eq!(history_rows, 1);
-        assert_eq!(receipt_rows, 1);
+        assert_eq!(receipt_rows, 0);
     }
 }
