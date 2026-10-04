@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import sys
+import tomllib
 from datetime import date
 from pathlib import Path
 
@@ -22,6 +23,7 @@ REQUIRED_FIELDS = (
     "tracking_id",
 )
 DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
+ADVISORY_ID_PATTERN = re.compile(r"RUSTSEC-\d{4}-\d{4}")
 
 
 def read_entries(registry_path: Path) -> list[dict[str, object]]:
@@ -54,6 +56,51 @@ def read_entries(registry_path: Path) -> list[dict[str, object]]:
     return payload
 
 
+def read_audit_ignore_ids(audit_config_path: Path) -> set[str]:
+    try:
+        with audit_config_path.open("rb") as source:
+            payload = tomllib.load(source)
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        raise ValueError(f"could not read Cargo audit config {audit_config_path}: {error}") from error
+
+    advisories = payload.get("advisories", {})
+    if not isinstance(advisories, dict):
+        raise ValueError("Cargo audit config [advisories] must be a table")
+    ignored = advisories.get("ignore", [])
+    if not isinstance(ignored, list):
+        raise ValueError("Cargo audit [advisories].ignore must be an array")
+
+    ids: set[str] = set()
+    for index, advisory_id in enumerate(ignored):
+        if not isinstance(advisory_id, str) or not ADVISORY_ID_PATTERN.fullmatch(advisory_id):
+            raise ValueError(f"Cargo audit ignore {index} must be a RustSec advisory ID")
+        if advisory_id in ids:
+            raise ValueError(f"duplicate Cargo audit ignore: {advisory_id}")
+        ids.add(advisory_id)
+    return ids
+
+
+def validate_registry_matches_audit(entries: list[dict[str, object]], ignored_ids: set[str]) -> None:
+    registry_ids = {str(entry["id"]) for entry in entries}
+    missing_from_audit = sorted(registry_ids - ignored_ids)
+    missing_from_registry = sorted(ignored_ids - registry_ids)
+    if not missing_from_audit and not missing_from_registry:
+        return
+
+    problems = []
+    if missing_from_audit:
+        problems.append(
+            "registry advisories missing from Cargo audit ignores: "
+            + ", ".join(missing_from_audit)
+        )
+    if missing_from_registry:
+        problems.append(
+            "Cargo audit ignores missing from the exception registry: "
+            + ", ".join(missing_from_registry)
+        )
+    raise ValueError("; ".join(problems))
+
+
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
@@ -62,11 +109,18 @@ def main() -> int:
         type=Path,
         default=repo_root / "docs/roadmap/security-advisory-exceptions.json",
     )
+    parser.add_argument(
+        "--audit-config",
+        type=Path,
+        default=repo_root / ".cargo/audit.toml",
+    )
     parser.add_argument("--as-of", type=date.fromisoformat, default=date.today())
     args = parser.parse_args()
 
     try:
         entries = read_entries(args.registry)
+        ignored_ids = read_audit_ignore_ids(args.audit_config)
+        validate_registry_matches_audit(entries, ignored_ids)
     except (OSError, json.JSONDecodeError, ValueError) as error:
         print(f"Invalid advisory exception registry: {error}", file=sys.stderr)
         return 2
@@ -74,7 +128,10 @@ def main() -> int:
     expired = [
         entry for entry in entries if date.fromisoformat(entry["review_by"]) < args.as_of
     ]
-    print(f"Validated {len(entries)} advisory exception entries as of {args.as_of}.")
+    print(
+        f"Validated {len(entries)} advisory exception entries against "
+        f"{len(ignored_ids)} Cargo audit ignores as of {args.as_of}."
+    )
     if not expired:
         print("No review dates are overdue.")
         return 0
