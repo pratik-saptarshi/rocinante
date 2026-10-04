@@ -23,8 +23,13 @@
     }
   },
   "bundle": {
+    "icon": [
+      "crates/rocinante-desktop-shell/packaging/icons/rocinante.png",
+      "crates/rocinante-desktop-shell/packaging/icons/Rocinante.icns",
+      "crates/rocinante-desktop-shell/packaging/icons/Rocinante.ico"
+    ],
     "resources": {
-      "tauri-resources/*": ""
+      "tauri-resources/": ""
     }
   }
 }

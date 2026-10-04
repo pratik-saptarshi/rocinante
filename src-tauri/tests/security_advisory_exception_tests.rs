@@ -94,7 +94,7 @@ fn gtk_glib_dependency_floor_is_tracked_as_release_blocking() {
         .contains("Release readiness is blocked by the tracked GTK/glib advisory exception."));
     assert!(baseline.contains("docs/roadmap/security-advisory-exceptions.json"));
     assert!(checklist.contains("Dependency audit exceptions are current and registry-backed"));
-    assert!(checklist.contains("all 17 review dates (2026-08-06) are overdue as of 2026-09-30"));
+    assert!(checklist.contains("all 17 review dates (2026-08-06) are overdue as of 2026-10-04"));
     assert!(checklist.contains("Release remains blocked until RT-RC-001 is closed"));
     assert!(proof_script.contains("cargo tree --manifest-path \"$repo_root/src-tauri/Cargo.toml\" -i glib --locked --target all"));
     assert!(proof_script.contains("cargo tree --manifest-path \"$repo_root/src-tauri/Cargo.toml\" -i gtk --locked --target all"));

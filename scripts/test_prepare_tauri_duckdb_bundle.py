@@ -114,7 +114,17 @@ class BundlePreparationTests(unittest.TestCase):
         config = json.loads((tauri_root / "tauri.conf.json").read_text())
         windows_config = json.loads((tauri_root / "tauri.windows.conf.json").read_text())
 
-        self.assertEqual(config["bundle"]["resources"], {"tauri-resources/*": ""})
+        self.assertEqual(config["bundle"]["resources"], {"tauri-resources/": ""})
+        self.assertEqual(
+            config["bundle"]["icon"],
+            [
+                "crates/rocinante-desktop-shell/packaging/icons/rocinante.png",
+                "crates/rocinante-desktop-shell/packaging/icons/Rocinante.icns",
+                "crates/rocinante-desktop-shell/packaging/icons/Rocinante.ico",
+            ],
+        )
+        for icon in config["bundle"]["icon"]:
+            self.assertTrue((tauri_root / icon).is_file(), f"Missing Tauri bundle icon {icon}")
         self.assertTrue((tauri_root / "tauri-resources" / "README.txt").is_file())
         self.assertEqual(
             config["build"]["beforeBuildCommand"],

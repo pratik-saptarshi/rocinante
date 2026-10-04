@@ -226,9 +226,16 @@ jobs:
           test -n "$package"
           package_root="$RUNNER_TEMP/rocinante-tauri-deb"
           dpkg-deb -x "$package" "$package_root"
-          test -f "$package_root/usr/lib/rocinante-repo-analyzer/libduckdb.so"
+          duckdb_library="$package_root/usr/lib/rocinante-repo-analyzer/libduckdb.so"
+          if [[ ! -f "$duckdb_library" ]]; then
+            echo "DuckDB runtime missing from the Tauri resource directory; package files:"
+            find "$package_root/usr/lib" -maxdepth 4 -type f -print
+            exit 1
+          fi
           # shellcheck disable=SC2016
-          patchelf --print-rpath "$package_root/usr/bin/rocinante-repo-analyzer" | grep -F '$ORIGIN/../lib/rocinante-repo-analyzer'
+          rpath=$(patchelf --print-rpath "$package_root/usr/bin/rocinante-repo-analyzer")
+          echo "Tauri executable RPATH: $rpath"
+          grep -F '$ORIGIN/../lib/rocinante-repo-analyzer' <<<"$rpath"
       - name: Verify DuckDB is inside the macOS app bundle with a relocatable loader path
         if: runner.os == 'macOS'
         run: |
