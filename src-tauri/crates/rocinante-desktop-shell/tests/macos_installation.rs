@@ -8,8 +8,31 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     let home = temp.path().join("home with spaces");
     let tools = temp.path().join("tools");
     let registration_log = temp.path().join("registration.log");
+    let install_name_log = temp.path().join("install-name-tool.log");
     std::fs::create_dir_all(&home).expect("create temporary home");
     std::fs::create_dir_all(&tools).expect("create command shims");
+    let duckdb_library = temp.path().join("deps/libduckdb.dylib");
+    std::fs::create_dir_all(duckdb_library.parent().unwrap()).expect("create library fixture");
+    std::fs::write(&duckdb_library, b"verified prebuilt DuckDB fixture")
+        .expect("write DuckDB library fixture");
+
+    let install_name_tool = tools.join("install_name_tool");
+    std::fs::write(
+        &install_name_tool,
+        "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$ROCINANTE_INSTALL_NAME_LOG\"\n",
+    )
+    .expect("write install_name_tool shim");
+    std::fs::set_permissions(&install_name_tool, std::fs::Permissions::from_mode(0o755))
+        .expect("make install_name_tool shim executable");
+
+    let otool = tools.join("otool");
+    std::fs::write(
+        &otool,
+        "#!/bin/sh\ncase \"$1\" in\n  -L) printf '%s\\n' \"$ROCINANTE_FAKE_DUCKDB_LOAD_NAME (compatibility version 1.0.0, current version 1.0.0)\" ;;\n  -D) printf '%s\\n' \"$2:\" '/tmp/cache/duckdb-download/x86_64-apple-darwin/1.5.6/libduckdb.dylib' ;;\n  -l) printf '%s\\n' 'Load command 0' ' cmd LC_RPATH' ' cmdsize 40' ' path /tmp/cache/duckdb-download/x86_64-apple-darwin/1.5.6 (offset 12)' ;;\n  *) exit 2 ;;\nesac\n",
+    )
+    .expect("write otool command shim");
+    std::fs::set_permissions(&otool, std::fs::Permissions::from_mode(0o755))
+        .expect("make otool shim executable");
 
     let lsregister = tools.join("lsregister");
     std::fs::write(
@@ -27,12 +50,22 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
 
     let installer =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("packaging/macos/install-user.sh");
+    let path = std::env::join_paths(std::iter::once(tools.clone()).chain(std::env::split_paths(
+        &std::env::var_os("PATH").unwrap_or_default(),
+    )))
+    .expect("construct command path");
     let output = Command::new("sh")
         .arg(installer)
         .arg(&binary)
         .env("HOME", &home)
         .env("ROCINANTE_LSREGISTER", &lsregister)
         .env("ROCINANTE_LSREGISTER_LOG", &registration_log)
+        .env("ROCINANTE_INSTALL_NAME_LOG", &install_name_log)
+        .env(
+            "ROCINANTE_FAKE_DUCKDB_LOAD_NAME",
+            "/tmp/cache/duckdb-download/x86_64-apple-darwin/1.5.6/libduckdb.dylib",
+        )
+        .env("PATH", path)
         .env(
             "ROCINANTE_BUNDLE_IDENTIFIER",
             "dev.rocinante.desktop-shell.contract",
@@ -48,10 +81,15 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     let bundle = home.join("Applications/Rocinante.app");
     let app_binary = bundle.join("Contents/MacOS/rocinante-desktop-shell");
     let app_icon = bundle.join("Contents/Resources/Rocinante.icns");
+    let app_duckdb = bundle.join("Contents/Frameworks/libduckdb.dylib");
     let info_plist = bundle.join("Contents/Info.plist");
     let package_info = bundle.join("Contents/PkgInfo");
     assert!(app_binary.is_file());
     assert!(app_icon.is_file());
+    assert_eq!(
+        std::fs::read(&app_duckdb).expect("read bundled DuckDB library"),
+        b"verified prebuilt DuckDB fixture"
+    );
     assert_eq!(
         std::fs::read(&app_binary).expect("read installed executable"),
         std::fs::read(&binary).expect("read source executable")
@@ -151,4 +189,13 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
         std::fs::read_to_string(registration_log).expect("read Launch Services registration"),
         format!("-f {}\n", bundle.display())
     );
+    let install_name_calls =
+        std::fs::read_to_string(install_name_log).expect("read install_name_tool calls");
+    assert!(install_name_calls.contains("-id @rpath/libduckdb.dylib"));
+    assert!(install_name_calls.contains(
+        "-change /tmp/cache/duckdb-download/x86_64-apple-darwin/1.5.6/libduckdb.dylib @rpath/libduckdb.dylib"
+    ));
+    assert!(install_name_calls.contains(
+        "-rpath /tmp/cache/duckdb-download/x86_64-apple-darwin/1.5.6 @executable_path/../Frameworks"
+    ));
 }

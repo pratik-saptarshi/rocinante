@@ -78,6 +78,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Cargo build failed with exit code $LASTEXITCODE." }
     if (-not (Test-Path -LiteralPath $sourceBinary -PathType Leaf)) { throw "Build did not produce $sourceBinary" }
     & $installer -Executable $sourceBinary
+    $installedDuckdb = Join-Path (Split-Path -Parent $installedBinary) 'duckdb.dll'
+    if (-not (Test-Path -LiteralPath $installedDuckdb -PathType Leaf)) {
+        throw "The user installation did not include prebuilt DuckDB: $installedDuckdb"
+    }
 
     $coldPath = Join-Path $testRoot 'cold repository'
     $warmPath = Join-Path $testRoot 'warm repository'

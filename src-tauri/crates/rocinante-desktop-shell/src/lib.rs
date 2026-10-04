@@ -438,6 +438,12 @@ mod native_ui {
         _url_event_handler: super::macos_url::UrlEventHandler,
     }
 
+    #[cfg(target_os = "macos")]
+    struct MacosStartup {
+        url_event_handler: super::macos_url::UrlEventHandler,
+        repaint_context: std::sync::Arc<std::sync::Mutex<Option<egui::Context>>>,
+    }
+
     impl RocinanteApp {
         fn new(
             creation_context: &eframe::CreationContext<'_>,
@@ -446,13 +452,10 @@ mod native_ui {
             restored_state: Option<ShellState>,
             initial_links: Vec<String>,
             url_event_receiver: Receiver<String>,
-            #[cfg(target_os = "macos")] url_event_handler: super::macos_url::UrlEventHandler,
-            #[cfg(target_os = "macos")] repaint_context: std::sync::Arc<
-                std::sync::Mutex<Option<egui::Context>>,
-            >,
+            #[cfg(target_os = "macos")] macos_startup: MacosStartup,
         ) -> Self {
             #[cfg(target_os = "macos")]
-            if let Ok(mut repaint_slot) = repaint_context.lock() {
+            if let Ok(mut repaint_slot) = macos_startup.repaint_context.lock() {
                 *repaint_slot = Some(creation_context.egui_ctx.clone());
             }
             let mut state: ShellState = restored_state.unwrap_or_else(|| {
@@ -522,7 +525,7 @@ mod native_ui {
                 link_inbox,
                 url_event_receiver,
                 #[cfg(target_os = "macos")]
-                _url_event_handler: url_event_handler,
+                _url_event_handler: macos_startup.url_event_handler,
             }
         }
     }
@@ -1916,9 +1919,10 @@ mod native_ui {
                     initial_links,
                     url_event_receiver,
                     #[cfg(target_os = "macos")]
-                    url_event_handler,
-                    #[cfg(target_os = "macos")]
-                    repaint_context,
+                    MacosStartup {
+                        url_event_handler,
+                        repaint_context,
+                    },
                 )))
             }),
         )?;

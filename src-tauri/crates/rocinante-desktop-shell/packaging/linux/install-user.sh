@@ -17,7 +17,18 @@ if [ -z "${HOME:-}" ]; then
 fi
 
 script_directory=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+source_directory=$(CDPATH= cd -- "$(dirname -- "$source_binary")" && pwd)
+duckdb_library=$source_directory/deps/libduckdb.so
+if [ ! -f "$duckdb_library" ]; then
+    echo "verified prebuilt DuckDB shared library is missing: $duckdb_library" >&2
+    exit 1
+fi
+if ! command -v patchelf >/dev/null 2>&1; then
+    echo "patchelf is required to make the installed DuckDB library relocatable" >&2
+    exit 1
+fi
 binary_directory=$HOME/.local/bin
+library_directory=$HOME/.local/lib/rocinante
 data_directory=${XDG_DATA_HOME:-$HOME/.local/share}
 application_directory=$data_directory/applications
 icon_directory=$data_directory/icons/hicolor/512x512/apps
@@ -25,8 +36,10 @@ mime_directory=$data_directory/mime
 installed_binary=$binary_directory/rocinante-desktop-shell
 desktop_entry=$application_directory/rocinante.desktop
 
-mkdir -p "$binary_directory" "$application_directory" "$icon_directory"
+mkdir -p "$binary_directory" "$library_directory" "$application_directory" "$icon_directory"
 install -m 0755 "$source_binary" "$installed_binary"
+install -m 0755 "$duckdb_library" "$library_directory/libduckdb.so"
+patchelf --set-rpath '$ORIGIN/../lib/rocinante' "$installed_binary"
 install -m 0644 "$script_directory/../icons/rocinante.png" "$icon_directory/rocinante.png"
 
 # Escape reserved characters for the quoted executable field in a .desktop file.

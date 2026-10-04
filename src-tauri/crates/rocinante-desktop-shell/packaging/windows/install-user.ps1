@@ -16,6 +16,11 @@ $source = (Resolve-Path -LiteralPath $Executable).Path
 if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
     throw "Desktop shell executable was not found: $Executable"
 }
+$sourceDirectory = Split-Path -Parent $source
+$duckdbLibrary = Join-Path $sourceDirectory 'deps\duckdb.dll'
+if (-not (Test-Path -LiteralPath $duckdbLibrary -PathType Leaf)) {
+    throw "Verified prebuilt DuckDB runtime was not found: $duckdbLibrary"
+}
 
 $installDirectory = Join-Path $env:LOCALAPPDATA 'Programs\Rocinante'
 $installedBinary = Join-Path $installDirectory 'rocinante-desktop-shell.exe'
@@ -24,6 +29,7 @@ $iconSource = (Resolve-Path -LiteralPath $iconSource).Path
 $installedIcon = Join-Path $installDirectory 'Rocinante.ico'
 New-Item -ItemType Directory -Path $installDirectory -Force | Out-Null
 Copy-Item -LiteralPath $source -Destination $installedBinary -Force
+Copy-Item -LiteralPath $duckdbLibrary -Destination (Join-Path $installDirectory 'duckdb.dll') -Force
 Copy-Item -LiteralPath $iconSource -Destination $installedIcon -Force
 
 $programsDirectory = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'

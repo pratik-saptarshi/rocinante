@@ -104,6 +104,16 @@ mkdir -p "$HOME" "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME"
 "$installer" "$shell_binary"
 desktop-file-validate "$XDG_DATA_HOME/applications/rocinante.desktop"
 installed_binary="$HOME/.local/bin/rocinante-desktop-shell"
+installed_duckdb="$HOME/.local/lib/rocinante/libduckdb.so"
+if [[ ! -s "$installed_duckdb" ]]; then
+  echo "The user installation did not include the prebuilt DuckDB shared library" >&2
+  exit 1
+fi
+if [[ "$(patchelf --print-rpath "$installed_binary")" != '$ORIGIN/../lib/rocinante' ]]; then
+  echo "The installed shell does not resolve DuckDB relative to its installation" >&2
+  patchelf --print-rpath "$installed_binary" >&2
+  exit 1
+fi
 if [[ "$(xdg-mime query default x-scheme-handler/rocinante)" != "rocinante.desktop" ]]; then
   echo "The per-user desktop database did not select rocinante.desktop for the URI scheme" >&2
   exit 1

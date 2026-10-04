@@ -66,8 +66,20 @@ fn linux_installer_registers_binary_and_uri_handler_in_user_scope() {
     let data = temp.path().join("data");
     let tools = temp.path().join("tools");
     let tool_calls = temp.path().join("tool-calls");
+    let duckdb_library = temp.path().join("deps/libduckdb.so");
     std::fs::create_dir_all(&home).expect("create temporary home");
     std::fs::create_dir_all(&tools).expect("create command shims");
+    std::fs::create_dir_all(duckdb_library.parent().unwrap()).expect("create library fixture");
+    std::fs::write(&duckdb_library, b"verified prebuilt DuckDB fixture")
+        .expect("write DuckDB library fixture");
+    let patchelf = tools.join("patchelf");
+    std::fs::write(
+        &patchelf,
+        "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$ROCINANTE_INSTALLER_CALL_LOG\"\n",
+    )
+    .expect("write patchelf command shim");
+    std::fs::set_permissions(&patchelf, std::fs::Permissions::from_mode(0o755))
+        .expect("make patchelf shim executable");
     for command in ["xdg-mime", "update-desktop-database"] {
         let path = tools.join(command);
         std::fs::write(
@@ -78,7 +90,7 @@ fn linux_installer_registers_binary_and_uri_handler_in_user_scope() {
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755))
             .expect("make command shim executable");
     }
-    let binary = temp.path().join("source-binary");
+    let binary = temp.path().join("deps/../source-binary");
     std::fs::write(&binary, "#!/bin/sh\nexit 0\n").expect("write source binary");
     std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o755))
         .expect("make source binary executable");
@@ -105,6 +117,10 @@ fn linux_installer_registers_binary_and_uri_handler_in_user_scope() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(home.join(".local/bin/rocinante-desktop-shell").is_file());
+    assert_eq!(
+        std::fs::read(home.join(".local/lib/rocinante/libduckdb.so")).unwrap(),
+        b"verified prebuilt DuckDB fixture"
+    );
     assert!(data
         .join("icons/hicolor/512x512/apps/rocinante.png")
         .is_file());
@@ -130,6 +146,7 @@ fn linux_installer_registers_binary_and_uri_handler_in_user_scope() {
     let tool_calls = std::fs::read_to_string(tool_calls).expect("read registration tool calls");
     assert!(tool_calls.contains("update-desktop-database "));
     assert!(tool_calls.contains("xdg-mime default rocinante.desktop x-scheme-handler/rocinante"));
+    assert!(tool_calls.contains("--set-rpath $ORIGIN/../lib/rocinante"));
 }
 
 #[test]

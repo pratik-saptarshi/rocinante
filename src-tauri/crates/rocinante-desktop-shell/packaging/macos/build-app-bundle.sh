@@ -21,9 +21,60 @@ if [ ! -f "$source_binary" ] || [ ! -x "$source_binary" ]; then
 fi
 
 contents=$output_app/Contents
+source_directory=$(CDPATH='' cd -- "$(dirname -- "$source_binary")" && pwd -P)
+duckdb_library=$source_directory/deps/libduckdb.dylib
+if [ ! -f "$duckdb_library" ]; then
+    echo "verified prebuilt DuckDB shared library is missing: $duckdb_library" >&2
+    exit 1
+fi
+for tool in install_name_tool otool; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "$tool is required to make the app's DuckDB library relocatable" >&2
+        exit 1
+    fi
+done
 script_directory=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-mkdir -p "$contents/MacOS" "$contents/Resources"
-install -m 0755 "$source_binary" "$contents/MacOS/rocinante-desktop-shell"
+mkdir -p "$contents/MacOS" "$contents/Resources" "$contents/Frameworks"
+installed_binary=$contents/MacOS/rocinante-desktop-shell
+installed_duckdb=$contents/Frameworks/libduckdb.dylib
+install -m 0755 "$source_binary" "$installed_binary"
+install -m 0755 "$duckdb_library" "$installed_duckdb"
+duckdb_id=$(otool -D "$installed_duckdb" | sed -n '2p')
+if [ "$duckdb_id" != @rpath/libduckdb.dylib ]; then
+    install_name_tool -id @rpath/libduckdb.dylib "$installed_duckdb"
+fi
+
+duckdb_load_name=$(otool -L "$installed_binary" | sed -n \
+    '/libduckdb\.dylib (compatibility version/{s/ (compatibility version.*//;s/^[[:space:]]*//;p;}')
+if [ -z "$duckdb_load_name" ]; then
+    echo "the desktop shell does not link the expected prebuilt libduckdb.dylib" >&2
+    exit 1
+fi
+if [ "$duckdb_load_name" != @rpath/libduckdb.dylib ]; then
+    install_name_tool -change "$duckdb_load_name" @rpath/libduckdb.dylib "$installed_binary"
+fi
+
+duckdb_rpaths=$(otool -l "$installed_binary" | awk '
+    /cmd LC_RPATH/ { getline; getline; sub(/^[[:space:]]*path /, ""); sub(/ [(]offset.*/, ""); print }
+')
+has_framework_rpath=false
+while IFS= read -r rpath; do
+    [ -n "$rpath" ] || continue
+    case "$rpath" in
+        *duckdb-download*)
+            install_name_tool -rpath "$rpath" @executable_path/../Frameworks "$installed_binary"
+            has_framework_rpath=true
+            ;;
+        @executable_path/../Frameworks)
+            has_framework_rpath=true
+            ;;
+    esac
+done <<EOF
+$duckdb_rpaths
+EOF
+if [ "$has_framework_rpath" != true ]; then
+    install_name_tool -add_rpath @executable_path/../Frameworks "$installed_binary"
+fi
 sed "s|<string>dev.rocinante.desktop-shell</string>|<string>$bundle_identifier</string>|" \
     "$script_directory/Info.plist" > "$contents/Info.plist"
 install -m 0644 "$script_directory/../icons/Rocinante.icns" "$contents/Resources/Rocinante.icns"

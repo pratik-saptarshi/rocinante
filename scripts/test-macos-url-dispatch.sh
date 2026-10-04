@@ -6,7 +6,8 @@ shell_manifest="$repo_root/src-tauri/crates/rocinante-desktop-shell/Cargo.toml"
 shell_binary="$repo_root/src-tauri/target/debug/rocinante-desktop-shell"
 bundle_root="$(mktemp -d "${TMPDIR:-/tmp}/rocinante-url-acceptance.XXXXXX")"
 bundle_root="$(cd "$bundle_root" && pwd -P)"
-bundle="${HOME:?}/Applications/RocinanteAcceptance-$$.app"
+bundle_home="${ROCINANTE_ACCEPTANCE_BUNDLE_HOME:-${HOME:?}}"
+bundle="$bundle_home/Applications/RocinanteAcceptance-$$.app"
 bundle_identifier="dev.rocinante.desktop-shell.acceptance.$$"
 bundle_binary="$bundle/Contents/MacOS/rocinante-desktop-shell"
 app_data="$bundle_root/app-data"
@@ -104,6 +105,20 @@ if ! grep -F "$bundle" "$registration_dump" >/dev/null \
 fi
 if [[ ! -f "$bundle/Contents/Resources/Rocinante.icns" ]]; then
   echo "The bundled application icon is missing" >&2
+  exit 1
+fi
+if [[ ! -s "$bundle/Contents/Frameworks/libduckdb.dylib" ]]; then
+  echo "The app bundle does not include the prebuilt DuckDB library" >&2
+  exit 1
+fi
+if ! otool -L "$bundle_binary" | grep -F '@rpath/libduckdb.dylib' >/dev/null; then
+  echo "The app executable does not resolve DuckDB from its bundled Frameworks directory" >&2
+  otool -L "$bundle_binary" >&2
+  exit 1
+fi
+if otool -l "$bundle_binary" | grep -F 'duckdb-download' >/dev/null; then
+  echo "The app executable still contains a Cargo-cache DuckDB run path" >&2
+  otool -l "$bundle_binary" >&2
   exit 1
 fi
 wait_for_applied_path() {
