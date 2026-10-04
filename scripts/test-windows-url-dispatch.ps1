@@ -8,6 +8,7 @@ $testId = [guid]::NewGuid().ToString('N')
 $testRoot = Join-Path $env:RUNNER_TEMP "rocinante-url-acceptance-$testId"
 $appData = Join-Path $testRoot 'app-data'
 $witness = Join-Path $testRoot 'applied-state.txt'
+$forwardWitness = Join-Path $testRoot 'forward-attempt.txt'
 $quitFile = Join-Path $testRoot 'request-clean-quit'
 $schemeKey = 'HKCU:\Software\Classes\rocinante'
 $localAppData = Join-Path $testRoot 'local-app-data'
@@ -16,6 +17,7 @@ $installedBinary = Join-Path $localAppData 'Programs\Rocinante\rocinante-desktop
 $previousWitness = $env:ROCINANTE_ACCEPTANCE_WITNESS
 $previousDataDir = $env:ROCINANTE_ACCEPTANCE_DATA_DIR
 $previousQuitFile = $env:ROCINANTE_ACCEPTANCE_QUIT_FILE
+$previousForwardWitness = $env:ROCINANTE_ACCEPTANCE_FORWARD_WITNESS
 $previousLocalAppData = $env:LOCALAPPDATA
 $previousAppData = $env:APPDATA
 $testPids = [System.Collections.Generic.HashSet[int]]::new()
@@ -45,7 +47,8 @@ function Wait-ForAppliedPath([string] $expectedPath) {
         Start-Sleep -Seconds 1
     }
     $snapshot = if (Test-Path -LiteralPath $witness) { Get-Content -LiteralPath $witness -Raw } else { '<no witness>' }
-    throw "The bundled app did not apply URI target '$expectedPath'. Witness: $snapshot"
+    $forwardSnapshot = if (Test-Path -LiteralPath $forwardWitness) { Get-Content -LiteralPath $forwardWitness -Raw } else { '<no secondary process forwarding witness>' }
+    throw "The bundled app did not apply URI target '$expectedPath'. Witness: $snapshot Forwarding: $forwardSnapshot"
 }
 
 function New-RepositoryUri([string] $path) {
@@ -60,6 +63,7 @@ try {
     $env:ROCINANTE_ACCEPTANCE_WITNESS = $witness
     $env:ROCINANTE_ACCEPTANCE_DATA_DIR = $appData
     $env:ROCINANTE_ACCEPTANCE_QUIT_FILE = $quitFile
+    $env:ROCINANTE_ACCEPTANCE_FORWARD_WITNESS = $forwardWitness
 
     & cargo build --manifest-path $manifest --bin rocinante-desktop-shell --features acceptance-witness --locked
     if ($LASTEXITCODE -ne 0) { throw "Cargo build failed with exit code $LASTEXITCODE." }
@@ -117,6 +121,7 @@ finally {
     if ($null -eq $previousWitness) { Remove-Item Env:ROCINANTE_ACCEPTANCE_WITNESS -ErrorAction SilentlyContinue } else { $env:ROCINANTE_ACCEPTANCE_WITNESS = $previousWitness }
     if ($null -eq $previousDataDir) { Remove-Item Env:ROCINANTE_ACCEPTANCE_DATA_DIR -ErrorAction SilentlyContinue } else { $env:ROCINANTE_ACCEPTANCE_DATA_DIR = $previousDataDir }
     if ($null -eq $previousQuitFile) { Remove-Item Env:ROCINANTE_ACCEPTANCE_QUIT_FILE -ErrorAction SilentlyContinue } else { $env:ROCINANTE_ACCEPTANCE_QUIT_FILE = $previousQuitFile }
+    if ($null -eq $previousForwardWitness) { Remove-Item Env:ROCINANTE_ACCEPTANCE_FORWARD_WITNESS -ErrorAction SilentlyContinue } else { $env:ROCINANTE_ACCEPTANCE_FORWARD_WITNESS = $previousForwardWitness }
     if ($null -eq $previousLocalAppData) { Remove-Item Env:LOCALAPPDATA -ErrorAction SilentlyContinue } else { $env:LOCALAPPDATA = $previousLocalAppData }
     if ($null -eq $previousAppData) { Remove-Item Env:APPDATA -ErrorAction SilentlyContinue } else { $env:APPDATA = $previousAppData }
     if (Test-Path -LiteralPath $testRoot) { Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue }

@@ -24,6 +24,8 @@ fn windows_url_acceptance_covers_dispatch_restart_and_cleanup() {
         "cargo build --manifest-path $manifest",
         "Start-Process -FilePath (New-RepositoryUri $coldPath)",
         "Start-Process -FilePath (New-RepositoryUri $warmPath)",
+        "ROCINANTE_ACCEPTANCE_FORWARD_WITNESS",
+        "forward-attempt.txt",
         "if ($warmPid -ne $primaryPid)",
         "request-clean-quit",
         "Remove-Item -LiteralPath $quitFile -Force",

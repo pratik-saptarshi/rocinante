@@ -1729,13 +1729,27 @@ mod native_ui {
         };
         let link_inbox = DeepLinkInbox::open(&data_dir)?;
         if !link_inbox.is_primary() {
-            if initial_links.is_empty() {
-                link_inbox.activate()?;
+            let forward_result = if initial_links.is_empty() {
+                link_inbox.activate()
             } else {
-                for link in initial_links {
-                    link_inbox.forward(&link)?;
-                }
+                initial_links
+                    .iter()
+                    .try_for_each(|link| link_inbox.forward(link))
+            };
+            #[cfg(feature = "acceptance-witness")]
+            if let Some(witness) = option_env!("ROCINANTE_ACCEPTANCE_FORWARD_WITNESS") {
+                let snapshot = format!(
+                    "pid={}\nlinks={:?}\nresult={:?}\n",
+                    std::process::id(),
+                    initial_links,
+                    forward_result
+                        .as_ref()
+                        .map(|()| ())
+                        .map_err(ToString::to_string)
+                );
+                let _ = std::fs::write(witness, snapshot);
             }
+            forward_result?;
             return Ok(());
         }
 
