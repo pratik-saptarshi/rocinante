@@ -273,15 +273,18 @@ desktop/MIME databases when their tools are installed. It places the verified
 runtime path. The Windows installer
 copies the executable into `%LOCALAPPDATA%` and registers a current-user
 `rocinante://` command under `HKCU`; it places the matching `duckdb.dll` beside
-the executable. Its PowerShell source contract is checked
-on this host, and Windows registry dispatch still needs runtime validation.
+the executable. Its PowerShell source contract is checked on this host.
 The macOS installer embeds `libduckdb.dylib` in `Contents/Frameworks`, rewrites
 the app-relative loader path, and declares the scheme in the `.app` bundle
 before registering it through Launch Services. The installed macOS lifecycle
 acceptance passes cold/warm URL delivery, tray actions, notification request,
-and saved-state restart on the current host. Linux and Windows installed
-runtime checks remain with their hosted acceptance jobs. Release distribution
-must sign the completed app bundle after packaging.
+and saved-state restart on the current host. Hosted CI run
+[37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846)
+passes Linux/macOS/Windows cold/warm URL and saved-state restart acceptance;
+the Linux Dunst check also confirms visible notification delivery. Visible
+notification delivery on macOS and Windows, physical tray-menu clicks, and
+macOS foreground activation still need interactive validation. Release
+distribution must sign the completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.
 

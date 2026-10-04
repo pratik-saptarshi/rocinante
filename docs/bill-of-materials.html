@@ -14,7 +14,8 @@ then release from the merged tip.
 - Remote: `origin`
 - Current work is on PR #108's remediation branch,
   `fix/rocinante-readiness-remediation`, currently at published commit
-  `e9ae452` with local changes in progress.
+  `b991f99`. The PR is open, relevant, and based on `main` at `cdd29b9`; all
+  30 inline review threads are resolved.
 - Product: Rust shared-service workspace with current Tauri integration, an
   in-progress GTK-free native desktop host, and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -113,8 +114,10 @@ actions and hide-on-close behavior. Optional `fs2` provides the exclusive per-us
 lock for a bounded deep-link inbox; `packaging/linux/rocinante.desktop` declares
 the URI scheme. Per-user installers package the verified `.so`, `.dylib`, or
 `.dll` and register the URL handlers. Local macOS cold/warm URL, tray,
-notification-request, and restart acceptance passes. Linux and Windows hosted
-runtime acceptance remains pending.
+notification-request, and restart acceptance passes. Hosted CI run
+`37198628846` passes Linux/macOS/Windows URL and saved-state restart acceptance;
+Linux visible notification delivery also passes. Visible macOS/Windows
+notification delivery and physical tray-menu clicks remain unverified.
 - `tempfile` for tests
 - `tauri-build` for the build step
 - `cargo-llvm-cov` for informational backend Rust coverage reporting
@@ -232,14 +235,17 @@ Before any release reaches `origin/main`, the repository should satisfy:
 7. The final publish uses a protected-branch-safe squash or PR merge.
 8. `origin/main` remains the source of truth; local and remote must be reconciled through merge checkpoints.
 
-Current local validation snapshot (2026-10-04): Rust formatting, the five
+Current validation snapshot (2026-10-04; PR head `b991f99`): Rust formatting, the nine
 DuckDB provisioner cases, the DuckDB feature graph and guard, the CI-scope
 contract, native-shell installer contracts, and the macOS installed lifecycle
 pass. The DuckDB engine-version query returns `1.5.6`. The extracted analysis,
 core, storage, and desktop-shell suites pass 75 tests; strict Clippy passes for
-those crates. Full root Tauri tests and full-workspace Clippy did not return a
-terminal result locally, so hosted CI must supply that evidence. Linux/Windows
-installed checks, hosted aggregate, and zero-exception audit remain pending.
+those crates. Hosted CI run `37198628846` also passes full workspace tests,
+Rust quality gates, core/storage lanes, formatting, Clippy, UI quality, and
+Linux/macOS/Windows installed URL/restart acceptance. The aggregate still fails
+at the fail-closed advisory governance job: all 17 registry review dates are
+overdue. The refreshed unfiltered audit reports zero vulnerabilities but four
+warnings and an empty ignore list, so it fails `--deny warnings` as required.
 
 Historical CI recovery evidence on `feat/bi-056-timeout-contract` is green and
 merged; BI-047 is also merged on PR run `28988956969`. Neither historic run is

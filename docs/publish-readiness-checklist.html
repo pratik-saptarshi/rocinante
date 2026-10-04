@@ -42,9 +42,9 @@ Main-branch sync precondition for publish | [x] | `git rev-list --left-right --c
 
 Current local snapshot (2026-10-04): work is on PR #108 branch
 `fix/rocinante-readiness-remediation`, currently based at published commit
-`e9ae452`. Readiness and DuckDB packaging changes are uncommitted. Continue
-through the protected PR flow; do not use older green runs as evidence for the
-current branch head.
+`b991f99`, based on `main` at `cdd29b9`. All 30 inline review threads are
+resolved. Continue through the protected PR flow; use only the terminal
+checks for the current head below.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -115,11 +115,11 @@ Roadmap/test traceability is present | [x] | `docs/roadmap/test-plan.html`, `doc
 Criterion | Status | Evidence
 ---|---|---
 Rust formatting passes | [x] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`
-Rust lint status policy | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code` (warnings are logged; dead-code remains non-blocking by policy)
-Rust tests pass | [ ] | `cargo test --manifest-path src-tauri/Cargo.toml`
-Full Cargo workspace tests pass | [ ] | `cargo test --locked --manifest-path src-tauri/Cargo.toml --workspace`; required `rust-workspace-tests` CI job
+Rust lint status policy | [x] | Hosted run `37198628846`: Rust fmt and Clippy lanes passed (`-A dead_code` remains the configured policy)
+Rust tests pass | [x] | Hosted run `37198628846`: core/storage test lanes passed
+Full Cargo workspace tests pass | [x] | Hosted run `37198628846`: required `rust-workspace-tests` passed
 DuckDB cannot build from source and has SHA-pinned native artifacts | [x] | `scripts/check-duckdb-features.sh`, its contract test, and `scripts/test_provision_duckdb.py` pass locally; see `scripts/duckdb-prebuilt-artifacts.json`
-Installed app loads the verified DuckDB library on all supported OSes | [ ] | Local macOS package inspected; Linux and Windows installed-runtime checks must pass in hosted acceptance jobs
+Installed app loads the verified DuckDB library on all supported OSes | [x] | Hosted run `37198628846`: Linux/macOS/Windows cold/warm URL and restart acceptance passed with packaged runtime
 Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
@@ -146,9 +146,9 @@ Sync local `main` to merged remote tip | [x] | `git merge --no-ff origin/main`
 
 Criterion | Status | Evidence
 ---|---|---
-CI workflow is monitored until terminal state | [ ] | `gh pr view <pr>` / `gh run view <run>`
-Security workflow is monitored until terminal state | [ ] | `gh pr view <pr>` / `gh run view <run>`
-Dependency review is monitored until terminal state | [ ] | `gh pr view <pr>` / `gh run view <run>`
+CI workflow is monitored until terminal state | [x] | Hosted run `37198628846` is terminal; aggregate fails only at advisory governance
+Security workflow is monitored until terminal state | [x] | Hosted run `37198628844` passed under the current exception configuration
+Dependency review is monitored until terminal state | [x] | Hosted run `37198628881` passed
 Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `rust-coverage-lcov` from CI job `rust-coverage`
 
 ## 7) Publish decision

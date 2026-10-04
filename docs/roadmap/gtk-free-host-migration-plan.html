@@ -75,7 +75,7 @@ user-visible behavior, backed by host-agnostic Rust core logic.
     including after restart without rescanning. Scan completion requests a
     success/failure desktop notification through the native platform. Linux CI starts
     Dunst under Xvfb and verifies the shared notification sender reaches a displayed
-    notification; its hosted result is pending. The native macOS notification request returned success locally, but visible delivery on
+    notification; hosted run 37198628846 confirms Linux-visible notification delivery. The native macOS notification request returned success locally, but visible delivery on
     macOS and Windows still needs runtime validation. Cold-launch repository links use
     `rocinante://repository/open?path=<percent-encoded-absolute-path>` and set
     the selected repository plus Repositories route before the first frame.
@@ -90,7 +90,7 @@ user-visible behavior, backed by host-agnostic Rust core logic.
     limits each URI to 8 KiB, and sequences writes under a queue lock, cleaning abandoned temporary files on the next enqueue. The Linux desktop entry declares
     the URI scheme and passes the URL argument; `packaging/linux/install-user.sh`
     copies a supplied executable into `~/.local/bin` and installs the per-user
-    desktop registration. The GTK-free Linux acceptance job verifies cold and warm URI dispatch through the installed handler plus selected-repository restoration after a clean process restart; hosted validation remains pending. The macOS installer creates a `.app` with
+    desktop registration. The GTK-free Linux acceptance job verifies cold and warm URI dispatch through the installed handler plus selected-repository restoration after a clean process restart; hosted run 37198628846 passes Linux/macOS/Windows URL and restart acceptance. The macOS installer creates a `.app` with
     `CFBundleURLTypes` and invokes Launch Services registration; its package and
     registration-command contract pass on macOS. Its bundled acceptance now runs
     the real per-user installer and dispatches cold/warm links with URI-only
@@ -102,8 +102,7 @@ user-visible behavior, backed by host-agnostic Rust core logic.
     executable, exercises cold and warm URL dispatch, verifies same-process
     forwarding, requests clean quit, and checks saved-state restoration in a
     new process; this acceptance and the bundled macOS cold/warm Launch Services
-    acceptance are wired into the aggregate CI gate, and all three hosted results
-    remain pending. The native macOS shell now registers a retained
+    acceptance are wired into the aggregate CI gate, and all three hosted URL and restart acceptance jobs passed in run 37198628846. The native macOS shell now registers a retained
     `NSAppleEventManager` `kAEGetURL` handler, validates the delivered
     `rocinante://` URL, and routes it to the UI thread; the shell compiles and
     its contract suite passes on macOS. The bundled acceptance job checks cold
@@ -113,9 +112,8 @@ user-visible behavior, backed by host-agnostic Rust core logic.
     same-process routing while minimized, visible-window restoration, and saved-state
     restoration after clean restart passed locally. The app requests macOS activation on its first UI frame, after URL delivery, and on tray Show. The acceptance helper can inspect and optionally require the frontmost PID; strict mode reported `visible=true`, `frontmost=false` in this automation session, while the normal installed lifecycle acceptance passed. AppKit activation remains a request and foreground success is unproven here. A separate-process forwarding contract verifies the running-instance
     handoff. The Dashboard renders repository/release metric and plugin summaries from scans or saved metrics and ports static sample accessibility, SEO/GEO/AEO, Drupal security, and performance panels with selectors, plus the quality snapshot and audience-specific focus sections. Static audits are labeled sample audit data and do not provide live audit integrations. Alerts and Settings placeholders and remaining functional parity gaps,
-    hosted app-icon and URI launch validation across supported platforms, macOS/Windows
-    notification delivery, physical tray-menu click delivery, Linux/Windows tray runtime, and full lifecycle coverage also
-    remain open. A read-only `AXIsProcessTrusted` probe returned false for the current macOS automation process; native menu clicks need a separate Accessibility-authorized interactive run. Login autostart is not
+    interactive visual app-icon launch validation, macOS/Windows
+    notification delivery, physical tray-menu click delivery, Linux/Windows tray runtime, and product-level parity gaps remain open; hosted cold/warm URI delivery and saved-state restart pass on all three platforms in run 37198628846. A read-only `AXIsProcessTrusted` probe returned false for the current macOS automation process; native menu clicks need a separate Accessibility-authorized interactive run. Login autostart is not
     included in the signed-off startup requirement.
 - Restore the must-have parity items first:
   - window lifecycle

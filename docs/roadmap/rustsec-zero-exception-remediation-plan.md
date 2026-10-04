@@ -1,7 +1,9 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status:** Phase 0 review is in progress; Phase 1 implementation is present,
-with current hosted package checks needing a rerun after local fixes.
+**Status:** Phase 0 review comments are resolved. Phase 1 packaging and test
+runtime checks pass in hosted CI. Zero-exception RustSec remediation remains in
+progress; the required governance gate is still fail-closed on 17 overdue
+entries and the unfiltered audit still reports four warnings.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -39,10 +41,10 @@ review threads. Review the open PR #108 threads and handle their findings:
 - The metrics-read lock and graceful-shutdown concern is already tracked as BI-060 in `docs/roadmap/bead-issue-tracker.html`, following the author's request to handle it as a distinct feature.
 - The UI pin was `pnpm@12.9.0`; the current npm stable registry reports `12.9.1`. Keep `ui/package.json`, the CI action, lockfile metadata, README, bill of materials, and codemap synchronized to that version.
 
-Keep the governance review thread open until the registry and affected
-dependency graphs are actually clean. The fail-closed gate is intentional:
-do not weaken it to make this PR green, renew dates, or represent an owner
-disposition that was not provided.
+The governance decision thread is resolved with an explicit policy response.
+The fail-closed gate remains required until the registry and affected
+dependency graphs are actually clean. Do not weaken it to make this PR green,
+renew dates, or represent an owner disposition that was not provided.
 
 **Validation:** inventory every Cargo lockfile; run `cargo tree` for the four
 live package paths; refresh and run cargo-audit from outside the repository's
@@ -94,6 +96,34 @@ terminal result during this run, and the macOS GUI acceptance could not scan
 its temporary bundle through Launch Services in this sandbox. Neither is
 claimed as a pass; the fixed code is awaiting hosted reruns.
 
+**Current Phase 0 follow-up (2026-10-04; PR head `b991f99`):** all 30 inline
+review threads are resolved. The empty-repository metrics query now returns a
+clear error before opening its database, with a focused regression test. The
+root workspace tests previously failed at runtime because the staged DuckDB
+library was not in Cargo's `debug/deps`; the provisioner and four CI test jobs
+now stage the verified runtime there, guarded by the CI scope contract.
+
+Hosted CI run [37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846)
+is terminal. Workflow parsing, UI quality, Linux/macOS/Windows lifecycle
+acceptance, full workspace tests, build seed, Rust quality gates, core/storage
+test lanes, formatting, and Clippy passed. The aggregate gate failed only at
+`security-exception-governance`, which listed all 17 records as overdue on
+2026-10-04. Security run
+[37198628844](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628844)
+and Dependency Review run
+[37198628881](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628881)
+passed; the Security workflow's existing ignore configuration does not prove
+the zero-exception requirement.
+
+The refreshed unfiltered audit used a writable temporary copy of the RustSec
+database because the default database lock path is read-only in this
+environment. The refresh succeeded and upstream remained at revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03; 722 locked packages).
+The report has zero vulnerability findings, four warnings (`glib`,
+`proc-macro-error`, `instant`, and `fxhash`), and an empty ignore list; it
+still exits nonzero with `--deny warnings`. No review date or owner acceptance
+was fabricated.
+
 ### Phase 1 — Provision DuckDB only from verified prebuilt artifacts
 
 Remove every source-build feature, pin the Rust binding and native engine
@@ -141,6 +171,13 @@ the verified library into the build output's sibling `deps` directory. That
 packaging gap is fixed in the working tree and awaits a hosted rerun. A local
 GUI revalidation is unverified because this sandbox could not scan the
 temporary app bundle through Launch Services.
+
+**Hosted follow-up (2026-10-04; PR head `b991f99`):** the prebuilt-only
+provisioning path passed Linux, macOS, and Windows cold/warm/restart
+acceptance. The full workspace test job also passed after staging the native
+library into Cargo's test dependency directory. The aggregate remains blocked
+by advisory governance and the four unfiltered RustSec warnings, not by
+DuckDB packaging or the Rust/UI quality jobs.
 
 ### Phase 2 — Replace Sled ingestion with SQLite without changing contracts
 
@@ -339,7 +376,13 @@ packaging paths from the supported workspace. Port Tauri integration assertions
 to shared-service and native-shell tests, preserving authorization and response
 shapes. Prove GTK/GLib and their macro dependencies are absent across all
 targets and features; disabling a target or retaining the old host elsewhere in
-the supported workspace does not count as removal.
+the supported workspace does not count as removal. The current full-workspace
+tree traces `glib 0.18.5` through GTK and the retained Tauri/Wry host, while
+`proc-macro-error 1.0.4` is pulled by the GTK/GLib macro crates. The isolated
+desktop-shell graph is already free of both packages on all targets; removing
+only the Linux shell's GTK path therefore cannot clear the lockfile audit. The
+required pivot is to finish native-shell parity and remove the old Tauri host
+from the supported workspace before closing these two advisories.
 
 ## Governance, tests, and acceptance
 

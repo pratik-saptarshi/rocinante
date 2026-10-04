@@ -162,33 +162,41 @@ and an in-progress GTK-free native desktop host.
     activation requests through a per-user inbox. The macOS installed
     acceptance passes cold/warm Launch Services URLs, tray actions, notification
     request, and saved-state restart locally. Linux acceptance also exercises
-    visible notification delivery under Xvfb/D-Bus; its hosted result, Windows
-    runtime acceptance, and cross-platform DLL/so loading remain pending on the
-    current branch. SQLite ingestion, legacy Sled migration, and Tauri/GTK
-    retirement are phase-gated in the RustSec remediation plan.
+    visible notification delivery under Xvfb/D-Bus. Hosted run `37198628846`
+    passes Linux/macOS/Windows URL and saved-state restart acceptance, including
+    Linux visible notifications and packaged DuckDB loading. SQLite ingestion,
+    legacy Sled migration, and Tauri/GTK retirement are phase-gated in the
+    RustSec remediation plan.
 
 ## Governance and Execution Snapshot
 
 - Active work is on PR #108 branch `fix/rocinante-readiness-remediation`,
-  published head `e9ae452` with local changes in progress. Use the dated
+  published head `b991f99`. PR #108 remains open and relevant against `main`
+  at `cdd29b9`; all 30 inline review threads are resolved. Use the dated
   RustSec zero-exception plan for phase order and current exit evidence.
-- A successful 2026-10-04 RustSec database refresh retained revision
+- A refreshed 2026-10-04 RustSec database retained revision
   `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03). The unfiltered
   audit finds no vulnerability-class reports and four warnings: GLib,
   proc-macro-error, instant, and fxhash. Audit ignores are empty. The
   fail-closed governance check still sees 17 overdue registry entries.
+- Hosted CI run `37198628846` passed workflow parsing, UI quality,
+  Linux/macOS/Windows lifecycle acceptance, full workspace tests, build seed,
+  Rust quality gates, core/storage lanes, formatting, and Clippy. The
+  aggregate failed only at advisory governance. Security and Dependency Review
+  runs `37198628844` and `37198628881` passed under current configuration.
 - The UI uses pinned pnpm `12.9.1`, the upstream latest stable on 2026-10-04.
   Frozen installation, typecheck, 62 unit tests, and production build pass;
   esbuild is `0.28.2`. The build reports a 506 KB chunk-size advisory.
 - DuckDB is pinned to binding `1.10506.0` / engine `1.5.6`; the official
   release artifact hashes are in `scripts/duckdb-prebuilt-artifacts.json`.
-  Provisioner and source-build feature contracts pass. macOS package loading
-  and installed lifecycle pass locally. Linux and Windows runtime results and
-  the aggregate PR checks remain pending on the current changes.
+  Provisioner tests pass 9/9, source-build feature contracts pass, and
+  hosted lifecycle acceptance passes on all three platforms. Rust test jobs
+  stage the verified runtime under Cargo's `debug/deps` directory.
 - Historical status: BI-047 merged on PR #85; the CI recovery and lane slices
   passed PR run `28987645462`. These older results do not establish readiness
-  for PR #108's current head. Publish remains blocked until the RustSec plan,
-  full-workspace gates, and cross-platform required checks close.
+  for PR #108's current head. Publish remains blocked until all four live
+  RustSec warnings are removed, the 17 records have evidence-backed closure,
+  and the required aggregate gate is green.
 
 ## Design Patterns
 

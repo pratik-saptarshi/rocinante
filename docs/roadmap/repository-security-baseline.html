@@ -24,12 +24,13 @@
 - Open Dependabot alerts are tracked as release blockers until remediated or explicitly accepted.
 - Dependency audit exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`.
 - `scripts/dependency-floor-proof.sh` records the current GTK/glib dependency floor.
-- `scripts/check-security-advisory-exceptions.py` fails when an exception review date is overdue; required CI job `security-exception-governance` enforces current dates through the aggregate `test` gate. The current registry reports 17 overdue reviews as of 2026-09-30.
+- `scripts/check-security-advisory-exceptions.py` fails when an exception review date is overdue; required CI job `security-exception-governance` enforces current dates through the aggregate `test` gate. The current registry reports 17 overdue reviews as of 2026-10-04.
 
 ## Release Blockers
 
 - `RT-RC-001` remains open while the GTK/glib dependency floor is present in `src-tauri/Cargo.lock`.
 - Release readiness is blocked by the tracked GTK/glib advisory exception.
 - Release readiness is blocked until the tracked GTK/glib advisory exception is retired or formally accepted.
-- `R3-F08` / BI-052: the UI lockfile resolves `esbuild@0.28.1`, PR #59 merged, and a live query on 2026-09-30 confirmed the tracked alert is closed. Five other alerts and the GTK/GLib alert tracked under RT-RC-001 remain release blockers.
-- The latest hosted Rust Security run [36424294477](https://github.com/pratik-saptarshi/rocinante/actions/runs/36424294477) failed on 2026-09-28: `rustls@0.23.40` (`RUSTSEC-2026-0285`), `rkyv@0.7.46` (`RUSTSEC-2026-0235`), and yanked `chacha20@0.10.1`. The working lockfile now uses patched `rustls@0.23.45` and `chacha20@0.10.2`, upgrades `rust_decimal` to 1.43.0 (removing `rkyv@0.7.46`), and resolves `serde_with` plus macros to 3.21.0. The documented root command `cargo audit --file src-tauri/Cargo.lock --deny warnings` passes. Hosted validation remains outstanding. The 17 GTK/GLib exception reviews remain overdue and unchanged.
+- `R3-F08` / BI-052: the UI lockfile resolves `esbuild@0.28.2`; the last live alert query on 2026-09-30 confirmed the tracked esbuild alert was closed. Other Dependabot alert state needs a fresh query before release.
+- Hosted CI run [37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846) passed UI, Rust workspace and lane tests, lint, and Linux/macOS/Windows URL and restart acceptance. Its aggregate fails only because governance reports 17 overdue exception dates. Security run [37198628844](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628844) passes with the current exception configuration; it does not establish the zero-exception requirement.
+- A fresh unfiltered audit reports zero vulnerability-class findings, four warnings (`glib@0.18.5`, `proc-macro-error@1.0.4`, `instant@0.1.13`, `fxhash@0.2.1`), and an empty ignore list. It fails `--deny warnings`; all 17 exception records remain overdue and unchanged.

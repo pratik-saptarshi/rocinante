@@ -12,9 +12,9 @@ _Captured: 2026-10-04_
 
 ## Branch and Sync State
 
-- The branch currently includes published commit `e9ae452` and local readiness
-  changes. Its owner-approved delivery path is to continue updating PR #108 and
-  use its protected review/check flow; the working changes are not yet committed.
+- PR #108 is open on `fix/rocinante-readiness-remediation` at published head
+  `b991f99`, based on `main` at `cdd29b9`. Continue on this branch through its
+  protected review/check flow; all 30 inline review threads are resolved.
 - The complete phase sequence and exit evidence are in
   `docs/roadmap/rustsec-zero-exception-remediation-plan.md`.
 - Lane-scope refinement now keeps docs-only and non-functional edits out of storage/coverage-heavy lanes while preserving core rust gate visibility.
@@ -57,26 +57,31 @@ _Captured: 2026-10-04_
   `scripts/duckdb-prebuilt-artifacts.json`; build lanes verify and stage the
   binary before Cargo. DuckDB source-build features are forbidden by a tested
   feature-graph guard.
-- The provisioner contract tests (5), DuckDB feature-guard contract, CI-scope
+- The provisioner contract tests (9), DuckDB feature-guard contract, CI-scope
   contract, macOS installer contract, and Linux installer/deep-link contract
   pass locally. An actual macOS shell build was packaged into an `.app`; `otool`
   shows `@rpath/libduckdb.dylib` and only the app-relative
   `@executable_path/../Frameworks` run path. The full installed macOS lifecycle
   also passes cold/warm Launch Services URLs, tray behavior, notification
-  request, and saved-state restart. Linux and Windows runtime package checks
-  remain assigned to their hosted acceptance jobs.
+  request, and saved-state restart. Hosted run
+  [37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846)
+  passes Linux/macOS/Windows URL and saved-state restart acceptance, and Linux
+  visible notification delivery.
 - The analysis/core/storage/desktop-shell workspace test suite passes all 75
   tests, including the verified DuckDB engine-version query and SQLite
   migration-path test. Strict Clippy passes for those extracted crates. Full
   root Tauri tests and full-workspace Clippy did not return terminal results on
   this Mac; the root test compile produced no new artifacts for 16 minutes
-  before interruption, so hosted CI must supply those results.
-- The current unfiltered Cargo audit has four warnings on the existing graph:
+  before interruption. Hosted run `37198628846` now passes full workspace
+  tests, Rust quality gates, formatting, Clippy, and core/storage test lanes.
+- The refreshed unfiltered Cargo audit has four warnings on the existing graph:
   GLib through Tauri/Wry and `fxhash` / `instant` through Sled, plus the
   unmaintained `proc-macro-error`. No advisory dates have been renewed; the
   governance gate remains fail-closed until the phased removal work is done.
-- PR #108 and hosted aggregate CI must be rechecked after the current commit;
-  no hosted or cross-platform result is claimed complete here.
+- The hosted aggregate still fails closed because `security-exception-governance`
+  lists all 17 review dates as overdue. The security workflow and Dependency
+  Review pass under the existing exception configuration; neither proves the
+  zero-exception RustSec requirement.
 
 ## Dependency Controls and Security Gate Stack
 
@@ -117,15 +122,17 @@ _Captured: 2026-10-04_
   already at its latest stable versions before the pnpm metadata refresh.
 - The PR workflow selects Rust lint and workspace tests for Cargo manifest,
   lockfile, workflow, and Rust source changes. The CI-scope path contract passes.
-- DuckDB prebuilt provisioning and installed app packaging are partly validated
-  locally. Linux and Windows must pass their hosted build and installed-app
-  acceptance jobs; those results are still pending.
+- DuckDB prebuilt provisioning and installed app packaging are validated
+  locally and in the hosted Linux, macOS, and Windows lifecycle jobs. Rust test
+  jobs also stage the verified runtime in Cargo's `debug/deps` directory.
 - The advisory gate is intentionally blocked by 17 overdue registry
   dispositions and four current audit warnings. No review dates or owner
   acceptance statements have been fabricated. The phased zero-exception
   remediation sequence is documented in the roadmap plan.
 - The dependency-floor and exception-registry phase is not complete. Do not
   use historical green CI runs above as evidence for PR #108's current head.
+  Current evidence is the terminal run `37198628846`; the four unfiltered
+  RustSec warnings and 17 overdue registry entries still block release.
 
 ## Release Artifacts
 
