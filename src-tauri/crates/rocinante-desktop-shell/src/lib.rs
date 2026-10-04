@@ -546,12 +546,7 @@ mod native_ui {
                     }
                     WindowCloseBehavior::Exit => {
                         self.state.dispatch(NavigationAction::Close);
-                        if self.explicit_quit {
-                            if let Some(storage) = frame.storage_mut() {
-                                self.save(storage);
-                                storage.flush();
-                            }
-                        }
+                        self.persist_shell_state(frame);
                         #[cfg(target_os = "macos")]
                         {
                             super::macos_url::terminate_application();
@@ -565,6 +560,7 @@ mod native_ui {
             if quit_from_tray {
                 self.state.dispatch(NavigationAction::Close);
                 self.explicit_quit = true;
+                self.persist_shell_state(frame);
                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             }
             if self.tray_icon.is_some() || self.link_inbox.is_primary() {
@@ -659,6 +655,7 @@ mod native_ui {
             });
 
             if close_requested {
+                self.persist_shell_state(frame);
                 ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
             }
 
@@ -810,6 +807,13 @@ mod native_ui {
 
         fn save(&mut self, storage: &mut dyn eframe::Storage) {
             eframe::set_value(storage, "rocinante_shell_state", &self.state);
+        }
+
+        fn persist_shell_state(&mut self, frame: &mut eframe::Frame) {
+            if let Some(storage) = frame.storage_mut() {
+                self.save(storage);
+                storage.flush();
+            }
         }
 
         fn persist_egui_memory(&self) -> bool {
