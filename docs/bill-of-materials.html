@@ -1,6 +1,6 @@
 # Bill of Materials - Rocinante Release Gate
 
-_Current as of 2026-09-30_
+_Current as of 2026-10-04_
 
 This document inventories the release-critical components, dependency surface,
 and governance artifacts that must stay aligned before publishing to `origin`.
@@ -12,14 +12,15 @@ then release from the merged tip.
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary integration branch: `main`
 - Remote: `origin`
-- Current working slice is `main` after merging `feat/bi-047-decision-paths`.
-- `origin/main` and local `main` are aligned at `4c28d9f`; the former local-only
-  merge checkpoints are preserved on `backup/main-pre-reconcile-20260930`.
-- Product: Rust + Tauri repository analyzer with a bead-backed roadmap
-  execution model and a frontend dashboard surface
+- Current work is on PR #108's remediation branch,
+  `fix/rocinante-readiness-remediation`, currently at published commit
+  `e9ae452` with local changes in progress.
+- Product: Rust shared-service workspace with current Tauri integration, an
+  in-progress GTK-free native desktop host, and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
   the default branch
-- Current CI-hardening branch `feat/bi-056-timeout-contract` was merged on PR run `28987645462`, which greened the health, parseability, scope, build-seed, lint, test, and aggregate merge gates.
+- The CI-hardening work in PR run `28987645462` is historical evidence; it does
+  not establish readiness for PR #108's current head.
 
 ## 2) Build, runtime, and release surface
 
@@ -97,7 +98,9 @@ Core runtime and support crates in `src-tauri/Cargo.toml`:
 - `rusqlite` with `bundled`
 - `tauri` with `wry`
 - `sled`
-- `duckdb` with `bundled`
+- `duckdb` `1.10506.0`, dynamically linked to official prebuilt DuckDB
+  `1.5.6`, the current stable release on 2026-10-04
+  ([upstream release](https://github.com/duckdb/duckdb/releases/tag/v1.5.6))
 - `base64`
 - `hmac`
 - `sha2`
@@ -108,14 +111,23 @@ optional `notify-rust` dependency requests success/failure desktop notifications
 optional `tray-icon` uses its GTK-free `ksni` feature on Linux to provide Show/Quit
 actions and hide-on-close behavior. Optional `fs2` provides the exclusive per-user
 lock for a bounded deep-link inbox; `packaging/linux/rocinante.desktop` declares
-the URI scheme. Package installation and Windows/macOS protocol registration are
-not yet integrated. Notification and tray delivery still need per-platform runtime
-validation.
+the URI scheme. Per-user installers package the verified `.so`, `.dylib`, or
+`.dll` and register the URL handlers. Local macOS cold/warm URL, tray,
+notification-request, and restart acceptance passes. Linux and Windows hosted
+runtime acceptance remains pending.
 - `tempfile` for tests
 - `tauri-build` for the build step
 - `cargo-llvm-cov` for informational backend Rust coverage reporting
 - `cargo-audit` for RustSec dependency audit checks
-- The esbuild Dependabot remediation slice is complete; five unrelated alerts and the GTK/GLib alert remain open on `main`. The working tree contains lockfile fixes for all five unrelated alerts; UI tests and build pass, and hosted closure validation remains pending merge.
+- pnpm `12.9.1` is pinned in `ui/package.json`, CI, and lockfile metadata; it is
+  the upstream latest stable release verified on 2026-10-04. The 2026-10-04
+  typecheck, 62 UI unit tests, and production build pass. The build reports a
+  506 KB chunk-size advisory.
+- DuckDB archive, library, and header SHA-256 values are pinned in
+  `scripts/duckdb-prebuilt-artifacts.json`. `scripts/provision_duckdb.py`
+  verifies and stages them before CI Cargo builds; source-build features are
+  rejected by a tested feature guard. SQLite ingestion and Sled migration are
+  later phases in the RustSec plan.
 
 ### UI / frontend packages
 
@@ -169,13 +181,21 @@ Packages declared in `ui/package.json`:
 - CodeQL is enabled for the Rust codebase
 - RustSec dependency audit is enforced through `cargo-audit`
 - Advisory exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`
-- All 17 GTK/GLib exception review dates are overdue as of 2026-09-30; none was renewed or accepted in this update.
+- All 17 advisory exception review dates are overdue as of 2026-10-04; none
+  was renewed or accepted in this update.
 - `scripts/dependency-floor-proof.sh` records the current GTK/GLib floor
 - `scripts/check-esbuild-lock.mjs` enforces UI lockfile floor `esbuild >= 0.28.1`
-- Local `ui/pnpm-lock.yaml` resolves `esbuild@0.28.1`; the Node lockfile check could not run because Node is unavailable in this environment.
+- Local `ui/pnpm-lock.yaml` resolves `esbuild@0.28.2`; the Node floor check
+  passes for `0.28.2 >= 0.28.1`.
 - `scripts/check-dependabot-esbuild-alert.sh` enforces advisory-specific Dependabot checks using explicit GHSA filtering.
-- The esbuild version remediation is merged in PR #59 and the lockfile is at `0.28.1`; a live query on 2026-09-30 confirmed its alert is closed. Main CI run 29415214522 reported a malformed Dependabot response and did not verify closure. Five other alerts and GTK/GLib alert #1 remain recorded as open release blockers.
-- Hosted Security run [36424294477](https://github.com/pratik-saptarshi/rocinante/actions/runs/36424294477) failed on 2026-09-28 with `rustls@0.23.40`, `rkyv@0.7.46`, and yanked `chacha20@0.10.1`. The working lockfile now uses `rustls@0.23.45`, `rust_decimal@1.43.0` (removing `rkyv@0.7.46`), `chacha20@0.10.2`, and `serde_with@3.21.0`; the documented root audit command passes. Hosted validation remains outstanding.
+- The esbuild alert closed in PR #59; its unrelated historic Dependabot and
+  hosted-audit snapshots above are superseded by the current lockfiles and
+  checks. Query live GitHub state before making any new alert-closure claim.
+- A refreshed unfiltered RustSec audit on 2026-10-04 reports zero vulnerability
+  findings and four warnings: `glib 0.18.5`, `proc-macro-error 1.0.4`,
+  `instant 0.1.13`, and `fxhash 0.2.1`. `settings.ignore` is empty; the audit
+  still fails `--deny warnings` as required. The database revision is
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`.
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 - `test` aggregate job in `.github/workflows/ci.yml` is the merge gate for protected-branch checks and depends on parse/scope/lint/test/coverage jobs.
@@ -212,7 +232,18 @@ Before any release reaches `origin/main`, the repository should satisfy:
 7. The final publish uses a protected-branch-safe squash or PR merge.
 8. `origin/main` remains the source of truth; local and remote must be reconciled through merge checkpoints.
 
-CI recovery evidence on `feat/bi-056-timeout-contract` is green and merged; BI-047 is also merged on PR run `28988956969`, and the publish checklist still waits on RT-RC-001 and the remaining release-gate evidence.
+Current local validation snapshot (2026-10-04): Rust formatting, the five
+DuckDB provisioner cases, the DuckDB feature graph and guard, the CI-scope
+contract, native-shell installer contracts, and the macOS installed lifecycle
+pass. The DuckDB engine-version query returns `1.5.6`. The extracted analysis,
+core, storage, and desktop-shell suites pass 75 tests; strict Clippy passes for
+those crates. Full root Tauri tests and full-workspace Clippy did not return a
+terminal result locally, so hosted CI must supply that evidence. Linux/Windows
+installed checks, hosted aggregate, and zero-exception audit remain pending.
+
+Historical CI recovery evidence on `feat/bi-056-timeout-contract` is green and
+merged; BI-047 is also merged on PR run `28988956969`. Neither historic run is
+evidence for PR #108's current head.
 
 This BOM is the release inventory; the checklist in
 `docs/publish-readiness-checklist.html` is the executable gate.

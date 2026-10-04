@@ -9,7 +9,9 @@
 ## Current execution slices
 
 - `RT-RC-001` GTK/glib dependency-floor governance:
-  - Release remains blocked until the exception registry exists and the current floor is retired or formally accepted.
+  - Release remains blocked until every applicable RustSec warning is removed,
+    every obsolete registry record has evidence-backed disposition, and both
+    ignore and exception registries are empty. No exception dates are renewed.
 - `RT-RC-002` GTK-free host migration planning:
   - Phase 0 through Phase 4 stay test-driven, with parity, core extraction, native shell, fallback containment, and dependency-floor removal each starting from a failing test or contract.
   - `F-049` / `T-051` includes shell close policy coverage: window close hides when a tray is available, while explicit Quit and tray-unavailable close exit. `native_shell_contract.rs` currently passes twelve tests. Darwin acceptance now covers close-to-tray, Show restoration, and Quit through the shared action handler used by tray callbacks; physical menu-click delivery and Linux/Windows tray behavior still need runtime validation.
@@ -17,6 +19,24 @@
   - `T-055` CI bootstrap + workflow parseability is green on PR run `28983234703`.
   - `T-056` CI lane scope and orchestration contract is green on PR run `28983234703`.
   - `T-057` Release-lane timeout and coverage-isolation contract is green on PR run `28983234703`.
+
+- PR #108 RustSec zero-exception remediation:
+  - The phased implementation and mandatory gates are tracked in
+    `docs/roadmap/rustsec-zero-exception-remediation-plan.md`.
+  - Phase 0 fixes the Cargo path classification and README scan signature;
+    the UI is pinned to pnpm `12.9.1`. The CI-scope path contract and UI
+    typecheck, 62 unit tests, and production build pass locally.
+  - Phase 1 disables DuckDB source-build features and stages the official
+    binding-matched native binaries by SHA-256. Provisioner and feature-graph
+    contract tests pass. The macOS bundle contract and a real `.app` package
+    pass loader inspection; the installed macOS lifecycle passes cold/warm
+    Launch Services URLs, tray actions, notification request, and saved-state
+    restart. Linux and Windows installed-runtime checks remain open for
+    hosted CI.
+  - Subsequent gates replace Sled ingestion with SQLite, preserve legacy Sled
+    stores through an audited migration utility, retire Tauri/GTK after native
+    parity, and remove all audit ignores only after the refreshed zero-warning
+    audit passes.
 
 ## Existing Test Coverage
 

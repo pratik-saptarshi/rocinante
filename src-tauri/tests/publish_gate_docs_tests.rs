@@ -22,20 +22,18 @@ fn publish_gate_documents_backend_rust_coverage_lane() {
 }
 
 #[test]
-fn publish_gate_documents_reflect_bi_047_merge_and_current_main_snapshot() {
+fn publish_gate_documents_reflect_bi_047_history_and_current_pr_snapshot() {
     let checklist = read_repo_file("../docs/publish-readiness-checklist.html");
     let bom = read_repo_file("../docs/bill-of-materials.html");
     let codemap = read_repo_file("../codemap.md");
 
-    assert!(
-        bom.contains("Current working slice is `main` after merging `feat/bi-047-decision-paths`.")
-    );
+    assert!(bom.contains("Current work is on PR #108's remediation branch"));
     assert!(bom.contains("BI-047"));
-    assert!(checklist.contains("BI-047 is complete"));
-    assert!(checklist.contains("Latest local branch snapshot"));
-    assert!(checklist.contains("local `main` is aligned with"));
+    assert!(checklist.contains("Current local snapshot (2026-10-04)"));
+    assert!(checklist.contains("fix/rocinante-readiness-remediation"));
     assert!(codemap.contains("BI-047 merged"));
-    assert!(codemap.contains("local `main` is aligned with fetched `origin/main` at `4c28d9f`"));
+    assert!(codemap.contains("Historical status: BI-047 merged on PR #85"));
+    assert!(codemap.contains("PR #108 branch `fix/rocinante-readiness-remediation`"));
 }
 
 #[test]

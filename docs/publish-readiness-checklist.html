@@ -40,11 +40,11 @@ Security policy exists | [x] | `SECURITY.md`
 Repository operating rules documented | [x] | `docs/project-rules.html`
 Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
-Latest local branch snapshot (2026-09-30): local `main` is aligned with
-`origin/main` at `4c28d9f`. The prior eight-commit local history is preserved at
-`backup/main-pre-reconcile-20260930`. The worktree still contains uncommitted
-migration and governance changes. Do not publish until those changes are reviewed
-and the release blockers below are resolved.
+Current local snapshot (2026-10-04): work is on PR #108 branch
+`fix/rocinante-readiness-remediation`, currently based at published commit
+`e9ae452`. Readiness and DuckDB packaging changes are uncommitted. Continue
+through the protected PR flow; do not use older green runs as evidence for the
+current branch head.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -80,6 +80,19 @@ no issues, and full-workspace tests are compiling the updated dependency tree.
 All 17 security-owner reviews remain overdue, and hosted checks have not run on
 this branch.
 
+Current local verification (2026-10-04): pnpm `12.9.1` frozen install,
+TypeScript check, all 62 Vitest tests, and production build pass. DuckDB
+`1.10506.0` / engine `1.5.6` is SHA-pinned as an official prebuilt library;
+the feature guard and provisioner contract pass, and the actual macOS app
+bundle resolves `@rpath/libduckdb.dylib` from `Contents/Frameworks`. The full
+macOS installed lifecycle also passes cold/warm Launch Services URLs, tray
+behavior, notification request, and restart. Linux and Windows app-runtime
+checks, current PR aggregate CI, and the no-exceptions RustSec gate are still
+required. The analysis/core/storage/desktop-shell workspace suite passes 75
+tests, and strict Clippy passes for those crates. Root Tauri tests and
+full-workspace Clippy did not return terminal local results; hosted CI must
+supply that evidence.
+
 Open Dependabot alerts are verified in CI on release lane | [ ] | `scripts/check-dependabot-esbuild-alert.sh` executes on `main` pushes in `.github/workflows/ci.yml`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
 Auth/RBAC boundary is covered by tests | [x] | `src-tauri/tests/auth_tests.rs`
@@ -105,13 +118,15 @@ Rust formatting passes | [x] | `cargo fmt --manifest-path src-tauri/Cargo.toml -
 Rust lint status policy | [ ] | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -A dead_code` (warnings are logged; dead-code remains non-blocking by policy)
 Rust tests pass | [ ] | `cargo test --manifest-path src-tauri/Cargo.toml`
 Full Cargo workspace tests pass | [ ] | `cargo test --locked --manifest-path src-tauri/Cargo.toml --workspace`; required `rust-workspace-tests` CI job
+DuckDB cannot build from source and has SHA-pinned native artifacts | [x] | `scripts/check-duckdb-features.sh`, its contract test, and `scripts/test_provision_duckdb.py` pass locally; see `scripts/duckdb-prebuilt-artifacts.json`
+Installed app loads the verified DuckDB library on all supported OSes | [ ] | Local macOS package inspected; Linux and Windows installed-runtime checks must pass in hosted acceptance jobs
 Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
 Merge gate (`test`) exists and depends on required CI lanes | [x] | `.github/workflows/ci.yml` `test` job and `src-tauri/tests/ci_gate_tests.rs` contract
-UI unit tests pass | [ ] | `pnpm exec vitest run` from `ui/`
-UI typecheck passes | [ ] | `pnpm exec tsc -b` from `ui/`
-UI production build passes | [ ] | `pnpm run build` from `ui/`
+UI unit tests pass | [x] | pnpm `12.9.1`: `pnpm exec vitest run` (62 tests, 2026-10-04)
+UI typecheck passes | [x] | pnpm `12.9.1`: `pnpm exec tsc -b` (2026-10-04)
+UI production build passes | [x] | pnpm `12.9.1`: `pnpm run build` (2026-10-04); Vite emits a 506 KB chunk-size advisory
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
 Coverage floor target (informational, enforce in next release) | [ ] | Branch: 85%; Unit: 85%; Integration: 85%; E2E: 85%; target to be promoted to hard fail on a stable CI release lane
 
@@ -138,8 +153,8 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 
 ## 7) Publish decision
 
-- Publish allowed only when all validation gates are green, the dependency exception registry is empty or formally accepted, and the GTK/glib floor has been retired or explicitly time-boxed by owner signoff.
-- RT-RC-001 is currently open, so publish is blocked until the advisory exception is retired or formally accepted.
+- Publish allowed only when all validation gates are green, the exception registry and audit ignore list are empty, and every supported Rust lockfile passes refreshed `cargo audit --deny warnings`.
+- RT-RC-001 is currently open, so publish is blocked until every current RustSec warning is removed and obsolete records are withdrawn with evidence.
 - RT-RC-002 is active, so the GTK-free host migration plan must stay synchronized with the bead tracker and test plan before release.
 - Release remains blocked until RT-RC-001 is closed.
 - Open Dependabot alerts should be closed or explicitly accepted before publish.
@@ -149,7 +164,9 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 
 ## 8) Branch governance and merge checkpoints
 
-- Local `main` is aligned with `origin/main` at `4c28d9f` (2026-09-30); the worktree is dirty. Publish actions continue via protected PR flow only. BI-055, BI-056, and BI-047 are merged, BI-047 is complete, and RT-RC-001 remains release-blocking with all 17 exception review dates overdue.
+- PR #108 is the active protected review path. Its aggregate and platform jobs
+  must finish green on the same final branch commit before publish readiness;
+  the 17-record governance gate currently fails closed.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`

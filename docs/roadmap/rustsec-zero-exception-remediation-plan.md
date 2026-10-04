@@ -1,6 +1,7 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status:** Approved plan; implementation and validation remain outstanding.
+**Status:** Phase 0 is validated locally; Phase 1 is in progress pending
+cross-platform hosted artifact and runtime checks.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -13,14 +14,198 @@ unsoundness, or unmaintained-package findings with `--deny warnings`.
 
 DuckDB remains the embedded analytics engine through verified, official,
 precompiled shared libraries. The project must never compile DuckDB from source.
+The official DuckDB release page and install selector report `1.5.6` as the
+current stable version on 2026-10-04; pin the matching Rust binding and artifact
+hashes together.
+
+## Phased execution and validation gates
+
+Execute these phases in order on PR #108's existing branch. A phase closes
+only when its implementation is committed and every validation listed for
+that phase has terminal evidence. Keep the security gate fail-closed throughout
+the work; do not renew or invent advisory acceptance.
+
+### Phase 0 — Reproduce the baseline and clear current review blockers
+
+Record the current supported lockfiles, resolved dependency paths, RustSec
+database revision, unfiltered audit output, PR check state, and unresolved
+review threads. Address the three live PR #108 review threads:
+
+- [Governance must not make every PR fail](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4172600314): keep the required gate and clear the obsolete exception entries only when withdrawal or package-absence evidence is recorded and the remaining package paths are actually removed.
+- [Cargo manifests must run the Rust lanes](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4176536547): classify `src-tauri/**` before generic manifest/metadata patterns and add a contract check proving manifest and lockfile changes select Rust validation.
+- [The public scan example must match the authenticated API](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4176644619): correct the README example or preserve a compatible wrapper, and verify the documented call compiles.
+- The UI pin was `pnpm@12.9.0`; the current npm stable registry reports `12.9.1`. Keep `ui/package.json`, the CI action, lockfile metadata, README, bill of materials, and codemap synchronized to that version.
+
+**Validation:** inventory every Cargo lockfile; run `cargo tree` for the four
+live package paths; refresh and run cargo-audit from outside the repository's
+`.cargo/audit.toml` scope with no target/severity filters; confirm its JSON has
+an empty `settings.ignore`; record the exact report and database revision;
+inspect current PR checks and unresolved review threads. Run the new CI-scope
+contract, then run UI install/typecheck/unit/build gates under the updated pnpm
+pin. Compile the README/API example in the Rust integration suite after
+Phase 1 stages the verified DuckDB binary; never invoke Cargo against a
+bundled DuckDB source-build graph.
+
+**Exit gate:** baseline facts are reproducible; the three review threads are
+addressed or explicitly tracked; and changing any Rust manifest/lockfile makes
+the Rust build, lint, and workspace-test lanes run.
+
+**Local progress (2026-10-04):** the path-classification contract passes for
+Rust manifests, lockfiles, and workflow changes. The README admin example now
+uses the authenticated four-argument scan API and the complete documented API
+calls compile in `readme_admin_api_contract`. UI checks pass under pnpm
+`12.9.1` (typecheck, 62 unit tests, build; Vite reports a 506 KB chunk-size
+advisory). A refreshed, unfiltered RustSec audit reports zero vulnerability
+findings, four warnings, and an empty ignore list. The governance gate remains
+fail-closed on the 17 overdue entries; no owner acceptance or date extension
+was invented.
+
+### Phase 1 — Provision DuckDB only from verified prebuilt artifacts
+
+Remove every source-build feature, pin the Rust binding and native engine
+pair, and add checksum-verified provisioning for every supported platform.
+Build and package against the official shared library with no unverified
+system-library fallback. The current Cargo lock resolves the `duckdb` crate
+to `1.10506.0`, which maps to DuckDB engine `1.5.6`. Pin this pair explicitly.
+The official DuckDB `v1.5.6` release assets currently report these SHA-256
+digests; verify them against the downloaded archives before checking them in
+as the provisioning manifest:
+
+| Target | Official asset | SHA-256 |
+|---|---|---|
+| `x86_64-unknown-linux-gnu` | [`libduckdb-linux-amd64.zip`](https://github.com/duckdb/duckdb/releases/download/v1.5.6/libduckdb-linux-amd64.zip) | `b845005f5132a7d8180057c35e14a7626632258782f871a90861b19c1c03841b` |
+| `x86_64-apple-darwin`, `aarch64-apple-darwin` | [`libduckdb-osx-universal.zip`](https://github.com/duckdb/duckdb/releases/download/v1.5.6/libduckdb-osx-universal.zip) | `e0bc007d9b0094c0970ac1847a8601d10aad07cbd2910ce586ec810f77b638d6` |
+| `x86_64-pc-windows-msvc` | [`libduckdb-windows-amd64.zip`](https://github.com/duckdb/duckdb/releases/download/v1.5.6/libduckdb-windows-amd64.zip) | `44cf59583f9951d2cb09b1bf115a63ecb2d8901e363903029d86c7d8683fe96a` |
+
+**Validation:** resolve the all-target Cargo feature graph and prove there is
+no `bundled`, `bundled-cmake`, or transitive DuckDB source-build feature; test
+the provisioner for missing, corrupt, wrong-version, and valid artifacts; in a
+clean cache capture compiler invocations and prove no DuckDB C/C++ translation
+unit is compiled; query the linked engine version; build and run storage tests
+on Linux, macOS, and Windows; launch installed apps with developer library-path
+variables removed.
+
+**Exit gate:** all supported target artifacts have official URLs and checked-in
+SHA-256 values, all builds use only those verified artifacts, and installed
+apps load the packaged library on each OS.
+
+**Local progress (2026-10-04):** the official macOS archive and extracted
+library hashes validate; the five provisioner tests, DuckDB source-build
+feature contract, resolved feature-graph check, and engine `SELECT version()`
+test pass. The analysis/core/storage/desktop-shell workspace suite passes all
+75 tests, including a macOS-portable SQLite migration-path check. Strict
+Clippy passes for the extracted workspace crates. Full root Tauri Clippy and
+tests did not return a terminal result on this Mac; the root test build stopped
+producing target artifacts for 16 minutes before interruption, so these gates
+remain pending hosted CI. Shell installer contracts pass on this host. A
+real macOS app bundle loads DuckDB from `Contents/Frameworks`, and the full
+local lifecycle passes cold/warm Launch Services delivery, tray actions,
+notification request, and saved-state restart. Linux and Windows package/runtime
+evidence remains pending in their hosted jobs.
+
+### Phase 2 — Replace Sled ingestion with SQLite without changing contracts
+
+Move ingestion into the shared storage crate on SQLite while retaining the
+public commands, payloads, authorization, sanitization, retention, scoring,
+baseline behavior, and DuckDB analytical queries. Use transactional writes,
+ordered prefix scans, deletes, and restart-safe promotion receipts.
+
+**Validation:** run the existing storage and command-integration suites plus
+new SQLite parity cases for binary keys/values, prefixes, ordering, deletes,
+retention, concurrent writers, crash/restart, duplicate promotion, and the
+DuckDB-commit/SQLite-acknowledgement interruption window. Compare public
+command names and serialized request/response fixtures before and after.
+
+**Exit gate:** all existing data-path contracts pass against SQLite, replay
+cannot lose or duplicate events, and Sled is absent from the application graph.
+
+### Phase 3 — Preserve legacy Sled data with an isolated audited reader
+
+Add the one-time migration utility, retaining legacy stores read-only and
+preserving existing DuckDB history. Keep the Sled package's true identity and
+provenance in the audited workspace, but patch its obsolete hashers and lock
+implementation so the migration graph contains neither `fxhash` nor
+`instant`; never suppress the affected advisories or rename the package.
+
+**Validation:** compare sorted, length-delimited hashes of every tree/key/value
+record; check SQLite integrity; test binary keys, multiple and empty trees,
+retry, interruption, corruption, conflicting target data, backup preservation,
+and rollback/recovery. Show the migration utility alone depends on Sled and its
+resolved graph is clean under fresh `cargo audit --deny warnings`.
+
+**Exit gate:** the source store remains intact, the migration is repeatable and
+recoverable, migrated records and DuckDB history are preserved, and the
+audited migration graph has no RustSec findings.
+
+### Phase 4 — Finish native-shell parity and retire Tauri/GTK
+
+Use the native shell as the supported desktop host after all required behavior
+is covered. Repository-folder selection satisfies the existing chooser
+requirement. Move integrations to shared services and remove Tauri, Wry,
+GTK/GLib and their macros from every supported target, feature, test, and
+packaging path.
+
+**Validation:** run the existing cold/warm URL, restart, notifications,
+window/tray and registration checks on Linux, macOS, and Windows; validate
+stable per-user app-data paths from shortcut, URL handler, and terminal launch;
+check visible interactive behavior where CI cannot observe it; inspect all
+target/feature dependency trees and fail if GTK/GLib/Tauri/Wry remain.
+
+**Exit gate:** native-host parity has direct test evidence on all three OSes;
+the application and migration graphs contain no affected GTK packages; public
+command and payload contracts remain stable.
+
+### Phase 5 — Remove obsolete governance records and enforce zero exceptions
+
+After Phases 2–4 close, write evidence-backed dispositions for all 17 original
+registry records. Remove withdrawn/absent advisories based on refreshed
+RustSec metadata and every supported lockfile; remove active records only
+after their package paths are gone. Then remove all audit ignores and make the
+checker enforce an empty exception registry.
+
+**Validation:** run the governance checker and its contract tests against
+withdrawn, absent, newly introduced, malformed, stale, empty-registry, and
+ignore/registry-mismatch fixtures. Refresh RustSec data and audit every Cargo
+lockfile with `--deny warnings`; verify JSON shows an empty ignore list and no
+warnings/findings. Confirm the hosting security-audit job also uses no
+exceptions.
+
+**Exit gate:** all 17 dispositions cite evidence; both governance stores are
+empty; refreshed, unfiltered audits pass for all supported lockfiles; the
+fail-closed governance and cargo-audit CI jobs pass.
+
+### Phase 6 — Full release-readiness verification and documentation closeout
+
+Synchronize `codemap.md`, architecture and host-migration roadmaps, README,
+test plan, bill of materials, and publish checklist with actual code and
+terminal results. Include native DuckDB version/provenance/checksum/license,
+storage boundaries, migration status, advisory dispositions, and remaining
+platform evidence. Do not describe hosted or interactive checks as complete
+before they pass.
+
+**Validation:** run pinned-toolchain `cargo fmt --check`, full-workspace
+Clippy/tests, UI typecheck/unit tests/build with the current pinned pnpm,
+security/governance/dependency-floor/roadmap contracts, and installed lifecycle
+acceptance on all three OSes. Require terminal success for the aggregate PR
+gate and all required security/platform checks on the final branch commit.
+
+**Exit gate:** no stale docs or unsupported readiness claims remain; all
+required checks are green for the same final commit; the branch is synchronized
+with PR #108's remote head and is ready for protected review/merge.
 
 ## Verified starting point
 
-On 2026-10-04, an unfiltered audit of PR branch commit `7acd1a0` inspected 722
+On 2026-10-04, an unfiltered audit of PR branch commit `e9ae452` inspected 722
 locked packages using `cargo-audit 0.22.2` and RustSec database revision
 `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (database timestamp
-`2026-10-03T10:14:03+02:00`). It found zero vulnerability-class reports and
-four advisory warnings:
+`2026-10-03T10:14:03+02:00`). The refreshed report found zero vulnerability
+reports and the four warnings shown below. It exited 1 with `--deny warnings`,
+as required. The supported Rust workspace currently has one lockfile:
+`src-tauri/Cargo.lock`.
+
+The RustSec refresh was repeated on 2026-10-04 through `rtk proxy cargo audit`;
+upstream had no newer database commit, and the report still contains zero
+vulnerability reports, four warnings, and an empty `settings.ignore` list.
 
 | Advisory | Locked package | Dependency path | Required disposition |
 |---|---|---|---|
@@ -37,9 +222,11 @@ obsolete ignores and registry entries together after preserving evidence in
 the dated disposition record. Keep the four applicable findings active until
 their packages are eliminated. Do not renew dates or infer owner acceptance.
 
-The existing hosted audit passed with repository ignores enabled. That result
-does not establish the zero-exception goal. The unfiltered local audit is the
-baseline for remediation.
+The current PR #108 checks are not ready: its governance check fails on the
+17 overdue records, while CodeQL and the Rust quality aggregate were still
+running when inspected. The hosted rust-audit check passed with repository
+ignores enabled; it does not establish the zero-exception goal. The unfiltered
+local audit above is the baseline for remediation.
 
 ## Implementation decisions and work
 

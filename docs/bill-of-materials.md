@@ -1,22 +1,22 @@
 # Bill of Materials - Markdown Snapshot
 
-_Captured: 2026-10-03_
+_Captured: 2026-10-04_
 
 ## Repository and Source Control
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Current working slice is `main` after merging `feat/bi-047-decision-paths`.
+- Current work is on PR #108's remediation branch, `fix/rocinante-readiness-remediation`.
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Branch and Sync State
 
-- The remediation branch `fix/rocinante-readiness-remediation` is based on
-  `main` at `4c28d9f`. It preserves the existing BI-048 extraction and
-  governance edits as working changes; they are not committed or pushed.
-- Remaining open slices continue via PR checkpoints with explicit roadmap/checklist
-  evidence and conventional commits.
+- The branch currently includes published commit `e9ae452` and local readiness
+  changes. Its owner-approved delivery path is to continue updating PR #108 and
+  use its protected review/check flow; the working changes are not yet committed.
+- The complete phase sequence and exit evidence are in
+  `docs/roadmap/rustsec-zero-exception-remediation-plan.md`.
 - Lane-scope refinement now keeps docs-only and non-functional edits out of storage/coverage-heavy lanes while preserving core rust gate visibility.
 
 ## Runtime Surface
@@ -45,24 +45,50 @@ _Captured: 2026-10-03_
 - `RT-RC-001` — GTK/glib dependency-floor governance (active)
 - `RT-RC-002` — GTK-free host migration planning (active)
 
-## Validation Snapshot (Latest Local Run)
+## Validation Snapshot (2026-10-04)
 
-- `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` passes.
-- `cargo test --locked --manifest-path src-tauri/Cargo.toml --test ci_gate_tests` passes on the pinned `1.96.1` toolchain.
-- `scripts/dependency-floor-proof.sh` confirms GTK 0.18.2 and GLib 0.18.5 remain in the Tauri/Wry tree; the registry's 17 `review_by` dates (2026-08-06) are overdue.
-- Core-only contract suite has nine passing tests, including host-independent claim validation and an admin-authorized release-baseline repository contract. The no-default-features test targets compile, and the default analytics library check passes. The auth integration test executable build was cancelled after several minutes without progress.
-- The esbuild version remediation is merged in PR #59 and the lockfile is at `0.28.1`; a live query on 2026-09-30 confirmed its Dependabot alert is closed. Main CI run 29415214522 logged a malformed response and did not verify closure. Five other alerts and GTK/GLib alert #1 remain recorded as release blockers.
-- Hosted Security run [36424294477](https://github.com/pratik-saptarshi/rocinante/actions/runs/36424294477) failed on 2026-09-28 with vulnerable `rustls@0.23.40`, vulnerable `rkyv@0.7.46`, and yanked `chacha20@0.10.1`. The local lockfile now updates `rustls` to 0.23.45, `rust_decimal` to 1.43.0 (removing `rkyv@0.7.46`), `chacha20` to 0.10.2, and `serde_with` plus macros to 3.21.0. The documented root audit command passes; hosted validation remains outstanding. The live `serde_with` Dependabot alert is still open on main pending merge.
-- `publish-readiness-checklist.html` remains open because RT-RC-001 is still active and publish still requires a formal release branch / merge checkpoint, even though BI-047 is merged and the CI recovery and CI lane slices now pass their latest remote checks.
-- Duplicate feature mapping cleanup completed by removing legacy duplicate `F-027` row from `docs/feature-list.html` (test traceability consolidation pass complete).
-- Remote PR run `28987645462` is green for `ci-health`, `ci-workflow-parse`, `ci-scope`, `rust-build-seed`, `rust-quality-gates`, `rust-lint`, `rust-tests`, and the aggregate `test` gate.
+- The UI lockfile is frozen and installs with `pnpm@12.9.1`, the latest
+  upstream stable release verified on 2026-10-04. TypeScript build checking,
+  all 62 Vitest cases, and the production build pass. Vite reports one 506 KB
+  chunk-size advisory; it does not fail the build.
+- DuckDB is pinned to Rust binding `1.10506.0` / engine `1.5.6`, dynamically
+  linked from the platform-specific official archive. The archive, extracted
+  library, and headers are SHA-256 pinned in
+  `scripts/duckdb-prebuilt-artifacts.json`; build lanes verify and stage the
+  binary before Cargo. DuckDB source-build features are forbidden by a tested
+  feature-graph guard.
+- The provisioner contract tests (5), DuckDB feature-guard contract, CI-scope
+  contract, macOS installer contract, and Linux installer/deep-link contract
+  pass locally. An actual macOS shell build was packaged into an `.app`; `otool`
+  shows `@rpath/libduckdb.dylib` and only the app-relative
+  `@executable_path/../Frameworks` run path. The full installed macOS lifecycle
+  also passes cold/warm Launch Services URLs, tray behavior, notification
+  request, and saved-state restart. Linux and Windows runtime package checks
+  remain assigned to their hosted acceptance jobs.
+- The analysis/core/storage/desktop-shell workspace test suite passes all 75
+  tests, including the verified DuckDB engine-version query and SQLite
+  migration-path test. Strict Clippy passes for those extracted crates. Full
+  root Tauri tests and full-workspace Clippy did not return terminal results on
+  this Mac; the root test compile produced no new artifacts for 16 minutes
+  before interruption, so hosted CI must supply those results.
+- The current unfiltered Cargo audit has four warnings on the existing graph:
+  GLib through Tauri/Wry and `fxhash` / `instant` through Sled, plus the
+  unmaintained `proc-macro-error`. No advisory dates have been renewed; the
+  governance gate remains fail-closed until the phased removal work is done.
+- PR #108 and hosted aggregate CI must be rechecked after the current commit;
+  no hosted or cross-platform result is claimed complete here.
 
 ## Dependency Controls and Security Gate Stack
 
-- Rust toolchain: `1.96.1` in `rust-toolchain.toml`
+- Rust toolchain: `1.99.0` in CI (`rust-toolchain.toml` remains the local floor)
 - CI release floor: `src-tauri/Cargo.toml`, `.cargo/audit.toml`
 - UI floor check: `scripts/check-esbuild-lock.mjs`
 - Dependabot alert gate: `scripts/check-dependabot-esbuild-alert.sh` on `main` lane
+- DuckDB binding/engine: `duckdb` `1.10506.0` / DuckDB `1.5.6`, the official
+  current stable engine on 2026-10-04 ([release](https://github.com/duckdb/duckdb/releases/tag/v1.5.6)), MIT; official
+  native artifacts and archive/library/header SHA-256 values are pinned in
+  `scripts/duckdb-prebuilt-artifacts.json`. DuckDB must never be compiled from
+  source; installed apps package the matching `.so`, `.dylib`, or `.dll`.
 - Security checks in CI: TruffleHog, CodeQL, `cargo-audit`, dependency review
 
 ## Validation Entry Points (Publish Gating)
@@ -81,40 +107,25 @@ _Captured: 2026-10-03_
   - `rust-quality-gates` (fmt, clippy, CI gate contract)
   - `rust-tests` (lane matrix: `core`, `storage`)
   - `rust-workspace-tests` (full-workspace clippy and tests)
-  - `ui-quality` (pnpm `12.9.0`, typecheck, unit tests, production build)
+- `ui-quality` (pnpm `12.9.1`, typecheck, unit tests, production build)
   - `rust-coverage` (release-only coverage)
 
 ## Current Remediation State Notes
 
-- On 2026-10-03, `cargo update` refreshed 193 Rust lockfile packages to their
-  latest semver-compatible stable releases; this includes Tauri `2.12.1` and
-  `serde_with` `3.24.0`. Cargo audit refreshed RustSec and completed with no
-  findings. Full-workspace clippy completed with no issues after moving the
-  trailing analysis function ahead of its test module. Full-workspace tests
-  are compiling the updated desktop analyzer and native dependency stack.
-- On 2026-10-03, UI direct dependencies were updated to current stable releases:
-  MUI `9.4.0`, React `19.3.0`, Vite `8.3.2`, Vitest `5.0.3`, TypeScript
-  `7.0.2`, Playwright `1.63.0`, and esbuild `0.28.2`. `pnpm outdated` reports
-  no outdated direct dependencies, and the full pnpm audit reports no known
-  vulnerabilities. Typecheck and production build pass after the MUI v9
-  system-props codemod; the build reports a chunk-size advisory. Vitest has
-  stalled before reporting test results.
-- Rust formatting, the advisory-governance, roadmap-doc, Dependabot-checker,
-  and native-shell dependency-guard contracts pass. The live advisory checker
-  still fails closed for all 17 overdue reviews; no owner disposition is
-  recorded. UI unit tests have not returned results. Hosted checks have not
-  run for this branch.
-- CI now tests the full Cargo workspace on Rust changes and routes changes to
-  `.github/workflows/ci.yml` through the Rust checks. Cross-platform native URL
-  and restart acceptance remains dependent on the corresponding hosted jobs.
-- The UI manifest pins pnpm `12.9.0`, the latest stable release verified on
-  2026-10-03. Local validation of this version is pending.
-
-- The latest UI lockfile resolves `esbuild@0.28.2`; the version-floor checker still requires a fresh run.
-- At the 2026-09-30 snapshot, the UI suite and coverage passed 62 tests, the
-  build passed, and the lockfile used `esbuild@0.28.1`, Vitest `4.1.11`, and
-  PostCSS `8.5.23`. The 2026-10-03 update supersedes those dependency versions;
-  current audit and validation results are recorded above.
+- The current pnpm pin is `12.9.1`; the frozen install and UI typecheck, unit
+  suite, and production build pass locally. The direct dependency set was
+  already at its latest stable versions before the pnpm metadata refresh.
+- The PR workflow selects Rust lint and workspace tests for Cargo manifest,
+  lockfile, workflow, and Rust source changes. The CI-scope path contract passes.
+- DuckDB prebuilt provisioning and installed app packaging are partly validated
+  locally. Linux and Windows must pass their hosted build and installed-app
+  acceptance jobs; those results are still pending.
+- The advisory gate is intentionally blocked by 17 overdue registry
+  dispositions and four current audit warnings. No review dates or owner
+  acceptance statements have been fabricated. The phased zero-exception
+  remediation sequence is documented in the roadmap plan.
+- The dependency-floor and exception-registry phase is not complete. Do not
+  use historical green CI runs above as evidence for PR #108's current head.
 
 ## Release Artifacts
 

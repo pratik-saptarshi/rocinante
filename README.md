@@ -84,45 +84,96 @@ Use the `repo_analyzer_core` library directly in Rust tests or a private interna
 ```rust
 use repo_analyzer_core::admin;
 use repo_analyzer_core::auth::issue_test_token;
+use repo_analyzer_core::risk_contract::PrCandidate;
 use repo_analyzer_core::storage::{IngestionBackendConfig, IngestionBackendKind};
-use repo_analyzer_core::types::{AdminQuery, PrCandidate, ScoringWeights};
-
-let token = issue_test_token("auditor", &["admin"], 900);
-let backend = IngestionBackendConfig {
-    kind: IngestionBackendKind::BadgerSidecar,
-    strict_badger_required: true,
-    endpoint: Some("inproc://badger".to_string()),
+use repo_analyzer_core::types::{
+    AdminQuery, CommitIngestionEvent, ScoringWeights, TelemetryPoint,
 };
+use std::path::Path;
 
-// 1) run a baseline scan
-let repo_count = admin::run_scan("/path/to/repos", "release-2026.06", "telemetry.db")?;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Use a live signed admin JWT in an application; this helper is for examples/tests.
+    let token = issue_test_token("auditor", &["admin"], 900);
+    let backend = IngestionBackendConfig {
+        kind: IngestionBackendKind::BadgerSidecar,
+        strict_badger_required: true,
+        endpoint: Some("inproc://badger".to_owned()),
+    };
 
-// 2) ingest commit telemetry
-let event = /* CommitIngestionEvent */;
-admin::ingest_event(&token, "telemetry-kv", "analytics.duckdb", event, &backend)?;
+    // 1) Run an authenticated baseline scan.
+    let _scan_summary = admin::run_scan(
+        &token,
+        "/path/to/repos",
+        "release-2026.06",
+        Path::new("telemetry.db"),
+    )?;
 
-// 3) push raw telemetry into analytics model
-let promoted = admin::promote_lifecycle(&token, "telemetry-kv", "analytics.duckdb")?;
+    // 2) Ingest commit telemetry.
+    let event = CommitIngestionEvent {
+        commit_id: "commit-001".to_owned(),
+        repo_name: "repo-a".to_owned(),
+        release: "release-2026.06".to_owned(),
+        committer: "auditor".to_owned(),
+        telemetry: vec![TelemetryPoint {
+            plugin: "example".to_owned(),
+            metric_key: "complexity".to_owned(),
+            metric_value: 1.0,
+            details: "example metric".to_owned(),
+        }],
+    };
+    admin::ingest_event(&token, "telemetry-kv", "analytics.duckdb", event, &backend)?;
 
-// 4) query risk evidence by repo/release
-let aggregates = admin::query_aggregates(
-    &token,
-    "telemetry-kv",
-    "analytics.duckdb",
-    AdminQuery { name: Some("repo-a".into()), release: Some("release-2026.06".into()) },
-)?;
+    // 3) Promote raw telemetry into the analytics model.
+    let _promoted = admin::promote_lifecycle(&token, "telemetry-kv", "analytics.duckdb")?;
 
-// 5) rank contributors/PRs with auditable formulas
-let scores = admin::committer_scores(&token, "telemetry-kv", "analytics.duckdb", AdminQuery { name: None, release: Some("release-2026.06".into()) }, "scoring-weights.json")?;
-let ranked = admin::rank_prs(&token, "telemetry-kv", "analytics.duckdb", vec![PrCandidate { .. }], "scoring-weights.json")?;
+    // 4) Query risk evidence by repository and release.
+    let _aggregates = admin::query_aggregates(
+        &token,
+        "telemetry-kv",
+        "analytics.duckdb",
+        AdminQuery {
+            name: Some("repo-a".to_owned()),
+            release: Some("release-2026.06".to_owned()),
+        },
+    )?;
 
-// 6) update model controls (logged)
-admin::update_scoring_weights(
-    &token,
-    "scoring-weights.json",
-    "scoring-audit.jsonl",
-    ScoringWeights::default(),
-)?;
+    // 5) Rank contributors and pull requests with auditable formulas.
+    let _scores = admin::committer_scores(
+        &token,
+        "telemetry-kv",
+        "analytics.duckdb",
+        AdminQuery {
+            name: None,
+            release: Some("release-2026.06".to_owned()),
+        },
+        "scoring-weights.json",
+    )?;
+    let _ranked = admin::rank_prs(
+        &token,
+        "telemetry-kv",
+        "analytics.duckdb",
+        vec![PrCandidate {
+            pr_id: "pr-001".to_owned(),
+            repo_name: "repo-a".to_owned(),
+            author: "auditor".to_owned(),
+            release: "release-2026.06".to_owned(),
+            file_risk: 0.4,
+            author_velocity: 0.6,
+            approval_fidelity: 0.9,
+            ..PrCandidate::default()
+        }],
+        "scoring-weights.json",
+    )?;
+
+    // 6) Update model controls and write an audit record.
+    admin::update_scoring_weights(
+        &token,
+        "scoring-weights.json",
+        "scoring-audit.jsonl",
+        ScoringWeights::default(),
+    )?;
+    Ok(())
+}
 ```
 
 ### Auditor workflow (desktop UI)
@@ -139,7 +190,7 @@ admin::update_scoring_weights(
 ### 1) Prerequisites
 
 - Rust stable toolchain.
-- Node.js + `pnpm` (`ui/package.json` declares `pnpm@12.9.0`).
+- Node.js + `pnpm` (`ui/package.json` declares `pnpm@12.9.1`).
 - Optional: Linux desktop deps for Tauri packaging if running full app packaging workflows.
 
 ### 2) Build UI bundle
@@ -151,6 +202,15 @@ pnpm run build
 ```
 
 ### 3) Build and run backend/app shell
+
+Before any Cargo command that builds analytics or the desktop shell, stage the
+official prebuilt DuckDB library for the current target. The provisioner checks
+the pinned archive and native-library SHA-256 values; the Cargo feature guard
+rejects DuckDB source-build features.
+
+```bash
+python3 scripts/provision_duckdb.py
+```
 
 ```bash
 (cd src-tauri && cargo test --workspace --locked --manifest-path Cargo.toml) # test Tauri and extracted crates
@@ -208,12 +268,20 @@ sh src-tauri/crates/rocinante-desktop-shell/packaging/linux/install-user.sh \
 
 This installs the binary under `~/.local/bin`, registers the desktop entry and
 `rocinante://` handler in the user's XDG data directory, and refreshes the
-desktop/MIME databases when their tools are installed. The Windows installer
+desktop/MIME databases when their tools are installed. It places the verified
+`libduckdb.so` in `~/.local/lib/rocinante` and sets an executable-relative
+runtime path. The Windows installer
 copies the executable into `%LOCALAPPDATA%` and registers a current-user
-`rocinante://` command under `HKCU`; its PowerShell source contract is checked
+`rocinante://` command under `HKCU`; it places the matching `duckdb.dll` beside
+the executable. Its PowerShell source contract is checked
 on this host, and Windows registry dispatch still needs runtime validation.
-The macOS scheme is declared in the `.app` bundle and registered through
-Launch Services; native URI dispatch still needs runtime validation.
+The macOS installer embeds `libduckdb.dylib` in `Contents/Frameworks`, rewrites
+the app-relative loader path, and declares the scheme in the `.app` bundle
+before registering it through Launch Services. The installed macOS lifecycle
+acceptance passes cold/warm URL delivery, tray actions, notification request,
+and saved-state restart on the current host. Linux and Windows installed
+runtime checks remain with their hosted acceptance jobs. Release distribution
+must sign the completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.
 
@@ -234,7 +302,7 @@ pnpm exec playwright test
 
 The Rust workspace test command includes `rocinante-core`,
 `rocinante-analysis`, `rocinante-storage`, and `rocinante-desktop-shell` as
-well as the Tauri adapter. Use the `pnpm@12.9.0` version declared in
+well as the Tauri adapter. Use the `pnpm@12.9.1` version declared in
 `ui/package.json` for UI checks.
 
 ### 5) Governance artifacts

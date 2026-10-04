@@ -3,8 +3,8 @@
 ## Project Responsibility
 Rocinante is a cross-language planning and execution workspace for AI quality
 checking, dashboarding, and loop-engineering controls. The repository combines
-a Rust/Tauri backend, a React/Vite UI, and documentation-led backlog and
-roadmap artifacts.
+a shared Rust service workspace, a React/Vite UI, current Tauri integration,
+and an in-progress GTK-free native desktop host.
 
 ## System Entry Points
 - `src-tauri/src/main.rs`: Tauri command registration and application state wiring.
@@ -31,6 +31,9 @@ roadmap artifacts.
   Tauri host and repository scan service require a configured 32-byte secret.
 - `src-tauri/crates/rocinante-storage/src/lib.rs`: shared Sled/DuckDB persistence
   and admin-authorized release-baseline operations used by Tauri and the shell.
+  DuckDB is dynamically linked from the checksum-verified prebuilt library for
+  the current target; SQLite ingestion and legacy-store migration are gated in
+  `docs/roadmap/rustsec-zero-exception-remediation-plan.md`.
 - `src-tauri/crates/rocinante-desktop-shell/src/main.rs`: GTK-free native shell
   entry point using eframe/winit; navigation state is also persisted as JSON in
   the per-user app-data directory for cross-process restart restoration, with
@@ -43,12 +46,14 @@ roadmap artifacts.
   checking, full-workspace crate tests, current advisory exception review-date enforcement,
   Linux URI/notification acceptance plus Windows and macOS URL/restart acceptance jobs,
   required `rust-workspace-tests` and `ui-quality` gates, and informational
-  backend Rust coverage via `rust-coverage`. The `ci-workflow-parse` job also
+  backend Rust coverage via `rust-coverage`. Rust build lanes stage DuckDB
+  releases before Cargo, and installed-app acceptance covers app-relative
+  `.so`, bundled `.dylib`, and colocated `.dll` loading. The `ci-workflow-parse` job also
   runs the standard-library-only roadmap and publish-doc contract tests before
   the Tauri test lanes.
 - `ui/src/App.tsx`: dashboard shell and admin bridge consumer.
 - `ui/src/admin-bridge-panel.tsx`: extracted command-bridge control block.
-- `ui/package.json`: `pnpm@12.9.0` UI manifest and test/build entry points.
+- `ui/package.json`: `pnpm@12.9.1` UI manifest and test/build entry points.
 - `docs/feature-list.html`: feature backlog with acceptance criteria and bead linkage.
 - `docs/product-roadmap.html`: stage ordering and release-gate sequencing.
 - `docs/roadmap/bead-issue-tracker.html`: execution ledger for active bead issues.
@@ -87,20 +92,26 @@ roadmap artifacts.
   window, macOS bundle, Linux launcher, and Windows shortcut/URI-handler icon assets.
 - `scripts/check-esbuild-lock.mjs`: enforces local lockfile dependency-floor for
   `esbuild >= 0.28.1` in CI and local verification.
+- `scripts/provision_duckdb.py` and `scripts/duckdb-prebuilt-artifacts.json`:
+  stage official DuckDB shared-library releases after SHA-256 verification;
+  source-build features are rejected by `scripts/check-duckdb-features.sh`.
+- `scripts/detect-ci-scope.sh`: routes Rust manifest, lockfile, and workflow
+  changes to the Rust workspace lanes; `scripts/test-ci-scope-contract.sh`
+  covers those path classifications.
 
 ## Directory Map
 
 | Directory | Responsibility Summary | Notes |
 |---|---|---|
 | `src-tauri/src/` | Backend service layer, command facade, storage boundaries, auth, scoring, telemetry, risk contracts, budget/fix-proposal/triage/verifier/convergence contracts, app support, baseline adapters, and the bulk-import telemetry surface tracked by the F-033 planning slice. | Tauri commands should stay thin and delegate into service/storage layers. `app_support.rs` owns the shared app builder and state. Storage opens keep the process-level ownership guard and tolerate transient sled close/reopen lock lag. |
-| `src-tauri/crates/rocinante-storage/` | Host-neutral admin/scoring services, Sled/DuckDB storage, and release-baseline authorization adapter. | Tauri re-exports its public storage API; both hosts use shared path defaults, writer locking, and snapshot refresh behavior. |
+| `src-tauri/crates/rocinante-storage/` | Host-neutral admin/scoring services, current Sled/DuckDB storage, and release-baseline authorization adapter. | Tauri re-exports its public storage API; both hosts use shared path defaults, writer locking, and snapshot refresh behavior. DuckDB links only through the staged official prebuilt shared library. SQLite ingestion and legacy Sled retirement remain planned gates. |
 | `src-tauri/crates/rocinante-desktop-shell/` | GTK-free native window, persisted navigation, keyboard routes, repository-folder selection, asynchronous scans, exact saved-metric reload, scan completion notifications, release-baseline query/reseed controls, a repository-metric dashboard view model, and ports of companion insight scoring, quality snapshot and audience-focus views, plus static sample accessibility, SEO, Drupal security, and performance panels, built with eframe/winit and serde_json. | The Dashboard summarizes repository, plugin, and metric data without inferring synthetic risk claims; sample insight and audit panel data are labeled; custom JSON can be applied/reset, and SEO scope/performance data selectors are present. React companion parity is implemented for all admin bridge commands; Alerts and Settings are placeholders and no fallback deferral is approved. The tray supports Show/Quit and hide-on-window-close. Linux URI metadata and per-user installation are implemented, with cold/warm/restart and notification-display acceptance wired into Ubuntu CI. macOS has a URL-scheme bundle and retained `NSAppleEventManager` `kAEGetURL` handler; its local acceptance installs a temporary bundle through the per-user installer and routes cold/warm URI-only Launch Services opens. Windows has current-user protocol registration and an icon-bearing Start Menu shortcut; its installer and cold/warm/restart URL acceptance are wired to a `windows-latest` CI job. A bounded warm-instance inbox and second-process forwarding test are implemented. macOS cold/warm URI, first-frame visible startup, minimized-window visible restoration, close-to-tray, Show restoration, Quit, native notification request, and saved-state restart acceptance passed locally on Darwin on 2026-09-30; macOS activation is requested through `NSApplication` and `NSRunningApplication`; the acceptance helper now measures frontmost state and strict mode reported visible=true/frontmost=false in this automation session, so foreground activation remains unproven. Hosted lifecycle validation remains open. Shared window, bundle, launcher, and protocol icons are packaged and contract-tested; visual launch checks remain open. The installed Darwin acceptance exercises Show/Quit through the same action handler used by tray callbacks; physical menu-click delivery and Linux/Windows tray runtime remain unverified, along with Linux notification hosted results, visible macOS/Windows notification delivery, hosted URL results, and the unresolved file-import decision. The native macOS notification request returned success locally, but visibility was not observed. Login autostart is out of scope unless separately approved. Tauri remains the production entry point. |
 | `src-tauri/crates/rocinante-analysis/` | Host-independent auth, repository discovery/analysis, telemetry persistence, and shared database-path configuration. | Owns the shared source modules; the Tauri crate re-exports these modules for its existing command layer. |
 | `src-tauri/tests/` | Backend regression coverage for PR risk contracts, CI-gate comment contracts, publish-gate documentation contracts, incident-feedback contracts, storage behavior, admin-only flows, and registered-handler integration. | Tests should protect command wiring, release-gate docs, and storage invariants. |
 | `ui/src/` | Frontend dashboard, bridge adapters, explainability panels, and quality-pulse rendering. | UI state should flow through the bridge adapters rather than direct runtime assumptions. |
 | `ui/e2e/` | Browser-level smoke coverage for the Tauri bridge and user-visible flows. | Keeps the Playwright surface separate from unit tests. |
 | `docs/` | Feature backlog, roadmap, test plan, publish-readiness checklist, and bead tracker artifacts. | This is the source of truth for phase sequencing and backlog accounting. |
-| `scripts/` | Repo automation and local operational helpers. | Prefer existing scripts over ad hoc shell snippets; include dependency-floor checks for security posture. |
+| `scripts/` | Repo automation, local operational helpers, and verified native-library provisioning. | Prefer existing scripts over ad hoc shell snippets; keep CI scope, dependency-floor, advisory, and DuckDB source-build guards contract-tested. |
 
 ## Data and Control Flow
 
@@ -142,48 +153,42 @@ roadmap artifacts.
     owns the shared auth, analysis, Git, and telemetry modules re-exported by
     the Tauri adapter.
 16. The GTK-free shell uses eframe/winit and calls `rocinante-analysis` for
-    admin-authorized scans and exact saved-metric queries, and `rocinante-storage`
-    for Sled/DuckDB administration and release-baseline operations; both hosts resolve the
-    same app-data telemetry DB. It parses cold-launch
-    `rocinante://repository/open?path=...` arguments and uses an exclusive-lock
-    per-user inbox to forward validated links and activation requests from second
-    launches. Linux and macOS per-user installers register the URI handler, and a
-    Windows PowerShell installer writes the current-user protocol key. The native
-    Dashboard summarizes real saved metrics. Linux URI and notification display
-    acceptance runs under Xvfb and D-Bus; Windows and macOS URI/restart acceptance
-    is also wired into CI. Hosted runtime results, visible macOS/Windows notification
-    delivery, remaining dashboard parity, physical tray-menu click delivery, Linux/Windows tray runtime validation, visual icon launch validation, and full lifecycle parity remain in BI-049; Darwin acceptance now covers close-to-tray, Show restoration, and Quit through the shared action handler. `AXIsProcessTrusted` returned false for the current automation process, so physical menu clicks require a separate Accessibility-authorized interactive run. File-selection scope is unresolved; F-027/F-033 backend telemetry import does not define a desktop chooser flow.
+    admin-authorized scans and saved-metric queries, and `rocinante-storage`
+    for current Sled/DuckDB administration and release-baseline operations.
+    DuckDB is dynamically linked from a checksum-verified official binary;
+    installed packages use an app-relative Linux path, a macOS Frameworks
+    path, or a Windows-adjacent DLL. The shell parses cold-launch
+    `rocinante://repository/open?path=...` arguments and forwards links and
+    activation requests through a per-user inbox. The macOS installed
+    acceptance passes cold/warm Launch Services URLs, tray actions, notification
+    request, and saved-state restart locally. Linux acceptance also exercises
+    visible notification delivery under Xvfb/D-Bus; its hosted result, Windows
+    runtime acceptance, and cross-platform DLL/so loading remain pending on the
+    current branch. SQLite ingestion, legacy Sled migration, and Tauri/GTK
+    retirement are phase-gated in the RustSec remediation plan.
 
 ## Governance and Execution Snapshot
 
-- Active bead slices: `BI-046` and `BI-049`,
-  and governance doc updates in `docs/feature-list.html`, `docs/bill-of-materials.html`,
-  and `docs/publish-readiness-checklist.html`.
-- CI recovery slices `BI-053`, `BI-054`, `BI-055`, `BI-056`, and `BI-057` are complete; the latest
-  green remote run is `28987645462`.
-- Active security slice: `RT-RC-001` (GTK/GLib dependency floor) and five
-  unrelated Dependabot alerts open on `main` and recorded in the release checklist. A fresh
-  live query on 2026-09-30 confirmed the tracked esbuild alert is closed.
-- The latest hosted Rust audit failed on 2026-09-28 with vulnerable `rustls`
-  and `rkyv` versions plus yanked `chacha20`; the working lockfile remediation
-  also resolves the open `serde_with` alert to 3.21.0 and passes the documented
-  root `cargo audit --file src-tauri/Cargo.lock --deny warnings`; hosted validation
-  is pending, and the live alert remains open on `main` until the lockfile change merges.
-- Current local signal: CI includes a top-level `test` aggregate gate for branch
-  protection, and the local UI lockfile resolves `esbuild` at `0.28.1`; the Node
-  floor script passes under a temporary Node 22 runtime. The working UI lockfile also resolves
-  Vitest, `@vitest/mocker`, and `@vitest/coverage-v8` to 4.1.11 and PostCSS to 8.5.23; all five unrelated alert fixes
-  are pending merge. UI tests and coverage pass (62 tests), the production build passes, and pnpm audit reports no known vulnerabilities. The merged CI lane contract materializes delta
-  lanes from scope outputs with PR run `28987645462`.
-- Sync signal: local `main` is aligned with fetched `origin/main` at `4c28d9f`
-  (2026-09-30); the previous eight-commit local history is preserved at
-  `backup/main-pre-reconcile-20260930`. The TruffleHog pin matches upstream at
-  `v3.95.9`. BI-047 merged on PR #85. BI-048 core
-  extraction is complete; BI-049 has authenticated scans, saved-metric reload,
-  GTK-free tray Show/Quit, and close-to-hide policy, with broader parity still open; BI-046 review dates remain overdue.
-  PR #59 patched esbuild; a fresh live query confirmed its alert is closed, while the five unrelated alerts remain open on `main` pending working-tree fixes merging.
-- Publish status: blocked by open security advisory exceptions and unresolved host-
-  migration + release-gating parity tasks.
+- Active work is on PR #108 branch `fix/rocinante-readiness-remediation`,
+  published head `e9ae452` with local changes in progress. Use the dated
+  RustSec zero-exception plan for phase order and current exit evidence.
+- A successful 2026-10-04 RustSec database refresh retained revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03). The unfiltered
+  audit finds no vulnerability-class reports and four warnings: GLib,
+  proc-macro-error, instant, and fxhash. Audit ignores are empty. The
+  fail-closed governance check still sees 17 overdue registry entries.
+- The UI uses pinned pnpm `12.9.1`, the upstream latest stable on 2026-10-04.
+  Frozen installation, typecheck, 62 unit tests, and production build pass;
+  esbuild is `0.28.2`. The build reports a 506 KB chunk-size advisory.
+- DuckDB is pinned to binding `1.10506.0` / engine `1.5.6`; the official
+  release artifact hashes are in `scripts/duckdb-prebuilt-artifacts.json`.
+  Provisioner and source-build feature contracts pass. macOS package loading
+  and installed lifecycle pass locally. Linux and Windows runtime results and
+  the aggregate PR checks remain pending on the current changes.
+- Historical status: BI-047 merged on PR #85; the CI recovery and lane slices
+  passed PR run `28987645462`. These older results do not establish readiness
+  for PR #108's current head. Publish remains blocked until the RustSec plan,
+  full-workspace gates, and cross-platform required checks close.
 
 ## Design Patterns
 
