@@ -40,13 +40,15 @@ Security policy exists | [x] | `SECURITY.md`
 Repository operating rules documented | [x] | `docs/project-rules.html`
 Main-branch sync precondition for publish | [x] | `git rev-list --left-right --count origin/main...main`
 
-Current local snapshot (2026-10-04): work is on PR #108 branch
-`fix/rocinante-readiness-remediation`, published at `d2f77a1` before the
-current local SQLite work, based on `main` at `cdd29b9`. The README review
-thread is resolved. The P1 Tauri installer runtime thread remains open pending
-the three-platform package matrix. The current storage work is not yet pushed
-or covered by hosted checks. GitHub could not be reached for a live refresh of
-review threads or CI results; record terminal checks on the final pushed head.
+Current local snapshot (2026-10-04): PR #108 remains open and mergeable on
+`fix/rocinante-readiness-remediation`, based on `main` at `cdd29b9` (69 commits
+ahead, zero behind). The latest pushed head is `0fe0e04`; CI run `37215719759`
+completed with all code, UI, Rust, native lifecycle, platform package, and
+workflow-contract lanes passing. Its aggregate failed because all 17 advisory
+review dates are overdue. Security run `37215719790` passed secret scanning,
+configured Rust audit, and CodeQL. Dependency Review
+`37215719745` passed. All 42 inline review threads are resolved, including the
+release-aware legacy telemetry fix.
 
 ## 2) Security, privacy, and secret hygiene
 
@@ -79,22 +81,22 @@ the RustSec database. The pnpm tree has no outdated direct dependencies and
 no known advisories. UI typecheck and production build pass after upgrading to
 MUI 9; unit tests had not returned results at that time. Those historical
 checks do not establish readiness for the current PR head.
-All 17 security-owner reviews remain overdue, and hosted checks have not run on
-this branch.
+All 17 security-owner reviews remain overdue. Hosted audit and dependency
+checks pass under the existing ignore configuration; the fail-closed
+governance job blocks the aggregate until owner-reviewed dispositions remove
+or justify each applicable exception. No dates or acceptance were inferred.
 
 Current local verification (2026-10-04): pnpm `12.9.1` frozen install,
-TypeScript check, all 62 Vitest tests, and production build pass. The 84-test
-non-root workspace run, eight analysis identity and scan tests, storage
-app-data test, and macOS installer-signing contract pass. Strict Clippy passes
-for analysis, storage, and desktop-shell; the root Tauri cargo check compiles
-all test targets with three existing dead-code warnings when analytics is
-disabled. Formatting, actionlint, roadmap/CI-scope contracts, seven Tauri
-bundle contracts, nine DuckDB provisioner tests, and the DuckDB source-build
-guard pass. DuckDB `1.10506.0` / engine `1.5.6` remains an official SHA-pinned
-prebuilt; it is staged before Cargo validates Tauri resources. Full root Tauri
-tests and hosted validation on the updated head remain open. The fail-closed
-governance check still reports 17 overdue entries; no owner dispositions or
-date renewals are recorded.
+TypeScript check, all 62 Vitest tests, and production build passed on hosted run
+`37212976724`; the same UI job passed on current head `0fe0e04` in run
+`37215719759`. The current head's full workspace tests, core/storage test
+shards, Rust format/Clippy, quality contracts, platform lifecycle checks, and
+three-platform Tauri package matrix all passed. For the current follow-up, all 9
+`rocinante-analysis` tests pass, analysis Clippy reports no issues,
+formatting and actionlint pass, and the Tauri bundle contract passes 8/8. DuckDB
+`1.10506.0` / engine `1.5.6` remains an official SHA-pinned prebuilt; no build
+from source is enabled. The fail-closed governance check still reports 17
+overdue entries; no owner dispositions or date renewals are recorded.
 
 Open Dependabot alerts are verified in CI on release lane | [ ] | `scripts/check-dependabot-esbuild-alert.sh` executes on `main` pushes in `.github/workflows/ci.yml`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
@@ -118,18 +120,18 @@ Roadmap/test traceability is present | [x] | `docs/roadmap/test-plan.html`, `doc
 Criterion | Status | Evidence
 ---|---|---
 Rust formatting passes | [x] | Current local `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` (2026-10-04)
-Rust lint status policy | [ ] | Strict Clippy passes locally for analysis, storage, and desktop-shell; full root workspace lint requires the Tauri resource fix CI rerun
-Rust tests pass | [x] | `cargo test --workspace --exclude rocinante-repo-analyzer`: 84 tests; analysis identity and scan tests: 8; storage path test and macOS installer-signing contract pass
-Full Cargo workspace tests pass | [ ] | The full Tauri adapter test command did not return locally; current-head hosted validation is required
+Rust lint status policy | [x] | Hosted current-head run `37215719759`: formatting, Clippy, and Rust quality contracts passed.
+Rust tests pass | [x] | Hosted current-head run `37215719759`: full workspace, core, and storage test lanes passed.
+Full Cargo workspace tests pass | [x] | Hosted run `37215719759` passed the full workspace test lane on `0fe0e04`.
 DuckDB cannot build from source and has SHA-pinned native artifacts | [x] | `scripts/check-duckdb-features.sh`, its contract test, and `scripts/test_provision_duckdb.py` pass locally; see `scripts/duckdb-prebuilt-artifacts.json`
-Installed app loads the verified DuckDB library on all supported OSes | [ ] | Hosted Linux, macOS, and Windows Tauri package matrix must pass on the updated head; run `37204604888` predates the tracked resource marker and pre-build staging fix
+Installed app loads the verified DuckDB library on all supported OSes | [x] | Linux, macOS, and Windows Tauri package checks passed on current head `0fe0e04` in run `37215719759`, including the macOS cache-RPATH rejection.
 Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
 Merge gate (`test`) exists and depends on required CI lanes | [x] | `.github/workflows/ci.yml` `test` job now requires the Tauri bundle matrix; local CI-scope contract passes
-UI unit tests pass | [x] | pnpm `12.9.1`: `pnpm exec vitest run` (62 tests, 2026-10-04)
-UI typecheck passes | [x] | pnpm `12.9.1`: `pnpm exec tsc -b` (2026-10-04)
-UI production build passes | [x] | pnpm `12.9.1`: `pnpm run build` (2026-10-04); Vite emits a 506 KB chunk-size advisory
+UI unit tests pass | [x] | Hosted UI lane on current head `0fe0e04` passed with pnpm `12.9.1` (62 tests).
+UI typecheck passes | [x] | Hosted UI lane on current head `0fe0e04` passed with pnpm `12.9.1`.
+UI production build passes | [x] | Hosted UI lane on current head `0fe0e04` passed; Vite emits a 506 KB chunk-size advisory.
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
 Coverage floor target (informational, enforce in next release) | [ ] | Branch: 85%; Unit: 85%; Integration: 85%; E2E: 85%; target to be promoted to hard fail on a stable CI release lane
 
@@ -149,9 +151,9 @@ Sync local `main` to merged remote tip | [x] | `git merge --no-ff origin/main`
 
 Criterion | Status | Evidence
 ---|---|---
-CI workflow is monitored until terminal state | [ ] | Latest observed CI run `37201188314` was still running on published head `d2f77a1`; this local worktree has not been pushed, and GitHub is currently unreachable
-Security workflow is monitored until terminal state | [ ] | Latest known run `37198628844` passed under exception configuration; current-head result is unverified
-Dependency review is monitored until terminal state | [ ] | Latest known run `37198628881` passed; current-head result is unverified
+CI workflow is monitored until terminal state | [x] | Current-head run `37215719759` completed; all code lanes passed, and aggregate CI failed on the 17 overdue exception records.
+Security workflow is monitored until terminal state | [x] | Current-head run `37215719790`: secret scan, Rust audit, and CodeQL passed.
+Dependency review is monitored until terminal state | [x] | Current-head run `37215719745` passed.
 Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `rust-coverage-lcov` from CI job `rust-coverage`
 
 ## 7) Publish decision

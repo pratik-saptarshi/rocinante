@@ -165,11 +165,13 @@
 ## Existing Test Coverage Additions
 
 - PR #108 review regressions:
-  - The analysis scan tests check path-stable repository IDs across workspace and direct-folder selection, distinguish duplicate basenames, and return legacy basename and tree-relative telemetry aliases.
+  - The analysis scan tests check path-stable repository IDs across workspace and direct-folder selection, distinguish duplicate basenames, and use legacy basename/tree-relative telemetry aliases only when the requested stable identity has no rows for that release. A row is never returned under both old and new identities.
   - The storage test checks shared per-user defaults for ingestion, analytics, and scoring paths while preserving explicit environment overrides.
   - The macOS installer test records nested signing order and verifies the final app bundle after Mach-O edits.
   - The CI scope contract selects Rust checks for toolchain and Cargo config paths and requires successful Linux, macOS, and Windows Tauri bundle jobs at the aggregate gate.
-  - The Tauri bundle contract checks the tracked resource marker and checksum-verified pre-build staging hook.
+  - The Tauri bundle contract checks the tracked resource marker, checksum-verified pre-build staging hook, and removal of DuckDB Cargo-cache RPATH entries from the macOS Tauri executable. Hosted macOS package validation rejects any remaining `duckdb-download` RPATH.
+  - The Tauri bundle contract maps `universal-apple-darwin` to the pinned universal macOS artifact while retaining Tauri's universal output directory.
+  - The advisory governance contract rejects both unregistered Cargo audit ignores and registry entries absent from `.cargo/audit.toml`.
 
 - `T-047` Bulk-import worker evidence and summary telemetry (`F-033`):
   - Historical commit import coverage target.
@@ -282,7 +284,7 @@
   owner dispositions are recorded. That 2026-10-03 snapshot predates hosted
   checks on the current PR head.
 
-## PR #108 Readiness Follow-up — 2026-10-04
+## Historical PR #108 Readiness Follow-up (head `d2f77a1`) — 2026-10-04
 
 - Published branch head `d2f77a1` on `fix/rocinante-readiness-remediation`
   predates the current local SQLite changes. The README review thread is
@@ -383,9 +385,33 @@
   - `ui/test:e2e`
   - Ensure Vitest excludes `e2e/**` and the Playwright runner keeps owning browser coverage.
 
-## PR #108 Review Blocker Follow-up — 2026-10-04
+## Historical PR #108 Review Blocker Follow-up (head `07fe913`) — 2026-10-04
 
 - The latest hosted run available before these changes was 37204604888 on head 07fe913. It failed because the configured Tauri DuckDB resource glob had no matching file at Cargo build-script time; the Tauri package matrix, Rust build/test jobs, and aggregate job failed. The governance check also reported all 17 advisory exceptions overdue.
 - The working tree adds a tracked Tauri resource marker and stages the checksum-verified DuckDB binary before Cargo resource validation. It makes the Linux, macOS, and Windows bundle matrix required by the aggregate gate, sends root Rust toolchain/config changes through Rust checks, signs the macOS app after loader edits, moves default stores under shared per-user app-data, and gives repository metrics a scan-root-stable path hash. Queries include legacy names to preserve previous saved telemetry.
 - Local verification passes 84 non-root workspace tests, eight analysis identity and scan tests, the storage app-data path test, the macOS signing contract, strict Clippy for analysis/storage/desktop-shell, root Tauri cargo check for all test targets, formatting, actionlint, roadmap/CI-scope contracts, seven Tauri package contracts, nine DuckDB provisioner tests, and the DuckDB source-build guard.
 - Full root Tauri tests and hosted checks on the updated branch are pending. The advisory registry is unchanged; no security-owner disposition or review-date renewal has been recorded.
+
+## Current PR #108 Review Follow-up — 2026-10-04 (head `0fe0e04`)
+
+- PR #108 remains open, mergeable, and current with `main` at `cdd29b9` (69
+  commits ahead, none behind). The current review listing has 42 inline threads;
+  all are resolved.
+- The newest review finding is fixed in `0fe0e04`: all-release queries preserve
+  older legacy releases and suppress legacy snapshots only for releases already
+  present under a repository's stable identity. MacOS Tauri packaging removes
+  DuckDB Cargo-cache RPATHs and rejects any remaining `duckdb-download` entry.
+- Local evidence: `rocinante-analysis` tests pass 9/9, its Clippy check reports
+  no issues, `cargo fmt --check` and actionlint pass, and the Tauri bundle
+  contract passes 8/8.
+- Hosted CI run
+  [37215719759](https://github.com/pratik-saptarshi/rocinante/actions/runs/37215719759)
+  passes UI quality, full workspace/core/storage tests, formatting, Clippy,
+  Linux/macOS/Windows URL lifecycle acceptance, all three Tauri package
+  inspections, and build seed. Governance fails closed on the 17 overdue
+  reviews, so the aggregate gate remains blocked.
+- Security run `37215719790` passed secret scanning, configured Rust audit,
+  and CodeQL. Dependency Review `37215719745` passed.
+  A fresh unfiltered audit still has four warnings (`glib`, `proc-macro-error`,
+  `instant`, `fxhash`) and an empty ignore list. Do not change registry dates
+  or claim owner acceptance without reviewed dispositions.

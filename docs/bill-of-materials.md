@@ -12,9 +12,10 @@ _Captured: 2026-10-04_
 
 ## Branch and Sync State
 
-- PR #108 is open on `fix/rocinante-readiness-remediation` at published head
-  `b991f99`, based on `main` at `cdd29b9`. Continue on this branch through its
-  protected review/check flow; all 30 inline review threads are resolved.
+- PR #108 is open and mergeable on `fix/rocinante-readiness-remediation` at
+  published head `0fe0e04`, based on `main` at `cdd29b9` (69 commits ahead,
+  zero behind). The latest refreshed review listing has 42 inline threads and
+  all are resolved.
 - The complete phase sequence and exit evidence are in
   `docs/roadmap/rustsec-zero-exception-remediation-plan.md`.
 - Lane-scope refinement now keeps docs-only and non-functional edits out of storage/coverage-heavy lanes while preserving core rust gate visibility.
@@ -57,8 +58,9 @@ _Captured: 2026-10-04_
   `scripts/duckdb-prebuilt-artifacts.json`; build lanes verify and stage the
   binary before Cargo. DuckDB source-build features are forbidden by a tested
   feature-graph guard. Tauri production bundles now use verified per-platform
-  resources and loader paths; the new three-platform bundle gate must pass on
-  the current PR head before installed Tauri packaging is considered verified.
+  resources and loader paths. All three package inspections pass on the
+  current PR head in hosted run `37215719759`; the required governance lane
+  fails on the 17 overdue exception reviews.
 - The provisioner contract tests (9), DuckDB feature-guard contract, CI-scope
   contract, macOS installer contract, and Linux installer/deep-link contract
   pass locally. An actual macOS shell build was packaged into an `.app`; `otool`
@@ -66,34 +68,38 @@ _Captured: 2026-10-04_
   `@executable_path/../Frameworks` run path. The full installed macOS lifecycle
   also passes cold/warm Launch Services URLs, tray behavior, notification
   request, and saved-state restart. Hosted run
-  [37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846)
-  passes Linux/macOS/Windows URL and saved-state restart acceptance, and Linux
-  visible notification delivery.
-- The workspace test run excluding the Tauri adapter passes all 83 tests,
+  [37215719759](https://github.com/pratik-saptarshi/rocinante/actions/runs/37215719759)
+  passes Linux/macOS/Windows URL and saved-state restart acceptance, the
+  three-platform Tauri DuckDB bundle checks, and Linux visible notification
+  delivery. All hosted Rust lint and test shards also passed.
+- The hosted full-workspace test lane passed on current head `0fe0e04` in run
+  `37215719759`. The workspace test run excluding the Tauri adapter passes all 83 tests,
   including SQLite persistence, prefix ordering, concurrent writes, legacy
   Sled refusal, and replay receipts. Strict Clippy passes for every
   `rocinante-storage` target. The root storage, transport, backend,
   admin-ingestion, Tauri-command, and README/API test binaries pass 17, 5, 5, 2,
   5, and 1 tests with the verified DuckDB runtime. `cargo check --tests` passes
-  for all root test targets; the enclosing root Cargo test command did not
-  return and was interrupted. Full Tauri validation still requires a terminal
-  hosted run.
+  for all root test targets. Current local follow-up validation also passes
+  all 9 analysis crate tests and analysis Clippy without warnings.
 - The updated 715-package lockfile no longer contains `sled`, `fxhash`, or
-  `instant`. An unfiltered audit against cached RustSec revision
-  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03) reports no
-  vulnerability findings and two warnings: GLib through Tauri/Wry and the
-  unmaintained `proc-macro-error`. The authorized database refresh failed
-  because GitHub could not be reached. No advisory dates have been renewed;
-  the governance gate remains fail-closed on all 17 overdue entries.
-- The hosted aggregate still fails closed because `security-exception-governance`
-  lists all 17 review dates as overdue. The security workflow and Dependency
-  Review pass under the existing exception configuration; neither proves the
+  `instant`. The refreshed unfiltered audit against RustSec revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` reports no vulnerability
+  findings and four warnings (`glib`, `proc-macro-error`, `instant`, and
+  `fxhash`) with an empty ignore list; it exits nonzero with `--deny warnings`.
+  No advisory dates have been renewed; governance remains fail-closed on all 17
+  overdue entries.
+- Current CI run `37215719759` completed with all package, lifecycle, UI,
+  build-seed, workspace-test, format, and Clippy jobs passed. The aggregate
+  failed because `security-exception-governance` found all 17 review dates
+  overdue. Current Security run `37215719790` passed secret scan,
+  repository-configured Rust audit, and CodeQL. Dependency Review
+  `37215719745` passed. These checks do not prove the
   zero-exception RustSec requirement.
-- PR #108 includes `tauri-runtime-bundle`, which creates Linux `.deb`,
-  macOS `.app`, and Windows NSIS packages and checks for their DuckDB runtime.
-  This was added in response to a P1 review finding. The last observed package
-  run was pending; record a terminal result and resolve that thread only after
-  all three package checks pass on the final branch head.
+- PR #108's required `tauri-runtime-bundle` passed on current head `0fe0e04` in
+  run `37215719759`: Linux `.deb`, macOS `.app`, and Windows NSIS packages all
+  contain the verified DuckDB runtime. The macOS check also rejects any
+  remaining `duckdb-download` Cargo-cache RPATH. The aggregate remains blocked
+  by the separate advisory governance failure.
 
 ## Dependency Controls and Security Gate Stack
 

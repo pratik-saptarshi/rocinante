@@ -13,10 +13,10 @@ then release from the merged tip.
 - Primary integration branch: `main`
 - Remote: `origin`
 - Current work is on PR #108's remediation branch,
-  `fix/rocinante-readiness-remediation`, currently at published commit
-  `07fe913`. The PR is open, relevant, and based on `main` at `cdd29b9`.
-  Six review threads were open at that published head; the local changeset now
-  addresses all six and awaits hosted validation.
+  `fix/rocinante-readiness-remediation`, at published commit `0fe0e04`. The PR
+  remains open, relevant, mergeable, and based on `main` at `cdd29b9` (69
+  commits ahead, zero behind). The latest refreshed review listing contains 42
+  inline threads, all resolved.
 - Product: Rust shared-service workspace with current Tauri integration, an
   in-progress GTK-free native desktop host, and a frontend dashboard surface
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -247,25 +247,26 @@ SQLite WAL, and strict Clippy passes for all storage targets. The root storage,
 transport, backend, admin-ingestion, Tauri-command, and README/API test binaries
 pass 17, 5, 5, 2, 5, and 1 tests with the verified DuckDB runtime. Root
 `cargo check --tests` passes for all test targets; the enclosing root Cargo test
-command did not return and was interrupted. The cached-database audit reports
-zero vulnerability findings and two warnings; its refresh and current hosted
-validation remain open. The
-fail-closed governance job still reports 17 overdue registry entries. The P1
-Tauri package-runtime review thread remains open until its Linux/macOS/Windows
- package matrix passes on the pushed final head.
+command did not return and was interrupted. The refreshed unfiltered audit
+reports zero vulnerability findings and four warnings; no advisory exception
+has an owner-approved disposition. The fail-closed governance job still
+reports 17 overdue registry entries. The Tauri package-runtime review thread
+is resolved after the Linux/macOS/Windows package matrix passed on the current
+review head.
 
-Current local validation snapshot (2026-10-04; based on published head 07fe913,
-local remediation not yet pushed): 84 tests pass across the non-root Rust
-workspace; eight analysis identity/scan tests, the storage app-data test, and
-the macOS installer-signing contract pass. Strict Clippy passes for analysis,
-storage, and desktop-shell. Root Tauri cargo check compiles all test targets
-with three existing dead-code warnings in the disabled analytics feature.
-Actionlint, formatting, roadmap contracts, CI-scope contract, seven Tauri
-bundle contracts, nine DuckDB provisioner tests, and the source-build guard
-pass. The root Tauri test suite and hosted rerun remain pending. Six inline
-threads are locally addressed; the package-runtime thread remains open until
-the hosted Linux/macOS/Windows matrix passes. The advisory gate still reports
-17 overdue entries with no owner dispositions.
+Current validation snapshot (2026-10-04; published head `0fe0e04`): all 9
+`rocinante-analysis` tests pass locally; analysis Clippy reports no issues;
+formatting, actionlint, and the eight-case Tauri bundle contract pass. Hosted
+run [37215719759](https://github.com/pratik-saptarshi/rocinante/actions/runs/37215719759)
+passes UI quality, full workspace tests, Linux/macOS/Windows URL lifecycle
+acceptance, the Linux/macOS/Windows Tauri bundle inspections, build seed, and
+Rust format/Clippy/test lanes. The aggregate is blocked by advisory governance's
+17 overdue records. Current Security run `37215719790` passed secret scan,
+repository-configured Rust audit, and CodeQL. Dependency Review
+`37215719745` passed. The unfiltered audit
+still reports four warnings and has an empty ignore list. All inline review
+findings are resolved on this head; do not infer owner dispositions or renew
+exception dates.
 
 Historical CI recovery evidence on `feat/bi-056-timeout-contract` is green and
 merged; BI-047 is also merged on PR run `28988956969`. Neither historic run is

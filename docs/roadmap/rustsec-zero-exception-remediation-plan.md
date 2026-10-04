@@ -1,16 +1,17 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status:** The previous Phase 0 findings are resolved. The current PR review
-round found a Tauri resource-glob failure, an aggregate-gate omission, Rust
-scope misclassification, missing macOS post-link signing, launcher-relative
-storage paths, and scan-root-dependent repository names. Local fixes are
-implemented and targeted contracts pass; hosted rerun 37204604888 predates
-these fixes. The local storage phase now
-removes Sled from the application lockfile and adds SQLite WAL ingestion with
-replay receipts. Its local audit against the cached 2026-10-03 RustSec database
-reports two remaining warnings (`glib` and `proc-macro-error`); a fresh database
-fetch failed because GitHub was unreachable. Governance still fails closed on
-17 overdue entries. Existing Sled stores must complete Phase 3 before upgrade.
+**Status:** The prior Phase 0 package, CI routing, signing, path, and repository
+identity findings are fixed. The current review follow-up also removes duplicate
+legacy telemetry rows and strips DuckDB Cargo-cache RPATH entries from macOS
+Tauri bundles. Commit `0fe0e04` also makes legacy telemetry fallback release
+aware, retaining older history while suppressing same-release legacy
+snapshots. The latest pushed head is `0fe0e04`; CI run `37215719759` has passed
+UI quality, Rust workspace tests and lint, Linux/macOS/Windows lifecycle
+acceptance, and all three Tauri package inspections. Its fail-closed governance
+check rejects all 17 overdue entries. A refreshed unfiltered audit reports zero vulnerability
+findings, four warnings (`glib`, `proc-macro-error`, `instant`, and `fxhash`),
+and an empty ignore list. No owner dispositions or review-date renewals were
+invented. Existing Sled stores must complete Phase 3 before upgrade.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -135,9 +136,10 @@ dynamically linked DuckDB runtime. The branch now provisions the verified
 prebuilt before the Cargo build, stages it in Tauri's bundle resource path,
 rewrites Linux/macOS loader paths, and leaves the Windows DLL beside the app
 executable. A required matrix builds Linux `.deb`, macOS `.app`, and Windows
-NSIS packages and inspects each for its runtime. Local contract tests pass
-7/7, and actionlint passes; the review thread stays open until this hosted
-matrix passes on the updated branch head.
+NSIS packages and inspects each for its runtime. At this historical head, local
+contract tests pass 7/7 and actionlint passes; the review thread stayed open
+until the package matrix passed. It was later resolved after all three package
+checks passed in hosted run `37215719759`.
 
 **README follow-up (2026-10-04; PR head `f160d27`):** review thread
 [`discussion_r4177394737`](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4177394737)
@@ -374,11 +376,19 @@ obsolete ignores and registry entries together after preserving evidence in
 the dated disposition record. Keep the four applicable findings active until
 their packages are eliminated. Do not renew dates or infer owner acceptance.
 
-The current PR #108 checks are not ready: its governance check fails on the
-17 overdue records, while CodeQL and the Rust quality aggregate were still
-running when inspected. The hosted rust-audit check passed with repository
-ignores enabled; it does not establish the zero-exception goal. The unfiltered
-local audit above is the baseline for remediation.
+The current PR #108 checks are not ready: run `37215719759` fails the governance
+job on the 17 overdue records. Security run `37215719790` passed secret scan,
+the configured Rust audit, and CodeQL. The hosted Rust audit passed with
+repository ignores enabled; it does not establish the zero-exception goal. The
+unfiltered audit above remains the baseline for remediation.
+
+**PR review follow-up (2026-10-04; head `0fe0e04`):** local analysis tests pass
+9/9, analysis Clippy, formatting, actionlint, and all 8 Tauri bundle contract
+tests pass. All 42 inline threads are resolved. Hosted CI passes every code,
+UI, Rust lint/test, native lifecycle, and package job; the aggregate is red
+only on the 17 overdue exception dates. The latest unfiltered audit still has
+four warnings (`glib`, `proc-macro-error`, `instant`, and `fxhash`) with an
+empty ignore list. No owner dispositions or date renewals were inferred.
 
 ## Implementation decisions and work
 

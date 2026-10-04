@@ -328,11 +328,14 @@ the app-relative loader path, and declares the scheme in the `.app` bundle
 before registering it through Launch Services. The installed macOS lifecycle
 acceptance passes cold/warm URL delivery, tray actions, notification request,
 and saved-state restart on the current host. Hosted CI run
-[37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846)
-passes Linux/macOS/Windows cold/warm URL and saved-state restart acceptance;
-the Linux Dunst check also confirms visible notification delivery. Visible
-notification delivery on macOS and Windows, physical tray-menu clicks, and
-macOS foreground activation still need interactive validation. Release
+[37215719759](https://github.com/pratik-saptarshi/rocinante/actions/runs/37215719759)
+passes Linux/macOS/Windows cold/warm URL and saved-state restart acceptance,
+the three-platform Tauri DuckDB package checks, the full Rust workspace and
+crate test/lint lanes, UI quality, and CI contracts. Its aggregate remains
+blocked by the 17 overdue advisory reviews. The macOS bundle check rejects
+DuckDB Cargo-cache RPATH entries.
+Visible notification delivery on macOS and Windows, physical tray-menu clicks,
+and macOS foreground activation still need interactive validation. Release
 distribution must sign the completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.
