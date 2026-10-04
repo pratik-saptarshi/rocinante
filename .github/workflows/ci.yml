@@ -249,6 +249,10 @@ jobs:
           test -f "$app/Contents/Resources/libduckdb.dylib"
           otool -L "$app/Contents/MacOS/rocinante-repo-analyzer" | grep -F '@rpath/libduckdb.dylib'
           otool -l "$app/Contents/MacOS/rocinante-repo-analyzer" | grep -A2 LC_RPATH | grep -F '@executable_path/../Resources'
+          if otool -l "$app/Contents/MacOS/rocinante-repo-analyzer" | grep -Fq 'duckdb-download'; then
+            echo "Tauri executable retains a DuckDB Cargo-cache RPATH"
+            exit 1
+          fi
       - name: Verify DuckDB is inside the Windows installer
         if: runner.os == 'Windows'
         shell: pwsh

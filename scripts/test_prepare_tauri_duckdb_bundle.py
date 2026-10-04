@@ -30,7 +30,14 @@ class BundlePreparationTests(unittest.TestCase):
         elif command[:2] == ["otool", "-L"]:
             output = f"{command[-1]}:\n/temporary/cache/libduckdb.dylib (compatibility version 1.0.0)\n"
         elif command[:2] == ["otool", "-l"]:
-            output = "Load command 0\n cmd LC_LOAD_DYLIB\n"
+            output = (
+                "Load command 0\n"
+                " cmd LC_RPATH\n"
+                " cmdsize 48\n"
+                " path /tmp/target/duckdb-download/aarch64-apple-darwin (offset 12)\n"
+                "Load command 1\n"
+                " cmd LC_LOAD_DYLIB\n"
+            )
         else:
             output = ""
         return CompletedProcess(command, 0, output, "")
@@ -45,13 +52,18 @@ class BundlePreparationTests(unittest.TestCase):
             self.commands,
         )
 
-    def test_macos_rewrites_duckdb_load_name_and_adds_resources_rpath(self) -> None:
+    def test_macos_removes_duckdb_cache_rpath_and_adds_resources_rpath(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             binary, library = self.make_binary_and_library(Path(directory), "libduckdb.dylib")
             bundle.patch_binary_loader("aarch64-apple-darwin", binary, library, self.runner)
 
         self.assert_command("install_name_tool", "-id", "@rpath/libduckdb.dylib")
         self.assert_command("install_name_tool", "-change", "/temporary/cache/libduckdb.dylib")
+        self.assert_command(
+            "install_name_tool",
+            "-delete_rpath",
+            "/tmp/target/duckdb-download/aarch64-apple-darwin",
+        )
         self.assert_command("install_name_tool", "-add_rpath", "@executable_path/../Resources")
 
     def test_windows_relies_on_tauri_resource_path_next_to_executable(self) -> None:
@@ -132,6 +144,7 @@ class BundlePreparationTests(unittest.TestCase):
         self.assertIn("python3 scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle", workflow)
         self.assertIn("python scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle", workflow)
         self.assertIn(r"$contents | Where-Object { $_ -match 'duckdb\.dll' }", workflow)
+        self.assertIn("duckdb-download", workflow)
         self.assertTrue((tauri_root / "tauri-resources" / "README.txt").is_file())
         self.assertEqual(
             config["build"]["beforeBuildCommand"],

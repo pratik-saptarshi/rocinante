@@ -80,6 +80,9 @@ def _macos_load_commands(binary: Path, library: Path, runner: CommandRunner) -> 
             rpaths.append(stripped.split()[1])
             awaiting_path = False
     bundle_rpath = "@executable_path/../Resources"
+    for rpath in rpaths:
+        if "duckdb-download" in rpath:
+            runner(["install_name_tool", "-delete_rpath", rpath, str(binary)])
     if bundle_rpath not in rpaths:
         runner(["install_name_tool", "-add_rpath", bundle_rpath, str(binary)])
 
