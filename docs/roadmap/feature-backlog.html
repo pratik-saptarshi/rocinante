@@ -17,10 +17,10 @@
   - Dedicated write-optimized KV ingestion tier.
   - Dedicated columnar analytics tier (`duckdb`) for read-heavy aggregation.
 - `F-008A` Storage engine conformance migration:
-  - Ingestion tier persists through BadgerDB sidecar validation and transport checks.
-  - DuckDB remains analytics-only and all transport fallbacks are validated.
+  - SQLite WAL is the default embedded ingestion tier; DuckDB remains analytics-only.
+  - Explicit Badger sidecar settings remain opt-in; removed Sled settings fail with a migration hint.
 - `F-008B` Strict storage boundary enforcement:
-  - Ingestion writes route only to BadgerDB APIs.
+  - Ingestion writes route only to the SQLite ingestion API.
   - Analytical reads/writes for metric marts route only to DuckDB.
 - `F-008D` Retention compliance automation:
   - Short-term raw TTL prune with long-term release rollup retention.

@@ -1,11 +1,13 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Status:** The earlier Phase 0 review comments are resolved. A new P1 Tauri
-DuckDB installer finding was reported on 2026-10-04; a packaging fix and
-three-platform bundle job are now in the branch, pending hosted results.
-Zero-exception RustSec remediation remains in progress; the required
-governance gate is still fail-closed on 17 overdue entries and the unfiltered
-audit still reports four warnings.
+**Status:** The earlier Phase 0 review comments are resolved. The P1 Tauri
+DuckDB installer finding has a packaging fix and three-platform bundle job;
+the last observed hosted run was still in progress. The local storage phase now
+removes Sled from the application lockfile and adds SQLite WAL ingestion with
+replay receipts. Its local audit against the cached 2026-10-03 RustSec database
+reports two remaining warnings (`glib` and `proc-macro-error`); a fresh database
+fetch failed because GitHub was unreachable. Governance still fails closed on
+17 overdue entries. Existing Sled stores must complete Phase 3 before upgrade.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -220,6 +222,35 @@ command names and serialized request/response fixtures before and after.
 **Exit gate:** all existing data-path contracts pass against SQLite, replay
 cannot lose or duplicate events, and Sled is absent from the application graph.
 
+**Implementation evidence (2026-10-04, local worktree):** `DualLayerStore`
+uses SQLite WAL at `ingestion.sqlite3`, full synchronous durability, binary-safe
+ordered prefix scans, and transactional deletion. DuckDB writes telemetry,
+baseline rows, and a unique event receipt in one transaction; SQLite acknowledges
+events after that commit, so restart replay skips an already recorded event.
+The default `SqliteWal` backend preserves command names and request/response
+payloads. The old `SledTransitional` config now fails with a migration hint.
+Startup also refuses to create SQLite when an unmigrated Sled directory is
+present, preserving old data until the audited migration utility is delivered.
+
+Nine `rocinante-storage` unit tests pass, including restart persistence,
+binary prefix ordering, concurrent writers, legacy-store refusal, and the
+DuckDB-commit/SQLite-ack interruption. Strict storage Clippy passes. The shared
+workspace test run excluding the Tauri adapter passed 83 tests. The relevant
+root integration binaries passed 17 storage, 5 transport, 5 backend, 2 admin
+ingestion, 5 Tauri command, and 1 README/API contract tests with the staged
+DuckDB runtime. `cargo check --tests` also passed for the complete Tauri test
+target set. The enclosing Cargo test command did not return and was interrupted.
+The lockfile and all-feature dependency tree no longer contain
+`sled`, `fxhash`, or `instant`.
+
+An unfiltered audit of the updated 715-package lockfile using the locally
+cached database revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`
+(2026-10-03) reports no vulnerability findings and two warnings:
+RUSTSEC-2024-0429 (`glib`) and RUSTSEC-2024-0370 (`proc-macro-error`). The
+authorized `rtk cargo audit` refresh could not reach GitHub, so this is not a
+fresh-database release audit. Hosted aggregate CI and the P1 package matrix also
+remain unverified for the current worktree.
+
 ### Phase 3 — Preserve legacy Sled data with an isolated audited reader
 
 Add the one-time migration utility, retaining legacy stores read-only and
@@ -343,9 +374,10 @@ per-user app-data directory for desktop defaults.
 
 Make promotion restart-safe: commit analytical rows and a unique source-event
 receipt together in DuckDB, then acknowledge/delete the corresponding SQLite
-events. Replays must not lose events or duplicate analytical rows. Replace
-Badger/Sled-specific backend settings with truthful SQLite configuration;
-legacy configuration must fail with an actionable migration message rather
+events. Replays must not lose events or duplicate analytical rows. Set the
+default backend to the truthful SQLite WAL configuration. Keep explicit
+Badger-sidecar settings for existing deployments, and make the retired
+Sled-specific configuration fail with an actionable migration message rather
 than silently redirecting data.
 
 ### Preserve legacy Sled data with an audited migration utility

@@ -47,12 +47,18 @@ Rocinante helps teams measure and explain repository risk using on-prem analysis
 
 ### 3) Storage model and boundary enforcement
 
-Rocinante uses two logical lanes in `src-tauri/src/storage.rs`:
+Rocinante uses two logical lanes in the shared `rocinante-storage` crate:
 
-- **Ingestion route** → raw commit event intake and write path.
-- **Analytics route** → promotion, aggregate read-paths, and query workloads.
+- **Ingestion route** → raw commit events in `<ROCINANTE_KV_PATH>/ingestion.sqlite3`, using SQLite WAL and durable transactions.
+- **Analytics route** → promotion receipts, DuckDB history, aggregates, and query workloads.
 
 Storage route checks prevent cross-use of the wrong backend for a given operation.
+The default backend is SQLite WAL. Explicit Badger sidecar configuration remains
+available for existing deployments; the retired `SledTransitional` setting now
+returns an actionable configuration error. Existing Sled data is preserved, and
+startup refuses to create a new SQLite store when it detects an unmigrated Sled
+directory. Complete the audited legacy-store migration in the RustSec roadmap
+before upgrading an installation that contains Sled data.
 
 ### 4) Audit and explainability outputs
 

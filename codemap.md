@@ -29,10 +29,12 @@ and an in-progress GTK-free native desktop host.
   resolution used by both desktop hosts.
 - `src-tauri/crates/rocinante-analysis/src/auth.rs`: shared JWT validation and role checks; the production
   Tauri host and repository scan service require a configured 32-byte secret.
-- `src-tauri/crates/rocinante-storage/src/lib.rs`: shared Sled/DuckDB persistence
-  and admin-authorized release-baseline operations used by Tauri and the shell.
+- `src-tauri/crates/rocinante-storage/src/lib.rs`: shared SQLite WAL/DuckDB
+  persistence and admin-authorized release-baseline operations used by Tauri and the shell.
   DuckDB is dynamically linked from the checksum-verified prebuilt library for
-  the current target; SQLite ingestion and legacy-store migration are gated in
+  the current target. SQLite ingestion now uses transactional writes, ordered
+  prefix scans, replay receipts, and a legacy-Sled startup guard. The audited
+  Sled data-migration utility remains gated in
   `docs/roadmap/rustsec-zero-exception-remediation-plan.md`.
 - `src-tauri/crates/rocinante-desktop-shell/src/main.rs`: GTK-free native shell
   entry point using eframe/winit; navigation state is also persisted as JSON in
@@ -108,8 +110,8 @@ and an in-progress GTK-free native desktop host.
 
 | Directory | Responsibility Summary | Notes |
 |---|---|---|
-| `src-tauri/src/` | Backend service layer, command facade, storage boundaries, auth, scoring, telemetry, risk contracts, budget/fix-proposal/triage/verifier/convergence contracts, app support, baseline adapters, and the bulk-import telemetry surface tracked by the F-033 planning slice. | Tauri commands should stay thin and delegate into service/storage layers. `app_support.rs` owns the shared app builder and state. Storage opens keep the process-level ownership guard and tolerate transient sled close/reopen lock lag. |
-| `src-tauri/crates/rocinante-storage/` | Host-neutral admin/scoring services, current Sled/DuckDB storage, and release-baseline authorization adapter. | Tauri re-exports its public storage API; both hosts use shared path defaults, writer locking, and snapshot refresh behavior. DuckDB links only through the staged official prebuilt shared library. SQLite ingestion and legacy Sled retirement remain planned gates. |
+| `src-tauri/src/` | Backend service layer, command facade, storage boundaries, auth, scoring, telemetry, risk contracts, budget/fix-proposal/triage/verifier/convergence contracts, app support, baseline adapters, and the bulk-import telemetry surface tracked by the F-033 planning slice. | Tauri commands should stay thin and delegate into service/storage layers. `app_support.rs` owns the shared app builder and state. Storage opens retain the process-level ownership guard and use SQLite busy-timeout handling. |
+| `src-tauri/crates/rocinante-storage/` | Host-neutral admin/scoring services, SQLite WAL ingestion, DuckDB analytics, and release-baseline authorization adapter. | Tauri re-exports its public storage API; both hosts use shared path defaults, writer locking, and snapshot refresh behavior. DuckDB links only through the staged official prebuilt shared library. The one-time legacy Sled migration remains a release gate. |
 | `src-tauri/crates/rocinante-desktop-shell/` | GTK-free native window, persisted navigation, keyboard routes, repository-folder selection, asynchronous scans, exact saved-metric reload, scan completion notifications, release-baseline query/reseed controls, a repository-metric dashboard view model, and ports of companion insight scoring, quality snapshot and audience-focus views, plus static sample accessibility, SEO, Drupal security, and performance panels, built with eframe/winit and serde_json. | The Dashboard summarizes repository, plugin, and metric data without inferring synthetic risk claims; sample insight and audit panel data are labeled; custom JSON can be applied/reset, and SEO scope/performance data selectors are present. React companion parity is implemented for all admin bridge commands; Alerts and Settings are placeholders and no fallback deferral is approved. The tray supports Show/Quit and hide-on-window-close. Linux URI metadata and per-user installation are implemented, with cold/warm/restart and notification-display acceptance wired into Ubuntu CI. macOS has a URL-scheme bundle and retained `NSAppleEventManager` `kAEGetURL` handler; its local acceptance installs a temporary bundle through the per-user installer and routes cold/warm URI-only Launch Services opens. Windows has current-user protocol registration and an icon-bearing Start Menu shortcut; its installer and cold/warm/restart URL acceptance are wired to a `windows-latest` CI job. A bounded warm-instance inbox and second-process forwarding test are implemented. macOS cold/warm URI, first-frame visible startup, minimized-window visible restoration, close-to-tray, Show restoration, Quit, native notification request, and saved-state restart acceptance passed locally on Darwin on 2026-09-30; macOS activation is requested through `NSApplication` and `NSRunningApplication`; the acceptance helper now measures frontmost state and strict mode reported visible=true/frontmost=false in this automation session, so foreground activation remains unproven. Hosted lifecycle validation remains open. Shared window, bundle, launcher, and protocol icons are packaged and contract-tested; visual launch checks remain open. The installed Darwin acceptance exercises Show/Quit through the same action handler used by tray callbacks; physical menu-click delivery and Linux/Windows tray runtime remain unverified, along with Linux notification hosted results, visible macOS/Windows notification delivery, hosted URL results, and the unresolved file-import decision. The native macOS notification request returned success locally, but visibility was not observed. Login autostart is out of scope unless separately approved. Tauri remains the production entry point. |
 | `src-tauri/crates/rocinante-analysis/` | Host-independent auth, repository discovery/analysis, telemetry persistence, and shared database-path configuration. | Owns the shared source modules; the Tauri crate re-exports these modules for its existing command layer. |
 | `src-tauri/tests/` | Backend regression coverage for PR risk contracts, CI-gate comment contracts, publish-gate documentation contracts, incident-feedback contracts, storage behavior, admin-only flows, and registered-handler integration. | Tests should protect command wiring, release-gate docs, and storage invariants. |
@@ -159,7 +161,7 @@ and an in-progress GTK-free native desktop host.
     the Tauri adapter.
 16. The GTK-free shell uses eframe/winit and calls `rocinante-analysis` for
     admin-authorized scans and saved-metric queries, and `rocinante-storage`
-    for current Sled/DuckDB administration and release-baseline operations.
+    for SQLite WAL ingestion, DuckDB analytics, and release-baseline operations.
     DuckDB is dynamically linked from a checksum-verified official binary;
     installed packages use an app-relative Linux path, a macOS Frameworks
     path, or a Windows-adjacent DLL. The shell parses cold-launch
@@ -170,24 +172,25 @@ and an in-progress GTK-free native desktop host.
     visible notification delivery under Xvfb/D-Bus. Hosted run `37198628846`
     passes Linux/macOS/Windows URL and saved-state restart acceptance, including
     Linux visible notifications and packaged DuckDB loading. SQLite ingestion,
-    legacy Sled migration, and Tauri/GTK retirement are phase-gated in the
+    legacy Sled migration and Tauri/GTK retirement are phase-gated in the
     RustSec remediation plan.
 
 ## Governance and Execution Snapshot
 
 - Active work is on PR #108 branch `fix/rocinante-readiness-remediation`,
-  published head `038f7c4` at the start of the current remediation. PR #108
-  remains open and relevant against `main` at `cdd29b9`; the prior 30 review
-  threads are resolved. A new P1 finding identified missing DuckDB in
-  production Tauri installers; a packaging fix is in progress and its new
-  hosted validation is not yet terminal. A second README staging finding has
-  been fixed in the current worktree. Use the dated RustSec zero-exception plan
-  for phase order and current exit evidence.
-- A refreshed 2026-10-04 RustSec database retained revision
-  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03). The unfiltered
-  audit finds no vulnerability-class reports and four warnings: GLib,
-  proc-macro-error, instant, and fxhash. Audit ignores are empty. The
-  fail-closed governance check still sees 17 overdue registry entries.
+  published head `d2f77a1` before the current local SQLite changes. PR #108
+  remains the relevant review path against `main` at `cdd29b9`. Earlier review
+  threads are resolved except the P1 Tauri package-runtime finding, which stays
+  open pending the required Linux/macOS/Windows package matrix. The README
+  staging finding is resolved. The current SQLite changes have local evidence
+  recorded in the dated zero-exception plan but are not yet published or covered
+  by hosted CI. GitHub could not be reached to refresh current review/check data.
+- The latest cached RustSec database revision is
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03). On the updated
+  715-package lockfile, an unfiltered no-fetch audit reports no vulnerability
+  findings and two warnings: GLib and proc-macro-error. `sled`, `fxhash`, and
+  `instant` are absent. GitHub could not be reached to refresh the database;
+  the fail-closed governance check still sees 17 overdue registry entries.
 - Hosted CI run `37198628846` passed workflow parsing, UI quality,
   Linux/macOS/Windows lifecycle acceptance, full workspace tests, build seed,
   Rust quality gates, core/storage lanes, formatting, and Clippy. The

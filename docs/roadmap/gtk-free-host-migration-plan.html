@@ -51,7 +51,7 @@ user-visible behavior, backed by host-agnostic Rust core logic.
 
 - BI-048 is complete. `src-tauri/crates/rocinante-core` has serde as its only direct runtime dependency and contains risk evaluation, budget guard, fix proposal, triage, verifier, authorization claim/admin policy, shared types, baseline scoring, and the admin-authorized release-baseline repository API.
 - Nine core contract tests pass. `cargo check --tests --no-default-features` compiles all Tauri test targets, and the default analytics library check passes. The auth test executable link did not finish in the available run; the feature test targets compile.
-- `rocinante-storage` now owns the existing dual-layer Sled/DuckDB implementation and admin-authorized release-baseline operations. Tauri re-exports this implementation, and the native shell calls the same adapter with the same path defaults, writer lock, and snapshot refresh semantics. `rocinante-analysis` owns shared auth/JWT, repository analysis, Git, and telemetry modules. BI-049 remains in progress; phases 3–4 remain queued.
+- `rocinante-storage` now owns SQLite WAL ingestion, DuckDB analytics, and admin-authorized release-baseline operations. Tauri re-exports this implementation, and the native shell calls the same adapter with the same path defaults, writer lock, and snapshot refresh semantics. Existing Sled data is preserved and blocks startup until the audited migration utility is complete. `rocinante-analysis` owns shared auth/JWT, repository analysis, Git, and telemetry modules. BI-049 remains in progress; phases 3–4 remain queued.
 
 ### Phase 2: GTK-Free Native Desktop MVP
 

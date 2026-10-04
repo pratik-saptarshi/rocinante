@@ -129,8 +129,9 @@ notification delivery and physical tray-menu clicks remain unverified.
 - DuckDB archive, library, and header SHA-256 values are pinned in
   `scripts/duckdb-prebuilt-artifacts.json`. `scripts/provision_duckdb.py`
   verifies and stages them before CI Cargo builds; source-build features are
-  rejected by a tested feature guard. SQLite ingestion and Sled migration are
-  later phases in the RustSec plan.
+  rejected by a tested feature guard. The shared storage crate now uses SQLite
+  WAL for ingestion and DuckDB for analytics. A one-time legacy Sled migration
+  is still required before existing Sled installations may upgrade.
 
 ### UI / frontend packages
 
@@ -194,11 +195,12 @@ Packages declared in `ui/package.json`:
 - The esbuild alert closed in PR #59; its unrelated historic Dependabot and
   hosted-audit snapshots above are superseded by the current lockfiles and
   checks. Query live GitHub state before making any new alert-closure claim.
-- A refreshed unfiltered RustSec audit on 2026-10-04 reports zero vulnerability
-  findings and four warnings: `glib 0.18.5`, `proc-macro-error 1.0.4`,
-  `instant 0.1.13`, and `fxhash 0.2.1`. `settings.ignore` is empty; the audit
-  still fails `--deny warnings` as required. The database revision is
-  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`.
+- The updated 715-package lockfile no longer contains `sled`, `fxhash`, or
+  `instant`. An unfiltered audit against the cached RustSec database revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03) reports no
+  vulnerability findings and two warnings: `glib 0.18.5` and
+  `proc-macro-error 1.0.4`. The authorized database refresh could not reach
+  GitHub, and the fail-closed governance gate still reports 17 overdue entries.
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 - `test` aggregate job in `.github/workflows/ci.yml` is the merge gate for protected-branch checks and depends on parse/scope/lint/test/coverage jobs.
@@ -235,17 +237,21 @@ Before any release reaches `origin/main`, the repository should satisfy:
 7. The final publish uses a protected-branch-safe squash or PR merge.
 8. `origin/main` remains the source of truth; local and remote must be reconciled through merge checkpoints.
 
-Current validation snapshot (2026-10-04; PR head `b991f99`): Rust formatting, the nine
-DuckDB provisioner cases, the DuckDB feature graph and guard, the CI-scope
-contract, native-shell installer contracts, and the macOS installed lifecycle
-pass. The DuckDB engine-version query returns `1.5.6`. The extracted analysis,
-core, storage, and desktop-shell suites pass 75 tests; strict Clippy passes for
-those crates. Hosted CI run `37198628846` also passes full workspace tests,
-Rust quality gates, core/storage lanes, formatting, Clippy, UI quality, and
-Linux/macOS/Windows installed URL/restart acceptance. The aggregate still fails
-at the fail-closed advisory governance job: all 17 registry review dates are
-overdue. The refreshed unfiltered audit reports zero vulnerabilities but four
-warnings and an empty ignore list, so it fails `--deny warnings` as required.
+Current validation snapshot (2026-10-04; published PR head `d2f77a1` before the
+local SQLite changes): Rust formatting, the nine DuckDB provisioner cases, the
+DuckDB feature graph and guard, the CI-scope contract, native-shell installer
+contracts, and the macOS installed lifecycle pass. The DuckDB engine-version
+query returns `1.5.6`. The extracted workspace now passes 83 tests, including
+SQLite WAL, and strict Clippy passes for all storage targets. The root storage,
+transport, backend, admin-ingestion, Tauri-command, and README/API test binaries
+pass 17, 5, 5, 2, 5, and 1 tests with the verified DuckDB runtime. Root
+`cargo check --tests` passes for all test targets; the enclosing root Cargo test
+command did not return and was interrupted. The cached-database audit reports
+zero vulnerability findings and two warnings; its refresh and current hosted
+validation remain open. The
+fail-closed governance job still reports 17 overdue registry entries. The P1
+Tauri package-runtime review thread remains open until its Linux/macOS/Windows
+package matrix passes on the pushed final head.
 
 Historical CI recovery evidence on `feat/bi-056-timeout-contract` is green and
 merged; BI-047 is also merged on PR run `28988956969`. Neither historic run is

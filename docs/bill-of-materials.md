@@ -69,25 +69,31 @@ _Captured: 2026-10-04_
   [37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846)
   passes Linux/macOS/Windows URL and saved-state restart acceptance, and Linux
   visible notification delivery.
-- The analysis/core/storage/desktop-shell workspace test suite passes all 75
-  tests, including the verified DuckDB engine-version query and SQLite
-  migration-path test. Strict Clippy passes for those extracted crates. Full
-  root Tauri tests and full-workspace Clippy did not return terminal results on
-  this Mac; the root test compile produced no new artifacts for 16 minutes
-  before interruption. Hosted run `37198628846` now passes full workspace
-  tests, Rust quality gates, formatting, Clippy, and core/storage test lanes.
-- The refreshed unfiltered Cargo audit has four warnings on the existing graph:
-  GLib through Tauri/Wry and `fxhash` / `instant` through Sled, plus the
-  unmaintained `proc-macro-error`. No advisory dates have been renewed; the
-  governance gate remains fail-closed until the phased removal work is done.
+- The workspace test run excluding the Tauri adapter passes all 83 tests,
+  including SQLite persistence, prefix ordering, concurrent writes, legacy
+  Sled refusal, and replay receipts. Strict Clippy passes for every
+  `rocinante-storage` target. The root storage, transport, backend,
+  admin-ingestion, Tauri-command, and README/API test binaries pass 17, 5, 5, 2,
+  5, and 1 tests with the verified DuckDB runtime. `cargo check --tests` passes
+  for all root test targets; the enclosing root Cargo test command did not
+  return and was interrupted. Full Tauri validation still requires a terminal
+  hosted run.
+- The updated 715-package lockfile no longer contains `sled`, `fxhash`, or
+  `instant`. An unfiltered audit against cached RustSec revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03) reports no
+  vulnerability findings and two warnings: GLib through Tauri/Wry and the
+  unmaintained `proc-macro-error`. The authorized database refresh failed
+  because GitHub could not be reached. No advisory dates have been renewed;
+  the governance gate remains fail-closed on all 17 overdue entries.
 - The hosted aggregate still fails closed because `security-exception-governance`
   lists all 17 review dates as overdue. The security workflow and Dependency
   Review pass under the existing exception configuration; neither proves the
   zero-exception RustSec requirement.
-- PR #108 now includes `tauri-runtime-bundle`, which creates Linux `.deb`,
+- PR #108 includes `tauri-runtime-bundle`, which creates Linux `.deb`,
   macOS `.app`, and Windows NSIS packages and checks for their DuckDB runtime.
-  This was added in response to a new P1 review finding; record the check's
-  terminal result and resolve its thread only after the package evidence passes.
+  This was added in response to a P1 review finding. The last observed package
+  run was pending; record a terminal result and resolve that thread only after
+  all three package checks pass on the final branch head.
 
 ## Dependency Controls and Security Gate Stack
 
@@ -132,13 +138,14 @@ _Captured: 2026-10-04_
   locally and in the hosted Linux, macOS, and Windows lifecycle jobs. Rust test
   jobs also stage the verified runtime in Cargo's `debug/deps` directory.
 - The advisory gate is intentionally blocked by 17 overdue registry
-  dispositions and four current audit warnings. No review dates or owner
-  acceptance statements have been fabricated. The phased zero-exception
+  dispositions and two current-worktree audit warnings. No review dates or
+  owner acceptance statements have been fabricated. The phased zero-exception
   remediation sequence is documented in the roadmap plan.
-- The dependency-floor and exception-registry phase is not complete. Do not
-  use historical green CI runs above as evidence for PR #108's current head.
-  Current evidence is the terminal run `37198628846`; the four unfiltered
-  RustSec warnings and 17 overdue registry entries still block release.
+- The dependency-floor and exception-registry phase is not complete. The last
+  terminal aggregate, `37198628846`, predates the latest published head and the
+  current local SQLite work. The current worktree has two cached-database
+  RustSec warnings and 17 overdue registry entries; the database refresh and
+  final hosted aggregate remain required.
 
 ## Release Artifacts
 
