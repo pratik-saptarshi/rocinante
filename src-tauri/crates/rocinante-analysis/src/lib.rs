@@ -182,8 +182,8 @@ fn scan_and_persist(
         records.push(pipeline.analyze_repo(repository, release)?);
     }
 
-    let store = TelemetryStore::open(db_path)?;
-    let summary = store.insert_records(&records, release)?;
+    let mut store = TelemetryStore::open(db_path)?;
+    let summary = store.replace_records(&records, release)?;
     Ok((summary, identities, store))
 }
 

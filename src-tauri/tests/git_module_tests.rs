@@ -32,3 +32,18 @@ fn changed_files_since_tag_returns_empty_on_empty_release() {
     let files = changed_files_since_tag(dir.path().to_str().expect("path"), "").expect("ok");
     assert!(files.is_empty());
 }
+
+#[test]
+fn changed_files_since_missing_tag_returns_empty_for_this_repository() {
+    let dir = tempdir().expect("tmp");
+    let init = Command::new("git")
+        .args(["init", "--quiet"])
+        .current_dir(dir.path())
+        .output()
+        .expect("git init");
+    assert!(init.status.success(), "git init failed: {:?}", init.stderr);
+
+    let files = changed_files_since_tag(dir.path().to_str().expect("path"), "release-not-here")
+        .expect("a missing release ref should produce an empty change set");
+    assert!(files.is_empty());
+}

@@ -3,6 +3,7 @@ use crate::plugins::sanitizer::{scrub_metric, scrub_record_strings, scrub_text};
 use crate::types::{AdminQuery, AnalysisMetric, AnalysisRecord, RepositoryMetric};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -90,6 +91,88 @@ impl TelemetryStore {
                 summary.duplicate_source_keys as i64
             ],
         )?;
+        Ok(summary)
+    }
+
+    /// Replace the saved metric snapshot for each repository and release.
+    ///
+    /// Unlike `insert_records`, this treats a scan as the current state: changed
+    /// metric values are updated and metrics no longer produced by the scan are
+    /// removed. The transaction keeps each repository/release replacement
+    /// atomic for readers.
+    pub fn replace_records(
+        &mut self,
+        records: &[AnalysisRecord],
+        source: &str,
+    ) -> Result<TelemetryImportSummary, AnalyzerError> {
+        let mut desired =
+            HashMap::<(String, String), HashMap<(String, String), (f64, String)>>::new();
+        let mut rows_attempted = 0usize;
+
+        for record in records {
+            let (repo_name, release) = scrub_record_strings(&record.repo_name, &record.release);
+            let metrics = desired.entry((repo_name, release)).or_default();
+            for metric in &record.metrics {
+                rows_attempted += 1;
+                let mut metric = metric.clone();
+                scrub_metric(&mut metric);
+                metrics.insert((metric.plugin, metric.key), (metric.value, metric.details));
+            }
+        }
+
+        let transaction = self.conn.transaction()?;
+        let mut rows_inserted = 0usize;
+        for ((repo_name, release), metrics) in &desired {
+            for ((plugin, metric_key), (metric_value, details)) in metrics {
+                rows_inserted += transaction.execute(
+                    "INSERT INTO telemetry (repo_name, release, plugin, metric_key, metric_value, details)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                     ON CONFLICT(repo_name, release, plugin, metric_key) DO UPDATE SET
+                       metric_value = excluded.metric_value,
+                       details = excluded.details
+                     WHERE telemetry.metric_value IS NOT excluded.metric_value
+                        OR telemetry.details IS NOT excluded.details",
+                    params![repo_name, release, plugin, metric_key, metric_value, details],
+                )?;
+            }
+
+            let current_keys = {
+                let mut statement = transaction.prepare(
+                    "SELECT plugin, metric_key FROM telemetry WHERE repo_name = ?1 AND release = ?2",
+                )?;
+                let rows = statement.query_map(params![repo_name, release], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })?;
+                rows.collect::<Result<HashSet<_>, _>>()?
+            };
+            for (plugin, metric_key) in current_keys {
+                if !metrics.contains_key(&(plugin.clone(), metric_key.clone())) {
+                    transaction.execute(
+                        "DELETE FROM telemetry
+                         WHERE repo_name = ?1 AND release = ?2 AND plugin = ?3 AND metric_key = ?4",
+                        params![repo_name, release, plugin, metric_key],
+                    )?;
+                }
+            }
+        }
+
+        let summary = TelemetryImportSummary {
+            source: source.to_string(),
+            records_processed: records.len(),
+            rows_inserted,
+            duplicate_source_keys: rows_attempted.saturating_sub(rows_inserted),
+        };
+        transaction.execute(
+            "INSERT INTO telemetry_import_summary (source, records_processed, rows_inserted, duplicate_source_keys)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![
+                summary.source,
+                summary.records_processed as i64,
+                summary.rows_inserted as i64,
+                summary.duplicate_source_keys as i64
+            ],
+        )?;
+        transaction.commit()?;
         Ok(summary)
     }
 

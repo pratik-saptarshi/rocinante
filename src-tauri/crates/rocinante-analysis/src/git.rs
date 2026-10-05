@@ -63,7 +63,28 @@ pub fn changed_files_since_tag_path(
     if release.is_empty() {
         return Ok(Vec::new());
     }
-    let diff = git_stdout_path(repo_path, &["diff", "--name-only", release, "HEAD"])?;
+    let revision = format!("{release}^{{commit}}");
+    let output = Command::new("git")
+        .args([
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            "--end-of-options",
+            &revision,
+        ])
+        .current_dir(repo_path)
+        .output()
+        .map_err(|error| AnalyzerError::Git(error.to_string()))?;
+    if !output.status.success() {
+        if output.status.code() == Some(1) {
+            return Ok(Vec::new());
+        }
+        return Err(AnalyzerError::Git(
+            String::from_utf8_lossy(&output.stderr).to_string(),
+        ));
+    }
+    let commit = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let diff = git_stdout_path(repo_path, &["diff", "--name-only", &commit, "HEAD"])?;
     Ok(diff
         .lines()
         .map(str::trim)
