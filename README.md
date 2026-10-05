@@ -367,9 +367,11 @@ ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh
 ```
 
 It waits for real Show/Quit menu selections and verifies frontmost state. The
-latest live GitHub refresh could not connect; the last
-successful PR/check snapshot is recorded in the readiness roadmap. Release
-distribution must sign the completed app bundle after packaging.
+latest GitHub refresh confirmed PR #112 at `496e1ec`: platform/UI and security
+checks passed, while the aggregate failed on a stale documentation assertion
+now corrected locally. The replacement hosted run and physical tray result
+remain pending; see the readiness roadmap for run identifiers and evidence.
+Release distribution must sign the completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.
 

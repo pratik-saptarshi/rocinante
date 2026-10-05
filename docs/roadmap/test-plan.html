@@ -3,13 +3,17 @@
 ## Current execution status — 2026-10-05
 
 The active remediation worktree retires the Tauri host and preserves its
-eleven command payload contracts as host-neutral metadata. On the last
-recorded PR #112 source head `27b9e21`, hosted CI run `37311344183` passed UI
-quality with pinned pnpm `12.9.1`, full Rust tests, formatting, Clippy,
-governance, the aggregate, and Linux/macOS/Windows package and URL lifecycle
-checks. Security run `37311344136` passed CodeQL, RustSec audit, and secret
-scan; Dependency Review run `37311344143` passed. A fresh GitHub refresh in
-this pass could not connect. The local installed macOS acceptance also passed
+eleven command payload contracts as host-neutral metadata. GitHub confirmed PR
+#112 OPEN/MERGEABLE at `496e1ec`, based on `main` `eb83be9`, with no unresolved
+review threads. The last fully green aggregate remains `37311344183` on
+`27b9e21`. Newer CI run `37317927760` passed UI quality with pinned pnpm
+`12.9.1`, formatting/Clippy, governance, and the Linux/macOS/Windows package
+and URL lifecycle checks, but the core/workspace shards and aggregate failed
+on a stale documentation assertion. That assertion is corrected locally and
+the full workspace now passes 269 tests across 63 suites. Security run
+`37317927662` fetched RustSec and passed both lockfile audits, CodeQL, and
+secret scan; Dependency Review run `37317927667` passed. A hosted rerun is
+required for the follow-up commit. The local installed macOS acceptance also passed
 cold/warm URL delivery, close-to-tray/Show/Quit handling, notification request, visible
 restore, and saved-state restart. AppKit returned `accepted=false`; foreground
 activation and physical tray-menu clicks remain unverified. The hosted results
@@ -226,7 +230,7 @@ are tied to `27b9e21`; refresh live PR checks when GitHub connectivity returns.
 - `T-048` Security advisory exception registry and dependency-floor proof tests:
   - `src-tauri/tests/security_advisory_exception_tests.rs`
   - `scripts/check-security-advisory-exceptions.py` and its shell contract validate registry shape and review-date expiry; required CI job `security-exception-governance` remains fail-closed and is required by aggregate `test`.
-  - Audit ignores stay mapped one-to-one to the exception registry. Fifteen withdrawn/absent records were closed with evidence, and the two remaining affected package paths were removed by retiring Tauri/GTK dependencies. The registry and ignore list are empty; the last fresh unfiltered audits passed both supported lockfiles, current refresh could not fetch the database but cached no-fetch scans pass, and hosted governance/RustSec checks passed in runs `37311344183` and `37311344136` on PR head `27b9e21`. See `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
+  - Audit ignores stay mapped one-to-one to the exception registry. Fifteen withdrawn/absent records were closed with evidence, and the two remaining affected package paths were removed by retiring Tauri/GTK dependencies. The registry and ignore list are empty; Security run `37317927662` on `496e1ec` fetched RustSec, scanned both supported lockfiles (517 app and 82 migration-tool dependencies), and passed with 1,290 advisories. Local refresh could not fetch the database, while cached no-fetch scans pass. The follow-up head must rerun the security workflow. See `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
 
 - `T-049` Parity matrix and host-decision tests:
   - `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`

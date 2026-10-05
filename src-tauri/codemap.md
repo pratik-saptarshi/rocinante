@@ -37,12 +37,15 @@ authenticated repository analysis, and persistence/admin services.
 
 ## Validation
 
-- Workspace formatting, all-target checks, and test-target compilation pass
-  locally; full workspace tests are being rerun after contract updates.
+- Workspace formatting, warning-denied all-target/all-feature Clippy, and the
+  full serial test suite pass locally (269 tests across 63 suites); the
+  security-advisory contract suite passes 5/5 after updating stale
+  documentation assertions.
 - The dependency guard requires GTK, GLib, Wry, Tauri runtime, and tracked
   advisory packages to be absent from supported workspace graphs.
 - CI defines required Linux, macOS, and Windows native-shell package and
-  lifecycle checks. Hosted evidence on this Tauri-retirement worktree is
-  pending.
+  lifecycle checks. Run `37317927760` passed the platform and UI checks on
+  `496e1ec`; the core/workspace test shards and aggregate failed on the stale
+  assertion. A corrective commit requires hosted rerun.
 - DuckDB source-build features remain prohibited; CI stages official
   checksum-verified binaries before building or packaging.

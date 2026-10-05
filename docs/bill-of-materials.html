@@ -11,24 +11,27 @@ then release from the merged tip.
 
 PR #108 is merged at `origin/main` `eb83be9`. Current work is on the PR #112
 focused follow-up branch `fix/weighted-rollup-aggregation`, based on that main
-tip. The latest recorded hosted snapshot is PR head `27b9e21`: CI run
-`37311344183` completed with 24 passed checks, no failures, and one configured
-coverage skip; Security run `37311344136` passed CodeQL, RustSec audit, and
-secret scan; Dependency Review run `37311344143` passed. At the last successful
-GitHub refresh, PR #112 was OPEN/CLEAN, its review threads had no unresolved
-items, and the live Dependabot query found no open alerts. A fresh GitHub
-refresh in this pass could not connect, so those are last-known remote facts.
+tip. GitHub confirmed PR #112 OPEN/MERGEABLE at `496e1ec`, based on `main`
+`eb83be9`, with zero unresolved review threads. The last fully green aggregate
+remains CI run `37311344183` on `27b9e21`. Newer run `37317927760` passed UI,
+quality, governance, platform packaging/URL checks, but failed the core and
+full-workspace test shards and aggregate on a stale documentation assertion;
+the local correction passes and requires a hosted rerun. Security run
+`37317927662` passed fresh RustSec audits, CodeQL, and secret scan; Dependency
+Review run `37317927667` passed. The last Dependabot query found no open alerts
+but was not refreshed in this pass.
 
 The supported host is the eframe/winit native shell; Tauri bootstrap,
 runtime/build dependencies, and installer configs are removed. The 11 prior
 command names and wire shapes remain as host-neutral compatibility metadata.
 The advisory registry and Cargo audit ignore list are empty; governance and
-both unfiltered lockfile audits pass against the last refreshed RustSec
-revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`. A new database fetch in
-this pass failed, while cached `--no-fetch --deny warnings` scans still pass.
-CI run `37311344183` passed the
-full workspace tests, formatting, Clippy, UI quality with pinned pnpm 12.9.1,
-the aggregate, and Linux/macOS/Windows package and URL lifecycle checks. The
+both unfiltered lockfile audits pass. Security run `37317927662` fetched the
+RustSec database on `496e1ec`, loaded 1,290 advisories, and scanned both
+supported lockfiles (517 app and 82 migration-tool dependencies) without
+findings. The local database fetch failed, while cached no-fetch scans still
+pass. CI run `37317927760` passed UI quality with pinned pnpm 12.9.1, Rust
+quality, governance, and Linux/macOS/Windows package and URL lifecycle checks;
+the Rust test shards and aggregate failed on the stale docs assertion. The
 local installed macOS acceptance also passed cold/warm delivery,
 close-to-tray/Show/Quit handling, notification request, visible restore, and
 restart restoration. AppKit returned `accepted=false`; foreground activation

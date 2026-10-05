@@ -17,52 +17,67 @@ which retains the original investigation and implementation history.
 
 | Phase | Work | Validation and exit gate | Current state |
 |---|---|---|---|
-| 0 — Establish the live baseline | Record `main`, branch, PR, head SHA, review threads, and check status. Refresh remote state before making a terminal claim. | PR base/head and current checks are obtained from GitHub; unresolved review comments are enumerated. If GitHub is unreachable, record the last successful snapshot and leave remote status unverified. | At the last successful GitHub refresh on 2026-10-05, PR #112 was OPEN/CLEAN at `27b9e21`; CI run `37311344183` had 24 passed, 0 failed, and 1 informational coverage skip; Security run `37311344136` and Dependency Review run `37311344143` passed. The PR #112 review-thread query returned zero unresolved threads, and the live Dependabot query returned zero open alerts. A fresh API check in the current pass could not connect, so these remain last-known remote facts, not a new live verification. |
-| 1 — Correct weighted retention | Keep rollup `metric_sum` and `sample_count` through aggregate metrics and committer scoring; combine them with live samples using total sum / total count. | Run the focused regression, complete storage suite, and serial full workspace suite; run formatting and warning-denied Clippy. Hosted `rust-workspace-tests` must terminate green on the same head. | The weighted-retention regression, storage suite (21/21), full serial workspace (269 tests across 63 suites), formatting, and warning-denied all-target/all-feature Clippy pass locally. On `27b9e21`, hosted full-workspace/core/storage test shards, Rust quality, and aggregate `test` passed in CI run `37311344183`. |
-| 2 — Clear security and dependency gates | Keep all 17 original advisory records accounted for, with the 15 authorized closures evidenced and the remaining affected packages removed from supported lockfiles. Keep the registry and audit ignore list empty. Preserve the RustSec gate. | Run governance and unfiltered `cargo audit --deny warnings` for both supported lockfiles against a freshly fetched database. Record database revision and report; hosted `rust-audit` and governance checks must pass on this PR head. | The authorized 15 closures are documented; the two remaining affected dependency paths are absent from both supported lockfiles. Governance passes with 0 registry entries and 0 ignores. The last successful fresh audits passed both lockfiles on RustSec revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories; 517 app and 82 migration-tool dependencies). This pass attempted a database refresh through `rtk cargo audit`, but GitHub fetch failed; `--no-fetch` scans of both lockfiles still pass against that cached revision. Hosted governance, RustSec audit, CodeQL, and secret scan passed on `27b9e21`; Dependency Review passed as well. |
+| 0 — Establish the live baseline | Record `main`, branch, PR, head SHA, review threads, and check status. Refresh remote state before making a terminal claim. | PR base/head and current checks are obtained from GitHub; unresolved review comments are enumerated. If GitHub is unreachable, record the last successful snapshot and leave remote status unverified. | GitHub App refresh on 2026-10-05 confirmed PR #112 OPEN/MERGEABLE at `496e1ec`, based on `main` `eb83be9`, with zero unresolved review threads. The last full green aggregate remains run `37311344183` on `27b9e21`. Newer CI run `37317927760` reached terminal failure in the workspace/core test shards on a stale documentation-string assertion; a follow-up fix passes locally and requires hosted rerun. Security run `37317927662` and Dependency Review run `37317927667` passed. The latest recorded Dependabot query found zero alerts; it was not refreshed in this pass. |
+| 1 — Correct weighted retention | Keep rollup `metric_sum` and `sample_count` through aggregate metrics and committer scoring; combine them with live samples using total sum / total count. | Run the focused regression, complete storage suite, and serial full workspace suite; run formatting and warning-denied Clippy. Hosted `rust-workspace-tests` must terminate green on the same head. | The weighted-retention regression, storage suite (21/21), full serial workspace (269 tests across 63 suites), formatting, and warning-denied all-target/all-feature Clippy pass locally. On `496e1ec`, the hosted workspace/core shards failed only in the stale security-governance documentation contract; the assertion now normalizes whitespace and checks the current checklist evidence. The full workspace and security-advisory suite pass locally after the correction; hosted confirmation on the follow-up head is pending. |
+| 2 — Clear security and dependency gates | Keep all 17 original advisory records accounted for, with the 15 authorized closures evidenced and the remaining affected packages removed from supported lockfiles. Keep the registry and audit ignore list empty. Preserve the RustSec gate. | Run governance and unfiltered `cargo audit --deny warnings` for both supported lockfiles against a freshly fetched database. Record database revision and report; hosted `rust-audit` and governance checks must pass on this PR head. | The authorized 15 closures are documented; the two remaining affected dependency paths are absent from both supported lockfiles. Governance passes with 0 registry entries and 0 ignores. Security run `37317927662` on `496e1ec` fetched the RustSec database, loaded 1,290 advisories, scanned both supported lockfiles (517 app and 82 migration-tool dependencies), and passed with no findings; CodeQL and secret scan also passed. Current upstream `RustSec/advisory-db` HEAD is `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (2026-10-03); the workflow log confirms a fresh fetch but does not print the downloaded SHA. A local refresh attempt failed, while cached no-fetch scans passed. The security workflow must rerun on the follow-up head. |
 | 3 — Preserve DuckDB binary-only packaging | Retain the SHA-256-verified official shared library and prohibit `bundled`, `bundled-cmake`, and any other source-build feature. | Run the DuckDB feature guard and provisioner contracts; inspect all supported package jobs and installed runtime evidence for Linux, macOS, and Windows. | The local DuckDB feature guard and provisioner contracts pass. On `27b9e21`, the Linux, macOS, and Windows native-shell package jobs passed, including runtime/loader checks; DuckDB remains a checksum-verified prebuilt and no source build is allowed. |
-| 4 — Validate UI and native acceptance | Validate the pinned pnpm UI lane and installed shell behavior: cold/warm URL delivery, saved-state restart, Linux notification and dependency-floor checks, plus platform packaging. | Required UI, package, registration, URL-dispatch, notification, dependency-floor, and aggregate CI checks terminate green at one PR head. Record any behavior the scripts do not exercise as open acceptance. | Hosted `ui-quality` passed on `27b9e21` using pinned pnpm `12.9.1`; Linux/macOS URL delivery, Windows registration, all package jobs, and Linux visible notification acceptance passed. The local installed macOS acceptance passed cold/warm delivery, close-to-tray/Show/Quit handling, notification request, visible restore, and saved-state restart. AppKit returned `accepted=false`; physical menu delivery and frontmost restoration remain open. Opt-in manual verification is `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh`; it waits for actual Show and Quit selections, checks frontmost state after Show, and verifies process exit. |
-| 5 — Resolve review comments and keep complex work tracked | Keep the weighted-retention PR #108 comment linked to its fix. Confirm other findings are fixed or have concrete roadmap acceptance criteria (including BI-060 operation draining and atomic persistence). | Refresh PR #108/#112 review threads; resolve only findings whose implementation and required validation are complete. Confirm deferred work has owner-independent scope, acceptance criteria, and a test plan in the roadmap/bead tracker. | The weighted-retention and admin-secret threads were replied to with validation evidence and resolved; identity and shutdown/persistence follow-ups are resolved or tracked under BI-060. The last live GraphQL refresh returned zero unresolved PR #112 review threads. Refreshing GitHub during this pass failed, so current thread state is not newly verified. |
-| 6 — Reconcile evidence and release decision | Synchronize roadmap, test plan, BOM, publish checklist, codemap, and dated decision record to actual results. | Run roadmap/publish contracts and `git diff --check`; only mark hosted/platform checks complete with terminal evidence. PR #112 must have a green aggregate and no unresolved blocking review comments before it is considered ready for protected merge. | Local roadmap/publish contracts passed 10/10, the targeted security suite passed 5/5, Rust formatting and `git diff --check` passed; the latest hosted CI run `37311344183` on `27b9e21` passed 24 checks with no failures and one informational coverage skip. Security and Dependency Review also passed. On `2a904b0`, the manual-tray contract, formatting, roadmap/governance, DuckDB, desktop dependency-floor, and diff checks pass locally. Direct physical tray-menu and foreground-activation evidence remains open. Current GitHub state could not be refreshed in this pass. |
+| 4 — Validate UI and native acceptance | Validate the pinned pnpm UI lane and installed shell behavior: cold/warm URL delivery, saved-state restart, Linux notification and dependency-floor checks, plus platform packaging. | Required UI, package, registration, URL-dispatch, notification, dependency-floor, and aggregate CI checks terminate green at one PR head. Record any behavior the scripts do not exercise as open acceptance. | On `496e1ec`, hosted `ui-quality` passed with pinned pnpm `12.9.1`; Linux/macOS/Windows package, registration, and URL lifecycle checks passed, including visible Linux notifications. Physical tray-menu delivery and foreground restoration remain open; opt-in manual verification is `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh` and still needs an interactive run. |
+| 5 — Resolve review comments and keep complex work tracked | Keep the weighted-retention PR #108 comment linked to its fix. Confirm other findings are fixed or have concrete roadmap acceptance criteria (including BI-060 operation draining and atomic persistence). | Refresh PR #108/#112 review threads; resolve only findings whose implementation and required validation are complete. Confirm deferred work has owner-independent scope, acceptance criteria, and a test plan in the roadmap/bead tracker. | The weighted-retention and admin-secret threads were replied to with validation evidence and resolved; identity and shutdown/persistence follow-ups are resolved or tracked under BI-060. GitHub App refresh on PR #112 returned zero review threads. The PR is open and mergeable at `496e1ec`; current follow-up checks remain required. |
+| 6 — Reconcile evidence and release decision | Synchronize roadmap, test plan, BOM, publish checklist, codemap, and dated decision record to actual results. | Run roadmap/publish contracts and `git diff --check`; only mark hosted/platform checks complete with terminal evidence. PR #112 must have a green aggregate and no unresolved blocking review comments before it is considered ready for protected merge. | On `496e1ec`, hosted UI, governance, quality/Clippy/fmt, package/lifecycle, RustSec/CodeQL/secret scan, and Dependency Review passed, but aggregate `test` failed on the stale documentation assertion. The assertion fix passes locally: full workspace 269 tests across 63 suites, advisory suite 5/5, warning-denied all-target/all-feature Clippy, formatting, roadmap contracts 10/10, governance, DuckDB/dependency guards, and `git diff --check`. A hosted rerun is required on the follow-up head. Physical tray-menu and foreground-activation evidence remains open. |
 
 ## Execution log — 2026-10-05
 
-### Latest recorded hosted validation
+### Last fully green aggregate and newer hosted validation
 
-- The last successful PR status refresh recorded PR #112 OPEN/CLEAN at
-  `27b9e21`. CI run `37311344183` completed with 24 passed checks, 0 failed,
-  and 1 configured informational coverage skip. Security run `37311344136`
-  passed RustSec audit, CodeQL, and secret scan; Dependency Review run
-  `37311344143` passed. Hosted UI, Rust workspace and quality, aggregate,
-  Linux/macOS/Windows package jobs, URL lifecycle, Linux visible notification,
-  and the dependency/governance gates were green. The review-thread query
-  returned zero unresolved threads and Dependabot returned zero open alerts.
-- This pass could not refresh GitHub: `gh` and the web fetch failed to connect
-  to GitHub. Preserve the snapshot above as last-known evidence and leave the
-  live PR/check state unverified until connectivity returns.
+- The last fully green PR aggregate remains run `37311344183` on head
+  `27b9e21`: 24 checks passed, none failed, and one configured coverage check
+  was informationally skipped. Security run `37311344136` and Dependency
+  Review run `37311344143` also passed.
+- GitHub App refresh confirmed PR #112 OPEN/MERGEABLE at `496e1ec`, based on
+  `main` `eb83be9`; the review-thread query returned no unresolved threads.
+  CI run `37317927760` completed with a failed `test` gate because the core
+  and full-workspace shards hit the same stale exact-string documentation
+  assertion. UI quality, all platform packaging/registration/URL jobs,
+  governance, Rust quality, Clippy, and storage tests passed; coverage was
+  skipped as configured.
+- Security run `37317927662` completed successfully: `rust-audit` fetched the
+  RustSec database and loaded 1,290 advisories for both supported lockfiles,
+  while CodeQL and secret scan passed. Dependency Review run `37317927667`
+  passed. The newest code/test correction passes locally and requires a new
+  hosted run on the follow-up head.
+- A current GitHub API read confirms the upstream RustSec advisory database
+  HEAD is `ef6173cbc5c50ec8166f9a5b28f07834144373ee`, dated 2026-10-03. The
+  hosted run logs prove a database fetch and 1,290-advisory load but do not
+  print the fetched commit SHA, so the run-specific SHA is not directly
+  evidenced.
 - A fresh `rtk cargo audit` database fetch also failed to connect. Both lockfiles
   passed cached `--no-fetch --deny warnings` scans against database revision
   `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories); this does not
   replace a future database refresh.
 
-### Current local closeout validation — commit `2a904b0`
+### Current local closeout validation — correction after `496e1ec`
 
-- Commit `2a904b0` (`test(desktop): add manual macOS tray acceptance`) was
-  pushed to the existing `fix/weighted-rollup-aggregation` branch. GitHub
-  PR/check queries and a remote-ref refresh then failed because
-  `api.github.com` and `github.com` could not be resolved; hosted status for
-  `2a904b0` is unverified.
-- `bash -n scripts/test-macos-url-dispatch.sh`, the desktop-shell
-  `macos_installation` contract test (1/1), roadmap contracts (10/10), the
-  advisory governance checker (0 registry entries and 0 ignores), the DuckDB
-  prebuilt-only guard, the desktop dependency-floor guard, Rust formatting,
-  and `git diff --check` passed on this worktree.
-- The RustSec database refresh failed. Both supported lockfiles passed cached
-  `--no-fetch --deny warnings` scans against revision
+- The repeated hosted failure was a documentation-contract mismatch: the
+  assertion expected a Dependabot phrase without normalizing Markdown
+  whitespace and pinned an older hosted head. The test now normalizes
+  whitespace and checks the current last-green evidence at `27b9e21`, plus
+  the checklist's refresh instruction.
+- The full serial Rust workspace passes locally (269 tests across 63 suites),
+  including the security-advisory suite (5/5). Rust formatting and warning-
+  denied all-target/all-feature Clippy pass locally. The previous manual-tray
+  contract (1/1), roadmap contracts (10/10), governance (0 entries/0 ignores),
+  DuckDB prebuilt-only guard, desktop dependency-floor guard, and diff check
+  also pass.
+- A local RustSec database refresh failed, but Security run `37317927662`
+  successfully refreshed the database on head `496e1ec`. Both supported
+  lockfiles passed hosted `--deny warnings` scans, loading 1,290 advisories
+  (517 app and 82 migration-tool dependencies). Cached local `--no-fetch`
+  scans also pass against revision
   `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories; 517 app and
-  82 migration-tool dependencies). Cargo emitted a crates.io index lock warning
-  but returned success with no audit findings. This is not a fresh-database
-  audit.
+  82 migration-tool dependencies); Cargo emitted a crates.io index lock
+  warning but returned success with no audit findings. The hosted audit is
+  fresh evidence for `496e1ec`; the security workflow must rerun on the
+  follow-up head.
 - The manual tray mode has not been run on an interactive macOS desktop. A
   person still needs to select Show and Quit and record the resulting
   frontmost/process-exit evidence.

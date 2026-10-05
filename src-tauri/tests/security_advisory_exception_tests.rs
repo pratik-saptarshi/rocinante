@@ -85,21 +85,23 @@ fn security_advisory_exceptions_have_owner_review_date_and_exit_condition() {
 
 #[test]
 fn zero_exception_security_gate_is_tracked_as_release_blocking() {
-    let baseline = read_repo_file("../docs/roadmap/repository-security-baseline.html");
-    let checklist = read_repo_file("../docs/publish-readiness-checklist.html");
+    let normalize = |text: String| text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let baseline = normalize(read_repo_file(
+        "../docs/roadmap/repository-security-baseline.html",
+    ));
+    let checklist = normalize(read_repo_file("../docs/publish-readiness-checklist.html"));
     let proof_script = read_repo_file("../scripts/dependency-floor-proof.sh");
     let audit = read_repo_file("../.cargo/audit.toml");
 
     assert!(baseline.contains("Current local status (2026-10-05)"));
     assert!(baseline.contains("both supported lockfiles pass unfiltered audits"));
-    assert!(baseline.contains("live Dependabot query found no open alerts"));
+    assert!(baseline.contains("Dependabot query found no open alerts"));
     assert!(baseline.contains("docs/roadmap/security-advisory-exceptions.json"));
     assert!(checklist.contains("Dependency registry and audit ignore list are empty"));
     assert!(checklist.contains("Fresh unfiltered audits passed both lockfiles"));
-    assert!(checklist.contains("hosted `rust-audit` and governance passed on `ff367c4`"));
-    assert!(checklist.contains("use current PR #112 checks to validate any"));
-    assert!(checklist
-        .contains("Release readiness requires terminal-green checks on the latest PR head"));
+    assert!(checklist.contains("hosted `rust-audit` and governance passed on `27b9e21`"));
+    assert!(checklist.contains("must rerun on the follow-up head"));
+    assert!(checklist.contains("Readiness requires terminal-green checks on the latest PR head"));
     assert!(proof_script.contains("scripts/check-desktop-shell-dependencies.sh"));
     assert!(audit.contains("ignore = []"));
 }

@@ -7,21 +7,25 @@ _Captured: 2026-10-05_
 ### Current local execution snapshot (2026-10-05)
 
 PR #108 is merged to `main` at `eb83be9`. The active follow-up is PR #112 on
-`fix/weighted-rollup-aggregation`, based on that main tip. The latest recorded
-hosted snapshot is PR head `27b9e21`: CI run `37311344183` had 24 passed
-checks, no failures, and one informational coverage skip. Security run
-`37311344136` and Dependency Review run `37311344143` passed. At the last
-successful GitHub refresh, PR #112 was OPEN/CLEAN, its review threads were
-resolved, and the live zero-open-alert query passed. A fresh GitHub refresh in
-this pass could not connect, so these are last-known remote facts.
+`fix/weighted-rollup-aggregation`, based on that main tip. GitHub confirmed PR
+#112 OPEN/MERGEABLE at `496e1ec`, based on `main` `eb83be9`, with zero
+unresolved review threads. The last fully green aggregate remains run
+`37311344183` on `27b9e21` (24 passed, no failures, one coverage skip). Newer
+CI run `37317927760` passed UI, quality, governance, and platform
+package/lifecycle jobs but failed its core/full-workspace test shards and
+aggregate on a stale documentation assertion. The local correction passes
+and requires hosted rerun. Security run `37317927662` passed fresh RustSec
+audits, CodeQL, and secret scan; Dependency Review run `37317927667` passed.
+The last Dependabot query returned zero alerts but was not refreshed here.
 
 Tauri/Wry and GTK/GLib are removed from supported application manifests and
 lockfiles. Fifteen withdrawn/absent advisory entries were closed with evidence;
 the two remaining affected package paths were removed. The exception registry
-and audit ignore list are empty. The last successful fresh audits passed both
-supported lockfiles against RustSec revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee`; a new fetch in this pass failed,
-while cached `--no-fetch --deny warnings` scans still passed. DuckDB remains a
+and audit ignore list are empty. Security run `37317927662` fetched the
+RustSec database on `496e1ec`, loaded 1,290 advisories, and passed both
+supported lockfiles (517 app and 82 migration-tool dependencies); the local
+fetch failed while cached `--no-fetch --deny warnings` scans still pass.
+DuckDB remains a
 checksum-verified prebuilt library and is never compiled from source. The hosted UI lane passed
 with pinned pnpm `12.9.1`; Linux/macOS/Windows package and URL lifecycle checks
 also passed on `27b9e21`. Local macOS lifecycle checks passed URL delivery and
@@ -63,11 +67,11 @@ activation remain unverified (`accepted=false`).
 ## Active Governance and Planned Slices
 
 - `BI-047` — F-047 Desktop parity evaluation and host decision (completed on PR run `28988956969`)
-- `BI-046` — F-046 GTK/glib dependency-floor governance (fresh audits and hosted governance passed on `27b9e21`; refresh current remote checks when connectivity returns)
+- `BI-046` — F-046 GTK/glib dependency-floor governance (hosted fresh audits and governance passed on `496e1ec`; rerun security workflow after the corrective test-contract change)
 - `BI-048` — F-048 Core extraction and host-agnostic contract (completed locally; nine contract tests pass)
 - `BI-049` — F-049 GTK-free native desktop MVP (in progress; broader platform and user-visible parity gaps remain)
 - `BI-050` — F-050 Parity closure and fallback containment (planned; must-have gaps need implementation or an approved, documented deferral)
-- `BI-051` — F-051 Tauri/GTK/GLib retirement (dependency/removal gate and hosted check passed on `27b9e21`; refresh current remote checks when connectivity returns)
+- `BI-051` — F-051 Tauri/GTK/GLib retirement (dependency/removal gate, platform packages, and URL lifecycle checks passed on `496e1ec`; aggregate still awaits the corrected workspace test rerun)
 - `BI-052` — F-052 Dependabot esbuild remediation (lock floor passes; live Dependabot query returned zero open alerts on 2026-10-05)
 - `BI-053` — F-053 CI bootstrap and workflow parseability (completed; validated on PR run `28983234703`)
 - `BI-054` — F-054 CI lane orchestration and gating (completed; validated on PR run `28983234703`)

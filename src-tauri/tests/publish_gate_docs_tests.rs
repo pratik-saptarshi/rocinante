@@ -32,10 +32,10 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
     assert!(checklist.contains("Current branch snapshot — 2026-10-05"));
     assert!(checklist.contains("fix/weighted-rollup-aggregation"));
     assert!(checklist.contains("PR #112"));
-    assert!(checklist.contains("test assertion was corrected in `8285ee6`"));
+    assert!(checklist.contains("Newer CI run `37317927760` on `496e1ec`"));
     assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
     assert!(codemap.contains("PR #112 carries the weighted-retention correction"));
-    assert!(codemap.contains("test assertion was corrected in commit `8285ee6`"));
+    assert!(codemap.contains("Newer CI run `37317927760`"));
 }
 
 #[test]

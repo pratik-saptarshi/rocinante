@@ -3,30 +3,31 @@
 ## Current branch snapshot — 2026-10-05
 
 PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains the active
-protected review path from branch `fix/weighted-rollup-aggregation`. The stale
-test assertion was corrected in `8285ee6`. The latest recorded PR head is
-`27b9e21`: CI run `37311344183` completed with 24 passed
-checks, no failures, and one informational coverage skip. The UI, Rust tests
-and quality, aggregate, Linux/macOS/Windows packages, URL lifecycle, Linux
-notification, and governance checks passed. Security run `37311344136` passed
-CodeQL, RustSec audit, and secret scan; Dependency Review run `37311344143`
-passed. At the last successful GitHub refresh, PR #112 was OPEN/CLEAN, review
-threads were resolved, and the live Dependabot query returned no open alerts.
-A new GitHub refresh in this pass failed to connect, so the remote state below
-is last-known rather than newly verified.
+protected review path from branch `fix/weighted-rollup-aggregation`. GitHub
+App refresh on 2026-10-05 confirmed PR #112 OPEN/MERGEABLE at `496e1ec`, based
+on `main` `eb83be9`, with zero unresolved review threads. The last full green
+aggregate remains run `37311344183` on `27b9e21` (24 passed, no failures, one
+informational coverage skip). Newer CI run `37317927760` on `496e1ec` reached
+terminal failure in the core/full-workspace tests and aggregate because a
+security-governance test expected stale documentation wording. The contract
+fix now passes locally and a hosted rerun is required on the follow-up head.
+UI quality, governance, Rust quality, all three platform package/lifecycle
+jobs passed on `496e1ec`. Security run `37317927662` passed RustSec audit,
+CodeQL, and secret scan; Dependency Review run `37317927667` passed. The last
+recorded Dependabot query found no open alerts; it was not refreshed in this
+pass.
 
 The security registry and Cargo audit ignore list are empty, and the governance
-checker passes. The last successful fresh audits passed both supported
-lockfiles against RustSec database revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories). A new database
-fetch failed during this pass; cached `--no-fetch --deny warnings` audits still
-pass both lockfiles. Hosted `rust-audit` and governance passed on `27b9e21` in
-runs `37311344136`/`37311344183`. Refresh current PR #112 checks when GitHub
-connectivity returns.
+checker passes. Security run `37317927662` fetched the RustSec database,
+loaded 1,290 advisories, scanned both supported lockfiles (517 app and 82
+migration-tool dependencies), and passed with no findings on `496e1ec`. A
+local refresh failed; cached `--no-fetch --deny warnings` audits still pass
+both lockfiles. Hosted audit, governance, CodeQL, and secret-scan checks must
+rerun on the follow-up head.
 
 The UI pin is pnpm `12.9.1`; local execution could not verify its registry
 signature while `registry.npmjs.org` was unreachable, but hosted `ui-quality`
-passed on `27b9e21` with pinned pnpm `12.9.1`. The installed macOS acceptance passed cold/warm URL delivery,
+passed on `496e1ec` with pinned pnpm `12.9.1`. The installed macOS acceptance passed cold/warm URL delivery,
 close-to-tray/Show/Quit handling, notification request, visible restore, and
 saved-state restart. AppKit returned `accepted=false`, so foregrounding is not
 claimed, and physical tray-menu clicks remain unverified. DuckDB remains a
@@ -160,17 +161,17 @@ Criterion | Status | Evidence
 ---|---|---
 Rust formatting passes on current worktree | [x] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` passes.
 Rust lint passes on current worktree | [x] | `cargo clippy --offline --locked --manifest-path src-tauri/Cargo.toml --workspace --all-targets --all-features -- -D warnings` reports no issues.
-Rust tests pass on current worktree | [x] | Offline locked analytics workspace suite passed 269 tests across 63 suites with `-- --test-threads=1`; hosted core, storage, and `rust-workspace-tests` passed in run `37311344183` on `27b9e21`.
-Full Cargo workspace tests pass on current worktree | [x] | Serial local workspace and hosted full-workspace jobs passed; run `37311344183` also passed the aggregate `test` gate on `27b9e21`.
+Rust tests pass on current worktree | [x] | Offline locked full workspace suite passed 269 tests across 63 suites with `-- --test-threads=1`; the security-advisory contract suite passed 5/5 after its whitespace-insensitive assertion update. The hosted core/full-workspace shards on `496e1ec` failed on the stale assertion; rerun required on the follow-up head.
+Full Cargo workspace tests pass on current worktree | [x] | Serial local workspace suite passes 269/63. CI run `37317927760` on `496e1ec` failed its full-workspace and core shards because of the same stale documentation contract; the correction is locally validated and awaits hosted rerun.
 DuckDB cannot build from source and has SHA-pinned native artifacts | [x] | `scripts/check-duckdb-features.sh`, its contract test, and `scripts/test_provision_duckdb.py` pass locally; see `scripts/duckdb-prebuilt-artifacts.json`
-Installed app loads the verified DuckDB library on all supported OSes | [x] | Linux, macOS, and Windows native-shell package jobs passed with runtime/loader checks in CI run `37311344183` on `27b9e21`; local macOS installed acceptance also passed.
+Installed app loads the verified DuckDB library on all supported OSes | [x] | Linux, macOS, and Windows native-shell package jobs passed with runtime/loader checks in CI run `37317927760` on `496e1ec`; local macOS installed acceptance also passed.
 Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
 Merge gate (`test`) requires native-shell package jobs | [x] | Workflow contract and hosted aggregate passed in CI run `37311344183` on `27b9e21`; all three required package jobs passed.
-UI unit tests pass with pinned pnpm on current worktree | [x] | Hosted `ui-quality` passed on `27b9e21`, including install, typecheck, unit tests, and production build with pinned pnpm `12.9.1`; local registry signature lookup remains unavailable.
-UI typecheck passes with pinned pnpm on current worktree | [x] | Hosted `ui-quality` passed on `27b9e21`; local pinned-pnpm execution was blocked by registry signature/network access.
-UI production build passes with pinned pnpm on current worktree | [x] | Hosted `ui-quality` production build passed on `27b9e21`; local pinned-pnpm execution was blocked by registry signature/network access.
+UI unit tests pass with pinned pnpm on current worktree | [x] | Hosted `ui-quality` passed on `496e1ec`, including install, typecheck, unit tests, and production build with pinned pnpm `12.9.1`; local registry signature lookup remains unavailable.
+UI typecheck passes with pinned pnpm on current worktree | [x] | Hosted `ui-quality` passed on `496e1ec`; local pinned-pnpm execution was blocked by registry signature/network access.
+UI production build passes with pinned pnpm on current worktree | [x] | Hosted `ui-quality` production build passed on `496e1ec`; local pinned-pnpm execution was blocked by registry signature/network access.
 Physical macOS tray-menu click and foreground activation are validated | [ ] | Run `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh` in an interactive macOS terminal. It waits for physical Show and Quit selections, checks the Show callback and frontmost window, and verifies process exit. This manual path does not synthesize UI input; it has not yet been run. AppKit previously returned `accepted=false`.
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
 Coverage floor target (informational, enforce in next release) | [ ] | Branch: 85%; Unit: 85%; Integration: 85%; E2E: 85%; target to be promoted to hard fail on a stable CI release lane
@@ -191,18 +192,18 @@ Sync local `main` to merged remote tip | [x] | `git merge --no-ff origin/main`
 
 Criterion | Status | Evidence
 ---|---|---
-CI workflow is monitored until terminal state on last recorded source head `27b9e21` | [x] | CI run `37311344183` completed with 24 passed, 0 failed, and one informational coverage skip; refresh required checks when GitHub connectivity returns.
-Security workflow is monitored until terminal state on last recorded source head `27b9e21` | [x] | Security run `37311344136` completed with CodeQL, rust-audit, and secret scan successful; refresh required checks when GitHub connectivity returns.
-Dependency review is monitored until terminal state on last recorded source head `27b9e21` | [x] | Dependency Review run `37311344143` passed; refresh required checks when GitHub connectivity returns.
+CI workflow is monitored until terminal state on PR head `496e1ec` | [x] | CI run `37317927760` reached terminal state; the aggregate failed on the stale security-advisory docs assertion. The local correction requires a replacement run on the follow-up head.
+Security workflow is monitored until terminal state on PR head `496e1ec` | [x] | Security run `37317927662` completed with fresh RustSec audit, CodeQL, and secret scan successful. Rerun the workflow on the follow-up head.
+Dependency review is monitored until terminal state on PR head `496e1ec` | [x] | Dependency Review run `37317927667` passed. Rerun checks on the follow-up head.
 Rust coverage artifact is retained for review | [ ] | `rust-coverage` was skipped as configured on this pull-request run; no artifact was produced.
 
 ## 7) Publish decision
 
-- CI, Security, Dependency Review, hosted UI, full Rust tests, and all three platform package/lifecycle jobs passed on the last recorded PR #112 head `27b9e21`; the registry and ignore list are empty, both lockfiles pass the refreshed unfiltered audit, and the last live Dependabot query found no open alerts.
+- The last fully green aggregate was on `27b9e21`. Run `37317927760` on `496e1ec` passed UI, governance, quality, package, and lifecycle checks but failed the Rust core/full-workspace tests and aggregate on a stale documentation assertion; the local correction passes the full workspace and awaits hosted rerun. Security and Dependency Review passed on `496e1ec`, including a fresh audit of both lockfiles.
 - For each evidence update, require terminal-green hosted checks on the resulting PR head. Keep DuckDB prebuilt-only and never compile it from source.
 - The installed macOS lifecycle passed, but physical tray-menu click delivery and foreground activation remain open acceptance gates; the latter returned `accepted=false`.
 - BI-049/BI-050 interactive parity evidence remains required before RT-RC-002 can close.
-- Release readiness requires a fresh terminal-green check refresh on the current PR head and the interactive tray-menu/foreground evidence recorded.
+- Release readiness requires terminal-green checks on the corrective PR head and the interactive tray-menu/foreground evidence recorded.
 - If any CI job fails, fix the branch and rerun the gate before merging.
 - If the branch contains docs-only changes, the same gating still applies.
 - If `main` is not aligned to `origin/main` ancestry, halt publish workflow until a sync checkpoint PR is merged.

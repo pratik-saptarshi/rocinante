@@ -7,12 +7,15 @@ application graph. The two remaining RustSec packages were eliminated by
 retiring their dependency paths; no security-owner exception is recorded. The
 registry and Cargo audit ignore list are empty, governance contracts pass, and
 both supported lockfiles pass unfiltered audits on refreshed RustSec revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee`. The last recorded PR #112 hosted
-snapshot at `27b9e21` passed RustSec audit, governance, CodeQL, secret scan,
-aggregate, and all native package/lifecycle jobs; the last live Dependabot query
-found no open alerts. A fresh GitHub refresh in this pass could not connect.
-The local refresh attempt for the RustSec database also failed; cached
-`--no-fetch --deny warnings` scans passed against that revision.
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee`. On PR head `496e1ec`, Security
+run `37317927662` fetched RustSec, loaded 1,290 advisories, and passed both
+supported lockfiles (517 app and 82 migration-tool dependencies), CodeQL, and
+secret scan; governance and Dependency Review passed too. CI run
+`37317927760` failed the core/full-workspace test shards because a contract
+expected stale documentation wording. The assertion now normalizes whitespace
+and passes locally; the follow-up hosted run is required. A local database
+refresh still fails while cached `--no-fetch --deny warnings` scans pass. The
+last recorded Dependabot query found no open alerts; it was not refreshed here.
 The remaining release evidence is an interactive macOS tray-menu click and
 foreground activation; the latest local AppKit request returned `accepted=false`.
 
