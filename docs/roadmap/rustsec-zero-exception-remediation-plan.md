@@ -2,8 +2,9 @@
 
 **Current status (2026-10-05; local remediation in progress):** work is on
 `fix/rocinante-readiness-remediation`; the last verified base was `main` at
-`cdd29b9f9a1f20269d1c50595a4b4d53d5fbc3e4`. Local commit `6f6b8cc` fixes the
-weighted-retention review finding and passes the full serial Rust workspace
+`cdd29b9f9a1f20269d1c50595a4b4d53d5fbc3e4`. The branch includes commit
+`6f6b8cc`, which fixes the weighted-retention review finding and passes the
+full serial Rust workspace
 suite, storage suite, formatting, and warning-denied Clippy. This follow-up
 has not yet received same-head hosted validation or a PR-thread reply. GitHub
 API and web refresh attempts failed, so the live PR and check state are
