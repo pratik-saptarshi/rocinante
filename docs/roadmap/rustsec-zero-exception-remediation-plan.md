@@ -77,7 +77,7 @@ maintainer authorization recorded in the closure document.
 
 | Phase | Status | Evidence and remaining gate |
 |---|---|---|
-| 0 — Baseline and review blockers | Frontend packaging fix implemented locally; hosted validation pending | On branch head `76519cf`, the Tauri packaging contract test passes 9/9 after requiring a production UI build in both platform configs and `frontendDist: ../ui/dist`. `git diff --check` passes. The pnpm invocation did not terminate during local probing and was interrupted, so no local production Tauri bundle is claimed. The GitHub API was unavailable in this attempt; push the change to this existing PR branch, then verify the comment and matrix checks before resolving its thread. The two overdue live RustSec entries remain an independent governance blocker. |
+| 0 — Baseline and review blockers | Packaging correction in progress; hosted rerun required | The first fix commit `1f0b2b2` was pushed to PR #108. Run `37269872184` showed all three Tauri bundle jobs fail because `pnpm --dir ../ui` cannot resolve from the hook's working directory; Rust Clippy also failed because `frontendDist` did not yet exist. This follow-up changes pnpm's directory to `ui` and adds an ignored-output marker so compile-time config validation sees `ui/dist`. Re-run checks on the corrected head before resolving the P1 thread. The governance job separately remains blocked by the two overdue live RustSec entries. |
 | 1 — Prebuilt DuckDB | Complete | The official checksum-verified runtime is staged without source compilation; Linux `.deb`, macOS `.app`, Windows NSIS packaging and lifecycle jobs passed in run `37249203857`. |
 | 2 — SQLite ingestion | Implemented; validation current | Hosted workspace/storage tests, Clippy, and formatting passed in run `37249203857`; preserve the existing public command and payload contracts. |
 | 3 — Isolated Sled migration | Complete | Eight migrator tests pass locally; the 82-package migrator lockfile has no findings or warnings in the refreshed 1,290-advisory database. Both supported lockfiles were audited outside the repository ignore configuration. |
@@ -95,13 +95,23 @@ matrix. The standard and Windows Tauri configs now set `frontendDist` to
 production UI build in the bundle job, then stages the checksum-verified
 DuckDB prebuilt. The Windows command retains its `python` executable spelling.
 
-The DuckDB bundle contract now checks the production asset directory and the
-full build/stage command for both configs. `rtk proxy python3
-scripts/test_prepare_tauri_duckdb_bundle.py` passes 9/9 and
-`rtk git diff --check` passes. A local `pnpm --dir ../ui --version` probe did
-not finish within roughly 25 seconds and was interrupted; this does not count
-as pnpm, UI-build, or platform-bundle validation. GitHub API access failed in
-this attempt, so publication and hosted CI/thread state are still pending.
+The DuckDB bundle contract now checks the production asset directory, its
+tracked existence marker, and the full build/stage command for both configs.
+The first push, `1f0b2b2`, started run `37269872184`: the UI quality and
+workflow-contract jobs passed, all three Tauri bundle jobs failed because
+`pnpm --dir ../ui` could not canonicalize that path, and workspace Clippy
+failed because `ui/dist` did not exist before the Tauri config macro ran.
+The governance job independently failed on the two overdue active records.
+This local correction changes pnpm's directory to `ui` and tracks
+`ui/dist/.gitkeep` so the path exists before the build hook. The correction
+passes the targeted Tauri/DuckDB contract suite (9/9), the roadmap/publish
+contract script (10/10), workspace Clippy, and `git diff --check`. It still
+needs a new hosted matrix run; the Tauri review thread remains open until
+those package jobs pass.
+
+A local `pnpm --dir ../ui --version` probe did not finish within roughly 25
+seconds and was interrupted. No local UI build or native package validation is
+claimed.
 
 ## Goal
 
