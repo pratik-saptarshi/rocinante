@@ -367,14 +367,13 @@ ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh
 ```
 
 It waits for real Show/Quit menu selections and verifies frontmost state. The
-latest GitHub refresh confirmed PR #112 OPEN/MERGEABLE at `b3f0c83`, based on
-`main` `eb83be9`; CI, Security, and Dependency Review all passed on that head.
-Two review findings arrived after those checks: repeated retention promotion
-could lose prior samples, and baseline compatibility calls could use the
-fallback signing secret. Both are fixed and locally validated in the current
-follow-up worktree, but still need a commit and hosted rerun. The physical tray
-result also remains pending; see the readiness roadmap for run identifiers and
-evidence.
+latest GitHub refresh confirmed PR #112 OPEN/MERGEABLE at `3748d5b`, based on
+`main` `eb83be9`. CI run `37325510392`, Security run `37325510228`, and
+Dependency Review run `37325510232` all passed on that head, and both review
+threads are resolved. Repeated retention now preserves prior sums/counts, and
+the four baseline compatibility entry points require a configured signing
+secret. The physical tray result remains pending; see the readiness roadmap
+for run identifiers and evidence.
 Release distribution must sign the completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.

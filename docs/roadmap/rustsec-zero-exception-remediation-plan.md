@@ -1,16 +1,16 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Current status (2026-10-05; follow-up fixes need hosted validation):** PR #108
+**Current status (2026-10-05; interactive parity evidence remains open):** PR #108
 was merged into `origin/main` at `eb83be9da64057dc71838b33edc01a9a2769b0fa`.
-PR #112 on `fix/weighted-rollup-aggregation` is OPEN/MERGEABLE at `b3f0c83`,
-based on that main tip. CI run `37321514028`, Security run `37321514047`, and
-Dependency Review run `37321514294` passed on that head. Two new review
-findings were raised afterward. The local follow-up now merges existing
+PR #112 on `fix/weighted-rollup-aggregation` is OPEN/MERGEABLE at `3748d5b`,
+based on that main tip. CI run `37325510392`, Security run `37325510228`, and
+Dependency Review run `37325510232` passed on that head. Two new review
+findings were raised and fixed. The follow-up now merges existing
 rollup sums/counts when retention runs repeatedly and requires the configured
 token secret at all four baseline compatibility entry points. Focused tests,
 the full workspace (270 tests/64 suites), formatting, and warning-denied
-Clippy pass locally; hosted validation on the follow-up commit is still
-required. The installed macOS lifecycle acceptance passes, but physical
+Clippy pass locally; both review threads were resolved after same-head hosted
+validation passed. The installed macOS lifecycle acceptance passes, but physical
 tray-menu click delivery and foreground activation remain open; the latest
 AppKit request returned `accepted=false`. See the phase-by-phase status in
 [`readiness-closeout-phases-2026-10-05.md`](readiness-closeout-phases-2026-10-05.md).
@@ -24,12 +24,12 @@ runtime. Both the advisory registry and `.cargo/audit.toml` ignore list are now
 empty, and the fail-closed governance contract passes.
 
 Local validation after the latest changes passes: the serial analytics
-workspace suite (269 tests across 63 suites), the storage suite (21/21),
-all-target/all-feature Clippy with warnings denied, formatting, roadmap/publish
+workspace suite (270 tests across 64 suites), the storage suite, all-target/
+all-feature Clippy with warnings denied, formatting, roadmap/publish
 contracts (10/10), governance, DuckDB source-build guard, and desktop
 dependency guard. The retention test now drops its ingestion sender after its
 first promotion; the full local suite no longer stalls. Direct admin storage
-services now require a configured signing secret. Admin-secret guard (1/1),
+services and compatibility baseline calls now require a configured signing secret. Admin-secret guard (1/1),
 admin-service (8/8), admin-ingestion guard (2/2), command compatibility (5/5),
 and scoring-audit (1/1) pass with explicit test-only secrets.
 
@@ -44,13 +44,14 @@ refresh-and-audit result.
 
 The pinned UI version is pnpm `12.9.1`; local typecheck/tests/build could not
 verify it because its registry signature lookup failed, but hosted `ui-quality`
-passed on source head `ff367c4`. Hosted Linux/macOS/Windows package and URL
+passed on source head `3748d5b`. Hosted Linux/macOS/Windows package and URL
 lifecycle checks also passed on that head. The latest local macOS acceptance
 passed cold/warm URL delivery, close-to-tray/Show/Quit handling, notification
 request, visible restore, and saved-state restart. AppKit activation returned
 `accepted=false`; do not claim foreground activation or physical tray-menu
-click acceptance from the scripted checks. Rerun hosted gates after the current
-documentation sync.
+click acceptance from the scripted checks. The current documentation sync
+records the same-head hosted results; rerun the documentation contracts before
+pushing it.
 
 The 2026-10-04 closure evidence is recorded in
 [`rustsec-exception-closure-evidence-2026-10-04.md`](rustsec-exception-closure-evidence-2026-10-04.md).

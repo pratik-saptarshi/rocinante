@@ -10,14 +10,14 @@ metadata in `src-tauri/src/command_compat.rs`; they do not register IPC.
 DuckDB remains a checksum-verified prebuilt shared library and is never
 compiled from source. PR #108 is merged; follow-up branch
 `fix/weighted-rollup-aggregation` is the active PR #112 review path. GitHub
-confirmed PR #112 OPEN/MERGEABLE at `b3f0c83`, based on `main` `eb83be9`; CI
-run `37321514028`, Security run `37321514047`, and Dependency Review run
-`37321514294` all passed on that head. Two new review comments followed: one
-found loss of old samples on repeated retention promotion, and one found
-missing configured-secret enforcement in baseline compatibility calls. Both
-are fixed in the current local worktree; the 270-test/64-suite workspace run,
-formatting, warning-denied Clippy, and focused regressions pass locally.
-Hosted checks for the follow-up fixes remain outstanding. The last recorded
+confirmed PR #112 OPEN/MERGEABLE at `3748d5b`, based on `main` `eb83be9`; CI
+run `37325510392`, Security run `37325510228`, and Dependency Review run
+`37325510232` all passed on that head. Two new review comments reported loss
+of old samples on repeated retention promotion and missing configured-secret
+enforcement in baseline compatibility calls. Both fixes are tested, pushed,
+and the review threads are resolved. The 270-test/64-suite workspace run,
+formatting, warning-denied Clippy, and focused regressions pass locally. The
+last recorded
 Dependabot query returned zero alerts but was not refreshed in this pass.
 Manual physical tray-menu clicks and macOS foreground activation remain
 unverified.
@@ -153,10 +153,10 @@ desktop host.
 
 ## Governance and Execution Snapshot
 
-- PR #108 is merged into current `origin/main` at `eb83be9`. PR #112 is OPEN/MERGEABLE at `b3f0c83`; all three hosted workflows succeeded on that head, then two review comments were added. Their fixes are in the local follow-up worktree and await hosted checks. BI-060 operation draining and atomic persistence remain roadmap work.
-- Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration. The native package and URL lifecycle jobs passed on Linux/macOS/Windows in CI run `37321514028`. Direct physical tray-menu validation remains open.
-- The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty. Security run `37321514047` passed RustSec audit, CodeQL, and secret scan on `b3f0c83`. The local database refresh limitation and audit revision evidence are recorded in the security roadmap. The last recorded Dependabot alert query returned zero open alerts.
-- On the current local code, the full serial workspace passes 270 tests/64 suites, the storage suite and both new regressions pass, formatting passes, and warning-denied Clippy passes. The hosted checks are green on `b3f0c83`, which predates the local follow-up fixes.
+- PR #108 is merged into current `origin/main` at `eb83be9`. PR #112 is OPEN/MERGEABLE at `3748d5b`; CI, Security, and Dependency Review all passed on that head, and both new review threads are resolved. BI-060 operation draining and atomic persistence remain roadmap work.
+- Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration. The native package and URL lifecycle jobs passed on Linux/macOS/Windows in CI run `37325510392`. Direct physical tray-menu validation remains open.
+- The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty. Security run `37325510228` passed RustSec audit, CodeQL, and secret scan on `3748d5b`. The local database refresh limitation and audit revision evidence are recorded in the security roadmap. The last recorded Dependabot alert query returned zero open alerts.
+- On the current local code, the full serial workspace passes 270 tests/64 suites, the storage suite and both new regressions pass, formatting passes, and warning-denied Clippy passes. CI, Security, and Dependency Review pass on the pushed head.
 - Rust formatting, CI scope, DuckDB prebuilt-only, native packaging, dependency-guard, governance, roadmap/publish documentation, and Dependabot-checker contracts pass on the current follow-up worktree. The security registry has zero entries and zero audit ignores; the DuckDB provisioner contract passes nine cases. One informational coverage job remains configured as a skip.
 - pnpm `12.9.1` is pinned and was verified as the latest stable release on 2026-10-05. Hosted `ui-quality` passed with the pin in CI run `37321514028`, including typecheck, UI tests, and production build; local registry signature lookup remains unavailable.
 - The installed macOS acceptance passes cold/warm URL delivery, saved-state restart, close-to-tray/Show/Quit handling, visible restore, and notification request. AppKit returned `accepted=false`, and physical tray-menu clicks were not exercised; foreground activation remains unverified.
