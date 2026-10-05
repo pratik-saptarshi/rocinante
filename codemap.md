@@ -9,8 +9,9 @@ command names and wire shapes are retained as host-neutral compatibility
 metadata in `src-tauri/src/command_compat.rs`; they do not register IPC.
 DuckDB remains a checksum-verified prebuilt shared library and is never
 compiled from source. PR #108 is merged; follow-up branch
-`fix/weighted-rollup-aggregation` is at `8285ee6` with PR #112 as the active
-review path. CI run `37302536069` on parent head `cf9c1d3` passed UI quality,
+`fix/weighted-rollup-aggregation` is the active PR #112 review path. The stale
+test assertion was corrected in commit `8285ee6`, followed by readiness-doc
+syncs on the same branch. CI run `37302536069` on parent head `cf9c1d3` passed UI quality,
 Rust quality, security, governance, dependency review, platform packaging, and
 URL checks; its core and workspace test jobs failed on a stale checklist
 assertion. The correction and updated readiness records are pushed at
@@ -149,7 +150,7 @@ desktop host.
 
 ## Governance and Execution Snapshot
 
-- PR #108 is merged into current `origin/main` at `eb83be9`. PR #112 carries the weighted-retention correction on `fix/weighted-rollup-aggregation`; latest pushed head is `8285ee6`. The test preserves `metric_sum` and `sample_count` in aggregate metrics and committer scoring. The full serial workspace suite, storage suite (21/21), formatting, warning-denied Clippy, and roadmap/publish contracts pass locally. A response linking the PR #108 review thread to PR #112 was posted. CI run `37302536069` on parent head `cf9c1d3` failed on a stale security-checklist assertion in two Rust test jobs; the local correction passes. CodeQL was still in progress in that snapshot; current hosted state needs refresh.
+- PR #108 is merged into current `origin/main` at `eb83be9`. PR #112 carries the weighted-retention correction on `fix/weighted-rollup-aggregation`; corrected test contract `8285ee6` and subsequent readiness-doc syncs are pushed. The test preserves `metric_sum` and `sample_count` in aggregate metrics and committer scoring. The full serial workspace suite, storage suite (21/21), formatting, warning-denied Clippy, and roadmap/publish contracts pass locally. A response linking the PR #108 review thread to PR #112 was posted. CI run `37302536069` on parent head `cf9c1d3` failed on a stale security-checklist assertion in two Rust test jobs; the local correction passes. CodeQL was still in progress in that snapshot; current hosted state needs refresh.
 - Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration locally. Native package contract tests pass 6/6; Linux/macOS/Windows package and current-worktree lifecycle checks still need hosted evidence.
 - The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty; governance contracts and cached-database audits pass. A fresh RustSec database retrieval was blocked by GitHub connectivity.
 - On the latest local code, full-workspace tests pass serially, the storage suite passes 21/21, formatting passes, and all-target/all-feature Clippy passes with warnings denied. Earlier worktree evidence also covers `cargo check --offline --workspace --all-targets` and test-target compilation.
