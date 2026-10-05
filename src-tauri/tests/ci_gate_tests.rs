@@ -238,7 +238,10 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
             "--tests",
         ],
     );
-    assert!(manifest.contains("test = false"));
+    assert!(manifest.contains("[lib]"));
+    assert!(!manifest.contains("[[bin]]"));
+    assert!(!manifest.contains("tauri"));
+    assert!(!manifest.contains("tauri-build"));
 }
 
 #[test]
@@ -700,10 +703,12 @@ fn ci_workflow_marks_release_build_floor_and_delta_scope() {
     assert!(workflow.contains("scope=delta"));
     let delta_seed = extract_named_step_block(&workflow, "Delta build seed");
     assert!(!delta_seed.contains("--all-targets"));
+    assert!(delta_seed.contains("--workspace"));
     let release_seed = extract_named_step_block(&workflow, "Release build seed");
     assert!(release_seed.contains("--bins"));
     assert!(release_seed.contains("--lib"));
     assert!(release_seed.contains("--tests"));
+    assert!(release_seed.contains("--workspace"));
     assert!(release_seed.contains("--no-run"));
 }
 
@@ -725,8 +730,8 @@ fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
             "--deny warnings",
         ],
     );
-    assert!(audit_config.contains("RUSTSEC-2024-0370"));
-    assert!(audit_config.contains("RUSTSEC-2024-0429"));
+    assert!(audit_config.contains("ignore = []"));
+    assert!(!audit_config.contains("RUSTSEC-"));
     assert!(!audit_config.contains("RUSTSEC-2024-0411"));
     assert!(!audit_config.contains("RUSTSEC-2025-0100"));
 }

@@ -52,12 +52,12 @@ test_job_contents="$(awk '
   in_job && /^  [[:alnum:]_-]+:$/ { exit }
   in_job { print }
 ' "$workflow")"
-if [[ "$test_job_contents" != *"- tauri-runtime-bundle"* ]]; then
-  echo "The aggregate test job must depend on the Tauri runtime bundle matrix." >&2
+if [[ "$test_job_contents" != *"- native-shell-package"* ]]; then
+  echo "The aggregate test job must depend on the native-shell package matrix." >&2
   exit 1
 fi
-if [[ "$test_job_contents" != *'needs.tauri-runtime-bundle.result'* || "$test_job_contents" != *'!= "success"'* ]]; then
-  echo "The aggregate test job must fail unless all Tauri bundle matrix legs succeed." >&2
+if [[ "$test_job_contents" != *'needs.native-shell-package.result'* || "$test_job_contents" != *'!= "success"'* ]]; then
+  echo "The aggregate test job must fail unless all native-shell package matrix legs succeed." >&2
   exit 1
 fi
 

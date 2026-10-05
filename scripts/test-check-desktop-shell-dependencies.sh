@@ -9,7 +9,9 @@ cat > "$temporary_root/bin/cargo" <<'CARGO'
 #!/usr/bin/env bash
 set -euo pipefail
 [[ " $* " == *" --locked "* ]] || exit 2
-[[ " $* " == *" --target x86_64-unknown-linux-gnu "* ]] || exit 2
+[[ " $* " == *" --workspace "* ]] || exit 2
+[[ " $* " == *" --all-features "* ]] || exit 2
+[[ " $* " == *" --target all "* ]] || exit 2
 cat "$CARGO_TREE_FIXTURE"
 CARGO
 chmod +x "$temporary_root/bin/cargo"
@@ -19,7 +21,12 @@ CARGO_TREE_FIXTURE="$temporary_root/clean-tree" \
 PATH="$temporary_root/bin:$PATH" \
   bash "$repo_root/scripts/check-desktop-shell-dependencies.sh" >/dev/null
 
-for dependency in gtk gtk4 gtk-sys gtk4-sys glib glib-sys gobject-sys gio-sys pango-sys atk-sys tauri wry; do
+printf 'tauri-winrt-notification v0.8.1\n' > "$temporary_root/allowed-platform-helper-tree"
+CARGO_TREE_FIXTURE="$temporary_root/allowed-platform-helper-tree" \
+PATH="$temporary_root/bin:$PATH" \
+  bash "$repo_root/scripts/check-desktop-shell-dependencies.sh" >/dev/null
+
+for dependency in gtk gtk4 gtk3-macros gtk-sys gtk4-sys glib glib-sys gobject-sys gio-sys pango-sys atk-sys atk tauri tauri-build wry proc-macro-error proc-macro-error-attr; do
   printf '%s v1.0.0\n' "$dependency" > "$temporary_root/forbidden-tree"
   if CARGO_TREE_FIXTURE="$temporary_root/forbidden-tree" \
     PATH="$temporary_root/bin:$PATH" \
@@ -35,4 +42,4 @@ for dependency in gtk gtk4 gtk-sys gtk4-sys glib glib-sys gobject-sys gio-sys pa
   fi
 done
 
-echo "pass: native shell dependency guard accepts clean trees and rejects GTK/GLib bindings, tauri, and wry"
+echo "pass: workspace dependency guard accepts clean trees and rejects retired GTK/Tauri dependencies"
