@@ -288,6 +288,15 @@ fi
 if [[ "$manual_tray_acceptance" == "1" ]]; then
   echo "Physical tray check: click Rocinante's menu-bar icon and choose Quit."
   for _ in {1..60}; do
+    grep -F -x "quit_action_started=true" "$activation_result" >/dev/null 2>&1 && break
+    bundle_pid_is_running "$test_pid" || break
+    sleep 1
+  done
+  if ! grep -F -x "quit_action_started=true" "$activation_result" >/dev/null 2>&1; then
+    echo "The native Quit menu action was not observed after the physical click" >&2
+    exit 1
+  fi
+  for _ in {1..45}; do
     bundle_pid_is_running "$test_pid" || break
     sleep 1
   done

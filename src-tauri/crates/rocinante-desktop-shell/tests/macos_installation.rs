@@ -142,6 +142,7 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     assert!(acceptance_script.contains("ROCINANTE_ACCEPTANCE_MANUAL_TRAY"));
     assert!(acceptance_script.contains("ROCINANTE_ACCEPTANCE_MANUAL_TRAY:-0"));
     assert!(acceptance_script.contains("show_action_started=true"));
+    assert!(acceptance_script.contains("quit_action_started=true"));
     assert!(acceptance_script.contains("wait_for_native_window_state true true"));
     assert!(acceptance_script.contains("choose Show Rocinante"));
     assert!(acceptance_script.contains("choose Quit"));
@@ -188,6 +189,7 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     assert!(shell_source.contains("ROCINANTE_ACCEPTANCE_NOTIFICATION_RESULT"));
     assert!(shell_source.contains("super::macos_url::activate_application()"));
     assert!(shell_source.contains("ROCINANTE_ACCEPTANCE_ACTIVATION_RESULT"));
+    assert!(shell_source.contains("quit_action_started=true\\n"));
     assert!(acceptance_script.contains("kill -KILL \"$process_id\""));
     assert!(acceptance_script.contains("packaging/macos/install-user.sh"));
     assert!(acceptance_script.contains(

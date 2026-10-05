@@ -363,7 +363,22 @@ mod native_ui {
                 }
                 false
             }
-            TrayMenuAction::Quit => true,
+            TrayMenuAction::Quit => {
+                #[cfg(feature = "acceptance-witness")]
+                if let Some(result_path) = option_env!("ROCINANTE_ACCEPTANCE_ACTIVATION_RESULT") {
+                    if let Ok(mut result_file) = std::fs::OpenOptions::new()
+                        .create(true)
+                        .append(true)
+                        .open(result_path)
+                    {
+                        let _ = std::io::Write::write_all(
+                            &mut result_file,
+                            b"quit_action_started=true\n",
+                        );
+                    }
+                }
+                true
+            }
         }
     }
 
