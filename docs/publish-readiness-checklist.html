@@ -2,24 +2,23 @@
 
 ## Current branch snapshot — 2026-10-05
 
-The remediation branch has local, uncommitted changes after pushed commit
-`3020d9e`. Tauri runtime removal and the replacement native-shell packaging
-matrix are implemented locally. Installed macOS lifecycle acceptance passes;
-the Linux/macOS/Windows package matrix and Linux/Windows lifecycle checks have
-not run hosted on this worktree. The exception registry and Cargo audit ignores are
-empty; the governance contract and cached-database audits pass. The complete
-workspace suite passes in serial mode, and the storage suite passes with two
-test threads. Its default-parallel run stalls on this machine, so same-head
-hosted Rust tests remain required. UI typecheck, all 63 unit tests, and the
-production build pass as diagnostics with installed dependencies under global
+The remediation branch includes pushed head `23c7d63` and local commit
+`6f6b8cc`, which fixes weighted retention aggregation in both metric queries
+and committer scoring. The full serial Rust workspace suite, storage suite
+(21/21), formatting, and warning-denied all-target/all-feature Clippy pass on
+that implementation. The latest GitHub API and web refresh attempts failed,
+so PR comments and same-head check results are unverified; hosted Security,
+platform, aggregate, and UI-pin checks remain required. Tauri
+runtime removal and the native-shell package matrix are implemented locally.
+The previously recorded installed macOS lifecycle acceptance passes; Linux
+and Windows lifecycle/package evidence on the current worktree remains
+unverified. The exception registry and Cargo audit ignores are empty, and the
+governance contract plus cached-database audits pass. UI typecheck, all 63
+unit tests, and the production build passed as local diagnostics under global
 pnpm `12.8.1`; the pinned `12.9.1` could not be fetched because
-`registry.npmjs.org` did not resolve, so the pinned UI gate remains required.
-The local installed macOS acceptance passes cold/warm URL delivery, saved-state
-restart, tray/window flow, and notification request. Its AppKit activation
-request returned false; frontmost state is not claimed. Linux/Windows
-package/lifecycle checks, a fresh RustSec database refresh, and hosted
-Security/platform/aggregate checks remain required. Historical green Tauri
-package and lifecycle runs below do not validate the current changes.
+`registry.npmjs.org` did not resolve. A fresh RustSec database refresh is also
+still required. Historical green Tauri package and lifecycle runs below do not
+validate the current native-shell worktree.
 
 This checklist is the required gating artifact for remote publication to
 `origin/main`.

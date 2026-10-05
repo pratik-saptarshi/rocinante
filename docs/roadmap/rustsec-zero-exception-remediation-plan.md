@@ -1,10 +1,13 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Current status (2026-10-05; local remediation in progress):** the worktree is
-on `fix/rocinante-readiness-remediation`, based on pushed commit `3020d9e` and
-`main` at `cdd29b9f9a1f20269d1c50595a4b4d53d5fbc3e4`. The branch tip matches
-`origin`; the current Phase 4/5 changes are uncommitted and have not run in
-hosted CI. A live PR/check refresh failed to connect to GitHub.
+**Current status (2026-10-05; local remediation in progress):** work is on
+`fix/rocinante-readiness-remediation`; the last verified base was `main` at
+`cdd29b9f9a1f20269d1c50595a4b4d53d5fbc3e4`. Local commit `6f6b8cc` fixes the
+weighted-retention review finding and passes the full serial Rust workspace
+suite, storage suite, formatting, and warning-denied Clippy. This follow-up
+has not yet received same-head hosted validation or a PR-thread reply. GitHub
+API and web refresh attempts failed, so the live PR and check state are
+unverified.
 
 The root Tauri binary, build script, runtime/build dependencies, command
 bootstrap, and installer configs have been removed from the supported Rust
@@ -859,3 +862,13 @@ audit record.
 the full serial workspace test suite, the native-shell tests in default and
 no-default feature modes, and the roadmap/publish contracts pass. Same-head
 hosted validation for these review follow-ups is pending.
+
+Review thread [`discussion_r4182447911`](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4182447911)
+found that analytics averaged each retained rollup as one sample when it was
+combined with newer raw samples. Commit `6f6b8cc` now carries `metric_sum` and
+`sample_count` through both aggregate queries and committer scoring, then
+computes the combined weighted average. The integration test creates two
+rolled-up values plus a live value and checks both query paths. The storage
+suite passes 21/21, the full serial workspace suite passes, formatting and
+all-target/all-feature Clippy pass. The thread still needs a response and
+same-head hosted confirmation after the branch update.
