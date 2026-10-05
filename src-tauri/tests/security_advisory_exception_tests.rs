@@ -102,9 +102,7 @@ fn zero_exception_security_gate_is_tracked_as_release_blocking() {
     assert!(checklist.contains(
         "Security run `37328034651` passed RustSec audit, CodeQL, and secret scan on `e9d6d3a`"
     ));
-    assert!(checklist.contains(
-        "Dependency Review run `37328034502` all succeeded on that head"
-    ));
+    assert!(checklist.contains("Dependency Review run `37328034502` all succeeded on that head"));
     assert!(checklist.contains("Readiness requires terminal-green checks on the latest PR head"));
     assert!(proof_script.contains("scripts/check-desktop-shell-dependencies.sh"));
     assert!(audit.contains("ignore = []"));

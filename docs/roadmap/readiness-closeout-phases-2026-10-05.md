@@ -31,7 +31,7 @@ which retains the original investigation and implementation history.
 |---|---|---|---|
 | 7 — Reconcile current evidence | Update current-state roadmap, test plan, security roadmaps, README, codemap, BOM, publish checklist, and dated decision summary to PR head `e9d6d3a` and its successful hosted runs. Preserve older run data as history. | Run `bash scripts/test-roadmap-doc-contracts.sh`, inspect current summaries for stale-head references, and require `rtk git diff --check` to pass. | Complete locally. Current summaries cite `e9d6d3a` and runs `37328034504`, `37328034651`, and `37328034502`; older `3748d5b` references remain as dated history. All 10 roadmap/publish contract tests and `rtk git diff --check` pass. Hosted validation of this documentation refresh follows the push. |
 | 8 — Complete interactive macOS acceptance | Run the opt-in installed-app check on this interactive Mac and physically choose Show and Quit from the app menu. Require frontmost state after Show and successful process exit after Quit. | Run with `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1` and leave strict cold-launch frontmost mode unset; manual mode checks frontmost after the physical Show action. Require a zero exit and the script's success witness. | Still open. The strict cold-launch attempt stopped before tray prompts (`visible=true`, `frontmost=false`). A second run installed and registered the app, passed cold URL, notification, and close-to-tray setup, then timed out without observing `show_action_started=true`; warm URL, Show foreground, Quit, and restart were not reached. No physical Show/Quit acceptance is claimed. Retry when a person can make the menu selections during the prompts. |
-| 9 — Final closeout audit | Record the interactive result, rerun document contracts and diff checks, push the existing PR branch, and refresh all hosted checks at its new head. | Require green aggregate CI, Security, and Dependency Review at one head, no unresolved blocking comments, and all required roadmap acceptance evidence. | First evidence-refresh commit `a1b8e7e`: Dependency Review passed; CI failed core/full workspace shards because `security_advisory_exception_tests.rs` still asserted the retired `3748d5b` audit snapshot. Other completed CI jobs passed. Security RustSec audit and secret scan passed; CodeQL was still running at the last poll. The assertion is updated locally and its suite passes 5/5; push a follow-up and monitor replacement runs. Phase 8 remains open. |
+| 9 — Final closeout audit | Record the interactive result, rerun document contracts and diff checks, push the existing PR branch, and refresh all hosted checks at its new head. | Require green aggregate CI, Security, and Dependency Review at one head, no unresolved blocking comments, and all required roadmap acceptance evidence. | The `a1b8e7e` run exposed the stale security-test expectation, corrected in `7e5bd2a`. On `7e5bd2a`, full/core/storage tests, Clippy, UI, governance, and platform package/lifecycle jobs passed; formatting failed on one line-wrap in that assertion. Local `cargo fmt --check`, the 5-test security suite, all 10 roadmap/publish contracts, and `git diff --check` now pass after formatting correction. Security audit and secret scan passed on `7e5bd2a`; CodeQL is still running. Dependency Review passed. Push the formatting correction and rerun the hosted gate. Phase 8 remains open. |
 
 ## Execution log — 2026-10-05
 
@@ -78,6 +78,16 @@ lifecycle jobs. The stale assertion has been updated locally, and the focused
 security-advisory suite passes 5/5. Security run `37333311614` has successful
 RustSec audit and secret-scan jobs; CodeQL was still in progress at the last
 poll. Replacement hosted runs are required after pushing the assertion fix.
+
+Follow-up CI run `37334243657` on `7e5bd2a` passed the full/core/storage Rust
+test jobs, Clippy, UI quality, security governance, and all package and URL
+lifecycle jobs. The aggregate failed only because `rust-lint (fmt)` found the
+new dependency-review assertion should be formatted on one line. Local
+`cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` reproduced
+and then passed after the formatting correction. Security run `37334243778`
+has successful RustSec audit and secret-scan jobs; CodeQL is still running.
+Dependency Review run `37334243714` passed. Push the formatted test and
+refresh all checks before closing phase 9.
 
 ### Review findings after green checks on `b3f0c83`
 
