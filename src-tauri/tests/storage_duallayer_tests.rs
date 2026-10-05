@@ -492,7 +492,31 @@ fn aggregates_and_scores_weighted_rollups_with_live_samples() {
     store
         .ingest_commit_event(&new_event)
         .expect("ingest live sample for rolled-up release");
-    store.promote_to_columnar().expect("promote live sample");
+    for release in ["r2022", "r2023"] {
+        let mut event = sample_event_with_release(&format!("new-{release}"), release);
+        event.telemetry[0].metric_value = 0.0;
+        store
+            .ingest_commit_event(&event)
+            .expect("ingest newer release to keep r2019 stale");
+    }
+    let stats = store
+        .promote_to_columnar_with_retention(&retention, now_ts_for_test())
+        .expect("re-promote with retention");
+    assert_eq!(stats.promoted_events, 3);
+
+    let connection = Connection::open(col.to_str().expect("col path"))
+        .expect("open analytics for rollup assertion");
+    let (metric_sum, sample_count): (f64, i64) = connection
+        .query_row(
+            "SELECT metric_sum, sample_count
+             FROM telemetry_history_rollup
+             WHERE repo_name = ?1 AND release = ?2 AND metric_key = ?3",
+            params!["repo-a", "r2019", "estimated_cyclomatic_complexity"],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .expect("read merged rollup");
+    assert!((metric_sum - 45.0).abs() < 1e-9);
+    assert_eq!(sample_count, 3);
 
     let query = AdminQuery {
         name: Some("repo-a".to_string()),

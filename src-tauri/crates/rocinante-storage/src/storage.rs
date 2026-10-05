@@ -1447,27 +1447,6 @@ impl DualLayerStore {
             .transaction()
             .map_err(|error| AnalyzerError::Db(error.to_string()))?;
 
-        let purge_rollup_sql = "
-            WITH ranked AS (
-                SELECT
-                    repo_name,
-                    release,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY repo_name
-                        ORDER BY MAX(ts) DESC, MAX(release) DESC
-                    ) AS rn
-                FROM telemetry_history
-                GROUP BY repo_name, release
-            )
-            DELETE FROM telemetry_history_rollup
-            WHERE (repo_name, release) IN (
-                SELECT repo_name, release FROM ranked WHERE rn > ?1
-            )
-        ";
-        let purged_rollups = transaction
-            .execute(purge_rollup_sql, params![keep_releases])
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-
         let rollup_sql = "
             WITH ranked AS (
                 SELECT
@@ -1482,24 +1461,63 @@ impl DualLayerStore {
             ),
             stale_releases AS (
                 SELECT repo_name, release FROM ranked WHERE rn > ?1
+            ),
+            rollup_inputs AS (
+                SELECT
+                    existing.repo_name,
+                    existing.release,
+                    existing.committer,
+                    existing.plugin,
+                    existing.metric_key,
+                    existing.metric_sum,
+                    existing.sample_count,
+                    existing.details
+                FROM telemetry_history_rollup existing
+                INNER JOIN stale_releases r
+                    ON r.repo_name = existing.repo_name
+                   AND r.release = existing.release
+
+                UNION ALL
+
+                SELECT
+                    h.repo_name,
+                    h.release,
+                    h.committer,
+                    h.plugin,
+                    h.metric_key,
+                    h.metric_value AS metric_sum,
+                    1 AS sample_count,
+                    h.details
+                FROM telemetry_history h
+                INNER JOIN stale_releases r
+                    ON r.repo_name = h.repo_name
+                   AND r.release = h.release
+            ),
+            merged_rollups AS (
+                SELECT
+                    repo_name,
+                    release,
+                    committer,
+                    plugin,
+                    metric_key,
+                    SUM(metric_sum) AS metric_sum,
+                    SUM(sample_count) AS sample_count,
+                    MIN(details) AS details
+                FROM rollup_inputs
+                GROUP BY repo_name, release, committer, plugin, metric_key
             )
-            INSERT INTO telemetry_history_rollup
+            INSERT OR REPLACE INTO telemetry_history_rollup
                 (repo_name, release, committer, plugin, metric_key, metric_sum, sample_count, details)
             SELECT
-                h.repo_name,
-                h.release,
-                h.committer,
-                h.plugin,
-                h.metric_key,
-                SUM(h.metric_value),
-                COUNT(*),
-                MIN(h.details)
-            FROM telemetry_history h
-            INNER JOIN stale_releases r
-                ON r.repo_name = h.repo_name
-               AND r.release = h.release
-            GROUP BY
-                h.repo_name, h.release, h.committer, h.plugin, h.metric_key
+                repo_name,
+                release,
+                committer,
+                plugin,
+                metric_key,
+                metric_sum,
+                sample_count,
+                details
+            FROM merged_rollups
         ";
 
         let rolled_up = transaction
@@ -1527,7 +1545,7 @@ impl DualLayerStore {
         let purged_history = transaction
             .execute(purge_sql, params![keep_releases])
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let changed = purged_rollups > 0 || rolled_up > 0 || purged_history > 0;
+        let changed = rolled_up > 0 || purged_history > 0;
         if changed {
             self.mark_snapshot_publication_pending()?;
         }
