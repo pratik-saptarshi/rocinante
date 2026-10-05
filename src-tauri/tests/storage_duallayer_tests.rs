@@ -764,6 +764,9 @@ fn async_ingestion_engine_applies_retention_before_promotion() {
         engine.promotion_count() > 0,
         "background ingestion did not complete a promotion before the timeout"
     );
+    // Stop the periodic worker before querying the published snapshot so later
+    // interval promotions cannot contend with these read assertions.
+    drop(engine);
 
     let legacy_hits = store
         .aggregate_by_query(&AdminQuery {
