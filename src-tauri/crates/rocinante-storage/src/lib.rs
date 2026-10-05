@@ -255,7 +255,9 @@ pub fn reseed_release_baseline(
 
 #[cfg(test)]
 mod tests {
-    use super::storage::{BaselineStore, IngestionBackendKind};
+    #[cfg(feature = "analytics")]
+    use super::storage::BaselineStore;
+    use super::storage::IngestionBackendKind;
 
     #[test]
     fn application_store_defaults_retain_legacy_paths_until_migration() {

@@ -1988,7 +1988,7 @@ mod queue_lag_tests {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "analytics"))]
 mod sqlite_ingestion_tests {
     use super::{
         now_ts, prefix_successor, AdminQuery, AnalyticsQueryMode, AnalyticsSnapshot,

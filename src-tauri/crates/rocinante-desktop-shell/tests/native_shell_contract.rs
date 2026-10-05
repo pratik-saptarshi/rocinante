@@ -1,4 +1,3 @@
-use eframe::Storage as _;
 use rocinante_desktop_shell::{
     deep_link::{parse_deep_link, DeepLinkTarget},
     navigation_shortcut, window_close_behavior, NavigationAction, ShellLifecycle, ShellPage,
@@ -7,9 +6,11 @@ use rocinante_desktop_shell::{
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+#[cfg(feature = "native-ui")]
 #[derive(Default)]
 struct MemoryStorage(HashMap<String, String>);
 
+#[cfg(feature = "native-ui")]
 impl eframe::Storage for MemoryStorage {
     fn get_string(&self, key: &str) -> Option<String> {
         self.0.get(key).cloned()
@@ -92,6 +93,7 @@ fn repository_selection_is_saved_and_restored_with_shell_state() {
 }
 
 #[test]
+#[cfg(feature = "native-ui")]
 fn repository_selection_roundtrips_through_eframe_ron_storage() {
     let mut shell = ShellState::default();
     shell.select_repository(Some(PathBuf::from("/work/project with spaces")));
@@ -106,16 +108,16 @@ fn repository_selection_roundtrips_through_eframe_ron_storage() {
 }
 
 #[test]
-fn repository_selection_roundtrips_through_eframe_json_storage_key() {
+fn repository_selection_roundtrips_through_json_storage_key() {
     let mut shell = ShellState::default();
     shell.select_repository(Some(PathBuf::from("/work/project with spaces")));
 
-    let mut storage = MemoryStorage::default();
+    let mut storage = HashMap::new();
     let saved = serde_json::to_string(&shell).expect("serialize shell state as JSON");
-    storage.set_string("rocinante_shell_state_json", saved);
+    storage.insert("rocinante_shell_state_json", saved);
     let restored: ShellState = serde_json::from_str(
         &storage
-            .get_string("rocinante_shell_state_json")
+            .get("rocinante_shell_state_json")
             .expect("load shell state JSON"),
     )
     .expect("restore shell state from JSON storage key");
