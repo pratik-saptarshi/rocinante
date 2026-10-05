@@ -1,36 +1,30 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Current status (2026-10-05; local evidence):** the remediation branch is
-fix/rocinante-readiness-remediation at eeaab43bb3e966ca5a915e7b3406fa876aa21e36;
-its cached origin branch ref matches. The last recorded base is main at cdd29b9.
-A live GitHub PR query could not reach api.github.com, so current PR state,
-review-thread state, and hosted results after run 37249203857 are unverified.
-That earlier run passed its recorded code, UI, lifecycle, and Tauri package
-lanes but failed the governance job on the two overdue exceptions.
+**Current status (2026-10-05; hosted and local evidence):** PR #108 remains open
+and mergeable on `fix/rocinante-readiness-remediation`, at head
+`e3a069df0b5c85b3a4456a6e0e6f20463787fc6d`, based on `main` at
+`cdd29b9f9a1f20269d1c50595a4b4d53d5fbc3e4`. Hosted CI run
+[`37270511350`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37270511350)
+completed with 22 checks passed, one expected coverage skip, and two failures:
+`security-exception-governance` plus its dependent aggregate `test`. The Rust
+workspace suite, Rust quality gate, crate test shards, Clippy/fmt, UI quality,
+Linux/macOS/Windows URL lifecycle, and all three Tauri package builds passed.
+The governance failure is limited to the two overdue active records. Security
+run [`37270511331`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37270511331)
+and Dependency Review run [`37270511339`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37270511339)
+passed, including Rust audit, CodeQL, and secret scan. The P1 frontend
+packaging review thread is resolved.
 
-The current local code slice has seven modified Rust files. Its full Rust
-workspace suite passes 267 tests across 62 suites; all-target/all-feature
-Clippy passes with warnings denied; workspace formatting, roadmap and publish
-contracts (10/10), advisory-governance contracts, CI-scope contract, DuckDB
-no-source-build contract, and native-shell dependency contract pass. The
-checksum-verifying provisioner staged the official DuckDB 1.5.6 prebuilt for
-the tests. A RustSec refresh on 2026-10-05 loaded 1,290 advisories from
-revision ef6173cbc5c50ec8166f9a5b28f07834144373ee (last upstream commit
+The 2026-10-05 RustSec database refresh loaded 1,290 advisories from revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee` (last upstream commit
 2026-10-03). An unfiltered audit outside the repository ignore file reports
 zero vulnerabilities and exactly two warnings: RUSTSEC-2024-0370
-(proc-macro-error 1.0.4, unmaintained) and RUSTSEC-2024-0429 (glib 0.18.5,
-unsound); --deny warnings exits 1. The 82-package migration-tool audit is
-clean. The local fail-closed governance checker validates the two-entry
-registry/ignore mapping and exits 1 because both review dates remain overdue.
-Fifteen obsolete registry entries are closed with evidence. No owner
-disposition or date renewal is inferred for the two live findings; the chosen
-resolution remains removing their dependency paths.
-
-Phase 4 is still required: the root manifest and supported Tauri package retain
-Tauri/Wry/GTK, even though the shared services and GTK-free shell are present.
-Phase 5 cannot close until those active paths are absent from all supported
-lockfiles, then the registry and audit ignores can be emptied and fresh
-unfiltered audits can pass.
+(`proc-macro-error 1.0.4`, unmaintained) and RUSTSEC-2024-0429 (`glib 0.18.5`,
+unsound); `--deny warnings` exits 1. The 82-package migration-tool audit is
+clean. Fifteen obsolete registry entries are closed with evidence. No owner
+disposition or date renewal is inferred for the two live findings; Phase 4
+must remove their Tauri/Wry/GTK dependency paths before Phase 5 empties the
+registry and ignore list and reruns the unfiltered audits.
 
 The 2026-10-04 closure evidence is recorded in
 [`rustsec-exception-closure-evidence-2026-10-04.md`](rustsec-exception-closure-evidence-2026-10-04.md).
@@ -77,7 +71,7 @@ maintainer authorization recorded in the closure document.
 
 | Phase | Status | Evidence and remaining gate |
 |---|---|---|
-| 0 — Baseline and review blockers | Packaging correction in progress; hosted rerun required | The first fix commit `1f0b2b2` was pushed to PR #108. Run `37269872184` showed all three Tauri bundle jobs fail because `pnpm --dir ../ui` cannot resolve from the hook's working directory; Rust Clippy also failed because `frontendDist` did not yet exist. This follow-up changes pnpm's directory to `ui` and adds an ignored-output marker so compile-time config validation sees `ui/dist`. Re-run checks on the corrected head before resolving the P1 thread. The governance job separately remains blocked by the two overdue live RustSec entries. |
+| 0 — Baseline and review blockers | Packaging blocker resolved; governance remains open | Corrected commit `e3a069d` passed the Linux, macOS, and Windows Tauri package jobs, UI quality, workflow contracts, lifecycle jobs, Rust workspace tests, Clippy/fmt, and CI gate contract in run `37270511350`. Security audit, CodeQL, secret scan, and Dependency Review passed. The P1 packaging thread is resolved. The CI aggregate still fails only because the fail-closed governance job rejects the two overdue live advisories. |
 | 1 — Prebuilt DuckDB | Complete | The official checksum-verified runtime is staged without source compilation; Linux `.deb`, macOS `.app`, Windows NSIS packaging and lifecycle jobs passed in run `37249203857`. |
 | 2 — SQLite ingestion | Implemented; validation current | Hosted workspace/storage tests, Clippy, and formatting passed in run `37249203857`; preserve the existing public command and payload contracts. |
 | 3 — Isolated Sled migration | Complete | Eight migrator tests pass locally; the 82-package migrator lockfile has no findings or warnings in the refreshed 1,290-advisory database. Both supported lockfiles were audited outside the repository ignore configuration. |
@@ -105,9 +99,11 @@ The governance job independently failed on the two overdue active records.
 This local correction changes pnpm's directory to `ui` and tracks
 `ui/dist/.gitkeep` so the path exists before the build hook. The correction
 passes the targeted Tauri/DuckDB contract suite (9/9), the roadmap/publish
-contract script (10/10), workspace Clippy, and `git diff --check`. It still
-needs a new hosted matrix run; the Tauri review thread remains open until
-those package jobs pass.
+contract script (10/10), workspace Clippy, and `git diff --check`. Hosted run
+`37270511350` passed all three Tauri package jobs and the P1 thread was
+resolved. The `ui-quality` job also passed on that head. The only required CI
+failure is the security-governance gate for the two overdue active records and
+its dependent aggregate.
 
 A local `pnpm --dir ../ui --version` probe did not finish within roughly 25
 seconds and was interrupted. No local UI build or native package validation is
