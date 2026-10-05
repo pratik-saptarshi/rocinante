@@ -1869,10 +1869,7 @@ mod native_ui {
                     "pid={}\nlinks={:?}\nresult={:?}\n",
                     std::process::id(),
                     initial_links,
-                    forward_result
-                        .as_ref()
-                        .map(|()| ())
-                        .map_err(ToString::to_string)
+                    forward_result.as_ref().map_err(ToString::to_string)
                 );
                 let _ = std::fs::write(witness, snapshot);
             }
