@@ -8,7 +8,7 @@ _Captured: 2026-10-05_
 
 PR #108 is merged to `main` at `eb83be9`. PR #112 remains open on `fix/weighted-rollup-aggregation`. The shutdown source candidate is `b95a8c1`; it sets eframe `run_and_return=false` after hosted CI showed that Quit reached the app but left the process resident on `fe5b2eb`.
 
-Local formatting, 52 desktop-shell tests, the 270-test/64-suite serial workspace, and warning-denied Clippy pass. The installed macOS lifecycle is inconclusive locally because Launch Services refused the temporary bundle (`-10822`). Same-head hosted CI, Security, and Dependency Review remain required; previous green results on `2fac448` do not validate the shutdown change. GitHub Status reported Actions degraded performance at 2026-10-05 19:33 UTC.
+Local formatting, 52 desktop-shell tests, the 270-test/64-suite serial workspace, and warning-denied Clippy pass. The installed macOS lifecycle is inconclusive locally because Launch Services refused the temporary bundle (`-10822`). A standalone executable attempt aborted before `main` because dyld could not load `@rpath/libduckdb.dylib` and found no `LC_RPATH`. Same-head hosted CI, Security, and Dependency Review remain required; previous green results on `2fac448` do not validate the shutdown change. GitHub Status reported Actions degraded performance at 2026-10-05 19:33 UTC.
 
 The security exception registry and audit ignore list remain empty, prior RustSec/CodeQL/secret-scan results passed on `2fac448`, and DuckDB remains a checksum-verified prebuilt that is never compiled from source. pnpm `12.9.1` is pinned; prior hosted UI validation used that pin. Physical Show/Quit, frontmost activation, and current-candidate saved-state restart remain unverified.
 
@@ -139,11 +139,7 @@ The security exception registry and audit ignore list remain empty, prior RustSe
   Linux/macOS/Windows package checks verified runtime loading without a source
   build. The desktop dependency guard excludes GTK, GLib, Tauri, and Wry across
   all workspace targets and features; this closes BI-051 on the source head.
-- The installed macOS acceptance passed cold/warm URL delivery,
-  close-to-tray/Show/Quit handling, notification request, visible restore, and
-  saved-state restart. AppKit returned `accepted=false`; physical tray-menu
-  click delivery and foreground activation remain unverified. BI-049/BI-050
-  also retain the parity gaps listed in the desktop parity matrix.
+- The earlier scripted installed-app lifecycle passed cold/warm URL delivery, close-to-tray, notification request, visible restore, and saved-state restart; it predates the current shutdown source and does not verify physical Show/Quit. Current acceptance is inconclusive: sandboxed Launch Services refused the temporary bundle (`-10822`), and a standalone executable attempt aborted before startup because dyld could not load `@rpath/libduckdb.dylib` (`no LC_RPATH`). Physical tray-menu clicks and foreground activation remain unverified. BI-049/BI-050 also retain the parity gaps listed in the desktop parity matrix.
 - This earlier snapshot is retained for per-check history. The latest recorded
   hosted snapshot is PR head `27b9e21`; a fresh GitHub status refresh remains
   pending network availability.

@@ -32,7 +32,7 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
     let bom = normalize_whitespace(&read_repo_file("../docs/bill-of-materials.html"));
     let codemap = normalize_whitespace(&read_repo_file("../codemap.md"));
 
-    assert!(bom.contains("Current work is on the PR #112"));
+    assert!(bom.contains("Current shutdown source `b95a8c1`"));
     assert!(bom.contains("BI-047"));
     assert!(checklist.contains("Current branch snapshot — 2026-10-05"));
     assert!(checklist.contains("fix/weighted-rollup-aggregation"));
@@ -43,13 +43,7 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
     assert!(codemap.contains("current shutdown source is `b95a8c1`"));
     assert!(codemap.contains("Same-head CI, Security, and Dependency Review are pending"));
 
-
-
-
-
     assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
-
-
 
 }
 

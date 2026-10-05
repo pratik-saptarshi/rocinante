@@ -141,6 +141,9 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     assert!(acceptance_script.contains("request_accepted="));
     assert!(acceptance_script.contains("ROCINANTE_ACCEPTANCE_MANUAL_TRAY"));
     assert!(acceptance_script.contains("ROCINANTE_ACCEPTANCE_MANUAL_TRAY:-0"));
+    assert!(acceptance_script.contains("otool -l \"$bundle_binary\""));
+    assert!(acceptance_script.contains("@executable_path/../Frameworks"));
+    assert!(acceptance_script.contains("codesign --verify --deep --strict \"$bundle\""));
     assert!(acceptance_script.contains("show_action_started=true"));
     assert!(acceptance_script.contains("quit_action_started=true"));
     assert!(acceptance_script.contains("wait_for_native_window_state true true"));

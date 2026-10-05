@@ -123,6 +123,16 @@ if ! otool -L "$bundle_binary" | grep -F '@rpath/libduckdb.dylib' >/dev/null; th
   otool -L "$bundle_binary" >&2
   exit 1
 fi
+bundle_rpaths="$(otool -l "$bundle_binary" | awk '/cmd LC_RPATH/ { getline; getline; sub(/^[[:space:]]*path /, ""); sub(/ [(]offset.*/, ""); print }')"
+if ! grep -F -x '@executable_path/../Frameworks' <<< "$bundle_rpaths" >/dev/null; then
+  echo "The app executable has no Frameworks-relative DuckDB run path" >&2
+  printf '%s\n' "$bundle_rpaths" >&2
+  exit 1
+fi
+if ! codesign --verify --deep --strict "$bundle"; then
+  echo "The acceptance app bundle failed strict code-signature verification" >&2
+  exit 1
+fi
 if otool -l "$bundle_binary" | grep -F 'duckdb-download' >/dev/null; then
   echo "The app executable still contains a Cargo-cache DuckDB run path" >&2
   otool -l "$bundle_binary" >&2

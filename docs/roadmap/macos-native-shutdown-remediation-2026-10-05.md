@@ -160,3 +160,9 @@ UTC that day. Treat the queue delay as external status, not as a pass or code
 failure; retain the gate until the actual same-head runs finish.
 
 The prior runs queued for source head `b95a8c1` were cancelled after the documentation commit moved the branch to `2e6c8e4`. Fresh required runs on the final source/documentation tree are still required.
+
+## Follow-up launch failure — 2026-10-05 14:22 CDT
+
+The fresh local report `rocinante-desktop-shell-2026-10-05-142210.ips` records an `EXC_CRASH`/`SIGABRT` in dyld before application startup: `Library not loaded: @rpath/libduckdb.dylib` and `Reason: no LC_RPATH was found`. The process path was a standalone executable on a mounted volume, not `Contents/MacOS/rocinante-desktop-shell` inside a registered `.app`; no Rust `main`, eframe UI, or tray callback ran. Treat this as a failed unsupported launch path, not evidence that the current shutdown callback crashed. The installed-app attempt remains inconclusive because sandboxed Launch Services refused the temporary bundle (`-10822`).
+
+The supported macOS launch artifact is the signed app bundle. Before any URI or lifecycle acceptance, require `Contents/Frameworks/libduckdb.dylib`, a `@rpath/libduckdb.dylib` load command, `@executable_path/../Frameworks` in `LC_RPATH`, and a passing strict bundle signature check. Launch the bundle through Launch Services; do not treat a copied bare executable as an app acceptance run. Keep cold/warm URL delivery, physical Show/Quit, foreground restoration, saved-state restart, and process exit unverified until the bundle can be launched in an interactive session.

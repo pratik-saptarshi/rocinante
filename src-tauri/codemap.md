@@ -41,6 +41,6 @@ authenticated repository analysis, and persistence/admin services.
 - The desktop-shell suite passes 52 tests across 9 suites. The full serial workspace passes 270 tests across 64 suites, and warning-denied workspace Clippy passes locally.
 - Hosted CI on source head `fe5b2eb` failed macOS URL dispatch. Its log records `quit_control_received=true`, `quit_action_started=true`, and a resident process after the tray icon was dropped and the viewport was closed.
 - Source head `b95a8c1` sets eframe `run_and_return=false`; same-head hosted CI, Security, and Dependency Review remain required. The prior green results on `2fac448` do not validate this change.
-- The latest local installed lifecycle attempt was inconclusive: Launch Services refused the temporary bundle (`-10822`), and direct execution of the unbundled binary did not record startup. Do not mark packaged macOS acceptance complete.
+- The latest local installed lifecycle attempt was inconclusive: Launch Services refused the temporary bundle (`-10822`). A separate standalone executable attempt aborted before startup because dyld could not load `@rpath/libduckdb.dylib` (`no LC_RPATH`); it did not exercise the app UI. Do not mark packaged macOS acceptance complete.
 - The manual Show attempt after `2fac448` timed out at the Show prompt without observing its callback. Physical Show/Quit and foreground acceptance remain open.
 - DuckDB source-build features remain prohibited; CI stages official checksum-verified binaries before building or packaging.
