@@ -128,6 +128,35 @@ class BundlePreparationTests(unittest.TestCase):
         )
         self.assertEqual(result, staged_library)
 
+    def test_target_specific_executable_wins_over_stale_host_release_binary(self) -> None:
+        target = "universal-apple-darwin"
+        executable_name = "rocinante-repo-analyzer"
+        with tempfile.TemporaryDirectory() as directory:
+            target_directory = Path(directory)
+            host_executable = target_directory / "release" / executable_name
+            target_executable = target_directory / target / "release" / executable_name
+            host_executable.parent.mkdir(parents=True)
+            target_executable.parent.mkdir(parents=True)
+            host_executable.write_bytes(b"stale host executable")
+            target_executable.write_bytes(b"target executable")
+            manifest = bundle.provisioner.load_manifest(bundle.provisioner.DEFAULT_MANIFEST)
+            cache_directory = target_directory / "cache"
+            staged_library = target_directory / "tauri-resources" / "libduckdb.dylib"
+
+            with (
+                mock.patch.object(bundle.provisioner, "load_manifest", return_value=manifest),
+                mock.patch.object(bundle.provisioner, "provision_target", return_value=cache_directory),
+                mock.patch.object(
+                    bundle.provisioner,
+                    "stage_runtime_to_directory",
+                    return_value=staged_library,
+                ),
+                mock.patch.object(bundle, "patch_binary_loader") as patch_loader,
+            ):
+                bundle.prepare_bundle(target, target_directory)
+
+        self.assertEqual(patch_loader.call_args.args[1], target_executable)
+
     def test_staging_checks_the_expected_runtime_hash(self) -> None:
         runtime = b"verified DuckDB runtime"
         expected_hash = hashlib.sha256(runtime).hexdigest()
@@ -181,6 +210,7 @@ class BundlePreparationTests(unittest.TestCase):
         config = json.loads((tauri_root / "tauri.conf.json").read_text())
         windows_config = json.loads((tauri_root / "tauri.windows.conf.json").read_text())
         workflow = (SCRIPT.parent.parent / ".github/workflows/ci.yml").read_text()
+        security_workflow = (SCRIPT.parent.parent / ".github/workflows/security.yml").read_text()
 
         self.assertEqual(config["bundle"]["resources"], {"tauri-resources/": ""})
         self.assertEqual(
@@ -200,6 +230,18 @@ class BundlePreparationTests(unittest.TestCase):
         self.assertIn("python scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle", workflow)
         self.assertIn(r"$contents | Where-Object { $_ -match 'duckdb\.dll' }", workflow)
         self.assertIn("duckdb-download", workflow)
+        codeql_provision_step = security_workflow.index(
+            "Verify and stage the DuckDB prebuilt for CodeQL"
+        )
+        codeql_autobuild_step = security_workflow.index(
+            "github/codeql-action/autobuild@"
+        )
+        self.assertLess(codeql_provision_step, codeql_autobuild_step)
+        self.assertIn(
+            "python3 scripts/provision_duckdb.py --target x86_64-unknown-linux-gnu",
+            security_workflow,
+        )
+        self.assertIn("CARGO_TARGET_DIR: ${{ github.workspace }}/src-tauri/target", security_workflow)
         self.assertTrue((tauri_root / "tauri-resources" / "README.txt").is_file())
         self.assertEqual(
             config["build"]["beforeBuildCommand"],

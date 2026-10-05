@@ -10,11 +10,12 @@ isolated in `tools/sled-migration`; this crate never opens or links Sled.
 ## Modules and contracts
 
 - `src/storage.rs` contains the SQLite ingestion engine, shared DuckDB
-  lifecycle/snapshot management, and `BaselineStore` adapter. It refuses
-  startup while Sled markers exist unless the migration completion marker is
-  valid.
+  lifecycle/snapshot management, and `BaselineStore` adapter. A durable
+  pending marker makes analytics snapshot publication retry after a committed
+  promotion, including idle cycles. It refuses startup while Sled markers
+  exist unless the migration completion marker is valid.
 - `src/admin.rs` contains shared authorization, storage, scoring, and risk
-  command services. `execute_admin_bridge_command` dispatches the eight
+  command services. `execute_admin_bridge_command` dispatches the nine
   companion command names using editable JSON payloads.
 - `src/scoring.rs` owns score configuration persistence and audit logging.
 - `src/lib.rs` exposes the same default storage paths to both hosts and applies

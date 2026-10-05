@@ -144,8 +144,8 @@ def prepare_bundle(target: str, target_directory: Path, runner: CommandRunner = 
 
     executable_name = "rocinante-repo-analyzer.exe" if target.endswith("-pc-windows-msvc") else "rocinante-repo-analyzer"
     candidates = [
-        target_directory / "release" / executable_name,
         target_directory / target / "release" / executable_name,
+        target_directory / "release" / executable_name,
     ]
     executable = next((candidate for candidate in candidates if candidate.is_file()), candidates[0])
     patch_binary_loader(target, executable, staged_library, runner)

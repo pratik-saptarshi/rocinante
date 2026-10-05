@@ -20,6 +20,8 @@ jobs:
   codeql:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/src-tauri/target
     permissions:
       actions: read
       contents: read
@@ -35,6 +37,8 @@ jobs:
       - uses: github/codeql-action/init@v4.38.2
         with:
           languages: rust
+      - name: Verify and stage the DuckDB prebuilt for CodeQL
+        run: python3 scripts/provision_duckdb.py --target x86_64-unknown-linux-gnu --target-dir "$CARGO_TARGET_DIR"
       - uses: github/codeql-action/autobuild@v4.38.2
       - uses: github/codeql-action/analyze@v4.38.2
 

@@ -1,5 +1,5 @@
 [env]
-# libduckdb-sys downloads the official shared library matching the pinned
-# duckdb crate version. The provisioning script verifies and primes its cache
-# before CI builds; this prevents Cargo from falling back to a system install.
+# libduckdb-sys links the official prebuilt matching the pinned duckdb crate
+# version. CI primes its target cache with the checksum-verifying provisioner
+# before any Cargo build, including CodeQL; source compilation is not enabled.
 DUCKDB_DOWNLOAD_LIB = { value = "1", force = true }

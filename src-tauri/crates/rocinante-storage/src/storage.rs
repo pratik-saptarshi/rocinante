@@ -17,6 +17,8 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::path::Path;
 use std::path::PathBuf;
+#[cfg(test)]
+use std::sync::atomic::AtomicBool;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, RecvTimeoutError, SyncSender};
 use std::sync::{Arc, Mutex, MutexGuard, RwLock};
@@ -429,6 +431,8 @@ pub struct DualLayerStore {
     _kv_lock: Arc<std::fs::File>,
     promotion_barrier: Arc<RwLock<()>>,
     latest_snapshot_id: Arc<AtomicU64>,
+    #[cfg(test)]
+    fail_next_snapshot_copy: Arc<AtomicBool>,
 }
 
 #[derive(Clone)]
@@ -667,6 +671,8 @@ impl DualLayerStore {
             _kv_lock: Arc::new(kv_lock),
             promotion_barrier: Arc::new(RwLock::new(())),
             latest_snapshot_id: Arc::new(AtomicU64::new(0)),
+            #[cfg(test)]
+            fail_next_snapshot_copy: Arc::new(AtomicBool::new(false)),
         };
         this.init_columnar()?;
         this.cleanup_analytics_snapshots(None)?;
@@ -834,6 +840,53 @@ impl DualLayerStore {
         format!("{:}.snapshot-{:}.duckdb", self.columnar_path, snapshot_id)
     }
 
+    #[cfg(feature = "analytics")]
+    fn snapshot_publication_pending_path(&self) -> PathBuf {
+        PathBuf::from(format!("{}.snapshot-pending", self.columnar_path))
+    }
+
+    #[cfg(feature = "analytics")]
+    fn mark_snapshot_publication_pending(&self) -> Result<(), AnalyzerError> {
+        let marker_path = self.snapshot_publication_pending_path();
+        let marker = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(false)
+            .open(&marker_path)
+            .map_err(|error| {
+                AnalyzerError::Io(format!(
+                    "analytics snapshot pending marker create failed: {error}"
+                ))
+            })?;
+        marker.sync_all().map_err(|error| {
+            AnalyzerError::Io(format!(
+                "analytics snapshot pending marker sync failed: {error}"
+            ))
+        })
+    }
+
+    #[cfg(feature = "analytics")]
+    fn snapshot_publication_pending(&self) -> Result<bool, AnalyzerError> {
+        match fs::metadata(self.snapshot_publication_pending_path()) {
+            Ok(_) => Ok(true),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+            Err(error) => Err(AnalyzerError::Io(format!(
+                "analytics snapshot pending marker read failed: {error}"
+            ))),
+        }
+    }
+
+    #[cfg(feature = "analytics")]
+    fn clear_snapshot_publication_pending(&self) -> Result<(), AnalyzerError> {
+        match fs::remove_file(self.snapshot_publication_pending_path()) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(AnalyzerError::Io(format!(
+                "analytics snapshot pending marker removal failed: {error}"
+            ))),
+        }
+    }
+
     fn cleanup_analytics_snapshots(
         &self,
         keep_snapshot_id: Option<u64>,
@@ -888,7 +941,8 @@ impl DualLayerStore {
         }
         self.latest_snapshot_id
             .store(snapshot_id, Ordering::Release);
-        self.cleanup_analytics_snapshots(Some(snapshot_id))
+        self.cleanup_analytics_snapshots(Some(snapshot_id))?;
+        self.clear_snapshot_publication_pending()
     }
 
     fn next_snapshot_id() -> u64 {
@@ -907,6 +961,13 @@ impl DualLayerStore {
 
         if snapshot_id == 0 {
             return Ok(snapshot_path);
+        }
+
+        #[cfg(test)]
+        if self.fail_next_snapshot_copy.swap(false, Ordering::AcqRel) {
+            return Err(AnalyzerError::Io(
+                "injected analytics snapshot copy failure".to_string(),
+            ));
         }
 
         let tmp_path = format!("{}.tmp", snapshot_path);
@@ -1048,7 +1109,7 @@ impl DualLayerStore {
         let mut stats = self.promote_to_columnar_no_lock()?;
         stats.pruned_events = pruned;
         let retention_changed = self.prune_analytics_releases_with_retention(policy)?;
-        if stats.promoted_events > 0 || retention_changed {
+        if stats.promoted_events > 0 || retention_changed || self.snapshot_publication_pending()? {
             self.publish_analytics_snapshot()?;
         }
         Ok(stats)
@@ -1070,7 +1131,7 @@ impl DualLayerStore {
             .write()
             .unwrap_or_else(|e| e.into_inner());
         let stats = self.promote_to_columnar_no_lock()?;
-        if stats.promoted_events > 0 {
+        if stats.promoted_events > 0 || self.snapshot_publication_pending()? {
             self.publish_analytics_snapshot()?;
         }
         Ok(stats)
@@ -1116,6 +1177,7 @@ impl DualLayerStore {
             .promotion_barrier
             .write()
             .unwrap_or_else(|e| e.into_inner());
+        self.mark_snapshot_publication_pending()?;
         {
             let conn = Connection::open(&self.columnar_path)
                 .map_err(|e| AnalyzerError::Db(e.to_string()))?;
@@ -1147,6 +1209,9 @@ impl DualLayerStore {
     #[cfg(feature = "analytics")]
     fn promote_to_columnar_no_lock(&self) -> Result<LifecycleStats, AnalyzerError> {
         let pending = self.kv.scan_prefix(b"evt:")?;
+        if !pending.is_empty() {
+            self.mark_snapshot_publication_pending()?;
+        }
         let (acknowledged_keys, promoted) = self.commit_pending_events_to_columnar(&pending)?;
         self.kv.remove_many(&acknowledged_keys)?;
         if !pending.is_empty() {
@@ -1379,10 +1444,14 @@ impl DualLayerStore {
         let purged_history = transaction
             .execute(purge_sql, params![keep_releases])
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let changed = purged_rollups > 0 || rolled_up > 0 || purged_history > 0;
+        if changed {
+            self.mark_snapshot_publication_pending()?;
+        }
         transaction
             .commit()
             .map_err(|error| AnalyzerError::Db(error.to_string()))?;
-        Ok(purged_rollups > 0 || rolled_up > 0 || purged_history > 0)
+        Ok(changed)
     }
 
     #[cfg(not(feature = "analytics"))]
@@ -2031,6 +2100,64 @@ mod sqlite_ingestion_tests {
             })
             .expect("count promotion receipts after expiry");
         assert_eq!(receipt_rows, 0);
+    }
+
+    #[test]
+    fn failed_snapshot_publication_retries_on_idle_promotion() {
+        let dir = tempdir().expect("temporary directory");
+        let kv_path = dir.path().join("kv");
+        let columnar_path = dir.path().join("analytics.duckdb");
+        let store = DualLayerStore::open(
+            kv_path.to_str().expect("kv path"),
+            columnar_path.to_str().expect("columnar path"),
+        )
+        .expect("open dual layer store");
+        let event = event("snapshot-retry");
+        let event_key = DualLayerStore::event_prefix(now_ts() + 10, &event);
+        let event_bytes = serde_json::to_vec(&event).expect("serialize event");
+        store
+            .kv
+            .insert(event_key.as_bytes(), &event_bytes)
+            .expect("insert pending event");
+        store
+            .fail_next_snapshot_copy
+            .store(true, std::sync::atomic::Ordering::Release);
+
+        let error = store
+            .promote_to_columnar()
+            .expect_err("first snapshot publication should fail");
+        assert!(error
+            .to_string()
+            .contains("injected analytics snapshot copy failure"));
+        assert!(store
+            .snapshot_publication_pending()
+            .expect("read pending marker"));
+        assert!(store
+            .kv
+            .scan_prefix(b"evt:")
+            .expect("pending source events")
+            .is_empty());
+
+        let retry = store
+            .promote_to_columnar()
+            .expect("idle promotion retries pending publication");
+        assert_eq!(retry.promoted_events, 0);
+        assert!(!store
+            .snapshot_publication_pending()
+            .expect("read pending marker after retry"));
+
+        let snapshot_id = store
+            .latest_snapshot_id
+            .load(std::sync::atomic::Ordering::Acquire);
+        assert_ne!(snapshot_id, 0);
+        let connection = DuckConnection::open(store.snapshot_path(snapshot_id))
+            .expect("open retried analytics snapshot");
+        let rows: i64 = connection
+            .query_row("SELECT COUNT(*) FROM telemetry_history", [], |row| {
+                row.get(0)
+            })
+            .expect("count analytics snapshot rows");
+        assert_eq!(rows, 1);
     }
 
     #[test]
