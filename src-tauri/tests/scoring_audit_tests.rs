@@ -1,8 +1,20 @@
 use repo_analyzer_core::admin::update_scoring_weights;
-use repo_analyzer_core::auth::issue_test_token;
+use repo_analyzer_core::auth::issue_test_token as issue_token_with_test_secret;
 use repo_analyzer_core::types::ScoringWeights;
 use std::fs;
+use std::sync::OnceLock;
 use tempfile::tempdir;
+
+fn issue_test_token(user: &str, roles: &[&str], ttl_seconds: i64) -> String {
+    static CONFIGURED_SECRET: OnceLock<()> = OnceLock::new();
+    CONFIGURED_SECRET.get_or_init(|| {
+        std::env::set_var(
+            "RUNICIPAL_TOKEN_SECRET",
+            "rocinante-scoring-audit-tests-secret-32-bytes",
+        );
+    });
+    issue_token_with_test_secret(user, roles, ttl_seconds)
+}
 
 #[test]
 fn weight_updates_are_audited_and_admin_only() {
