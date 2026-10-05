@@ -38,14 +38,24 @@ authenticated repository analysis, and persistence/admin services.
 ## Validation
 
 - Workspace formatting, warning-denied all-target/all-feature Clippy, and the
-  full serial test suite pass locally (269 tests across 63 suites); the
+  full serial test suite pass locally (270 tests across 64 suites); the
   security-advisory contract suite passes 5/5 after updating stale
-  documentation assertions.
+  documentation assertions. The latest targeted documentation checks pass
+  both publish/security integration suites (8 tests total), and the roadmap
+  contracts pass 10/10.
 - The dependency guard requires GTK, GLib, Wry, Tauri runtime, and tracked
   advisory packages to be absent from supported workspace graphs.
 - CI defines required Linux, macOS, and Windows native-shell package and
-  lifecycle checks. Run `37317927760` passed the platform and UI checks on
-  `496e1ec`; the core/workspace test shards and aggregate failed on the stale
-  assertion. A corrective commit requires hosted rerun.
+  lifecycle checks. On PR #112 code head `ce5a1e1`, CI run `37341472090`
+  passed the aggregate, core/storage/full-workspace tests, formatting,
+  Clippy, UI checks, security governance, platform packages and lifecycle,
+  Windows registration, Linux notifications, and dependency-floor contracts.
+  Security run `37341472140` passed RustSec audit, CodeQL, and secret scan;
+  Dependency Review run `37341472151` passed. Earlier failures on
+  `37317927760` and `496e1ec` were superseded by these green same-head runs.
+- The physical macOS tray Show/Quit acceptance remains open. Two latest manual
+  attempts timed out at the Show prompt without observing its callback; the
+  validation script now also requires a Quit-action witness before it accepts
+  process exit.
 - DuckDB source-build features remain prohibited; CI stages official
   checksum-verified binaries before building or packaging.
