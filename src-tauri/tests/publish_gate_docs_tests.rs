@@ -32,8 +32,9 @@ fn publish_gate_documents_reflect_bi_047_history_and_current_pr_snapshot() {
     assert!(checklist.contains("Current branch snapshot — 2026-10-05"));
     assert!(checklist.contains("fix/rocinante-readiness-remediation"));
     assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
-    assert!(codemap
-        .contains("Branch `fix/rocinante-readiness-remediation` is at pushed commit `3020d9e`"));
+    assert!(codemap.contains(
+        "Branch `fix/rocinante-readiness-remediation` includes Rust fix commit `6f6b8cc`"
+    ));
 }
 
 #[test]

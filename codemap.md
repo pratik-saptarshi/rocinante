@@ -142,13 +142,13 @@ desktop host.
 
 ## Governance and Execution Snapshot
 
-- Branch `fix/rocinante-readiness-remediation` is at pushed commit `3020d9e`; the current changes are uncommitted. The hosted PR/check state has not been refreshed for this worktree.
-- Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration locally. Native package contract tests pass 6/6; current Linux/macOS/Windows package and lifecycle runs are pending.
-- The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty; governance contracts and cached-database audits pass. Fresh RustSec database retrieval was blocked by GitHub connectivity.
-- `cargo check --offline --workspace --all-targets`, test-target compilation, Clippy with warnings denied, and the full workspace suite in serial mode pass. The default-parallel local storage suite stalls in the retention test; that binary passes with two test threads and serial execution.
-- Rust formatting, workflow parsing, CI scope, DuckDB prebuilt-only, native packaging, dependency-guard, governance, and roadmap contracts have local pass evidence. Same-head hosted Security and aggregate checks remain required.
-- pnpm `12.9.1` is pinned and is the latest stable upstream release on 2026-10-05. Typecheck, all 63 UI tests, and the production build pass locally with global pnpm `12.8.1`; fetching the exact pin failed because `registry.npmjs.org` did not resolve, so the pinned hosted UI gate remains required.
-- The installed macOS acceptance passes cold/warm URL delivery, saved-state restart, tray/window flow, and the notification request. AppKit returned `accepted=false`; foreground activation is not claimed. Linux/Windows and same-head hosted platform checks remain pending.
+- Branch `fix/rocinante-readiness-remediation` includes Rust fix commit `6f6b8cc`, which corrects weighted aggregation for retained samples in metrics and committer scoring. GitHub API and web refresh attempts failed, so PR-thread and same-head check states are unverified.
+- Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration locally. Native package contract tests pass 6/6; Linux/macOS/Windows package and current-worktree lifecycle checks still need hosted evidence.
+- The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty; governance contracts and cached-database audits pass. A fresh RustSec database retrieval was blocked by GitHub connectivity.
+- On the latest local code, full-workspace tests pass serially, the storage suite passes 21/21, formatting passes, and all-target/all-feature Clippy passes with warnings denied. Earlier worktree evidence also covers `cargo check --offline --workspace --all-targets` and test-target compilation.
+- Rust formatting, CI scope, DuckDB prebuilt-only, native packaging, dependency-guard, governance, and roadmap contracts have local pass evidence. Same-head hosted Security and aggregate checks remain required.
+- pnpm `12.9.1` is pinned and was verified as the latest stable release on 2026-10-05. Typecheck, all 63 UI tests, and the production build passed as diagnostics with global pnpm `12.8.1`; fetching the exact pin failed because `registry.npmjs.org` did not resolve, so the pinned hosted UI gate remains required.
+- Previously recorded installed macOS acceptance passes cold/warm URL delivery, saved-state restart, tray/window flow, and the notification request. AppKit returned `accepted=false`; foreground activation is not claimed. Linux/Windows and same-head hosted platform checks remain pending.
 
 ## Design Patterns
 
