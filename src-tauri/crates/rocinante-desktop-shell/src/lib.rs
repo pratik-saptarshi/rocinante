@@ -650,7 +650,12 @@ mod native_ui {
                         self.state.dispatch(NavigationAction::Close);
                         self.persist_shell_state(frame);
                         #[cfg(target_os = "macos")]
-                        super::macos_url::request_application_termination_after_ui_pass();
+                        {
+                            // Keep winit's event loop alive until the deferred
+                            // AppKit termination request runs after this UI pass.
+                            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+                            super::macos_url::request_application_termination_after_ui_pass();
+                        }
                     }
                 }
             }
@@ -661,6 +666,9 @@ mod native_ui {
                 self.state.dispatch(NavigationAction::Close);
                 self.explicit_quit = true;
                 self.persist_shell_state(frame);
+                #[cfg(target_os = "macos")]
+                super::macos_url::request_application_termination_after_ui_pass();
+                #[cfg(not(target_os = "macos"))]
                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             }
             if self.tray_icon.is_some() || self.link_inbox.is_primary() {

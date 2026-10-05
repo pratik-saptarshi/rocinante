@@ -191,6 +191,8 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     assert!(shell_source.contains("ROCINANTE_ACCEPTANCE_ACTIVATION_RESULT"));
     assert!(shell_source.contains("quit_action_started=true\\n"));
     assert!(shell_source.contains("request_application_termination_after_ui_pass"));
+    assert!(shell_source.contains("ViewportCommand::CancelClose"));
+    assert!(shell_source.contains("#[cfg(not(target_os = \"macos\"))]"));
     assert!(macos_url_source.contains("performSelector: sel!(terminate:)"));
     assert!(macos_url_source.contains("afterDelay: 0.01"));
     assert!(!macos_url_source.contains(".terminate(None)"));
