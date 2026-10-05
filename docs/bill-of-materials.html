@@ -11,11 +11,12 @@ then release from the merged tip.
 
 PR #108 is merged at `origin/main` `eb83be9`. Current work is on the PR #112
 focused follow-up branch `fix/weighted-rollup-aggregation`, based on that main
-tip. GitHub confirmed PR #112 OPEN/MERGEABLE at `e9d6d3a`, based on `main`
-`eb83be9`. CI run `37328034504`, Security run `37328034651`, and Dependency
-Review run `37328034502` all passed on that head; both blocking review threads
-are resolved. Repeated retention preserves existing rollup sums/counts, and
-all four baseline compatibility entry points require a configured secret.
+tip. GitHub confirmed PR #112 OPEN/MERGEABLE at `ce5a1e1`, based on `main`
+`eb83be9`. CI run `37341472090`, Security run `37341472140`, and Dependency
+Review run `37341472151` all passed on that head; all three review threads
+are resolved. Repeated retention preserves existing rollup sums/counts, all
+four baseline compatibility entry points require a configured secret, and the
+manual macOS script requires a Quit-callback witness before accepting exit.
 The serial Rust workspace passes 270 tests across 64 suites; formatting,
 warning-denied Clippy, and the focused regressions pass locally. The last
 Dependabot query found no open alerts but was not refreshed in this pass.
@@ -24,14 +25,15 @@ The supported host is the eframe/winit native shell; Tauri bootstrap,
 runtime/build dependencies, and installer configs are removed. The 11 prior
 command names and wire shapes remain as host-neutral compatibility metadata.
 The advisory registry and Cargo audit ignore list are empty; governance and
-both unfiltered lockfile audits pass. Security run `37328034651` passed
-RustSec audit, CodeQL, and secret scan on `e9d6d3a`; CI run `37328034504`
+both unfiltered lockfile audits pass. Security run `37341472140` passed
+RustSec audit, CodeQL, and secret scan on `ce5a1e1`; CI run `37341472090`
 passed UI quality with pinned pnpm 12.9.1, Rust quality, governance, and
 Linux/macOS/Windows package and URL lifecycle checks. The local installed
-macOS acceptance also passed cold/warm delivery,
-close-to-tray/Show/Quit handling, notification request, visible restore, and
-restart restoration. AppKit returned `accepted=false`; foreground activation
-and physical tray-menu clicks remain unverified. DuckDB remains a
+macOS scripted lifecycle acceptance passed cold/warm delivery, close-to-tray,
+notification request, visible restore, and restart restoration. Two recent
+manual attempts reached the Show prompt but timed out without observing the
+Show callback. AppKit returned `accepted=false`; physical tray-menu clicks and
+foreground activation remain unverified. DuckDB remains a
 SHA-verified prebuilt and is never compiled from source.
 
 ## 1) Repository identity
@@ -42,8 +44,8 @@ SHA-verified prebuilt and is never compiled from source.
 - PR #108 completed the readiness migration and merged as `eb83be9`. The
   weighted-retention correction is in PR #112 on
   `fix/weighted-rollup-aggregation`, based on that main tip. CI run
-  `37328034504`, Security run `37328034651`, and Dependency Review run
-  `37328034502` all passed on head `e9d6d3a`; both new review findings are
+  `37341472090`, Security run `37341472140`, and Dependency Review run
+  `37341472151` all passed on head `ce5a1e1`; all three review findings are
   fixed and their threads are resolved.
 - Product: Rust shared-service workspace with a GTK-free native desktop host
   and a React/Vite preview dashboard
@@ -144,9 +146,9 @@ optional `tray-icon` uses its GTK-free `ksni` feature on Linux to provide Show/Q
 actions and hide-on-close behavior. Optional `fs2` provides the exclusive per-user
 lock for a bounded deep-link inbox; `packaging/linux/rocinante.desktop` declares
 the URI scheme. Per-user installers package the verified `.so`, `.dylib`, or
-`.dll` and register the URL handlers. Local macOS cold/warm URL, tray,
-notification-request, and restart acceptance passes. Hosted CI run
-`37328034504` passes Linux/macOS/Windows URL and saved-state restart acceptance;
+`.dll` and register the URL handlers. The scripted local macOS cold/warm URL,
+tray-action routing, notification-request, and restart acceptance passes.
+Hosted CI run `37341472090` passes Linux/macOS/Windows URL and saved-state restart acceptance;
 Linux visible notification delivery also passes. Visible macOS/Windows
 notification delivery and physical tray-menu clicks remain unverified.
 - `tempfile` for tests

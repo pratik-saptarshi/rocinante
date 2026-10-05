@@ -17,21 +17,21 @@ which retains the original investigation and implementation history.
 
 | Phase | Work | Validation and exit gate | Current state |
 |---|---|---|---|
-| 0 — Establish the live baseline | Record `main`, branch, PR, head SHA, review threads, and check status. Refresh remote state before making a terminal claim. | PR base/head and current checks are obtained from GitHub; unresolved review comments are enumerated. If GitHub is unreachable, record the last successful snapshot and leave remote status unverified. | Refreshed GitHub state confirms PR #112 OPEN/MERGEABLE at `e9d6d3a`, based on `main` `eb83be9`. CI `37328034504`, Security `37328034651`, and Dependency Review `37328034502` all completed successfully on that head. Both blocking review threads are resolved. |
-| 1 — Correct weighted retention | Keep rollup `metric_sum` and `sample_count` through aggregate metrics and committer scoring; combine them with live samples using total sum / total count. | Run the focused regression, complete storage suite, and serial full workspace suite; run formatting and warning-denied Clippy. Hosted `rust-workspace-tests` must terminate green on the same head. | Retention promotion merges prior rollup sums/counts with newly stale raw samples. The regression forces a second retention cycle and verifies sum 45/count 3, average 15, and the weighted score. The full serial workspace passes 270 tests across 64 suites; formatting and warning-denied all-target/all-feature Clippy pass locally. CI `37328034504` passed on `e9d6d3a`. |
-| 2 — Clear security and dependency gates | Keep all 17 original advisory records accounted for, with the 15 authorized closures evidenced and the remaining affected packages removed from supported lockfiles. Keep the registry and audit ignore list empty. Preserve the RustSec gate. | Run governance and unfiltered `cargo audit --deny warnings` for both supported lockfiles against a freshly fetched database. Record database revision and report; hosted `rust-audit` and governance checks must pass on this PR head. | The 15 user-authorized closures are documented; both affected dependency paths are absent from supported lockfiles. Governance passes with 0 registry entries and 0 ignores. Security `37328034651` passed RustSec audit, CodeQL, and secret scan on `e9d6d3a`; its logs confirm a database fetch, but do not report the fetched database SHA. |
-| 3 — Preserve DuckDB binary-only packaging | Retain the SHA-256-verified official shared library and prohibit `bundled`, `bundled-cmake`, and any other source-build feature. | Run the DuckDB feature guard and provisioner contracts; inspect all supported package jobs and installed runtime evidence for Linux, macOS, and Windows. | Local DuckDB feature and provisioner contracts pass. CI `37328034504` passed Linux, macOS, and Windows package jobs with the verified prebuilt runtime. DuckDB remains a checksum-verified prebuilt and no source build is allowed. |
-| 4 — Validate UI and native acceptance | Validate the pinned pnpm UI lane and installed shell behavior: cold/warm URL delivery, saved-state restart, Linux notification and dependency-floor checks, plus platform packaging. | Required UI, package, registration, URL-dispatch, notification, dependency-floor, and aggregate CI checks terminate green at one PR head. Record any behavior the scripts do not exercise as open acceptance. | CI `37328034504` passed on `e9d6d3a`, including pinned pnpm `12.9.1` UI quality, Linux/macOS/Windows package and URL lifecycle jobs, Windows registration, Linux notifications, and dependency-floor checks. Physical tray-menu delivery and foreground restoration remain open; opt-in manual verification still needs an interactive run. |
-| 5 — Resolve review comments and keep complex work tracked | Fix weighted-retention data loss and configured-secret bypasses. Keep multi-operation shutdown/persistence concerns scoped under BI-060. | Refresh PR #112 review threads; resolve only findings whose implementation and required validation are complete. Confirm deferred work has owner-independent scope, acceptance criteria, and a test plan in the roadmap/bead tracker. | Both PR #112 findings are fixed and tested: repeated retention preserves old aggregates, and all four baseline compatibility entry points require the configured secret. Both threads are resolved after CI, Security, and Dependency Review passed on `e9d6d3a`. BI-060 operation draining and atomic persistence remain tracked separately. |
-| 6 — Reconcile evidence and release decision | Synchronize roadmap, test plan, BOM, publish checklist, codemap, and dated decision record to actual results. | Run roadmap/publish contracts and `git diff --check`; only mark hosted/platform checks complete with terminal evidence. PR #112 must have a green aggregate and no unresolved blocking review comments before it is considered ready for protected merge. | Local full workspace (270 tests/64 suites), Clippy, formatting, roadmap/publish contracts (10/10), governance (0 entries/0 ignores), DuckDB and desktop dependency guards/contracts, CI-scope and Dependabot-checker contracts, provisioner contract (9 tests), and `git diff --check` pass. CI, Security, and Dependency Review are green on `e9d6d3a`, and both blocking review threads are resolved. Physical tray-menu and foreground-activation evidence remains open; the configured Rust coverage job was skipped as informational. |
+| 0 — Establish the live baseline | Record `main`, branch, PR, head SHA, review threads, and check status. Refresh remote state before making a terminal claim. | PR base/head and current checks are obtained from GitHub; unresolved review comments are enumerated. If GitHub is unreachable, record the last successful snapshot and leave remote status unverified. | Refreshed GitHub state confirms PR #112 OPEN/MERGEABLE at `ce5a1e1a6c8fbc67f0077e08f7e43805c0b26abc` on `fix/weighted-rollup-aggregation`, based on `main` `eb83be9da64057dc71838b33edc01a9a2769b0fa`. CI `37341472090`, Security `37341472140`, and Dependency Review `37341472151` all completed successfully. All three PR review threads are resolved. |
+| 1 — Correct weighted retention | Keep rollup `metric_sum` and `sample_count` through aggregate metrics and committer scoring; combine them with live samples using total sum / total count. | Run the focused regression, complete storage suite, and serial full workspace suite; run formatting and warning-denied Clippy. Hosted `rust-workspace-tests` must terminate green on the same head. | Retention promotion merges prior rollup sums/counts with newly stale raw samples. The regression forces a second retention cycle and verifies sum 45/count 3, average 15, and the weighted score. The full serial workspace passes 270 tests across 64 suites; formatting and warning-denied all-target/all-feature Clippy pass locally. CI `37341472090` passed workspace tests and Clippy on `ce5a1e1`. |
+| 2 — Clear security and dependency gates | Keep all 17 original advisory records accounted for, with the 15 authorized closures evidenced and the remaining affected packages removed from supported lockfiles. Keep the registry and audit ignore list empty. Preserve the RustSec gate. | Run governance and unfiltered `cargo audit --deny warnings` for both supported lockfiles against a freshly fetched database. Record database revision and report; hosted `rust-audit` and governance checks must pass on this PR head. | The 15 user-authorized closures are documented; both affected dependency paths are absent from supported lockfiles. Governance passed on `ce5a1e1`; the registry and audit ignore list remain empty. Security `37341472140` passed RustSec audit, CodeQL, and secret scan. The hosted audit result does not expose a database SHA. |
+| 3 — Preserve DuckDB binary-only packaging | Retain the SHA-256-verified official shared library and prohibit `bundled`, `bundled-cmake`, and any other source-build feature. | Run the DuckDB feature guard and provisioner contracts; inspect all supported package jobs and installed runtime evidence for Linux, macOS, and Windows. | Local DuckDB feature and provisioner contracts pass. CI `37341472090` passed Linux, macOS, and Windows package jobs using the verified prebuilt runtime. DuckDB remains a checksum-verified prebuilt and no source build is allowed. |
+| 4 — Validate UI and native acceptance | Validate the pinned pnpm UI lane and installed shell behavior: cold/warm URL delivery, saved-state restart, Linux notification and dependency-floor checks, plus platform packaging. | Required UI, package, registration, URL-dispatch, notification, dependency-floor, and aggregate CI checks terminate green at one PR head. Record any behavior the scripts do not exercise as open acceptance. | CI `37341472090` passed UI typecheck, unit tests, production build, Linux/macOS/Windows packaging and lifecycle checks, Windows registration, Linux notification delivery, and dependency-floor checks. Hosted cold/warm dispatch passed; four manual macOS attempts failed to observe the physical Show callback within 60 seconds. Physical tray-menu delivery, foreground restoration, Quit, and saved-state restart remain open. |
+| 5 — Resolve review comments and keep complex work tracked | Fix weighted-retention data loss and configured-secret bypasses. Keep multi-operation shutdown/persistence concerns scoped under BI-060. | Refresh PR #112 review threads; resolve only findings whose implementation and required validation are complete. Confirm deferred work has owner-independent scope, acceptance criteria, and a test plan in the roadmap/bead tracker. | The weighted-retention and configured-secret findings are fixed and tested. The additional Quit-witness finding is fixed on `ce5a1e1`: the tray callback writes a Quit marker, and manual acceptance requires it before accepting process exit. All three review threads are resolved after local contracts and hosted checks passed. BI-060 operation draining and atomic persistence remain tracked separately. |
+| 6 — Reconcile evidence and release decision | Synchronize roadmap, test plan, BOM, publish checklist, codemap, and dated decision record to actual results. | Run roadmap/publish contracts and `git diff --check`; only mark hosted/platform checks complete with terminal evidence. PR #112 must have a green aggregate and no unresolved blocking review comments before it is considered ready for protected merge. | Local full workspace (270 tests/64 suites), Clippy, formatting, roadmap/publish contracts (10/10), governance (0 entries/0 ignores), DuckDB and desktop dependency guards/contracts, CI-scope and Dependabot-checker contracts, provisioner contract (9 tests), and `git diff --check` pass. The latest documentation-only roadmap contract run passed 10/10 and `rtk git diff --check` passed. CI, Security, and Dependency Review are green on `ce5a1e1`; all blocking comments are resolved. Phase 8 physical tray-menu and foreground-activation evidence remains open; coverage was skipped as informational. |
 
 ## Remaining execution phases
 
 | Phase | Work | Validation and exit gate | Current state |
 |---|---|---|---|
-| 7 — Reconcile current evidence | Update current-state roadmap, test plan, security roadmaps, README, codemap, BOM, publish checklist, and dated decision summary to PR head `e9d6d3a` and its successful hosted runs. Preserve older run data as history. | Run `bash scripts/test-roadmap-doc-contracts.sh`, inspect current summaries for stale-head references, and require `rtk git diff --check` to pass. | Complete locally. Current summaries cite `e9d6d3a` and runs `37328034504`, `37328034651`, and `37328034502`; older `3748d5b` references remain as dated history. All 10 roadmap/publish contract tests and `rtk git diff --check` pass. Hosted validation of this documentation refresh follows the push. |
-| 8 — Complete interactive macOS acceptance | Run the opt-in installed-app check on this interactive Mac and physically choose Show and Quit from the app menu. Require frontmost state after Show and successful process exit after Quit. | Run with `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1` and leave strict cold-launch frontmost mode unset; manual mode checks frontmost after the physical Show action. Require a zero exit and the script's success witness. | Still open. The strict cold-launch attempt stopped before tray prompts (`visible=true`, `frontmost=false`). Two manual-mode attempts installed and registered the bundle, passed cold URL, notification, and close-to-tray setup, then each timed out after 60 seconds without observing `show_action_started=true`. Warm URL, Show foreground, Quit, and restart remain unverified. No physical Show/Quit acceptance is claimed; retry when a person can click Show and Quit during the prompts. |
-| 9 — Final closeout audit | Record the interactive result, rerun document contracts and diff checks, push the existing PR branch, and refresh all hosted checks at its new head. | Require green aggregate CI, Security, and Dependency Review at one head, no unresolved blocking comments, and all required roadmap acceptance evidence. | On evidence head `6555587`, CI run `37339337822`, Security run `37339337692`, and Dependency Review run `37339337795` all passed; CI included Rust format, Clippy, core/storage/workspace tests, governance, UI, and Linux/macOS/Windows package and lifecycle jobs. PR #112 remains OPEN/MERGEABLE with both review threads resolved. The `c88062d` CI run was cancelled by the subsequent evidence-only push while its native dependency setup/gate was still running. Local format, focused advisory suite, 10 roadmap/publish contracts, and `git diff --check` pass. Phase 8 remains open; final readiness is not claimed. |
+| 7 — Reconcile current evidence | Update current-state roadmap, test plan, security roadmaps, README, codemap, BOM, publish checklist, and dated decision summary to PR head `ce5a1e1` and its successful hosted runs. Preserve older run data as history. | Run `bash scripts/test-roadmap-doc-contracts.sh`, inspect current summaries for stale-head references, and require `rtk git diff --check` to pass. | Complete locally. Current summaries cite `ce5a1e1` and runs `37341472090`, `37341472140`, and `37341472151`; older heads and runs remain as dated history. All 10 roadmap/publish contract tests and `rtk git diff --check` pass. Hosted validation of this documentation refresh follows the push. |
+| 8 — Complete interactive macOS acceptance | Run the opt-in installed-app check on this interactive Mac and physically choose Show and Quit from the app menu. Require frontmost state after Show and successful process exit after Quit. | Run with `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1` and leave strict cold-launch frontmost mode unset; manual mode checks frontmost after the physical Show action. Require a zero exit and the script's success witness. | Still open. The strict cold-launch attempt stopped before tray prompts (`visible=true`, `frontmost=false`). Four manual-mode attempts installed and registered the bundle, passed cold URL, notification, and close-to-tray setup, then each timed out after 60 seconds without observing `show_action_started=true`. Warm URL, Show foreground, Quit, and restart remain unverified. No physical Show/Quit acceptance is claimed. |
+| 9 — Final closeout audit | Record the interactive result, rerun document contracts and diff checks, push the existing PR branch, and refresh all hosted checks at its new head. | Require green aggregate CI, Security, and Dependency Review at one head, no unresolved blocking comments, and all required roadmap acceptance evidence. | On code head `ce5a1e1`, CI `37341472090`, Security `37341472140`, and Dependency Review `37341472151` passed with no unresolved review threads. The documentation contracts (10/10) and diff check pass locally. The docs-only commit still must be pushed to the existing PR branch and replacement hosted checks must complete. Phase 8 is still open because repeated physical Show attempts recorded no callback; final readiness is not claimed. |
 
 ## Execution log — 2026-10-05
 
@@ -49,7 +49,7 @@ Both review threads were replied to with the local regression evidence and
 resolved after these same-head checks completed. The physical macOS tray-menu
 Show/Quit click and foreground activation still require an interactive run.
 
-### Current hosted validation refresh — `e9d6d3a`
+### Historical hosted validation refresh — `e9d6d3a`
 
 The live PR read confirms PR #112 is OPEN/MERGEABLE at `e9d6d3ab6d398d6c9c786e7b7108d9d926d0b1bb` on `main` `eb83be9`. CI `37328034504`, Security
 `37328034651`, and Dependency Review `37328034502` all completed successfully.
@@ -104,7 +104,7 @@ notification, and close-to-tray setup, then timed out after 60 seconds without
 observing `show_action_started=true`. The Show action, warm URL, foreground
 state, Quit action, and restart were not verified.
 
-### Latest complete hosted validation — `6555587`
+### Previous complete hosted validation — `6555587`
 
 On head `65555870a22ddade2cae3592e97eb8d0b7446654`, CI run `37339337822`,
 Security run `37339337692`, and Dependency Review run `37339337795` all
@@ -251,14 +251,17 @@ acceptance also remain open.
 
 ### Still required
 
-- Refresh PR #112 and required-check state when GitHub is reachable; do not
-  treat a previous successful snapshot as proof of current remote status.
+- The live PR refresh confirmed `ce5a1e1` and green CI, Security, and
+  Dependency Review runs, with no unresolved review threads. After this
+  documentation update is pushed, refresh the checks again on its new head;
+  do not treat the `ce5a1e1` results as proof for a later commit.
 - Run `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh`
-  in an interactive macOS terminal. Physically select Show and Quit when
-  prompted, then record the complete terminal result. The script does not
-  synthesize input; it requires a real Show callback, a frontmost window, and
-  process exit after Quit. Keep AppKit's `accepted=false` result alongside the
-  observed frontmost state.
+  on an interactive macOS desktop when a person can choose Show and Quit
+  during the prompts. Four manual runs timed out without observing the Show
+  callback; warm URL, foreground, Quit, and restart are still unverified. The
+  script requires a real Show callback and Quit-action witness, a frontmost
+  window, and process exit after Quit. Keep AppKit's `accepted=false` result
+  alongside the observed frontmost state.
 - Do not merge outside the protected PR flow.
 
 ## Reproducible validation commands
@@ -276,3 +279,32 @@ rtk cargo audit --db /private/tmp/rocinante-rustsec-advisory-db \
 rtk cargo audit --db /private/tmp/rocinante-rustsec-advisory-db \
   --file tools/sled-migration/Cargo.lock --deny warnings
 ```
+
+### Latest hosted closeout and manual acceptance — `ce5a1e1` (2026-10-05)
+
+GitHub reports PR #112 OPEN/MERGEABLE at
+`ce5a1e1a6c8fbc67f0077e08f7e43805c0b26abc`, based on `main`
+`eb83be9da64057dc71838b33edc01a9a2769b0fa`. CI run `37341472090`, Security
+run `37341472140`, and Dependency Review run `37341472151` all completed
+successfully. CI passed workspace tests, Rust format/Clippy, UI typecheck/unit
+tests/production build, advisory governance, Linux/macOS/Windows package jobs,
+Linux and macOS URL lifecycle checks, Windows registration/lifecycle, Linux
+notifications, and DuckDB/dependency-floor contracts. Security passed RustSec
+audit, CodeQL, and secret scan. Dependency Review passed. Rust coverage remains
+skipped as configured.
+
+The Quit-witness review finding was fixed on this head. The tray Quit callback
+records `quit_action_started=true`; the manual script requires that witness
+before it accepts the app's exit. Its contract and feature checks passed, and
+the review thread was resolved after all three hosted workflows were green.
+The two earlier functional review findings also remain resolved. The PR has no
+unresolved inline review threads.
+
+Two further interactive macOS attempts installed the signed app and passed
+cold URL delivery, notification request, and close-to-tray setup, but neither
+observed `show_action_started=true` during its 60-second prompt. Together with
+the two earlier timeouts, this leaves physical Show, foreground restoration,
+warm URL delivery, Quit, and saved-state restart unverified. The attempt is
+not a pass; Phase 8 and final release readiness remain open. This documentation
+refresh still needs its contract/diff checks, push to the existing PR branch,
+and new same-head hosted check runs.

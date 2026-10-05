@@ -351,29 +351,32 @@ copies the executable into `%LOCALAPPDATA%` and registers a current-user
 the executable. Its PowerShell source contract is checked on this host.
 The macOS installer embeds `libduckdb.dylib` in `Contents/Frameworks`, rewrites
 the app-relative loader path, and declares the scheme in the `.app` bundle
-before registering it through Launch Services. The installed macOS lifecycle
-acceptance passes cold/warm URL delivery, tray actions, notification request,
-and saved-state restart on this host. The native-shell package matrix builds
-and inspects the Linux, macOS, and Windows installations. Hosted CI run
-`37328034504` passed package/runtime-loader validation and URL/restart
-acceptance on all three platforms, plus visible Linux notification delivery,
-on PR #112 source head `e9d6d3a`. The installed macOS acceptance also passes
-locally. Visible notification delivery on macOS and Windows, physical
-tray-menu clicks, and macOS foreground activation still need interactive
+before registering it through Launch Services. The scripted installed macOS
+lifecycle acceptance passes cold/warm URL delivery, notification request,
+minimize/restore, and saved-state restart on this host. Its default acceptance
+controls exercise tray action routing but do not prove a physical menu click.
+The native-shell package matrix builds and inspects the Linux, macOS, and
+Windows installations. Hosted CI run `37341472090` passed package/runtime-
+loader validation and URL/restart acceptance on all three platforms, plus
+visible Linux notification delivery, on PR #112 source head `ce5a1e1`.
+Physical tray-menu clicks and macOS foreground activation remain unverified;
+visible notification delivery on macOS and Windows also needs interactive
 validation. Run the manual macOS check from an interactive macOS terminal:
 
 ```sh
 ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh
 ```
 
-It waits for real Show/Quit menu selections and verifies frontmost state. The
-latest GitHub refresh confirmed PR #112 OPEN/MERGEABLE at `e9d6d3a`, based on
-`main` `eb83be9`. CI run `37328034504`, Security run `37328034651`, and
-Dependency Review run `37328034502` all passed on that head, and both blocking
-review threads are resolved. Repeated retention preserves prior sums/counts,
-and the four baseline compatibility entry points require a configured signing
-secret. Physical macOS tray Show/Quit clicks and foreground activation remain
-pending; see the readiness roadmap for the execution phases and evidence.
+It requires real Show/Quit menu selections and verifies the Show callback,
+frontmost state, Quit callback, and process exit. Two latest attempts reached
+the Show prompt but timed out without observing the callback; no physical
+Show/Quit acceptance is claimed. The latest GitHub refresh confirmed PR #112
+OPEN/MERGEABLE at `ce5a1e1`, based on `main` `eb83be9`. CI run `37341472090`,
+Security run `37341472140`, and Dependency Review run `37341472151` all passed
+on that head. All three review threads, including the Quit-witness blocker,
+are resolved. Repeated retention preserves prior sums/counts, and the four
+baseline compatibility entry points require a configured signing secret.
+See the readiness roadmap for the remaining interactive gate and evidence.
 Release distribution must sign the completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.
