@@ -4,36 +4,13 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 checker="$repo_root/scripts/check-security-advisory-exceptions.py"
 registry="$repo_root/docs/roadmap/security-advisory-exceptions.json"
-entry_count="$(python3 - "$registry" <<'PY'
-import json
-import sys
-from pathlib import Path
+audit_config="$repo_root/.cargo/audit.toml"
 
-print(len(json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))))
-PY
-)"
-before_deadline="$(python3 "$checker" --as-of 2026-08-06)"
-if [[ "$before_deadline" != *"No review dates are overdue."* ]]; then
-  echo "review date should remain valid on its due date" >&2
-  exit 1
-fi
-
-set +e
-after_deadline="$(python3 "$checker" --as-of 2026-08-07 2>&1)"
-status=$?
-set -e
-if [[ $status -ne 1 ]]; then
-  echo "expired review dates must fail closed (status $status)" >&2
-  printf '%s\n' "$after_deadline" >&2
-  exit 1
-fi
-if [[ "$after_deadline" != *"$entry_count exception review dates are overdue:"* ]]; then
-  echo "expected all current exceptions to be reported as overdue ($entry_count)" >&2
-  printf '%s\n' "$after_deadline" >&2
-  exit 1
-fi
-if [[ "$after_deadline" != *"No risk acceptance or review-date renewal is inferred"* ]]; then
-  echo "expired exceptions must not imply risk acceptance" >&2
+current="$(python3 "$checker" --as-of 2026-10-05)"
+if [[ "$current" != *"Validated 0 advisory exception entries against 0 Cargo audit ignores"* || \
+  "$current" != *"No review dates are overdue."* ]]; then
+  echo "the empty registry and empty audit ignore list must pass" >&2
+  printf '%s\n' "$current" >&2
   exit 1
 fi
 
@@ -45,6 +22,7 @@ import tempfile
 from pathlib import Path
 
 checker = Path(sys.argv[1])
+
 
 def entry(advisory_id: str) -> dict[str, str]:
     return {
@@ -58,7 +36,8 @@ def entry(advisory_id: str) -> dict[str, str]:
         "tracking_id": f"TEST-{advisory_id}",
     }
 
-def invoke(registry: Path, audit_config: Path) -> subprocess.CompletedProcess[str]:
+
+def invoke(registry: Path, audit_config: Path, as_of: str = "2026-08-06") -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable,
@@ -68,12 +47,13 @@ def invoke(registry: Path, audit_config: Path) -> subprocess.CompletedProcess[st
             "--audit-config",
             str(audit_config),
             "--as-of",
-            "2026-08-06",
+            as_of,
         ],
         capture_output=True,
         text=True,
         check=False,
     )
+
 
 first = "RUSTSEC-2026-0001"
 second = "RUSTSEC-2026-0002"
@@ -82,11 +62,21 @@ with tempfile.TemporaryDirectory() as directory:
     registry = root / "registry.json"
     audit_config = root / "audit.toml"
 
+    registry.write_text("[]", encoding="utf-8")
+    audit_config.write_text("[advisories]\nignore = []\n", encoding="utf-8")
+    empty = invoke(registry, audit_config)
+    if empty.returncode != 0 or "Validated 0 advisory exception entries" not in empty.stdout:
+        raise SystemExit("an empty registry and empty ignore list should pass")
+
     registry.write_text(json.dumps([entry(first)]), encoding="utf-8")
     audit_config.write_text(f'[advisories]\nignore = ["{first}"]\n', encoding="utf-8")
     matched = invoke(registry, audit_config)
     if matched.returncode != 0:
         raise SystemExit(f"matching registry and Cargo ignores should pass: {matched.stderr}")
+
+    expired = invoke(registry, audit_config, "2026-08-07")
+    if expired.returncode != 1 or first not in expired.stdout:
+        raise SystemExit("an expired exception must fail closed and identify the advisory")
 
     audit_config.write_text(
         f'[advisories]\nignore = ["{first}", "{second}"]\n', encoding="utf-8"

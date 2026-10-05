@@ -1,6 +1,2 @@
 [advisories]
-ignore = [
-  # Current warnings awaiting the security-owner dispositions in the registry.
-  "RUSTSEC-2024-0370",
-  "RUSTSEC-2024-0429",
-]
+ignore = []
