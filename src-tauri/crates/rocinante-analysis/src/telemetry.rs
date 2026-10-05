@@ -203,24 +203,41 @@ impl TelemetryStore {
         let release = scrub_text(&query.release.clone().unwrap_or_default());
 
         let mut stmt = self.conn.prepare(
-            "SELECT plugin, metric_key, metric_value, details
+            "SELECT repo_name, release, plugin, metric_key, metric_value, details
              FROM telemetry
              WHERE repo_name LIKE '%' || ?1 || '%'
                AND release LIKE '%' || ?2 || '%'",
         )?;
 
         let rows = stmt.query_map(params![name, release], |row| {
-            Ok(AnalysisMetric {
-                plugin: row.get(0)?,
-                key: row.get(1)?,
-                value: row.get(2)?,
-                details: row.get(3)?,
-            })
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                AnalysisMetric {
+                    plugin: row.get(2)?,
+                    key: row.get(3)?,
+                    value: row.get(4)?,
+                    details: row.get(5)?,
+                },
+            ))
         })?;
 
-        let mut out = Vec::new();
-        for row in rows {
-            let mut metric = row?;
+        let rows = rows.collect::<Result<Vec<_>, _>>()?;
+        let stable_releases = rows
+            .iter()
+            .filter_map(|(repo_name, release, _)| {
+                stable_identity_basename(repo_name)
+                    .map(|basename| (basename.to_string(), release.clone()))
+            })
+            .collect::<HashSet<_>>();
+
+        let mut out = Vec::with_capacity(rows.len());
+        for (repo_name, release, mut metric) in rows {
+            if stable_identity_basename(&repo_name).is_none()
+                && stable_releases.contains(&(repo_name.clone(), release))
+            {
+                continue;
+            }
             scrub_metric(&mut metric);
             out.push(metric);
         }
@@ -271,4 +288,10 @@ impl TelemetryStore {
         }
         Ok(out)
     }
+}
+
+fn stable_identity_basename(repo_name: &str) -> Option<&str> {
+    let (basename, suffix) = repo_name.rsplit_once(' ')?;
+    (suffix.len() == 32 && suffix.bytes().all(|byte| (b'a'..=b'p').contains(&byte)))
+        .then_some(basename)
 }
