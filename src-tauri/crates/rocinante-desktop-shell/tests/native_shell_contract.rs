@@ -116,7 +116,7 @@ fn repository_selection_roundtrips_through_json_storage_key() {
     let saved = serde_json::to_string(&shell).expect("serialize shell state as JSON");
     storage.insert("rocinante_shell_state_json", saved);
     let restored: ShellState = serde_json::from_str(
-        &storage
+        storage
             .get("rocinante_shell_state_json")
             .expect("load shell state JSON"),
     )
