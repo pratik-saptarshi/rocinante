@@ -650,9 +650,7 @@ mod native_ui {
                         self.state.dispatch(NavigationAction::Close);
                         self.persist_shell_state(frame);
                         #[cfg(target_os = "macos")]
-                        {
-                            super::macos_url::terminate_application();
-                        }
+                        super::macos_url::request_application_termination_after_ui_pass();
                     }
                 }
             }
