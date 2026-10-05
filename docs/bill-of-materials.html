@@ -11,10 +11,10 @@ then release from the merged tip.
 
 PR #108 is merged at `origin/main` `eb83be9`. Current work is on the PR #112
 focused follow-up branch `fix/weighted-rollup-aggregation`, based on that main
-tip. GitHub confirmed PR #112 OPEN/MERGEABLE at `3748d5b`, based on `main`
-`eb83be9`. CI run `37325510392`, Security run `37325510228`, and Dependency
-Review run `37325510232` all passed on that head; both new review threads are
-resolved. Repeated retention now preserves existing rollup sums/counts, and
+tip. GitHub confirmed PR #112 OPEN/MERGEABLE at `e9d6d3a`, based on `main`
+`eb83be9`. CI run `37328034504`, Security run `37328034651`, and Dependency
+Review run `37328034502` all passed on that head; both blocking review threads
+are resolved. Repeated retention preserves existing rollup sums/counts, and
 all four baseline compatibility entry points require a configured secret.
 The serial Rust workspace passes 270 tests across 64 suites; formatting,
 warning-denied Clippy, and the focused regressions pass locally. The last
@@ -24,8 +24,8 @@ The supported host is the eframe/winit native shell; Tauri bootstrap,
 runtime/build dependencies, and installer configs are removed. The 11 prior
 command names and wire shapes remain as host-neutral compatibility metadata.
 The advisory registry and Cargo audit ignore list are empty; governance and
-both unfiltered lockfile audits pass. Security run `37325510228` passed
-RustSec audit, CodeQL, and secret scan on `3748d5b`; CI run `37325510392`
+both unfiltered lockfile audits pass. Security run `37328034651` passed
+RustSec audit, CodeQL, and secret scan on `e9d6d3a`; CI run `37328034504`
 passed UI quality with pinned pnpm 12.9.1, Rust quality, governance, and
 Linux/macOS/Windows package and URL lifecycle checks. The local installed
 macOS acceptance also passed cold/warm delivery,
@@ -42,8 +42,8 @@ SHA-verified prebuilt and is never compiled from source.
 - PR #108 completed the readiness migration and merged as `eb83be9`. The
   weighted-retention correction is in PR #112 on
   `fix/weighted-rollup-aggregation`, based on that main tip. CI run
-  `37325510392`, Security run `37325510228`, and Dependency Review run
-  `37325510232` all passed on head `3748d5b`; both new review findings are
+  `37328034504`, Security run `37328034651`, and Dependency Review run
+  `37328034502` all passed on head `e9d6d3a`; both new review findings are
   fixed and their threads are resolved.
 - Product: Rust shared-service workspace with a GTK-free native desktop host
   and a React/Vite preview dashboard
@@ -146,7 +146,7 @@ lock for a bounded deep-link inbox; `packaging/linux/rocinante.desktop` declares
 the URI scheme. Per-user installers package the verified `.so`, `.dylib`, or
 `.dll` and register the URL handlers. Local macOS cold/warm URL, tray,
 notification-request, and restart acceptance passes. Hosted CI run
-`37321514028` passes Linux/macOS/Windows URL and saved-state restart acceptance;
+`37328034504` passes Linux/macOS/Windows URL and saved-state restart acceptance;
 Linux visible notification delivery also passes. Visible macOS/Windows
 notification delivery and physical tray-menu clicks remain unverified.
 - `tempfile` for tests

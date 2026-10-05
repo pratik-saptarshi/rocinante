@@ -355,9 +355,9 @@ before registering it through Launch Services. The installed macOS lifecycle
 acceptance passes cold/warm URL delivery, tray actions, notification request,
 and saved-state restart on this host. The native-shell package matrix builds
 and inspects the Linux, macOS, and Windows installations. Hosted CI run
-`37321514028` passed package/runtime-loader validation and URL/restart
+`37328034504` passed package/runtime-loader validation and URL/restart
 acceptance on all three platforms, plus visible Linux notification delivery,
-on PR #112 source head `b3f0c83`. The installed macOS acceptance also passes
+on PR #112 source head `e9d6d3a`. The installed macOS acceptance also passes
 locally. Visible notification delivery on macOS and Windows, physical
 tray-menu clicks, and macOS foreground activation still need interactive
 validation. Run the manual macOS check from an interactive macOS terminal:
@@ -367,13 +367,13 @@ ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh
 ```
 
 It waits for real Show/Quit menu selections and verifies frontmost state. The
-latest GitHub refresh confirmed PR #112 OPEN/MERGEABLE at `3748d5b`, based on
-`main` `eb83be9`. CI run `37325510392`, Security run `37325510228`, and
-Dependency Review run `37325510232` all passed on that head, and both review
-threads are resolved. Repeated retention now preserves prior sums/counts, and
-the four baseline compatibility entry points require a configured signing
-secret. The physical tray result remains pending; see the readiness roadmap
-for run identifiers and evidence.
+latest GitHub refresh confirmed PR #112 OPEN/MERGEABLE at `e9d6d3a`, based on
+`main` `eb83be9`. CI run `37328034504`, Security run `37328034651`, and
+Dependency Review run `37328034502` all passed on that head, and both blocking
+review threads are resolved. Repeated retention preserves prior sums/counts,
+and the four baseline compatibility entry points require a configured signing
+secret. Physical macOS tray Show/Quit clicks and foreground activation remain
+pending; see the readiness roadmap for the execution phases and evidence.
 Release distribution must sign the completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.

@@ -2,9 +2,9 @@
 
 **Current status (2026-10-05; interactive parity evidence remains open):** PR #108
 was merged into `origin/main` at `eb83be9da64057dc71838b33edc01a9a2769b0fa`.
-PR #112 on `fix/weighted-rollup-aggregation` is OPEN/MERGEABLE at `3748d5b`,
-based on that main tip. CI run `37325510392`, Security run `37325510228`, and
-Dependency Review run `37325510232` passed on that head. Two new review
+PR #112 on `fix/weighted-rollup-aggregation` is OPEN/MERGEABLE at `e9d6d3a`,
+based on that main tip. CI run `37328034504`, Security run `37328034651`, and
+Dependency Review run `37328034502` passed on that head. Two new review
 findings were raised and fixed. The follow-up now merges existing
 rollup sums/counts when retention runs repeatedly and requires the configured
 token secret at all four baseline compatibility entry points. Focused tests,
@@ -44,14 +44,14 @@ refresh-and-audit result.
 
 The pinned UI version is pnpm `12.9.1`; local typecheck/tests/build could not
 verify it because its registry signature lookup failed, but hosted `ui-quality`
-passed on source head `3748d5b`. Hosted Linux/macOS/Windows package and URL
+passed on source head `e9d6d3a`. Hosted Linux/macOS/Windows package and URL
 lifecycle checks also passed on that head. The latest local macOS acceptance
 passed cold/warm URL delivery, close-to-tray/Show/Quit handling, notification
 request, visible restore, and saved-state restart. AppKit activation returned
 `accepted=false`; do not claim foreground activation or physical tray-menu
 click acceptance from the scripted checks. The current documentation sync
-records the same-head hosted results; rerun the documentation contracts before
-pushing it.
+records the same-head hosted results and its roadmap/publish contracts pass
+locally. Hosted checks must rerun after this documentation update is pushed.
 
 The 2026-10-04 closure evidence is recorded in
 [`rustsec-exception-closure-evidence-2026-10-04.md`](rustsec-exception-closure-evidence-2026-10-04.md).
