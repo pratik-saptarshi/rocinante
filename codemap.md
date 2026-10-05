@@ -11,14 +11,16 @@ DuckDB remains a checksum-verified prebuilt shared library and is never
 compiled from source. PR #108 is merged; follow-up branch
 `fix/weighted-rollup-aggregation` is the active PR #112 review path. The stale
 test assertion was corrected in commit `8285ee6`, followed by readiness-doc
-syncs on the same branch. On verified PR source head `ff367c4`, CI run
-`37305039584` completed with 24 passed checks, no failures, and one configured
-coverage skip. Security run `37305039580` passed CodeQL, RustSec audit, and
-secret scan; Dependency Review passed. UI, Rust quality/tests, aggregate,
-Linux/macOS/Windows packages and URL lifecycle also passed. PR #108 has no
-unresolved review threads and the live Dependabot query returned no open
-alerts. The evidence above applies to ff367c4; readiness for a newer PR head depends on terminal-green hosted checks for that exact head. Manual physical
-tray-menu clicks and macOS foreground activation remain unverified.
+syncs on the same branch. The latest recorded hosted validation is for PR head
+`27b9e21`: CI run `37311344183` completed with 24 passed checks, no failures,
+and one configured coverage skip. Security run `37311344136` and Dependency
+Review run `37311344143` passed. UI, Rust quality/tests, aggregate,
+Linux/macOS/Windows packages and URL lifecycle also passed. At the last
+successful GitHub refresh, PR #112 was OPEN/CLEAN, its review threads were all
+resolved, and the Dependabot alert query returned zero open alerts. A new live
+refresh on 2026-10-05 could not connect to GitHub, so current remote state is
+not freshly verified. Manual physical tray-menu clicks and macOS foreground
+activation remain unverified.
 
 ## Project Responsibility
 Rocinante is a cross-language planning and execution workspace for AI quality
@@ -130,7 +132,7 @@ desktop host.
 |---|---|---|
 | `src-tauri/src/` | Shared backend services and host-neutral compatibility facades for auth, storage, scoring, telemetry, risk, budget, fix-proposal, triage, verifier, convergence, and baseline operations. | No Tauri bootstrap remains. `command_compat.rs` records the retired public command shapes and keeps the old Rust module path as a compatibility re-export. |
 | `src-tauri/crates/rocinante-storage/` | Host-neutral admin/scoring services, SQLite WAL ingestion, DuckDB analytics, and release-baseline authorization adapter. | The native shell calls this crate directly. Analytics and scoring keep legacy working-directory defaults until BI-058 provides a data-preserving migration. The separate analysis `telemetry.db` uses per-user data with legacy-file migration. DuckDB links only to the official staged prebuilt; the isolated `tools/sled-migration` utility handles legacy Sled data. |
-| `src-tauri/crates/rocinante-desktop-shell/` | Supported GTK-free native window, navigation, repository selection, analysis, saved metrics, notifications, release-baseline controls, and sample insight/reference panels using eframe/winit. | Linux, macOS, and Windows packaging and lifecycle checks are configured but have not yet run on this Tauri-retirement worktree. Physical tray/menu and visible notification behavior still need direct platform evidence. |
+| `src-tauri/crates/rocinante-desktop-shell/` | Supported GTK-free native window, navigation, repository selection, analysis, saved metrics, notifications, release-baseline controls, and sample insight/reference panels using eframe/winit. | Linux, macOS, and Windows package and URL lifecycle checks passed in CI run `37311344183` on PR head `27b9e21`; visible Linux notification delivery also passed. Physical macOS tray-menu clicks and foreground activation remain unverified; visible macOS/Windows notification delivery and Linux/Windows tray runtime remain parity gaps. |
 | `src-tauri/crates/rocinante-analysis/` | Host-independent auth, repository discovery/analysis, telemetry persistence, and shared database-path configuration. | Owns shared modules used by native-shell and Rust service callers. |
 | `src-tauri/tests/` | Backend regression coverage for PR-risk, CI-gate, publish-doc, incident-feedback, storage, authorization, and command-compatibility contracts. | Tests protect shared-service and release-gate invariants; there is no registered Tauri handler suite. |
 | `ui/src/` | Frontend dashboard, bridge adapters, explainability panels, and quality-pulse rendering. | UI state should flow through the bridge adapters rather than direct runtime assumptions. |
@@ -151,11 +153,11 @@ desktop host.
 
 ## Governance and Execution Snapshot
 
-- PR #108 is merged into current `origin/main` at `eb83be9`. PR #112 carries the weighted-retention correction on `fix/weighted-rollup-aggregation`; the full serial workspace suite, storage suite (21/21), formatting, warning-denied Clippy, and roadmap/publish contracts pass locally. Hosted CI run `37305039584` and Security run `37305039580` passed on source head `ff367c4`; the two formerly unresolved PR #108 threads are resolved with this evidence.
-- Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration. The native package and URL lifecycle jobs passed on Linux/macOS/Windows in run `37305039584`. Direct physical tray-menu validation remains open.
-- The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty; both supported lockfiles pass a fresh audit, and hosted governance plus RustSec audit passed. The live Dependabot alert query returned zero open alerts.
+- PR #108 is merged into current `origin/main` at `eb83be9`. PR #112 carries the weighted-retention correction on `fix/weighted-rollup-aggregation`; the full serial workspace suite, storage suite (21/21), formatting, warning-denied Clippy, and roadmap/publish contracts pass locally. Hosted CI run `37311344183`, Security run `37311344136`, and Dependency Review run `37311344143` passed on source head `27b9e21`; the formerly unresolved PR #108 threads were resolved after the relevant evidence passed.
+- Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration. The native package and URL lifecycle jobs passed on Linux/macOS/Windows in run `37311344183`. Direct physical tray-menu validation remains open.
+- The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty; both supported lockfiles pass the last refreshed audit and the cached `--no-fetch` recheck. A new database fetch failed during this pass because GitHub could not be reached. Hosted governance and RustSec audit passed on `27b9e21`; the last live Dependabot alert query returned zero open alerts.
 - On the latest local code, full-workspace tests pass serially, the storage suite passes 21/21, formatting passes, and all-target/all-feature Clippy passes with warnings denied. Earlier worktree evidence also covers `cargo check --offline --workspace --all-targets` and test-target compilation.
-- Rust formatting, CI scope, DuckDB prebuilt-only, native packaging, dependency-guard, governance, and roadmap contracts have local pass evidence. The hosted aggregate and required checks passed on `ff367c4`; one informational coverage job was skipped.
+- Rust formatting, CI scope, DuckDB prebuilt-only, native packaging, dependency-guard, governance, and roadmap contracts have local pass evidence. The hosted aggregate and required checks passed on `27b9e21`; one informational coverage job was skipped. A live status refresh now fails to connect to GitHub, so the last successful remote snapshot is retained rather than presented as newly verified.
 - pnpm `12.9.1` is pinned and was verified as the latest stable release on 2026-10-05. Hosted `ui-quality` passed with the pin, including typecheck, UI tests, and production build; local registry signature lookup remains unavailable.
 - The installed macOS acceptance passes cold/warm URL delivery, saved-state restart, close-to-tray/Show/Quit handling, visible restore, and notification request. AppKit returned `accepted=false`, and physical tray-menu clicks were not exercised; foreground activation remains unverified.
 

@@ -11,20 +11,22 @@ then release from the merged tip.
 
 PR #108 is merged at `origin/main` `eb83be9`. Current work is on the PR #112
 focused follow-up branch `fix/weighted-rollup-aggregation`, based on that main
-tip. At verified source head `ff367c4`, PR #112 was OPEN/CLEAN: CI run
-`37305039584` completed with 24 passed checks, no failures, and one configured
-coverage skip; Security run `37305039580` passed CodeQL, RustSec audit, and
-secret scan; Dependency Review passed. The live GitHub query found no open
-Dependabot alerts and PR #108 has zero unresolved review threads. These results
-apply to `ff367c4`; readiness for any newer PR head depends on terminal-green
-hosted checks for that exact head.
+tip. The latest recorded hosted snapshot is PR head `27b9e21`: CI run
+`37311344183` completed with 24 passed checks, no failures, and one configured
+coverage skip; Security run `37311344136` passed CodeQL, RustSec audit, and
+secret scan; Dependency Review run `37311344143` passed. At the last successful
+GitHub refresh, PR #112 was OPEN/CLEAN, its review threads had no unresolved
+items, and the live Dependabot query found no open alerts. A fresh GitHub
+refresh in this pass could not connect, so those are last-known remote facts.
 
 The supported host is the eframe/winit native shell; Tauri bootstrap,
 runtime/build dependencies, and installer configs are removed. The 11 prior
 command names and wire shapes remain as host-neutral compatibility metadata.
 The advisory registry and Cargo audit ignore list are empty; governance and
-both unfiltered lockfile audits pass against refreshed RustSec revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee`. CI run `37305039584` passed the
+both unfiltered lockfile audits pass against the last refreshed RustSec
+revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`. A new database fetch in
+this pass failed, while cached `--no-fetch --deny warnings` scans still pass.
+CI run `37311344183` passed the
 full workspace tests, formatting, Clippy, UI quality with pinned pnpm 12.9.1,
 the aggregate, and Linux/macOS/Windows package and URL lifecycle checks. The
 local installed macOS acceptance also passed cold/warm delivery,
@@ -41,9 +43,8 @@ SHA-verified prebuilt and is never compiled from source.
 - PR #108 completed the readiness migration and merged as `eb83be9`. The
   weighted-retention correction is in PR #112 on
   `fix/weighted-rollup-aggregation`, based on that main tip. Hosted CI,
-  Security, and Dependency Review passed on source head `ff367c4`; review
-  threads on PR #108 are resolved. Readiness for a newer PR head depends on
-  its terminal-green hosted checks.
+  Security, and Dependency Review passed on last-recorded source head
+  `27b9e21`; refresh live checks when GitHub connectivity returns.
 - Product: Rust shared-service workspace with a GTK-free native desktop host
   and a React/Vite preview dashboard
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -145,7 +146,7 @@ lock for a bounded deep-link inbox; `packaging/linux/rocinante.desktop` declares
 the URI scheme. Per-user installers package the verified `.so`, `.dylib`, or
 `.dll` and register the URL handlers. Local macOS cold/warm URL, tray,
 notification-request, and restart acceptance passes. Hosted CI run
-`37305039584` passes Linux/macOS/Windows URL and saved-state restart acceptance;
+`37311344183` passes Linux/macOS/Windows URL and saved-state restart acceptance;
 Linux visible notification delivery also passes. Visible macOS/Windows
 notification delivery and physical tray-menu clicks remain unverified.
 - `tempfile` for tests
@@ -235,7 +236,7 @@ Packages declared in `ui/package.json`:
   `proc-macro-error`, and `glib`. Unfiltered `cargo audit --deny warnings`
   passes for both against cached RustSec revision
   `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; hosted RustSec audit, governance,
-  CodeQL, and secret scan passed in run `37305039580`.
+  CodeQL, and secret scan passed on PR head `27b9e21` in run `37311344136`.
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 - `test` aggregate job in `.github/workflows/ci.yml` is the merge gate for protected-branch checks and depends on parse/scope/lint/test/coverage jobs.
