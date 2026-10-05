@@ -1,8 +1,29 @@
 # Bill of Materials - Markdown Snapshot
 
-_Captured: 2026-10-04_
+_Captured: 2026-10-05_
 
 ## Repository and Source Control
+
+### Current local execution snapshot (2026-10-05)
+
+The remediation worktree on PR #108 is based on pushed commit `3020d9e` and
+contains uncommitted host-retirement and zero-exception changes. Tauri/Wry and
+GTK/GLib have been removed from supported workspace manifests and lockfiles.
+The native-shell package contract passes locally and the installed macOS
+URL/restart acceptance passes; the cross-platform package matrix has not run
+hosted on this worktree.
+The 15 withdrawn/absent advisory entries and the two avoided package paths are
+closed with evidence; both the exception registry and audit ignore list are
+empty. Governance contracts and cached RustSec audits pass. A fresh database
+refresh could not connect to GitHub. Formatting, all-target/all-feature Clippy,
+and the full serial workspace suite pass locally; the storage suite also passes
+with two threads, while its default-parallel run stalls in the retention case.
+UI typecheck, 63 tests, and production build pass as diagnostics with global
+pnpm 12.8.1; pinned pnpm 12.9.1 could not be fetched due registry DNS failure.
+The installed macOS URL/restart acceptance passes, but its AppKit activation
+request returned false. Linux/Windows package/lifecycle and same-head hosted
+validation remain required. Do not treat earlier hosted Tauri package or CI
+runs as evidence for this local change.
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
@@ -10,7 +31,7 @@ _Captured: 2026-10-04_
 - Current work is on PR #108's remediation branch, `fix/rocinante-readiness-remediation`.
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
-## Branch and Sync State
+## Historical hosted branch snapshot (2026-10-04)
 
 - PR #108 is open on `fix/rocinante-readiness-remediation`; its latest hosted
   validation head is `1be093a`, based on `main` tip `cdd29b9`. All 47 inline
@@ -39,9 +60,10 @@ _Captured: 2026-10-04_
 ## Active Governance and Planned Slices
 
 - `BI-047` — F-047 Desktop parity evaluation and host decision (completed on PR run `28988956969`)
-- `BI-046` — F-046 GTK/glib dependency-floor governance (in progress; two live exception reviews overdue since 2026-08-06)
+- `BI-046` — F-046 GTK/glib dependency-floor governance (in progress; registry and ignores are now empty locally, with fresh audit and hosted proof pending)
 - `BI-048` — F-048 Core extraction and host-agnostic contract (completed locally; nine contract tests pass)
 - `BI-049` — F-049 GTK-free native desktop MVP (in progress; eframe/winit shell with lossless paths, authenticated scans, saved-metric reload, and desktop notification requests)
+- `BI-051` — F-051 Tauri/GTK/GLib retirement (in progress; host removed locally, native platform package validation pending)
 - `BI-052` — F-052 Dependabot esbuild remediation (tracked esbuild alert confirmed closed by live query on 2026-09-30; other release blockers remain)
 - `BI-053` — F-053 CI bootstrap and workflow parseability (completed; validated on PR run `28983234703`)
 - `BI-054` — F-054 CI lane orchestration and gating (completed; validated on PR run `28983234703`)
@@ -147,25 +169,22 @@ _Captured: 2026-10-04_
 
 ## Current Remediation State Notes
 
-- The current pnpm pin is `12.9.1`; the frozen install and UI typecheck, unit
-  suite, and production build pass locally. The direct dependency set was
-  already at its latest stable versions before the pnpm metadata refresh.
+- The current pnpm pin is `12.9.1`, the latest stable upstream release on
+  2026-10-05. Local UI typecheck, 63 unit tests, and production build pass with
+  installed dependencies under global pnpm `12.8.1`; registry DNS prevented
+  fetching the exact pin. The hosted pinned-version UI lane remains required.
 - The PR workflow selects Rust lint and workspace tests for Cargo manifest,
-  lockfile, workflow, and Rust source changes. The CI-scope path contract passes.
-- DuckDB prebuilt provisioning and installed app packaging are validated
-  locally and in the hosted Linux, macOS, and Windows lifecycle jobs. Rust test
-  jobs also stage the verified runtime in Cargo's `debug/deps` directory.
-- The advisory gate remains intentionally blocked by two overdue live
-  dispositions and two app audit warnings. The other 15 registry entries were
-  removed only after withdrawal or supported-lockfile absence evidence; no
-  review dates or owner acceptance statements were fabricated. The phased
-  zero-exception remediation sequence is documented in the roadmap plan.
-- The dependency-floor and exception-registry phase is not complete. The last
-  terminal aggregate on the latest hosted validation head, `37235903810`, passed
-  all code lanes but failed the required gate because the registry at that head
-  had 17 reviews overdue. The local registry reclassification and its contract
-  test are not hosted-validated yet. Do not record owner acceptance or renew
-  either remaining review date without the actual disposition.
+  lockfile, workflow, and Rust source changes. The CI-scope contract passes.
+- DuckDB remains an official checksum-verified prebuilt and the source-build
+  feature guard passes. Local macOS packaging/lifecycle acceptance passes;
+  Linux/Windows package and lifecycle runs are still required on this worktree.
+- The advisory registry and Cargo audit ignores are empty. Governance contracts
+  and cached-database audits pass for both supported lockfiles. A fresh RustSec
+  database fetch could not reach GitHub, and hosted Security checks remain
+  pending; no owner acceptance or review-date renewal was recorded.
+- Formatting, all-target/all-feature Clippy, and the full serial workspace test
+  suite pass locally. Same-head hosted aggregate validation remains outstanding;
+  earlier green Tauri-head results do not validate the native-shell retirement.
 
 ## Release Artifacts
 

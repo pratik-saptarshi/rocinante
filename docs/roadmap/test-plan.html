@@ -1,5 +1,23 @@
 # Test Plan (TDD Roadmap)
 
+## Current execution status — 2026-10-05
+
+The active remediation worktree retires the Tauri host and preserves its
+eleven command payload contracts as host-neutral metadata. Formatting,
+all-target/all-feature Clippy, the full locked workspace suite in serial mode,
+and the governance, dependency, DuckDB-prebuilt, native-package, workflow,
+roadmap, and CI-scope contracts pass locally. The storage suite also passes
+with two test threads; its default-parallel run stalls in the retention case on
+this machine. Local UI diagnostics pass with installed dependencies under the
+global pnpm `12.8.1` (typecheck, 63 tests, and production build), but the pinned
+`12.9.1` could not be fetched because `registry.npmjs.org` did not resolve. The
+installed macOS acceptance passes cold/warm URL delivery, window/tray
+lifecycle, notification request, and saved-state restart; AppKit returned
+`accepted=false`, and foreground activation is not claimed. Cached RustSec
+audits pass for both supported lockfiles, but refreshing the database failed
+to reach GitHub. Linux and Windows package/lifecycle runs and same-head hosted
+Security/aggregate checks remain pending.
+
 ## Testing Strategy
 
 - Enforce red-green-refactor cycle per feature ID.
@@ -35,7 +53,7 @@
     hosted CI.
   - Phase 2 now uses SQLite WAL for default ingestion and DuckDB for analytics.
     The shared workspace passes 83 tests, including 9 storage unit tests; root
-    storage (17), transport (5), backend (5), admin-ingestion (2), Tauri-command
+    storage (17), transport (5), backend (5), admin-ingestion (2), command-compatibility
     (5), and README/API (1) test binaries also pass. `cargo check --tests` passes
     for root test targets. Strict workspace Clippy passes for extracted crates.
     Promotion receipts protect the
@@ -102,8 +120,8 @@
 
 ## In-Progress Test Work
 
-- `T-008` Tauri command integration tests:
-  - Validate command input/output contracts for the current command-schema slice and command-level RBAC denial/allow flows.
+- `T-008` Retired command compatibility tests:
+  - Validate preserved command input/output contracts and RBAC behavior without a Tauri IPC runtime.
 
 - `T-031` CI gate and comment contract tests:
   - `src-tauri/tests/ci_gate_tests.rs`
@@ -164,11 +182,11 @@
   - Missing-file fallback behavior.
 ## Existing Test Coverage Additions
 
-- PR #108 review regressions:
+- Historical PR #108 review regressions (before Phase 4C retired the Tauri host):
   - The analysis scan tests check path-stable repository IDs across workspace and direct-folder selection, distinguish duplicate basenames, and use legacy basename/tree-relative telemetry aliases only when the requested stable identity has no rows for that release. A row is never returned under both old and new identities.
   - The storage test checks legacy working-directory defaults for the analytics and scoring stores until BI-058 implements a data-preserving migration, while preserving explicit environment overrides; the separate analysis `telemetry.db` remains per-user with its legacy-file migration.
   - The macOS installer test records nested signing order and verifies the final app bundle after Mach-O edits.
-  - The CI scope contract selects Rust checks for toolchain and Cargo config paths and requires successful Linux, macOS, and Windows Tauri bundle jobs at the aggregate gate.
+  - The CI scope contract selected Rust checks for toolchain and Cargo config paths and required successful Linux, macOS, and Windows Tauri bundle jobs at the aggregate gate; Phase 4C replaced that matrix with native-shell package jobs.
   - The Tauri bundle contract checks the tracked resource marker, checksum-verified pre-build staging hook, and removal of DuckDB Cargo-cache RPATH entries from the macOS Tauri executable. Hosted macOS package validation rejects any remaining `duckdb-download` RPATH.
   - The Tauri bundle contract maps `universal-apple-darwin` to the pinned universal macOS artifact while retaining Tauri's universal output directory.
   - The advisory governance contract rejects both unregistered Cargo audit ignores and registry entries absent from `.cargo/audit.toml`.
@@ -184,9 +202,8 @@
   - Service-layer injection covers default and custom PR policies without changing the command surface.
 
 - `T-038` Admin PR risk command boundary tests:
-  - `tests/tauri_command_tests.rs`
-  - End-to-end command invocation through the Tauri bridge.
-  - RBAC denial/allow flow for the command facade.
+  - `tests/command_compat_tests.rs`
+  - Retired command request/response and RBAC compatibility facade tests.
 
 - `T-036` Admin PR risk command tests:
   - `tests/pr_risk_contract_tests.rs`
@@ -211,8 +228,8 @@
 
 - `T-048` Security advisory exception registry and dependency-floor proof tests:
   - `src-tauri/tests/security_advisory_exception_tests.rs`
-  - `scripts/check-security-advisory-exceptions.py` and its shell contract test validate date syntax and expiry; required CI job `security-exception-governance` runs the checker against the current date and keeps the aggregate `test` gate blocked while reviews are overdue.
-  - Audit ignores stay mapped one-to-one to the exception registry. The latest hosted run was against the earlier 17-entry registry and failed closed. The 2026-10-04 local update removes 15 entries using upstream withdrawal or supported-lockfile absence evidence; two live findings remain overdue pending owner dispositions. See `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
+  - `scripts/check-security-advisory-exceptions.py` and its shell contract validate registry shape and review-date expiry; required CI job `security-exception-governance` remains fail-closed and is required by aggregate `test`.
+  - Audit ignores stay mapped one-to-one to the exception registry. Fifteen withdrawn/absent records were closed with evidence, and the two remaining affected package paths were removed by retiring Tauri/GTK dependencies. The registry and ignore list are empty; cached audits pass, while a fresh database and hosted run remain pending. See `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
 
 - `T-049` Parity matrix and host-decision tests:
   - `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`
@@ -321,18 +338,19 @@
 
 - `T-053` Dependency-floor removal tests:
   - `scripts/dependency-floor-proof.sh`
+  - `scripts/check-desktop-shell-dependencies.sh`
   - `.cargo/audit.toml`
   - `docs/roadmap/repository-security-baseline.html`
-  - BI-051 must add executable release gates that fail if `gtk` or `glib` reappear in the release dependency tree or the exception registry remains open after removal. This gate is planned, not currently enforced by `dependency-floor-proof.sh`.
+  - Local dependency-floor and workspace-graph checks pass. They fail if GTK, GLib, Wry, Tauri, or the affected proc-macro-error package reappears in a supported desktop workspace target; the advisory registry and Cargo audit ignore list are empty.
 
 - `T-054` Dependabot esbuild remediation tests:
   - `ui/pnpm-lock.yaml`
   - `ui/package.json`
   - `pnpm -C ui test`
   - `pnpm -C ui build`
-  - Main CI run [29415214522](https://github.com/pratik-saptarshi/rocinante/actions/runs/29415214522) on 2026-07-15 did not verify closure because its checker skipped a malformed response. The local checker now fails closed; `scripts/test-check-dependabot-esbuild-alert.sh` covers malformed API and pagination responses. A successful live query on 2026-09-30 confirmed the tracked alert is no longer open.
-  - The UI lockfile resolves `esbuild@0.28.1`; the local Node script could not run in this environment. Five unrelated Dependabot alerts and GTK/GLib exceptions remain release blockers.
-  - `scripts/test-check-dependabot-esbuild-alert.sh` verifies confirmed-zero pass, open matches, malformed error/pagination responses, and exit-2 errors for missing `gh`/`jq`, API or jq failures, and malformed output. The alert-query job grants `vulnerability-alerts: read`, the GitHub-documented token scope. actionlint v1.7.12 does not recognize this documented scope, so the parser ignores only that diagnostic. A fresh live query passed on 2026-09-30.
+  - Main CI run [29415214522](https://github.com/pratik-saptarshi/rocinante/actions/runs/29415214522) on 2026-07-15 did not verify closure because its checker skipped a malformed response. The local checker now fails closed; `scripts/test-check-dependabot-esbuild-alert.sh` covers malformed API and pagination responses. The last successful live query on 2026-09-30 reported the tracked alert closed; this worktree's current live query could not reach GitHub.
+  - The UI lockfile resolves `esbuild@0.28.2`; `node scripts/check-esbuild-lock.mjs` passes locally against the 0.28.1 floor. No current Dependabot alert status is claimed without a fresh API query.
+  - `scripts/test-check-dependabot-esbuild-alert.sh` verifies confirmed-zero pass, open matches, malformed error/pagination responses, and exit-2 errors for missing `gh`/`jq`, API or jq failures, and malformed output. The alert-query job grants `vulnerability-alerts: read`, the GitHub-documented token scope. actionlint v1.7.12 does not recognize this documented scope, so the parser ignores only that diagnostic.
 
 - `T-055` CI bootstrap and workflow parseability tests (`F-053`):
   - `src-tauri/tests/ci_gate_tests.rs`
@@ -376,9 +394,9 @@
   - `ui/src/tauri-admin.test.ts`
   - `ui/e2e/app.spec.ts`
   - `src-tauri/tests/release_baseline_tests.rs`
-  - `src-tauri/tests/release_baseline_handler_tests.rs`
+  - `src-tauri/tests/command_compat_tests.rs`
   - `src-tauri/tests/release_baseline_storage_tests.rs`
-  - The native Dashboard release-baseline controls call the shared admin-authorized SQLite/DuckDB adapter asynchronously. Tauri commands and the shell use the same storage paths, writer lock, and snapshot refresh implementation.
+  - The native Dashboard release-baseline controls call the shared admin-authorized SQLite/DuckDB adapter asynchronously. The retired command contracts preserve the historical path and payload surface; the native shell uses shared storage services directly.
 
 - `T-044` Vitest and Playwright runner boundary tests (`F-040`):
   - `ui/vite.config.ts`

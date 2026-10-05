@@ -49,7 +49,7 @@ fn parity_decision_artifacts_stay_stable_during_planned_work() {
     assert!(migration_plan.contains("Phase 0:"));
     assert!(test_plan.contains("`F-047` -> `T-049`"));
     assert!(migration_plan.contains("F-047"));
-    assert!(checklist.contains("RT-RC-002 is active"));
+    assert!(checklist.contains("before RT-RC-002 can close"));
 }
 
 #[test]

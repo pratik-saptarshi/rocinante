@@ -1,5 +1,13 @@
 # Desktop Parity Matrix and Host-Decision Record
 
+## Current implementation status — 2026-10-05
+
+The current remediation worktree uses the eframe/winit native shell and has
+removed Tauri from supported manifests and lockfiles. The old Tauri surface is
+the historical parity baseline. Linux/macOS/Windows packaging and lifecycle
+checks are configured but pending on this worktree; BI-049/BI-050 remain open
+until hosted and interactive acceptance evidence is recorded.
+
 ## Scope and Timestamp
 
 - Track date: 2026-07-07
@@ -44,7 +52,7 @@ approved for a documented fallback.
 - Notification surface visibility
 
 Parity evidence: the GTK-free shell implements repository-folder selection, but
-the current Tauri/UI source has no matching file-import workflow or import
+the historical Tauri/UI source has no matching file-import workflow or import
 command. Existing F-027/F-033 bulk import work covers backend historical telemetry
 ingestion and does not define a desktop file-selection flow. Treat this row as
 unresolved until the product owner confirms whether folder selection satisfies

@@ -1,35 +1,45 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Current status (2026-10-05; hosted and local evidence):** PR #108 remains open
-and mergeable on `fix/rocinante-readiness-remediation`, at head
-`e3a069df0b5c85b3a4456a6e0e6f20463787fc6d`, based on `main` at
-`cdd29b9f9a1f20269d1c50595a4b4d53d5fbc3e4`. Hosted CI run
-[`37270511350`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37270511350)
-completed with 22 checks passed, one expected coverage skip, and two failures:
-`security-exception-governance` plus its dependent aggregate `test`. The Rust
-workspace suite, Rust quality gate, crate test shards, Clippy/fmt, UI quality,
-Linux/macOS/Windows URL lifecycle, and all three Tauri package builds passed.
-The governance failure is limited to the two overdue active records. Security
-run [`37270511331`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37270511331)
-and Dependency Review run [`37270511339`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37270511339)
-passed, including Rust audit, CodeQL, and secret scan. The P1 frontend
-packaging review thread is resolved.
+**Current status (2026-10-05; local remediation in progress):** the worktree is
+on `fix/rocinante-readiness-remediation`, based on pushed commit `3020d9e` and
+`main` at `cdd29b9f9a1f20269d1c50595a4b4d53d5fbc3e4`. The branch tip matches
+`origin`; the current Phase 4/5 changes are uncommitted and have not run in
+hosted CI. A live PR/check refresh failed to connect to GitHub.
 
-The 2026-10-05 RustSec database refresh loaded 1,290 advisories from revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee` (last upstream commit
-2026-10-03). An unfiltered audit outside the repository ignore file reports
-zero vulnerabilities and exactly two warnings: RUSTSEC-2024-0370
-(`proc-macro-error 1.0.4`, unmaintained) and RUSTSEC-2024-0429 (`glib 0.18.5`,
-unsound); `--deny warnings` exits 1. The 82-package migration-tool audit is
-clean. Fifteen obsolete registry entries are closed with evidence. No owner
-disposition or date renewal is inferred for the two live findings; Phase 4
-must remove their Tauri/Wry/GTK dependency paths before Phase 5 empties the
-registry and ignore list and reruns the unfiltered audits.
+The root Tauri binary, build script, runtime/build dependencies, command
+bootstrap, and installer configs have been removed from the supported Rust
+workspace. The regenerated application lockfile and isolated Sled-migration
+lockfile contain neither `glib 0.18.5` nor `proc-macro-error 1.0.4`; the
+whole-workspace dependency guard also excludes GTK, GLib, Wry, and the Tauri
+runtime. Both the advisory registry and `.cargo/audit.toml` ignore list are now
+empty, and the fail-closed governance contract passes.
+
+`cargo check --offline --workspace --all-targets`, complete test-target
+compilation, formatting, all-target/all-feature Clippy with warnings denied,
+and the full Rust workspace suite in serial mode pass locally. The storage
+suite passes with two test threads (20/20); its default-parallel run stalls on
+this machine in `async_ingestion_engine_applies_retention_before_promotion`,
+so same-head hosted CI must validate the normal parallel lane. Roadmap,
+governance, dependency, DuckDB prebuilt/feature, native-package (6/6), CI-scope,
+and workflow `actionlint` contracts pass. UI typecheck, 63 tests, and the
+production build pass as diagnostics using installed dependencies under global
+pnpm `12.8.1`; the exact pin `12.9.1` is the latest stable release listed by
+[pnpm](https://github.com/pnpm/pnpm/releases/tag/v12.9.1), but retrieval failed
+because `registry.npmjs.org` did not resolve. The pinned UI lane remains
+required. The installed macOS acceptance passes cold/warm URL delivery,
+saved-state restart, tray/window flow, and notification request; the AppKit
+activation request returned false, so foreground activation is not claimed.
+Linux and Windows package/lifecycle checks remain pending. Unfiltered
+`cargo audit --no-fetch --deny warnings` exits successfully for both lockfiles
+against the cached RustSec database (1,290 advisories, revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee`). A fresh database fetch failed to
+connect to GitHub, so current-upstream audit freshness and hosted
+security/platform checks remain unverified.
 
 The 2026-10-04 closure evidence is recorded in
 [`rustsec-exception-closure-evidence-2026-10-04.md`](rustsec-exception-closure-evidence-2026-10-04.md).
 
-**Unfiltered audit refresh (2026-10-04):** `rtk cargo audit` refreshed the
+**Historical unfiltered audit baseline (2026-10-04):** `rtk cargo audit` refreshed the
 RustSec database to revision
 `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories, last updated
 2026-10-03). Audits ran from `/private/tmp`, outside the repository audit
@@ -59,11 +69,11 @@ RustSec revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`, timestamped
 audit reports the two warnings below. No newer upstream database revision was
 available during this check.
 
-The supported application dependency graph still contains the two live paths
-through Tauri/Wry/GTK. Phase 4 must remove those paths before Phase 5 deletes
-the final ignores and registry records; no owner acceptance will be substituted
-for dependency removal. The other 15 entries were closed under the evidence and
-maintainer authorization recorded in the closure document.
+The historical baseline contained two applicable records. Their package paths
+are now absent after Phase 4 host retirement; the other 15 entries were closed
+under the evidence and maintainer authorization recorded in the closure
+document. No owner acceptance or date renewal was substituted for dependency
+removal.
 **Latest decision record:** [`decision-2026-10-05.md`](../decisions/decision-2026-10-05.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
@@ -71,15 +81,15 @@ maintainer authorization recorded in the closure document.
 
 | Phase | Status | Evidence and remaining gate |
 |---|---|---|
-| 0 — Baseline and review blockers | Packaging blocker resolved; governance remains open | Corrected commit `e3a069d` passed the Linux, macOS, and Windows Tauri package jobs, UI quality, workflow contracts, lifecycle jobs, Rust workspace tests, Clippy/fmt, and CI gate contract in run `37270511350`. Security audit, CodeQL, secret scan, and Dependency Review passed. The P1 packaging thread is resolved. The CI aggregate still fails only because the fail-closed governance job rejects the two overdue live advisories. |
+| 0 — Baseline and review blockers | Local current-worktree gates pass; hosted validation pending | Commit `e3a069d` passed the Tauri packaging review matrix and its P1 thread was resolved. That host has since been retired. Current local Rust, UI diagnostic, macOS lifecycle, governance, package, workflow, and documentation checks pass as recorded above; hosted checks on the updated branch are not yet available. |
 | 1 — Prebuilt DuckDB | Complete | The official checksum-verified runtime is staged without source compilation; Linux `.deb`, macOS `.app`, Windows NSIS packaging and lifecycle jobs passed in run `37249203857`. |
 | 2 — SQLite ingestion | Implemented; validation current | Hosted workspace/storage tests, Clippy, and formatting passed in run `37249203857`; preserve the existing public command and payload contracts. |
 | 3 — Isolated Sled migration | Complete | Eight migrator tests pass locally; the 82-package migrator lockfile has no findings or warnings in the refreshed 1,290-advisory database. Both supported lockfiles were audited outside the repository ignore configuration. |
-| 4 — Native parity and Tauri/GTK retirement | In progress | Phase 4A inventory covers all eleven registered commands and its contract passes. Shared telemetry and admin routing are implemented and locally tested. The production manifest still includes Tauri, tauri-build, and Wry, so the 4C removal gate is not met. Next: complete the native parity map, remove Tauri build/package surfaces, then run all-target dependency checks before 4D platform evidence. |
-| 5 — Zero-exception governance | Partially complete; blocked on Phase 4 dependency removal | Fifteen evidence-backed records are closed locally. Remove the final two registry entries and Cargo ignores only after glib and proc-macro-error are absent from every supported lockfile; then refresh RustSec and run unfiltered --deny warnings audits plus governance fixtures. |
-| 6 — Release readiness and docs | Pending | After 4C/4D and 5 pass, reconcile docs to the exact final commit, run the full local quality suite, and require terminal green aggregate/security/platform checks on the same PR head. |
+| 4 — Native parity and Tauri/GTK retirement | In progress | The 11-command contract inventory and shared service routes are in place. Tauri manifests, bootstrap, macros, configs, and package job are removed locally; native-shell packaging replaces the old matrix. Workspace tests pass serially, Clippy and local package/dependency contracts pass. Installed macOS cold/warm URL and restart acceptance passes locally; AppKit activation returned false. Linux/Windows package/lifecycle evidence and same-head hosted checks remain required. |
+| 5 — Zero-exception governance | Locally cleared; final verification pending | All 17 records are accounted for: 15 previously closed with withdrawal/absence evidence, and the two live packages are now absent from both supported lockfiles. The registry and audit ignores are empty; governance contract passes. Cached-database unfiltered audits pass. Retry a fresh RustSec fetch and require hosted Security/audit success before phase closure. |
+| 6 — Release readiness and docs | Local documentation reconciled; final verification pending | README, repository maps, BOM, test plan, and publish checklist describe the native-only host, empty registry, transport compatibility boundary, and local results. Roadmap/publish-doc contracts pass. Global pnpm 12.8.1 UI diagnostics pass; exact pinned 12.9.1 retrieval failed on registry DNS. Require fresh-audit and same-head green aggregate, Security, pinned UI, Dependabot, and platform checks on PR #108. |
 
-### Phase 0 frontend packaging finding (2026-10-05; local validation)
+### Historical Phase 0 Tauri frontend packaging finding (resolved before host retirement)
 
 The P1 PR #108 finding reports that Tauri packaged `ui/index.html` from the
 source tree, whose entry point references `/src/main.tsx`; the UI-quality
@@ -290,8 +300,8 @@ the provisioner for missing, corrupt, wrong-version, and valid artifacts; in a
 clean cache capture compiler invocations and prove no DuckDB C/C++ translation
 unit is compiled; query the linked engine version; build and run storage tests
 on Linux, macOS, and Windows; launch installed apps with developer library-path
-variables removed. Build the Tauri `.deb`, `.app`, and NSIS installer from the
-verified prebuilt, inspect each package for its platform library, and confirm
+variables removed. Build and install the GTK-free native shell on Linux,
+macOS, and Windows; inspect each package for its platform library, and confirm
 the installed binary's loader path resolves to that packaged file.
 
 **Exit gate:** all supported target artifacts have official URLs and checked-in
@@ -464,6 +474,17 @@ checksum-matched DuckDB runtime and starts without developer library paths.
 GTK, or GLib packages, and the native shell is the only supported desktop
 entry point.
 
+**Local execution evidence (2026-10-05):** the root Rust package no longer has
+a binary, `build.rs`, Tauri runtime/dev/build dependencies, command macros,
+or Tauri installer configs. The command inventory is retained as a host-neutral
+compatibility contract. The new required Linux/macOS/Windows native-shell
+package matrix stages DuckDB beside the release binary, installs each platform
+package, checks the runtime hash/loader path, and verifies the signed macOS
+bundle. Its contract suite passes 6/6 and actionlint passes. Full workspace
+test-target compilation passes; the full test run exposed two stale assertions
+that still expected the removed Tauri binary and advisory ignores. Hosted
+package and lifecycle results for this change are pending.
+
 #### Phase 4D — Prove native behavior and close parity gaps
 
 Run cold/warm URL delivery, saved-state restart, notification, window/tray,
@@ -487,10 +508,10 @@ stable.
 Record evidence-backed dispositions for all 17 original registry records.
 Eight withdrawn records and seven records whose packages are absent from both
 supported lockfiles are now closed locally, with exact evidence documented in
-`rustsec-exception-closure-evidence-2026-10-04.md`. The two active records
-remain until their dependency paths are removed or security-owner dispositions
-are recorded. Then remove all audit ignores and make the checker enforce an
-empty exception registry.
+`rustsec-exception-closure-evidence-2026-10-04.md`. The remaining two advisory
+packages are absent from both supported lockfiles after Tauri/Wry/GTK removal,
+so no security-owner exception was needed. The active registry and Cargo audit
+ignore list are empty, and the checker now accepts this zero-exception state.
 
 **Validation:** run the governance checker and its contract tests against
 withdrawn, absent, newly introduced, malformed, stale, empty-registry, and
@@ -499,11 +520,16 @@ lockfile with `--deny warnings`; verify JSON shows an empty ignore list and no
 warnings/findings. Confirm the hosting security-audit job also uses no
 exceptions.
 
+**Current validation:** the governance checker and empty-registry contract
+pass. Unfiltered audits with `--deny warnings` pass for both supported
+lockfiles against the cached 1,290-advisory database at revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee`. A fresh database fetch failed to
+connect to GitHub; hosted Security/audit checks on this dependency graph are
+also pending.
+
 **Exit gate:** all 17 dispositions cite evidence; both governance stores are
 empty; refreshed, unfiltered audits pass for all supported lockfiles; the
-fail-closed governance and cargo-audit CI jobs pass. Current status: 15
-evidence-backed closures are recorded locally, while the two active entries
-await owner dispositions and hosted validation of the updated registry.
+fail-closed governance and cargo-audit CI jobs pass.
 
 ### Phase 6 — Full release-readiness verification and documentation closeout
 

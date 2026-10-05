@@ -1,6 +1,6 @@
-# Rocinante Tauri Repo Analyzer
+# Rocinante Repo Analyzer
 
-Rust + Tauri local repository analyzer with a bead-based plugin engine, dual-layer telemetry storage, and an admin control plane.
+Rust native desktop repository analyzer with a bead-based plugin engine, dual-layer telemetry storage, and an admin control plane.
 
 This public README summarizes what the repo can do today, with a specific focus on security and audit workflows.
 
@@ -32,7 +32,7 @@ Rocinante helps teams measure and explain repository risk using on-prem analysis
 ### 2) Security controls and governance
 
 - JWT token validation and admin role enforcement in `src-tauri/crates/rocinante-analysis/src/auth.rs`.
-- Admin command surface is explicit and closed over command names in `src-tauri/src/main.rs` and `src-tauri/src/admin.rs`:
+- Migrated command names and payload contracts are recorded in `docs/roadmap/native-shell-command-contract-inventory.md`. The former Tauri `window.__TAURI__.core.invoke` transport is retired; the native shell calls shared Rust services directly. Native admin actions are closed over command names in `src-tauri/crates/rocinante-storage/src/lib.rs`:
   - `run_scan`
   - `query_metrics`
   - `ingest_event`
@@ -40,6 +40,9 @@ Rocinante helps teams measure and explain repository risk using on-prem analysis
   - `query_aggregates`
   - `committer_scores`
   - `rank_prs`
+  - `evaluate_pr_risk`
+  - `query_release_baseline`
+  - `reseed_release_baseline`
   - `update_scoring_weights`
 - Mandatory privacy redaction via sanitizer policy packs (`general`, `security`, `privacy`, `payments`).
 - Signed scoring-weight config plus append-only change log in `scoring.rs` for tamper visibility.
@@ -208,7 +211,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 - Rust stable toolchain.
 - Node.js + `pnpm` (`ui/package.json` declares `pnpm@12.9.1`).
-- Optional: Linux desktop deps for Tauri packaging if running full app packaging workflows.
+- Optional: Linux window-system, Vulkan, and udev development libraries for building the native shell.
 
 ### 2) Build UI bundle
 
@@ -218,7 +221,7 @@ pnpm install
 pnpm run build
 ```
 
-### 3) Build and run backend/app shell
+### 3) Build and run the native desktop app
 
 Before any Cargo command that builds analytics or the desktop shell, provision
 the official prebuilt DuckDB library for the current target. The provisioner
@@ -226,11 +229,11 @@ checks the pinned archive and native-library SHA-256 values; the Cargo feature
 guard rejects DuckDB source-build features. Installer commands below also
 stage the runtime beside the built shell executable.
 
-Before starting Tauri or the standalone shell, set `RUNICIPAL_TOKEN_SECRET` in
-the process environment. `app_state()` validates it during startup, so setting
-it only before scanning is too late. It must be at least 32 bytes, and the admin
-JWT must be signed with the same secret. For an interactive Bash session, enter
-the secret without echoing it or placing it in shell history:
+Before starting the native shell, set `RUNICIPAL_TOKEN_SECRET` in the process
+environment. The shell validates it during startup, so setting it only before
+scanning is too late. It must be at least 32 bytes, and the admin JWT must be
+signed with the same secret. For an interactive Bash session, enter the secret
+without echoing it or placing it in shell history:
 
 ```bash
 read -r -s -p "RUNICIPAL_TOKEN_SECRET (32+ bytes): " RUNICIPAL_TOKEN_SECRET
@@ -260,25 +263,11 @@ python3 scripts/provision_duckdb.py
 ```
 
 ```bash
-(cd src-tauri && cargo test --workspace --locked --manifest-path Cargo.toml) # test Tauri and extracted crates
-(cd src-tauri && cargo run --manifest-path Cargo.toml)
+(cd src-tauri && cargo test --workspace --locked --manifest-path Cargo.toml)
+(cd src-tauri && cargo run --manifest-path Cargo.toml -p rocinante-desktop-shell)
 ```
 
-For a production Tauri installer, run the pinned Tauri CLI from `src-tauri`:
-
-```bash
-cd src-tauri
-pnpm dlx @tauri-apps/cli@2.12.0 build --bundles deb # Linux
-pnpm dlx @tauri-apps/cli@2.12.0 build --bundles app # macOS
-pnpm dlx @tauri-apps/cli@2.12.0 build --bundles nsis # Windows
-```
-
-The Tauri hooks verify the official DuckDB archive before Cargo builds, stage
-the matching prebuilt library into the installer resources, and set a
-platform-relative loader path. The app does not rely on a library in a local
-Cargo cache, and DuckDB is never compiled from source.
-
-The GTK-free native shell can also be launched independently:
+The GTK-free native shell is the supported desktop host:
 
 ```bash
 cargo run --manifest-path src-tauri/Cargo.toml -p rocinante-desktop-shell
@@ -364,13 +353,10 @@ The macOS installer embeds `libduckdb.dylib` in `Contents/Frameworks`, rewrites
 the app-relative loader path, and declares the scheme in the `.app` bundle
 before registering it through Launch Services. The installed macOS lifecycle
 acceptance passes cold/warm URL delivery, tray actions, notification request,
-and saved-state restart on the current host. Hosted CI run
-[37215719759](https://github.com/pratik-saptarshi/rocinante/actions/runs/37215719759)
-passes Linux/macOS/Windows cold/warm URL and saved-state restart acceptance,
-the three-platform Tauri DuckDB package checks, the full Rust workspace and
-crate test/lint lanes, UI quality, and CI contracts. Its aggregate remains
-blocked by the 17 overdue advisory reviews. The macOS bundle check rejects
-DuckDB Cargo-cache RPATH entries.
+and saved-state restart on this host. The native-shell package matrix builds
+and inspects the Linux, macOS, and Windows installations; local macOS
+acceptance passes, while current-head hosted package results and Linux and
+Windows acceptance remain pending.
 Visible notification delivery on macOS and Windows, physical tray-menu clicks,
 and macOS foreground activation still need interactive validation. Release
 distribution must sign the completed app bundle after packaging.
@@ -393,8 +379,8 @@ pnpm exec playwright test
 ```
 
 The Rust workspace test command includes `rocinante-core`,
-`rocinante-analysis`, `rocinante-storage`, and `rocinante-desktop-shell` as
-well as the Tauri adapter. Use the `pnpm@12.9.1` version declared in
+`rocinante-analysis`, `rocinante-storage`, and `rocinante-desktop-shell` plus
+the shared service library. Use the `pnpm@12.9.1` version declared in
 `ui/package.json` for UI checks.
 
 ### 5) Governance artifacts

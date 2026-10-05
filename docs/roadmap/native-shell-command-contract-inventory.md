@@ -1,17 +1,24 @@
-# Native Shell Command Contract Inventory
+# Retired Host Command Compatibility Inventory
 
 **Date:** 2026-10-04
 **Branch:** `fix/rocinante-readiness-remediation`
 **Baseline source:** PR #108 commit `d42b2bc3ab3799d04c904d1a1b76c5a5b525e15a`
 **Parent plan:** [`rustsec-zero-exception-remediation-plan.md`](rustsec-zero-exception-remediation-plan.md)
 
-This inventory covers the eleven handlers registered by
-`app_support::build_app`. It captures their argument and response contracts
-before the Tauri adapter is retired. The shared service crates remain the
-source of behavior; native-shell transport and controls must not silently
-change these payloads.
+This inventory preserves the eleven public command names and wire shapes from
+the retired Tauri host. `src-tauri/src/command_compat.rs` records those shapes
+as host-neutral migration metadata and keeps the former Rust module path as a
+compatibility re-export. It does not register IPC handlers. The native shell
+calls the shared services directly, and the React/Vite UI is a browser preview
+surface rather than a production desktop transport.
 
-| Registered command | Request fields | Response | Shared owner and current native route |
+**Transport compatibility change:** the supported desktop no longer exposes
+the former `window.__TAURI__.core.invoke` IPC surface. The inventory and the
+service request/response contracts preserve the operation names and payload
+shapes for migration and Rust callers; they do not supply a replacement
+JavaScript IPC endpoint.
+
+| Migrated command | Request contract | Response contract | Shared owner and current native route |
 |---|---|---|---|
 | `run_scan` | `payload: { token, root, release }` | `TelemetryImportSummary` | `rocinante-analysis::run_scan`; native shell calls `run_scan_with_metrics` and renders its summary plus metrics. |
 | `query_metrics` | `token`, optional `name`, optional `release` | `Vec<AnalysisMetric>` (`plugin`, `key`, `value`, `details`) | `rocinante-storage::admin::query_metrics` to `rocinante-analysis::TelemetryStore::query`; stable/legacy duplicates are suppressed per basename and release without changing the response shape. |
@@ -25,23 +32,21 @@ change these payloads.
 | `reseed_release_baseline` | `token`, `repoName`, `baselineComplexity` | `f64` | `rocinante-storage::admin::reseed_release_baseline`, also routed by the shared admin bridge. |
 | `update_scoring_weights` | `token`, `weights` | unit / JSON `null` | `rocinante-storage::admin::update_scoring_weights`, also routed by the shared admin bridge. |
 
-Tauri's command adapter accepts camel-case names for multiword parameters;
-the shared bridge also accepts the existing camel-case baseline payload keys.
-The React admin panel exposes seven actions, including PR-risk evaluation
-through the registered Tauri command. The GTK-free native shell exposes all
-nine storage/admin bridge actions, including PR-risk evaluation through shared
-JSON dispatch. Scanning and saved-metric loading have native-shell UI paths.
-The command name and `{ token, candidate }` payload remain stable across hosts.
+The retired Tauri adapter accepted camel-case names for multiword parameters.
+The compatibility inventory preserves those names and payload shapes. The
+native shell exposes supported scan, saved-metric, and admin operations
+through shared Rust services; no desktop IPC transport is implied by this
+inventory. The command name and `{ token, candidate }` payload are documented
+for migration compatibility.
 
 ## Validation Evidence
 
-- The registration list is defined once in `app_support::build_app` and every
-  registered command above maps to a shared analysis, storage, or core service.
+- `MIGRATED_COMMAND_CONTRACTS` in `src-tauri/src/command_compat.rs` records the
+  retired command surface as host-neutral compatibility metadata.
 - `rocinante-storage/tests/admin_bridge_contract.rs` checks bridge command
   names, JSON request fields, response values, and admin authorization.
-- `evaluate_pr_risk` is routed through the shared JSON bridge with its existing
-  `{ token, candidate }` payload and role check; the React admin panel exposes
-  the same registered command.
+- `evaluate_pr_risk` remains available through the shared admin service with
+  its existing `{ token, candidate }` payload and role check.
 - `rocinante-analysis/tests/repository_scan.rs` covers authenticated scanning
   and saved metrics. `legacy_metric_query.rs` covers stable/legacy duplicate
   suppression and confirms older release rows remain visible.
@@ -57,15 +62,17 @@ The command name and `{ token, candidate }` payload remain stable across hosts.
   advisory. These UI commands used installed local binaries because the pinned
   `pnpm@12.9.1` launch could not complete registry signature verification in
   this environment. Roadmap doc contracts (10/10) and advisory checker
-  contracts pass. The live advisory governance check remains blocked by the
-  two overdue, unresolved owner dispositions listed in the decision record.
-  Hosted validation for this worktree head is pending.
+  contracts pass. At that historical point the live advisory governance check
+  remained blocked by two overdue records. Current local disposition and
+  validation status are tracked in the remediation plan; hosted validation for
+  the Tauri-retirement worktree is pending.
 
-## Phase 4B Work Remaining
+## Current Compatibility Boundaries
 
 - Keep the eleven request/response shapes covered without `tauri::command`
-  macros or Tauri runtime types.
-- Move or remove the remaining Tauri adapter and package bootstrap only after
-  native parity gates in BI-049/BI-050 are accepted.
-- Preserve the present working-directory defaults for analytics and scoring
-  until BI-058 migrates existing files with backup and rollback evidence.
+  macros or Tauri runtime types; the source list and inventory are checked
+  together by `native_shell_command_contract_tests.rs`.
+- Preserve analytics and scoring working-directory defaults until BI-058
+  migrates existing files with backup and rollback evidence.
+- Complete hosted native-shell packaging and lifecycle validation before
+  treating the desktop migration as release-ready.

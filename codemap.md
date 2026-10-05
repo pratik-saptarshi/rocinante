@@ -1,16 +1,27 @@
 # Repository Atlas: rocinante
 
+## Current Architecture Status (2026-10-05)
+
+The supported desktop host on the current remediation worktree is the
+GTK-free eframe/winit shell. The Tauri binary, runtime/build dependencies,
+bootstrap, and installer configs are removed locally. The former 11 Tauri
+command names and wire shapes are retained as host-neutral compatibility
+metadata in `src-tauri/src/command_compat.rs`; they do not register IPC.
+DuckDB remains a checksum-verified prebuilt shared library and is never
+compiled from source. Current worktree validation is local only; hosted
+package, lifecycle, refreshed RustSec audit, and aggregate checks are pending.
+
 ## Project Responsibility
 Rocinante is a cross-language planning and execution workspace for AI quality
 checking, dashboarding, and loop-engineering controls. The repository combines
-a shared Rust service workspace, a React/Vite UI, current Tauri integration,
-and an in-progress GTK-free native desktop host.
+a shared Rust service workspace, a React/Vite preview UI, and a GTK-free native
+desktop host.
 
 ## System Entry Points
-- `src-tauri/src/main.rs`: Tauri command registration and application state wiring.
+- `src-tauri/crates/rocinante-desktop-shell/src/main.rs`: native desktop entry point.
 - `src-tauri/src/lib.rs`: backend crate surface and shared module exports.
-- `src-tauri/src/tauri_commands.rs`: token-checked backend facade for admin,
-  risk, and release-baseline operations.
+- `src-tauri/src/command_compat.rs`: host-neutral inventory of the retired
+  command names and request/response shapes, plus shared service facades.
 - `src-tauri/src/budget_guard.rs`: budget guard and kill-switch contract for
   report-only and stop behavior.
 - `src-tauri/src/fix_proposal.rs`: minimal-fix and escalation contract for
@@ -26,11 +37,11 @@ and an in-progress GTK-free native desktop host.
   authorization policy, baseline scoring, and shared types.
 - `src-tauri/crates/rocinante-analysis/src/lib.rs`: host-agnostic repository
   scan entry point, admin authorization, and shared telemetry database path
-  resolution used by both desktop hosts.
-- `src-tauri/crates/rocinante-analysis/src/auth.rs`: shared JWT validation and role checks; the production
-  Tauri host and repository scan service require a configured 32-byte secret.
+  resolution used by the native shell and Rust services.
+- `src-tauri/crates/rocinante-analysis/src/auth.rs`: shared JWT validation and role checks; admin
+  operations require a configured 32-byte secret.
 - `src-tauri/crates/rocinante-storage/src/lib.rs`: shared SQLite WAL/DuckDB
-  persistence and admin-authorized release-baseline operations used by Tauri and the shell.
+  persistence and admin-authorized release-baseline operations used by the shell.
   DuckDB is dynamically linked from the checksum-verified prebuilt library for
   the current target. SQLite ingestion now uses transactional writes, ordered
   prefix scans, replay receipts, and a legacy-Sled startup guard. The isolated
@@ -47,13 +58,13 @@ and an in-progress GTK-free native desktop host.
 - `.github/workflows/ci.yml`: CI contract for Rust formatting, linting,
   checking, full-workspace crate tests, current advisory exception review-date enforcement,
   Linux URI/notification acceptance plus Windows and macOS URL/restart acceptance jobs,
-  Linux/macOS/Windows Tauri installer packaging checks for the prebuilt DuckDB
+  required Linux/macOS/Windows native-shell package checks for the prebuilt DuckDB
   runtime, required `rust-workspace-tests` and `ui-quality` gates, and informational
   backend Rust coverage via `rust-coverage`. Rust build lanes stage DuckDB
   releases before Cargo, and installed-app acceptance covers app-relative
   `.so`, bundled `.dylib`, and colocated `.dll` loading. The `ci-workflow-parse` job also
   runs the standard-library-only roadmap and publish-doc contract tests before
-  the Tauri test lanes.
+  the workspace test lanes.
 - `ui/src/App.tsx`: dashboard shell and admin bridge consumer.
 - `ui/src/admin-bridge-panel.tsx`: extracted command-bridge control block.
 - `ui/package.json`: `pnpm@12.9.1` UI manifest and test/build entry points.
@@ -98,10 +109,8 @@ and an in-progress GTK-free native desktop host.
 - `scripts/provision_duckdb.py` and `scripts/duckdb-prebuilt-artifacts.json`:
   stage official DuckDB shared-library releases after SHA-256 verification;
   source-build features are rejected by `scripts/check-duckdb-features.sh`.
-- `scripts/prepare-tauri-duckdb-bundle.py` and
-  `src-tauri/tauri.conf.json`: stage the verified prebuilt DuckDB runtime into
-  the Tauri installer resource directory and set an app-relative loader path;
-  CI builds and inspects Linux, macOS, and Windows packages.
+- `scripts/test_native_shell_packaging.py`: contract-test the required
+  Linux/macOS/Windows native-shell package matrix and prebuilt DuckDB placement.
 - `scripts/detect-ci-scope.sh`: routes Rust manifest, lockfile, and workflow
   changes to the Rust workspace lanes; `scripts/test-ci-scope-contract.sh`
   covers those path classifications.
@@ -110,98 +119,57 @@ and an in-progress GTK-free native desktop host.
 
 | Directory | Responsibility Summary | Notes |
 |---|---|---|
-| `src-tauri/src/` | Backend service layer, command facade, storage boundaries, auth, scoring, telemetry, risk contracts, budget/fix-proposal/triage/verifier/convergence contracts, app support, baseline adapters, and the bulk-import telemetry surface tracked by the F-033 planning slice. | Tauri commands should stay thin and delegate into service/storage layers. `app_support.rs` owns the shared app builder and state. Storage opens retain the process-level ownership guard and use SQLite busy-timeout handling. |
-| `src-tauri/crates/rocinante-storage/` | Host-neutral admin/scoring services, SQLite WAL ingestion, DuckDB analytics, and release-baseline authorization adapter. | Tauri re-exports its public storage API; both hosts use the same legacy working-directory defaults for analytics and scoring until BI-058 implements data-preserving migration. The separate analysis `telemetry.db` uses the per-user data directory with a legacy-file migration. DuckDB links only through the staged official prebuilt shared library. The isolated `tools/sled-migration` utility must run before upgrading an installation with legacy Sled data. |
-| `src-tauri/crates/rocinante-desktop-shell/` | GTK-free native window, persisted navigation, keyboard routes, repository-folder selection, asynchronous scans, exact saved-metric reload, scan completion notifications, release-baseline query/reseed controls, a repository-metric dashboard view model, and ports of companion insight scoring, quality snapshot and audience-focus views, plus static sample accessibility, SEO, Drupal security, and performance panels, built with eframe/winit and serde_json. | The Dashboard summarizes repository, plugin, and metric data without inferring synthetic risk claims; sample insight and audit panel data are labeled; custom JSON can be applied/reset, and SEO scope/performance data selectors are present. React companion parity is implemented for all admin bridge commands; Alerts and Settings are placeholders and no fallback deferral is approved. The tray supports Show/Quit and hide-on-window-close. Linux URI metadata and per-user installation are implemented, with cold/warm/restart and notification-display acceptance wired into Ubuntu CI. macOS has a URL-scheme bundle and retained `NSAppleEventManager` `kAEGetURL` handler; its local acceptance installs a temporary bundle through the per-user installer and routes cold/warm URI-only Launch Services opens. Windows has current-user protocol registration and an icon-bearing Start Menu shortcut; its installer and cold/warm/restart URL acceptance are wired to a `windows-latest` CI job. A bounded warm-instance inbox and second-process forwarding test are implemented. Hosted cold/warm URL delivery and saved-state restart acceptance passed on Linux, macOS, and Windows in CI run `37215719759`, including visible Linux notifications. macOS first-frame visibility, minimized-window restoration, close-to-tray, Show/Quit handler behavior, notification request, and saved-state restart also passed locally on Darwin on 2026-09-30; macOS foreground activation remains unproven because strict mode measured `visible=true/frontmost=false`. Shared window, bundle, launcher, and protocol icons are packaged and contract-tested; visual icon checks remain open. Physical tray-menu clicks and Linux/Windows tray runtime remain unverified, as do visible macOS/Windows notification delivery and the file-import decision. The native macOS notification request returned success locally, but visibility was not observed. Login autostart is out of scope unless separately approved. Tauri remains the production entry point. |
-| `src-tauri/crates/rocinante-analysis/` | Host-independent auth, repository discovery/analysis, telemetry persistence, and shared database-path configuration. | Owns the shared source modules; the Tauri crate re-exports these modules for its existing command layer. |
-| `src-tauri/tests/` | Backend regression coverage for PR risk contracts, CI-gate comment contracts, publish-gate documentation contracts, incident-feedback contracts, storage behavior, admin-only flows, and registered-handler integration. | Tests should protect command wiring, release-gate docs, and storage invariants. |
+| `src-tauri/src/` | Shared backend services and host-neutral compatibility facades for auth, storage, scoring, telemetry, risk, budget, fix-proposal, triage, verifier, convergence, and baseline operations. | No Tauri bootstrap remains. `command_compat.rs` records the retired public command shapes and keeps the old Rust module path as a compatibility re-export. |
+| `src-tauri/crates/rocinante-storage/` | Host-neutral admin/scoring services, SQLite WAL ingestion, DuckDB analytics, and release-baseline authorization adapter. | The native shell calls this crate directly. Analytics and scoring keep legacy working-directory defaults until BI-058 provides a data-preserving migration. The separate analysis `telemetry.db` uses per-user data with legacy-file migration. DuckDB links only to the official staged prebuilt; the isolated `tools/sled-migration` utility handles legacy Sled data. |
+| `src-tauri/crates/rocinante-desktop-shell/` | Supported GTK-free native window, navigation, repository selection, analysis, saved metrics, notifications, release-baseline controls, and sample insight/reference panels using eframe/winit. | Linux, macOS, and Windows packaging and lifecycle checks are configured but have not yet run on this Tauri-retirement worktree. Physical tray/menu and visible notification behavior still need direct platform evidence. |
+| `src-tauri/crates/rocinante-analysis/` | Host-independent auth, repository discovery/analysis, telemetry persistence, and shared database-path configuration. | Owns shared modules used by native-shell and Rust service callers. |
+| `src-tauri/tests/` | Backend regression coverage for PR-risk, CI-gate, publish-doc, incident-feedback, storage, authorization, and command-compatibility contracts. | Tests protect shared-service and release-gate invariants; there is no registered Tauri handler suite. |
 | `ui/src/` | Frontend dashboard, bridge adapters, explainability panels, and quality-pulse rendering. | UI state should flow through the bridge adapters rather than direct runtime assumptions. |
-| `ui/e2e/` | Browser-level smoke coverage for the Tauri bridge and user-visible flows. | Keeps the Playwright surface separate from unit tests. |
+| `ui/e2e/` | Browser-level smoke coverage for the React/Vite preview and user-visible flows. | Keeps the Playwright surface separate from unit tests. |
 | `docs/` | Feature backlog, roadmap, test plan, publish-readiness checklist, and bead tracker artifacts. | This is the source of truth for phase sequencing and backlog accounting. |
 | `scripts/` | Repo automation, local operational helpers, and verified native-library provisioning. | Prefer existing scripts over ad hoc shell snippets; keep CI scope, dependency-floor, advisory, and DuckDB source-build guards contract-tested. |
 
 ## Data and Control Flow
 
-1. Roadmap docs define the active phase and bead backlog.
-2. The Tauri backend exposes admin commands through `src-tauri/src/main.rs`
-   and the service helpers in `src-tauri/src/admin.rs`.
-3. CI uses a deterministic scope gate in `.github/workflows/ci.yml` to skip
-   Rust-heavy test and lint lanes when only docs/metadata/non-Rust paths are
-   changed.
-4. The Tauri app builder in `src-tauri/src/app_support.rs` owns the registered
-   handler table and shared `AppState` wiring.
-5. Storage and auth layers validate access before mutating persistence or
-   reading protected state; release baseline operations flow through the
-   baseline adapter rather than directly through the broader store.
-   The Tauri app refuses startup when `RUNICIPAL_TOKEN_SECRET` is missing or
-   shorter than 32 bytes, and the native scan service applies the same check.
-6. Budget guard loops enforce report-only and kill-switch behavior before
-   broader automation continues.
-7. Triage loops enforce report-only formatting with high-priority, watch, noise,
-   and state-updates sections.
-8. Verifier loops enforce reject-by-default behavior and require evidence before
-   approval.
-9. Stage 3 convergence now has an explicit roadmap-coherence validator so
-   release-gate collapse only happens when test mappings and phase gates are present.
-10. Fix-proposal loops enforce one-problem remediation and retry caps before
-   escalation with full context.
-11. The GTK-free migration plan adds a phase-gated host path for parity,
-    core extraction, native shell MVP, fallback containment, and dependency
-    removal without reintroducing GTK/GLib.
-12. The Dependabot remediation plan records the `esbuild` floor and alert-check evidence and the
-    remaining open alert snapshot that blocks release.
-13. The React UI invokes the bridge through `ui/src/tauri-admin.ts`, the
-    extracted command bridge shell in `ui/src/admin-bridge-panel.tsx`, and
-    renders results in `ui/src/App.tsx`.
-14. Unit, integration, and e2e tests validate the command facade, the bridge
-    seam, and the browser-visible behavior.
-15. The Tauri adapter delegates extracted domain behavior to `rocinante-core`;
-    release-baseline persistence is shared through `rocinante-storage`, while `rocinante-analysis`
-    owns the shared auth, analysis, Git, and telemetry modules re-exported by
-    the Tauri adapter.
-16. The GTK-free shell uses eframe/winit and calls `rocinante-analysis` for
-    admin-authorized scans and saved-metric queries, and `rocinante-storage`
-    for SQLite WAL ingestion, DuckDB analytics, and release-baseline operations.
-    DuckDB is dynamically linked from a checksum-verified official binary;
-    installed packages use an app-relative Linux path, a macOS Frameworks
-    path, or a Windows-adjacent DLL. The shell parses cold-launch
-    `rocinante://repository/open?path=...` arguments and forwards links and
-    activation requests through a per-user inbox. The macOS installed
-    acceptance passes cold/warm Launch Services URLs, tray actions, notification
-    request, and saved-state restart locally. Linux acceptance also exercises
-    visible notification delivery under Xvfb/D-Bus. Hosted run `37198628846`
-    passes Linux/macOS/Windows URL and saved-state restart acceptance, including
-    Linux visible notifications and packaged DuckDB loading. SQLite ingestion,
-    legacy Sled migration and Tauri/GTK retirement are phase-gated in the
-    RustSec remediation plan.
+1. Roadmap documents and the bead tracker define phase order, acceptance criteria, and release blockers.
+2. The eframe/winit desktop shell calls authenticated scan and admin services in `rocinante-analysis`, `rocinante-storage`, and `rocinante-core`.
+3. `src-tauri/src/command_compat.rs` records the retired Tauri command names and wire shapes. It does not register IPC; `lib.rs` re-exports its module at the former Rust path for compatibility.
+4. Native scan and admin operations require the configured `RUNICIPAL_TOKEN_SECRET` and enforce role checks at service boundaries.
+5. SQLite WAL handles ingestion, DuckDB handles analytics through checksum-verified official prebuilt libraries, and legacy Sled stores require the isolated audited migrator before upgrade.
+6. CI scope detection routes Rust manifest, lockfile, workflow, and configuration changes to Rust validation. The aggregate gate now requires the Linux/macOS/Windows native-shell package matrix.
+7. The React/Vite UI is a browser preview surface; it is not a production desktop transport. Its pinned pnpm, typecheck, unit, and production-build checks remain in the UI quality lane.
+8. Roadmap, governance, package, and platform contracts are tested locally and in CI. Historical hosted Tauri results do not validate the current native-host retirement worktree.
 
 ## Governance and Execution Snapshot
 
-- PR #108 branch `fix/rocinante-readiness-remediation` remains relevant and open. Its latest hosted code-validation head is `1be093a`; all 47 inline review threads are resolved. CI run [37235903810](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903810) passed Rust, UI, lifecycle, package, and contract lanes. At that head the governance registry still contained 17 overdue entries, so `security-exception-governance` and aggregate `test` failed. Security run [37235903812](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903812) and Dependency Review [37235903871](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903871) passed.
-- A local, user-authorized update removes 15 advisory IDs from both `.cargo/audit.toml` and `docs/roadmap/security-advisory-exceptions.json`: eight records were withdrawn upstream and seven affected packages are absent from both supported lockfiles. Evidence is in `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`. Hosted validation of this update is pending.
-- The two current app warnings remain in both registries: `RUSTSEC-2024-0370` (`proc-macro-error 1.0.4`) and `RUSTSEC-2024-0429` (`glib 0.18.5`). Their existing review dates are overdue. The fail-closed governance check correctly remains red until security-owner dispositions are supplied; no acceptance or date renewal was inferred.
-- Local advisory contract coverage now computes the overdue-count message from the registry size; the checker contract and roadmap-doc contracts pass. The configured audit ignore list and registry contain the same two live IDs. The unfiltered app audit has zero vulnerability findings and exactly two warnings; the isolated migrator audit has no findings or warnings.
-- DuckDB remains an official checksum-verified prebuilt. CI stages it before Tauri resource validation, the source-build feature guard rejects compilation from source, and the macOS package check rejects any remaining `duckdb-download` RPATH.
-- Legacy Sled migration uses the separate audited workspace under `tools/sled-migration`; it copies `conf`, `db`, and `blobs/` while holding the storage lock. The 1 MiB blob-backed regression verifies migrated bytes and unchanged source files. Hosted workspace tests, core/storage shards, formatting, Clippy, UI quality, platform lifecycle, and all three Tauri package checks passed on `1be093a` in run `37235903810`.
-- The pinned UI tool is pnpm 12.9.1. The latest completed hosted run passed typecheck, all 62 unit tests, and production build.
-- Historical status: BI-047 merged on PR #85; the CI recovery and lane slices passed PR run 28987645462. These results do not establish readiness for PR #108.
-- Historical status: BI-047 merged on PR #85; the CI recovery and lane slices passed PR run 28987645462. Those results do not establish readiness for PR #108.
+- Branch `fix/rocinante-readiness-remediation` is at pushed commit `3020d9e`; the current changes are uncommitted. The hosted PR/check state has not been refreshed for this worktree.
+- Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration locally. Native package contract tests pass 6/6; current Linux/macOS/Windows package and lifecycle runs are pending.
+- The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty; governance contracts and cached-database audits pass. Fresh RustSec database retrieval was blocked by GitHub connectivity.
+- `cargo check --offline --workspace --all-targets`, test-target compilation, Clippy with warnings denied, and the full workspace suite in serial mode pass. The default-parallel local storage suite stalls in the retention test; that binary passes with two test threads and serial execution.
+- Rust formatting, workflow parsing, CI scope, DuckDB prebuilt-only, native packaging, dependency-guard, governance, and roadmap contracts have local pass evidence. Same-head hosted Security and aggregate checks remain required.
+- pnpm `12.9.1` is pinned and is the latest stable upstream release on 2026-10-05. Typecheck, all 63 UI tests, and the production build pass locally with global pnpm `12.8.1`; fetching the exact pin failed because `registry.npmjs.org` did not resolve, so the pinned hosted UI gate remains required.
+- The installed macOS acceptance passes cold/warm URL delivery, saved-state restart, tray/window flow, and the notification request. AppKit returned `accepted=false`; foreground activation is not claimed. Linux/Windows and same-head hosted platform checks remain pending.
 
 ## Design Patterns
 
-Recent PR #108 review fixes also route the Tauri runtime bundle matrix through
-the aggregate gate, route Rust toolchain and Cargo config edits to Rust checks,
-stage the checksum-verified DuckDB binary before Tauri resource validation,
-sign the macOS app after loader rewrites, and key stored repository metrics
-with a sanitized label plus stable local path hash. Reads use legacy basename
-or tree-relative aliases only when the stable identity has no matching rows
-for the requested release, avoiding duplicate metrics during upgrade. The
-analysis `telemetry.db` migrates to per-user storage; analytics and scoring
-defaults retain their legacy working-directory paths until BI-058 defines and
-validates migration, backup, conflict, and rollback behavior.
+The current host routes retained operations through shared service crates and
+uses a required native-shell package matrix. Stored repository metrics use a
+sanitized label plus stable local path hash. Reads use legacy basename or
+tree-relative aliases only when the stable identity has no matching rows for
+the requested release, avoiding duplicate metrics during upgrade. The analysis
+`telemetry.db` migrates to per-user storage; analytics and scoring defaults
+retain their legacy working-directory paths until BI-058 defines and validates
+migration, backup, conflict, and rollback behavior.
 
-- Command facade for Tauri invocation.
-- Service layer separation between command wrappers and storage logic.
-- Adapter boundary for the UI bridge.
+**Historical PR #108 Tauri packaging fixes (superseded by Phase 4C):** the
+former Tauri runtime bundle matrix was routed through the aggregate gate, the
+checksum-verified DuckDB binary was staged before Tauri resource validation,
+and the macOS app was signed after loader rewrites. Those Tauri packaging steps
+were retired with the Tauri host; the native-shell package matrix now owns
+release packaging validation.
+
+- Host-neutral compatibility record for retired command payloads.
+- Service layer separation between desktop controls and storage logic.
+- Browser preview adapter kept outside the native runtime boundary.
 - Dual-layer persistence for ingest and analytics responsibilities.
 - Contract-driven testing for admin workflows and roadmap-backed behavior.

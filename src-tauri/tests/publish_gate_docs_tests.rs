@@ -29,11 +29,11 @@ fn publish_gate_documents_reflect_bi_047_history_and_current_pr_snapshot() {
 
     assert!(bom.contains("Current work is on PR #108's remediation branch"));
     assert!(bom.contains("BI-047"));
-    assert!(checklist.contains("Current local snapshot (2026-10-04)"));
+    assert!(checklist.contains("Current branch snapshot — 2026-10-05"));
     assert!(checklist.contains("fix/rocinante-readiness-remediation"));
-    assert!(codemap.contains("BI-047 merged"));
-    assert!(codemap.contains("Historical status: BI-047 merged on PR #85"));
-    assert!(codemap.contains("PR #108 branch `fix/rocinante-readiness-remediation`"));
+    assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
+    assert!(codemap
+        .contains("Branch `fix/rocinante-readiness-remediation` is at pushed commit `3020d9e`"));
 }
 
 #[test]

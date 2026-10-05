@@ -1,40 +1,48 @@
 # src-tauri/
 
 ## Responsibility
-Backend runtime package for the Tauri application. Owns command handlers,
-Tauri app state, storage coordination, scoring, and host-specific adapters.
-The `rocinante-analysis` crate owns shared auth, Git, telemetry, and repository
-analysis modules used by both Tauri and the native shell. `rocinante-storage`
-owns the shared Sled/DuckDB persistence adapter and release-baseline operations.
+
+This directory contains the Rust service workspace and the supported native
+desktop host. Despite the historical directory name, the Tauri runtime is
+removed from the remediation worktree. `rocinante-core`,
+`rocinante-analysis`, and `rocinante-storage` provide host-neutral contracts,
+authenticated repository analysis, and persistence/admin services.
 
 ## Design
-Layered command architecture:
-- `main.rs` bootstraps Tauri and registers the command surface.
-- `admin.rs` re-exports the shared admin service API.
-- `storage.rs` re-exports the host-neutral `rocinante-storage` implementation.
-- `crates/rocinante-desktop-shell/src/dashboard_insights.rs` ports the React
-  companion's deterministic insight score and JSON payload contract for the
-  GTK-free native Dashboard, including quality snapshot and stakeholder focus views.
-- `crates/rocinante-desktop-shell/src/dashboard_reference.rs` provides static
-  sample accessibility, SEO, Drupal security, and performance panels and their
-  selectors for the GTK-free Dashboard.
-- `scoring.rs` and `storage.rs` re-export the shared service and persistence
-  modules; `team_policies.rs` remains Tauri-side.
-- `crates/rocinante-analysis/` owns repository scanning, token validation,
-  telemetry persistence, and analysis plugins.
-- `crates/rocinante-storage/` owns admin/scoring services, the dual-layer
-  Sled/DuckDB store, baseline persistence, and command dispatch; Tauri and the
-  native shell call the same implementation.
 
-## Flow
-1. UI invokes a Tauri command.
-2. `main.rs` routes to `admin.rs`.
-3. `admin.rs` decodes the principal, checks role/routing constraints, and
-   opens the storage backend.
-4. `storage.rs` persists or queries the appropriate store tier.
-5. Results return through the command handler to the frontend bridge.
+- `crates/rocinante-core/` owns shared domain contracts.
+- `crates/rocinante-analysis/` owns authenticated scanning, repository
+  discovery, plugins, telemetry, and per-user analysis database paths.
+- `crates/rocinante-storage/` owns SQLite WAL ingestion, DuckDB analytics,
+  admin operations, and release-baseline persistence.
+- `crates/rocinante-desktop-shell/` is the eframe/winit native application.
+  It calls shared Rust services directly and owns window, URL, notification,
+  and platform packaging behavior.
+- `src/` contains remaining service modules and compatibility facades.
+  `command_compat.rs` records the 11 public command names and wire shapes
+  from the retired host; `lib.rs` re-exports this module at the former
+  `tauri_commands` Rust path for source compatibility. No IPC is registered.
+- `tools/sled-migration/` is an isolated audited one-time reader for existing
+  Sled data. It is not part of the application runtime dependency graph.
 
-## Integration
-- Consumed by `ui/src/tauri-admin.ts` via the desktop invoke bridge.
-- Depends on `Cargo.toml`, `crates/rocinante-analysis/`, and the `tests/` suite
-  for policy and storage validation.
+## Data Flow
+
+1. The desktop shell authenticates admin actions at the shared service
+   boundary and calls analysis/storage APIs directly.
+2. Ingestion writes SQLite WAL records; DuckDB handles analytics using an
+   official checksum-verified prebuilt shared library.
+3. Existing Sled stores must be migrated by the isolated tool before upgrade.
+4. The React/Vite UI is a browser preview and validation surface, not a
+   production desktop transport.
+
+## Validation
+
+- Workspace formatting, all-target checks, and test-target compilation pass
+  locally; full workspace tests are being rerun after contract updates.
+- The dependency guard requires GTK, GLib, Wry, Tauri runtime, and tracked
+  advisory packages to be absent from supported workspace graphs.
+- CI defines required Linux, macOS, and Windows native-shell package and
+  lifecycle checks. Hosted evidence on this Tauri-retirement worktree is
+  pending.
+- DuckDB source-build features remain prohibited; CI stages official
+  checksum-verified binaries before building or packaging.

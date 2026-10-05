@@ -3,7 +3,7 @@
 ## Responsibility
 
 GTK-free native desktop host for repository selection, authenticated analysis,
-saved-metric views, URL lifecycle, the admin command bridge and release-baseline
+saved-metric views, URL lifecycle, shared admin operations and release-baseline
 controls, the ported React companion insight slice, and static accessibility,
 SEO, Drupal security, and performance reference panels.
 
@@ -16,8 +16,9 @@ SEO, Drupal security, and performance reference panels.
   metrics; it does not infer risk from generic metric values.
 - The Dashboard release-baseline controls use the shared `rocinante-storage`
   authorization and persistence adapter and execute off the UI thread.
-- The admin command bridge offers all nine shared actions through a command
-  selector and editable JSON payload, using the same shared services as Tauri.
+- The admin panel exposes supported shared operations through editable JSON
+  payloads and calls host-neutral services directly. The retired Tauri
+  transport is not a runtime dependency.
 - `src/dashboard_insights.rs` ports the companion's sample commit-risk,
   bottleneck, opportunity, quality-pulse, audience recommendation/routing,
   explainability, trend/PR-risk, job-observability, limit, JSON envelope, and

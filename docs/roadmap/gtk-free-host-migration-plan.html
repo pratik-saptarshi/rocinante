@@ -1,5 +1,14 @@
 # GTK-Free Host Migration Plan
 
+## Current execution status — 2026-10-05
+
+The native shell and shared Rust crates are implemented locally. The Tauri
+bootstrap, runtime/build dependencies, and installer configuration are removed
+from the supported workspace, and dependency/package contracts pass locally.
+The new Linux/macOS/Windows native package and lifecycle checks have not run on
+this worktree. Keep BI-049/BI-050/BI-051 open until hosted platform evidence
+and direct interactive parity evidence are recorded.
+
 ## Objective
 
 Retire the GTK/GLib-backed desktop host path without losing desktop parity.
@@ -18,8 +27,9 @@ user-visible behavior, backed by host-agnostic Rust core logic.
   implementation changes.
 - Treat browser-sidecar only as a scoped fallback for parity gaps, not as the
   default architecture.
-- Keep temporary Tauri as the explicit stopgap comparison path until the parity
-  matrix is signed off and `BI-047` is complete.
+- Temporary Tauri was the historical comparison path recorded by BI-047. It
+  has been retired from the supported workspace on the current remediation
+  worktree; hosted native validation remains the exit gate.
 
 ## Phase Plan
 
