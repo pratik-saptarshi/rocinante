@@ -1,0 +1,23 @@
+[package]
+name = "rocinante-analysis"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.96.1"
+
+[dependencies]
+rocinante-core = { path = "../rocinante-core" }
+base64 = "0.22"
+fs2 = "0.4"
+hmac = "0.13"
+rusqlite = { version = "0.40", features = ["backup", "bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.11"
+thiserror = "2"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"
+
+[lib]
+path = "src/lib.rs"

@@ -1,7 +1,7 @@
 use repo_analyzer_core::storage::{IngestionBackendConfig, IngestionBackendKind};
 
 #[test]
-fn strict_mode_rejects_transitional_sled_backend() {
+fn removed_sled_backend_returns_migration_hint() {
     let cfg = IngestionBackendConfig {
         kind: IngestionBackendKind::SledTransitional,
         strict_badger_required: true,
@@ -9,9 +9,7 @@ fn strict_mode_rejects_transitional_sled_backend() {
     };
 
     let err = cfg.validate().expect_err("expected strict-mode rejection");
-    assert!(err
-        .to_string()
-        .contains("Badger sidecar backend is required in strict mode"));
+    assert!(err.to_string().contains("configure the SQLite WAL backend"));
 }
 
 #[test]

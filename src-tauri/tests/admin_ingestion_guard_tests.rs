@@ -22,7 +22,7 @@ fn sample_event() -> CommitIngestionEvent {
 }
 
 #[test]
-fn blocks_ingestion_when_strict_mode_not_badger() {
+fn blocks_removed_sled_ingestion_with_migration_hint() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
@@ -42,9 +42,7 @@ fn blocks_ingestion_when_strict_mode_not_badger() {
     )
     .expect_err("strict mode should block");
 
-    assert!(err
-        .to_string()
-        .contains("Badger sidecar backend is required in strict mode"));
+    assert!(err.to_string().contains("configure the SQLite WAL backend"));
 }
 
 #[test]

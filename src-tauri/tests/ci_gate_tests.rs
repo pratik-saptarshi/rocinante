@@ -202,7 +202,7 @@ fn repo_pins_the_rust_toolchain_to_a_specific_stable_release() {
     let toolchain = read_repo_file("../rust-toolchain.toml");
     let manifest = read_repo_file("Cargo.toml");
 
-    assert!(toolchain.contains("channel = \"1.96.1\""));
+    assert!(toolchain.contains("channel = \"1.99.0\""));
     assert!(toolchain.contains("profile = \"minimal\""));
     assert!(toolchain.contains("\"clippy\""));
     assert!(toolchain.contains("\"rustfmt\""));
@@ -214,7 +214,7 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
     let manifest = read_repo_file("Cargo.toml");
 
-    assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
+    assert!(workflow.contains("dtolnay/rust-toolchain@1.99.0"));
     assert!(workflow.contains("components: clippy, rustfmt"));
     assert_step_run_contains_all(
         &workflow,
@@ -238,7 +238,10 @@ fn ci_workflow_uses_the_pinned_toolchain_and_locked_rust_commands() {
             "--tests",
         ],
     );
-    assert!(manifest.contains("test = false"));
+    assert!(manifest.contains("[lib]"));
+    assert!(!manifest.contains("[[bin]]"));
+    assert!(!manifest.contains("tauri"));
+    assert!(!manifest.contains("tauri-build"));
 }
 
 #[test]
@@ -246,7 +249,7 @@ fn ci_workflow_has_a_non_blocking_backend_rust_coverage_job() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
 
     assert!(workflow.contains("rust-coverage:"));
-    assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
+    assert!(workflow.contains("dtolnay/rust-toolchain@1.99.0"));
     assert_step_block_contains_all(
         &workflow,
         "Install cargo-llvm-cov",
@@ -300,12 +303,59 @@ fn ci_workflow_has_aggregate_test_gate() {
     assert!(workflow.contains("test:"));
     assert!(workflow.contains("if: ${{ always() }}"));
     assert!(workflow.contains(
-        "needs:\n      - ci-workflow-parse\n      - ci-scope\n      - rust-build-seed\n      - rust-quality-gates\n      - rust-lint\n      - rust-tests\n      - rust-coverage\n",
+        "security-exception-governance:\n    needs: [ci-workflow-parse]\n    runs-on: ubuntu-latest"
     ));
+    assert_step_run_contains_all(
+        &workflow,
+        "Enforce current advisory exception review dates",
+        &["python3 scripts/check-security-advisory-exceptions.py"],
+    );
+    assert!(workflow.contains(
+        "needs:\n      - ci-workflow-parse\n      - security-exception-governance\n      - ci-scope\n      - ui-quality\n      - rust-workspace-tests\n      - windows-registration\n      - macos-url-dispatch\n      - linux-url-dispatch\n      - rust-build-seed\n      - rust-quality-gates\n      - rust-lint\n      - rust-tests\n      - rust-coverage\n",
+    ));
+    assert!(workflow.contains(
+        "windows-registration:\n    needs: [ci-workflow-parse]\n    runs-on: windows-latest"
+    ));
+    assert_step_block_contains_all(
+        &workflow,
+        "Exercise per-user URI registration installer",
+        &[
+            "shell: pwsh",
+            "run: ./scripts/test-windows-registration.ps1",
+        ],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Verify cold, warm, and restarted Windows URL dispatch",
+        &[
+            "shell: pwsh",
+            "run: ./scripts/test-windows-url-dispatch.ps1",
+        ],
+    );
+    assert!(workflow.contains(
+        "macos-url-dispatch:\n    needs: [ci-workflow-parse]\n    runs-on: macos-latest"
+    ));
+    assert_step_run_contains_all(
+        &workflow,
+        "Verify bundled cold and warm URL dispatch",
+        &["bash scripts/test-macos-url-dispatch.sh"],
+    );
+    assert!(workflow.contains(
+        "linux-url-dispatch:\n    needs: [ci-workflow-parse]\n    runs-on: ubuntu-latest"
+    ));
+    assert_step_run_contains_all(
+        &workflow,
+        "Verify registered URL dispatch and notification delivery",
+        &["xvfb-run -a dbus-run-session -- bash scripts/test-linux-url-dispatch.sh"],
+    );
     assert_step_block_contains_all(
         &workflow,
         "Gate summary",
         &[
+            "if [[ \"${{ needs.security-exception-governance.result }}\" != \"success\" ]]",
+            "if [[ \"${{ needs.windows-registration.result }}\" != \"success\" ]]",
+            "if [[ \"${{ needs.macos-url-dispatch.result }}\" != \"success\" ]]",
+            "if [[ \"${{ needs.linux-url-dispatch.result }}\" != \"success\" ]]",
             "if [[ \"${{ needs.ci-scope.result }}\" == \"failure\" || \"${{ needs.ci-scope.result }}\" == \"cancelled\" ]]",
             "if [[ \"${{ needs.rust-build-seed.result }}\" == \"failure\" || \"${{ needs.rust-build-seed.result }}\" == \"cancelled\" ]]",
             "if [[ \"${{ needs.rust-lint.result }}\" == \"failure\" || \"${{ needs.rust-lint.result }}\" == \"cancelled\" ]]",
@@ -317,16 +367,38 @@ fn ci_workflow_has_aggregate_test_gate() {
 #[test]
 fn ci_workflow_has_offline_workflow_parseability_gate() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let roadmap_contracts = read_repo_file("../scripts/test-roadmap-doc-contracts.sh");
 
     assert!(workflow.contains("ci-workflow-parse:"));
     assert!(workflow.contains("needs: [ci-health]"));
     assert!(workflow.contains("actions/checkout@v7"));
+    assert_step_block_contains_all(
+        &workflow,
+        "Set up Rust for fast roadmap contracts",
+        &["uses: dtolnay/rust-toolchain@1.99.0"],
+    );
+    assert_step_run_contains_all(
+        &workflow,
+        "Test roadmap and publish-doc contracts",
+        &["bash scripts/test-roadmap-doc-contracts.sh"],
+    );
+    assert!(
+        roadmap_contracts.contains("gtk_free_host_migration_plan_tests")
+            && roadmap_contracts.contains("publish_gate_docs_tests")
+            && roadmap_contracts.contains("roadmap_coherence_tests"),
+        "fast roadmap contract step must execute all std-only planning contracts"
+    );
+    assert!(
+        workflow.find("Test roadmap and publish-doc contracts")
+            < workflow.find("Validate workflow parseability"),
+        "roadmap docs contracts should fail before workflow or Rust build checks"
+    );
     assert_step_run_contains_all(
         &workflow,
         "Validate workflow parseability",
         &[
             "go install github.com/rhysd/actionlint/cmd/actionlint@latest",
-            "actionlint -oneline .github/workflows/ci.yml .github/workflows/security.yml",
+            "actionlint -oneline -ignore 'unknown permission scope \"vulnerability-alerts\"' .github/workflows/ci.yml .github/workflows/security.yml",
         ],
     );
 }
@@ -334,6 +406,7 @@ fn ci_workflow_has_offline_workflow_parseability_gate() {
 #[test]
 fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let scope_classifier = read_repo_file("../scripts/detect-ci-scope.sh");
 
     assert!(workflow.contains("ci-scope:"));
     assert!(workflow.contains("id: detect"));
@@ -341,40 +414,40 @@ fn ci_workflow_has_ci_scope_gate_with_delta_impact_reason() {
     assert!(workflow.contains("scope-profile"));
     assert!(workflow.contains("run-rust-storage-lanes"));
     assert!(workflow.contains("run-rust-coverage-lanes"));
-    assert!(workflow.contains("NEEDS_RUST=false"));
-    assert!(workflow.contains("echo \"needs_rust=$NEEDS_RUST\""));
-    assert!(workflow.contains("echo \"scope_profile=$SCOPE_PROFILE\""));
-    assert!(workflow.contains("echo \"run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES\""));
-    assert!(workflow.contains("echo \"run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES\""));
-    assert!(workflow.contains("SCOPE_PROFILE=docs-only-tweak"));
-    assert!(workflow.contains("RUN_RUST_STORAGE_LANES=true"));
-    assert!(workflow.contains("RUN_RUST_COVERAGE_LANES=true"));
+    assert_step_run_contains_all(
+        &workflow,
+        "Detect CI scope",
+        &[
+            "bash scripts/detect-ci-scope.sh true >> \"$GITHUB_OUTPUT\"",
+            "echo \"scope_reason=baseline-fallback\" >> \"$GITHUB_OUTPUT\"",
+            "git diff --name-only",
+            "bash scripts/detect-ci-scope.sh \"$FORCE_RUST\"",
+        ],
+    );
 
-    assert!(workflow.contains("case \"$path\" in"));
-    assert!(workflow.contains(
-        "docs/*|README.md|README.*|CHANGELOG*|*.md|*.txt|*.rst|LICENSE*|SECURITY*|CODE_OF_CONDUCT*",
-    ));
-    assert!(workflow.contains(".github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock"));
-    assert!(workflow.contains("src-tauri/*"));
+    assert!(scope_classifier.contains("needs_rust=false"));
+    assert!(scope_classifier.contains("scope_profile=docs-only-tweak"));
+    assert!(scope_classifier.contains("case \"$path\" in"));
+    assert!(scope_classifier.contains("docs/*|README.md|README.*"));
+    assert!(scope_classifier.contains(".github/*|ui/*|*.toml|*.yml|*.yaml|*.json|*.lock"));
+    assert!(scope_classifier.contains(".github/workflows/ci.yml|src-tauri/*"));
 }
 
 #[test]
 fn ci_workflow_has_scope_profile_outputs_for_lane_planning() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let scope_classifier = read_repo_file("../scripts/detect-ci-scope.sh");
 
     assert_step_run_contains_all(
         &workflow,
         "Detect CI scope",
-        &[
-            "SCOPE_PROFILE=docs-only-tweak",
-            "{",
-            "echo \"needs_rust=$NEEDS_RUST\"",
-            "echo \"scope_profile=$SCOPE_PROFILE\"",
-            "echo \"run_rust_storage_lanes=$RUN_RUST_STORAGE_LANES\"",
-            "echo \"run_rust_coverage_lanes=$RUN_RUST_COVERAGE_LANES\"",
-            "} >> \"$GITHUB_OUTPUT\"",
-        ],
+        &["bash scripts/detect-ci-scope.sh \"$FORCE_RUST\" >> \"$GITHUB_OUTPUT\""],
     );
+    assert!(scope_classifier.contains("scope_profile=docs-only-tweak"));
+    assert!(scope_classifier.contains("printf 'needs_rust=%s\\n' \"$needs_rust\""));
+    assert!(scope_classifier.contains("printf 'scope_profile=%s\\n' \"$scope_profile\""));
+    assert!(scope_classifier.contains("printf 'run_rust_storage_lanes=%s\\n'"));
+    assert!(scope_classifier.contains("printf 'run_rust_coverage_lanes=%s\\n'"));
     assert!(workflow.contains("scope-profile: ${{ steps.detect.outputs.scope_profile }}"));
     assert!(workflow
         .contains("run-rust-storage-lanes: ${{ steps.detect.outputs.run_rust_storage_lanes }}"));
@@ -521,12 +594,13 @@ fn ci_workflow_differentiates_release_and_delta_lanes() {
 #[test]
 fn ci_workflow_materializes_delta_test_lanes_from_scope_outputs() {
     let workflow = read_repo_file("../.github/workflows/ci.yml");
+    let scope_classifier = read_repo_file("../scripts/detect-ci-scope.sh");
 
     assert!(workflow.contains("rust-tests:"));
     assert!(workflow.contains("lane: ${{ fromJSON(needs.ci-scope.outputs.rust-test-lanes) }}"));
     assert!(workflow.contains("rust-test-lanes: ${{ steps.detect.outputs.rust_test_lanes }}"));
-    assert!(workflow.contains("RUST_TEST_LANES='[\"core\",\"storage\"]'"));
-    assert!(workflow.contains("echo \"rust_test_lanes=$RUST_TEST_LANES\""));
+    assert!(scope_classifier.contains("rust_test_lanes='[\"core\",\"storage\"]'"));
+    assert!(scope_classifier.contains("printf 'rust_test_lanes=%s\\n' \"$rust_test_lanes\""));
 }
 
 #[test]
@@ -629,10 +703,12 @@ fn ci_workflow_marks_release_build_floor_and_delta_scope() {
     assert!(workflow.contains("scope=delta"));
     let delta_seed = extract_named_step_block(&workflow, "Delta build seed");
     assert!(!delta_seed.contains("--all-targets"));
+    assert!(delta_seed.contains("--workspace"));
     let release_seed = extract_named_step_block(&workflow, "Release build seed");
     assert!(release_seed.contains("--bins"));
     assert!(release_seed.contains("--lib"));
     assert!(release_seed.contains("--tests"));
+    assert!(release_seed.contains("--workspace"));
     assert!(release_seed.contains("--no-run"));
 }
 
@@ -641,7 +717,7 @@ fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
     let workflow = read_repo_file("../.github/workflows/security.yml");
     let audit_config = read_repo_file("../.cargo/audit.toml");
 
-    assert!(workflow.contains("dtolnay/rust-toolchain@1.96.1"));
+    assert!(workflow.contains("dtolnay/rust-toolchain@1.99.0"));
     assert!(workflow.contains("components: clippy, rustfmt"));
     assert!(workflow.contains("taiki-e/install-action@v2"));
     assert!(workflow.contains("tool: cargo-audit"));
@@ -654,9 +730,10 @@ fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
             "--deny warnings",
         ],
     );
-    assert!(audit_config.contains("RUSTSEC-2024-0411"));
-    assert!(audit_config.contains("RUSTSEC-2024-0429"));
-    assert!(audit_config.contains("RUSTSEC-2025-0100"));
+    assert!(audit_config.contains("ignore = []"));
+    assert!(!audit_config.contains("RUSTSEC-"));
+    assert!(!audit_config.contains("RUSTSEC-2024-0411"));
+    assert!(!audit_config.contains("RUSTSEC-2025-0100"));
 }
 
 #[test]

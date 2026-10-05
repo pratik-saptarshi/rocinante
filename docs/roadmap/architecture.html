@@ -5,14 +5,14 @@
 - Application stack: Rust + Tauri (on-prem only).
 - Analysis model: bead/plugin pipeline with mandatory sanitizer pre-processor.
 - Storage model:
-  - Write-path currently implemented with embedded KV (`sled`) as transitional ingestion layer.
-  - Read-path implemented with embedded columnar analytics (`DuckDB`) for aggregations, scoring, and ranking.
+  - Raw ingestion is stored in the shared storage crate's SQLite WAL database with transactional writes, ordered prefix scans, retention, and deletes.
+  - Promotion receipts and analytical history are stored in DuckDB for aggregations, scoring, and ranking; the native library is an official checksum-verified prebuilt binary.
 - Security controls:
   - RBAC admin-only access for sensitive operations.
   - Sanitization at pre-processing and telemetry persistence/query boundaries.
   - Storage boundary primitives enforce route semantics (ingestion vs analytics).
 - Runtime controls:
-  - Strict ingestion backend validation is wired at startup and admin ingestion path.
+  - The default ingestion backend is SQLite WAL; explicit Badger sidecar settings remain opt-in, and removed Sled configuration fails with an actionable migration error.
   - Backend-aware ingestion transport supports:
     - `inproc://` development/test sidecar simulation.
     - `unix://` sidecar socket transport.
@@ -21,8 +21,8 @@
 
 - Strict dual-layer architecture (no workload mixing):
   - Ingestion layer:
-    - BadgerDB sidecar as the only allowed write-heavy backend in strict mode.
-    - High-concurrency append ingestion with sharded key strategies.
+    - SQLite WAL is the embedded ingestion backend.
+    - Serialized writers, ordered key-prefix scans, and transactional acknowledgements preserve append and replay behavior.
     - Short-term retention with TTL prune and roll-up.
   - Analytics layer:
     - DuckDB for read-heavy historical analytics only.
@@ -41,6 +41,7 @@
 
 ## Gap to Close
 
-- Replace transitional `sled` persistence usage in ingestion internals with full Badger sidecar transport for production strict mode.
+- Add and verify the one-time audited migration from existing Sled stores to SQLite before allowing those installations to start.
+- Retire Tauri/GTK only after the GTK-free native shell meets required parity and installed-app validation gates.
 - Add sidecar health checks, retry/backoff strategy, and observability metrics for queue depth and promotion lag.
 - Complete snapshot materialization/rotation mechanics for analytics read isolation.

@@ -20,6 +20,8 @@ jobs:
   codeql:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/src-tauri/target
     permissions:
       actions: read
       contents: read
@@ -29,14 +31,16 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: clippy, rustfmt
-      - uses: github/codeql-action/init@v4
+      - uses: github/codeql-action/init@v4.38.2
         with:
           languages: rust
-      - uses: github/codeql-action/autobuild@v4
-      - uses: github/codeql-action/analyze@v4
+      - name: Verify and stage the DuckDB prebuilt for CodeQL
+        run: python3 scripts/provision_duckdb.py --target x86_64-unknown-linux-gnu --target-dir "$CARGO_TARGET_DIR"
+      - uses: github/codeql-action/autobuild@v4.38.2
+      - uses: github/codeql-action/analyze@v4.38.2
 
   secret-scan:
     runs-on: ubuntu-latest
@@ -49,7 +53,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: TruffleHog OSS scan
-        uses: trufflesecurity/trufflehog@v3.95.9
+        uses: trufflesecurity/trufflehog@v3.97.9
         with:
           path: ./
           base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
@@ -66,11 +70,13 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
-      - uses: dtolnay/rust-toolchain@1.96.1
+      - uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: clippy, rustfmt
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@v2.87.23
         with:
           tool: cargo-audit
       - name: Audit Rust dependencies
-        run: cargo audit --file src-tauri/Cargo.lock --deny warnings
+        run: |
+          cargo audit --file src-tauri/Cargo.lock --deny warnings
+          cargo audit --file tools/sled-migration/Cargo.lock --deny warnings

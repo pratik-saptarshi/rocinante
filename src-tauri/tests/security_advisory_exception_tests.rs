@@ -53,10 +53,15 @@ fn security_advisory_exceptions_cover_all_audit_ignores() {
 
 #[test]
 fn security_advisory_exceptions_have_owner_review_date_and_exit_condition() {
+    let mut tracking_ids = BTreeSet::new();
     for entry in registry_entries() {
         let entry = entry.as_object().expect("registry object");
         assert!(!entry["owner"].as_str().expect("owner").is_empty());
-        assert_eq!(entry["review_by"], "2026-08-06");
+        assert_eq!(entry["kind"], "audit_ignore");
+        let review_by = entry["review_by"].as_str().expect("review date");
+        assert_eq!(review_by.len(), 10);
+        assert_eq!(&review_by[4..5], "-");
+        assert_eq!(&review_by[7..8], "-");
         assert!(!entry["exit_condition"]
             .as_str()
             .expect("exit condition")
@@ -66,30 +71,35 @@ fn security_advisory_exceptions_have_owner_review_date_and_exit_condition() {
             .expect("affected path")
             .is_empty());
         assert!(!entry["reason"].as_str().expect("reason").is_empty());
-        assert!(entry["tracking_id"]
+        let tracking_id = entry["tracking_id"]
             .as_str()
             .expect("tracking id")
-            .starts_with("RT-RC-001-"));
+            .to_string();
+        assert!(tracking_id.starts_with("RT-RC-001-"));
+        assert!(
+            tracking_ids.insert(tracking_id),
+            "tracking ids must be unique"
+        );
     }
 }
 
 #[test]
-fn gtk_glib_dependency_floor_is_tracked_as_release_blocking() {
+fn zero_exception_security_gate_is_tracked_as_release_blocking() {
     let baseline = read_repo_file("../docs/roadmap/repository-security-baseline.html");
     let checklist = read_repo_file("../docs/publish-readiness-checklist.html");
     let proof_script = read_repo_file("../scripts/dependency-floor-proof.sh");
     let audit = read_repo_file("../.cargo/audit.toml");
 
-    assert!(baseline
-        .contains("Release readiness is blocked by the tracked GTK/glib advisory exception."));
+    assert!(baseline.contains("Current local status (2026-10-05)"));
+    assert!(baseline.contains("refresh could not connect to GitHub"));
     assert!(baseline.contains("docs/roadmap/security-advisory-exceptions.json"));
+    assert!(checklist.contains("Dependency registry and audit ignore list are empty"));
+    assert!(checklist.contains("A fresh database refresh and hosted audit remain pending"));
     assert!(checklist.contains(
-        "Dependency audit exceptions are registry-backed, time-boxed, and release-blocking"
+        "Release remains blocked until all required current-head checks are terminal and green"
     ));
-    assert!(checklist.contains("Release remains blocked until RT-RC-001 is closed"));
-    assert!(proof_script.contains("cargo tree --manifest-path \"$repo_root/src-tauri/Cargo.toml\" -i glib --locked --target all"));
-    assert!(proof_script.contains("cargo tree --manifest-path \"$repo_root/src-tauri/Cargo.toml\" -i gtk --locked --target all"));
-    assert!(audit.contains("RUSTSEC-2024-0429"));
+    assert!(proof_script.contains("scripts/check-desktop-shell-dependencies.sh"));
+    assert!(audit.contains("ignore = []"));
 }
 
 #[test]
@@ -101,7 +111,9 @@ fn roadmap_does_not_claim_complete_backlog_with_active_security_exception() {
 
     assert!(feature_list.contains("F-046 GTK/glib dependency-floor governance"));
     assert!(product_roadmap.contains("Stage 4 | Release/security governance"));
-    assert!(product_roadmap.contains("Open release/security slice remains: RT-RC-001"));
+    assert!(
+        product_roadmap.contains("RT-RC-001 remains active until the empty registry is confirmed")
+    );
     assert!(bead_tracker.contains("`RT-RC-001` GTK/glib dependency-floor governance is active"));
     assert!(bead_tracker.contains("BI-046"));
     assert!(test_plan.contains("F-046` -> `T-048"));
@@ -145,7 +157,7 @@ fn gtk_free_host_migration_plan_is_stage_gated_and_tdd_driven() {
     assert!(bom.contains("docs/roadmap/gtk-free-host-migration-plan.html"));
     assert!(bom.contains("scripts/dependency-floor-proof.sh"));
     assert!(checklist.contains("GTK-free host migration plan is documented and phased"));
-    assert!(checklist.contains("RT-RC-002 is active"));
+    assert!(checklist.contains("before RT-RC-002 can close"));
     assert!(codemap.contains("gtk-free-host-migration-plan.html"));
     assert!(codemap.contains("security-advisory-exceptions.json"));
     assert!(codemap.contains("dependency-floor-proof.sh"));

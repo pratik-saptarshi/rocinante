@@ -1,29 +1,34 @@
 # ui/
 
 ## Responsibility
-Frontend application package for the dashboard, insight visualization, and
-desktop-command bridge. Also owns the browser validation harness.
+
+React/Vite browser preview for dashboard, insight visualization, and the
+headless UI validation harness. It is not the supported native desktop host;
+desktop operations run in the Rust eframe/winit shell.
 
 ## Design
-Built as a Vite + React + TypeScript package with MUI-based layout and a
-separation between:
-- dashboard composition (`src/App.tsx`)
-- extracted bridge shell (`src/admin-bridge-panel.tsx`)
-- deterministic view-model builders (`src/insight-engine.ts`, `src/domain/`)
-- contract adapters (`src/dashboard-contract.ts`, `src/admin-bridge-contract.ts`)
-- runtime bridge (`src/tauri-admin.ts`)
+
+- `src/App.tsx` composes the dashboard and local state.
+- `src/admin-bridge-panel.tsx` contains preview controls for admin payloads.
+- `src/insight-engine.ts` and `src/domain/` build deterministic view models.
+- `src/dashboard-contract.ts` and `src/admin-bridge-contract.ts` normalize
+  dashboard and command compatibility payloads.
+- `src/tauri-admin.ts` retains a browser/runtime adapter for compatibility
+  tests. It does not imply a packaged Tauri runtime.
 
 ## Flow
-1. `src/main.tsx` boots the React tree and applies the theme.
-2. `src/App.tsx` renders the dashboard shell and binds local state.
-3. `src/admin-bridge-panel.tsx` isolates command dispatch controls from the
-   dashboard shell.
-4. Payload contracts normalize incoming JSON envelopes into insight inputs.
-5. Admin bridge helpers build typed command payloads and dispatch them when
-   the desktop runtime is present.
-6. Browser tests exercise the same shell and fallback behavior headlessly.
 
-## Integration
-- Depends on `src-tauri/` through the Tauri invoke bridge.
-- Validated by Vitest and Playwright suites under `ui/src/`, `ui/src/test/`,
-  and `ui/e2e/`.
+1. `src/main.tsx` boots the React tree and theme.
+2. `src/App.tsx` renders the preview dashboard.
+3. Contract helpers validate and normalize JSON payloads.
+4. Admin preview helpers dispatch only when a compatible runtime is present;
+   supported desktop behavior is implemented through the native Rust shell.
+5. Vitest and Playwright validate browser behavior and fallback handling.
+
+## Integration and Validation
+
+- The Rust service workspace is authoritative for desktop scans, storage, and
+  admin operations; this UI remains a preview and test surface.
+- `ui/package.json` pins pnpm `12.9.1`.
+- CI runs the pinned install, typecheck, unit tests, and production build.
+- Browser suites live under `ui/src/`, `ui/src/test/`, and `ui/e2e/`.

@@ -1,5 +1,13 @@
 # Desktop Parity Matrix and Host-Decision Record
 
+## Current implementation status — 2026-10-05
+
+The current remediation worktree uses the eframe/winit native shell and has
+removed Tauri from supported manifests and lockfiles. The old Tauri surface is
+the historical parity baseline. Linux/macOS/Windows packaging and lifecycle
+checks are configured but pending on this worktree; BI-049/BI-050 remain open
+until hosted and interactive acceptance evidence is recorded.
+
 ## Scope and Timestamp
 
 - Track date: 2026-07-07
@@ -10,14 +18,55 @@
 
 Current desktop behaviors are classified as:
 
+### Dashboard and command-surface parity evidence
+
+The GTK-free shell provides authenticated repository scans, saved-metric
+queries, and repository/plugin/metric summaries. The native Dashboard now also
+ports the companion's sample commit-risk, stage-bottleneck, opportunity,
+quality-pulse, audience recommendation/routing, limit, JSON-envelope, and
+payload apply/reset behavior. It labels sample data and preserves the last
+valid view after malformed input. It also ports score decomposition,
+explainability traces, trend and PR-risk panels, and job-observability views.
+The shell now provides the complete nine-command admin bridge, including
+PR-risk evaluation and release-baseline query/reseed, backed by the shared
+`rocinante-storage` adapter.
+The bridge uses admin JWT checks, shared path defaults, the same writer lock,
+and snapshot refresh behavior as Tauri. The Dashboard also ports static sample
+accessibility, SEO/GEO/AEO, Drupal security, and performance panels, including
+SEO-scope and performance-data selectors. The Optimization insights panel also
+ports the quality snapshot and distinct Team Lead, Manager, Executive, and
+Security focus sections. These panels are labeled as sample
+audit data and do not establish live audit integrations. Alerts and Settings routes remain
+placeholders. Remaining parity is an open
+BI-049 gap, not an approved browser-sidecar deferral. BI-050 cannot close until
+each user-visible function is implemented in the native shell or individually
+approved for a documented fallback.
+
 ### Must-have
 
 - App window lifecycle (open, minimize, close, restore)
-- Installer/runtime startup behavior
+- Per-user installation, app-icon launch, registered URI launch, and saved-state restore after launch; login autostart is out of scope unless separately approved
 - File open dialog and import selection
 - Deep link launch behavior
 - Main shell persistence and launch restore
 - Notification surface visibility
+
+Parity evidence: the GTK-free shell implements repository-folder selection, but
+the historical Tauri/UI source has no matching file-import workflow or import
+command. Existing F-027/F-033 bulk import work covers backend historical telemetry
+ingestion and does not define a desktop file-selection flow. Treat this row as
+unresolved until the product owner confirms whether folder selection satisfies
+the intended behavior; do not add a speculative import flow. The Linux hosted acceptance now sends the shell's shared
+notification helper through Dunst under Xvfb and verifies the daemon receives
+the notification; hosted run 37198628846 passed on 2026-10-04, including visible Linux delivery. Visible notification delivery
+on macOS and Windows remains unverified.
+
+macOS cold/warm URL dispatch, visible-window restoration after minimizing, saved-state process restart, tray icon initialization, close-to-tray, Show restoration, and Quit pass the installed local acceptance. The native shell requests visible, unminimized window state on its first UI frame; two consecutive runs passed after adding this startup request. Show/Quit are exercised through the same action handler used by tray callbacks; physical menu-click delivery remains untested. A read-only `AXIsProcessTrusted` probe returned false for the current automation process, so no UI click was attempted and no Accessibility permission was changed. An interactive Accessibility-authorized run is still needed to validate native menu delivery. The Show and URL paths request macOS app activation. AppKit accepted the Show activation request in the latest local run, and the acceptance helper now measures frontmost status; strict mode reported visible=true/frontmost=false in this automation session, so foreground activation remains unverified. The native macOS notification request returned success locally, but visible delivery remains unverified; hosted run 37198628846 confirms Linux visible notification delivery; visible macOS/Windows notification delivery remains unverified.
+
+The shared Rocinante icon is now included in the native window, the macOS app
+bundle, the Linux launcher installation, and the Windows Start Menu shortcut
+and protocol registration. Packaging contracts cover the icon files and paths;
+visual launch validation remains pending on the supported desktop platforms.
 
 ### Should-have
 

@@ -2,6 +2,9 @@
 
 use repo_analyzer_core::storage::{DualLayerStore, IngestionBackendConfig, IngestionBackendKind};
 use repo_analyzer_core::types::{CommitIngestionEvent, TelemetryPoint};
+use rusqlite::Connection;
+use std::fs;
+use std::path::Path;
 
 use tempfile::tempdir;
 
@@ -18,6 +21,27 @@ fn sample_event(id: &str) -> CommitIngestionEvent {
             details: "ok".to_string(),
         }],
     }
+}
+
+fn pending_event_count(kv_path: &Path) -> i64 {
+    fs::create_dir_all(kv_path).expect("create SQLite ingestion directory");
+    let connection = Connection::open(kv_path.join("ingestion.sqlite3"))
+        .expect("open SQLite ingestion database");
+    connection
+        .execute_batch(
+            "CREATE TABLE IF NOT EXISTS ingestion_kv (
+                key BLOB PRIMARY KEY NOT NULL,
+                value BLOB NOT NULL
+            ) WITHOUT ROWID;",
+        )
+        .expect("create ingestion table");
+    connection
+        .query_row(
+            "SELECT COUNT(*) FROM ingestion_kv WHERE key >= ?1 AND key < ?2",
+            rusqlite::params![b"evt:".as_slice(), b"evu:".as_slice()],
+            |row| row.get(0),
+        )
+        .expect("count pending events")
 }
 
 #[test]
@@ -89,10 +113,7 @@ fn badger_sidecar_transport_failure_does_not_persist_raw_event() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
-    let before_count = {
-        let db = sled::open(&kv).expect("open kv");
-        db.scan_prefix("evt:").count()
-    };
+    let before_count = pending_event_count(&kv);
 
     let res = {
         let store = DualLayerStore::open(kv.to_str().expect("kv"), col.to_str().expect("col"))
@@ -110,10 +131,7 @@ fn badger_sidecar_transport_failure_does_not_persist_raw_event() {
     };
     assert!(err.to_string().contains("badger sidecar transport failed"));
 
-    let after_count = {
-        let db = sled::open(&kv).expect("open kv");
-        db.scan_prefix("evt:").count()
-    };
+    let after_count = pending_event_count(&kv);
     assert_eq!(before_count, after_count);
 }
 

@@ -1,6 +1,9 @@
 # Build artifacts
 /target
 src-tauri/target
+/tools/sled-migration/target/
+src-tauri/tauri-resources/libduckdb.*
+src-tauri/tauri-resources/duckdb.dll
 .target-*/
 .pnpm-store/
 .slim/

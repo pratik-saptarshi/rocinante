@@ -1,5 +1,15 @@
 # Repository Security Baseline
 
+## Current local status (2026-10-05)
+
+The remediation worktree has removed Tauri/Wry and GTK/GLib from the supported
+application graph. The two remaining RustSec packages were eliminated by
+retiring their dependency path; no security-owner exception is recorded. The
+registry and Cargo audit ignore list are empty, governance contracts pass, and
+unfiltered audits pass against the cached RustSec database. A fresh database
+refresh could not connect to GitHub. Hosted security and native package checks
+for this worktree are still pending, so release remains blocked.
+
 ## Main Branch Standards
 
 - Default branch: `main`.
@@ -12,6 +22,7 @@
 ## Privacy Controls
 
 - Never commit secrets or credentials.
+- Native scans and admin services require `RUNICIPAL_TOKEN_SECRET` with at least 32 bytes before authorizing operations.
 - `.env*`, keys, certs, and runtime databases are ignored by default.
 - Secret scanning enabled in CI.
 
@@ -22,11 +33,13 @@
 - Dependency updates via Dependabot.
 - Open Dependabot alerts are tracked as release blockers until remediated or explicitly accepted.
 - Dependency audit exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`.
-- `scripts/dependency-floor-proof.sh` records the current GTK/glib dependency floor.
+- `scripts/dependency-floor-proof.sh` and `scripts/check-desktop-shell-dependencies.sh` reject GTK/GLib, Tauri/Wry, and tracked advisory packages from supported workspace graphs.
+- `scripts/check-security-advisory-exceptions.py` remains fail-closed; its registry is empty and its local contract passes. Hosted execution on the changed branch is pending.
 
 ## Release Blockers
 
-- `RT-RC-001` remains open while the GTK/glib dependency floor is present in `src-tauri/Cargo.lock`.
-- Release readiness is blocked by the tracked GTK/glib advisory exception.
-- Release readiness is blocked until the tracked GTK/glib advisory exception is retired or formally accepted.
-- `R3-F08` remains open until the UI lockfile resolves `esbuild` at `0.28.1` or newer and the remote Dependabot alert closes.
+- `RT-RC-001` remains open until a fresh RustSec database audit and hosted governance run verify the empty exception state.
+- Release readiness is blocked until refreshed audits, native platform checks, and the same-head aggregate pass.
+- `R3-F08` / BI-052: the UI lockfile resolves `esbuild@0.28.2`; the last live alert query on 2026-09-30 confirmed the tracked esbuild alert was closed. Other Dependabot alert state needs a fresh query before release.
+- Historical hosted CI run [37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846) passed the former Tauri lifecycle and package lanes but failed the then-current 17-record governance gate. It does not validate the present native-shell worktree.
+- Current supported lockfiles contain no GTK, GLib, Wry, Tauri runtime, `proc-macro-error`, or `glib` packages. Cached-database unfiltered audits pass with `--deny warnings`; the RustSec revision is `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (last updated 2026-10-03). GitHub connectivity prevented a fresh database refresh.

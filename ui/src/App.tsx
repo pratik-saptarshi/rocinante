@@ -68,13 +68,20 @@ function ScoreGauge({ value, subtitle, status }: { value: number; subtitle: stri
           backgroundColor: '#fafafa'
         }}
       >
-        <Typography component="span" fontWeight="bold">
+        <Typography component="span" sx={{
+          fontWeight: "bold"
+        }}>
           {value}
         </Typography>
       </Box>
       <Box>
         <StatusBadge status={status} label={`${subtitle}: ${value}/100`} />
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary",
+            mt: 0.5
+          }}>
           {status === 'good' ? 'Good' : status === 'medium' ? 'Needs Improvement' : 'Action Required'}
         </Typography>
       </Box>
@@ -85,7 +92,12 @@ function ScoreGauge({ value, subtitle, status }: { value: number; subtitle: stri
 function FindingSection({ title, items }: { title: string; items: DashboardFinding[] }) {
   return (
     <Box sx={{ mt: 1.5 }}>
-      <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+      <Typography
+        variant="subtitle2"
+        sx={{
+          fontWeight: 700,
+          mb: 1
+        }}>
         {title}
       </Typography>
       <List dense disablePadding>
@@ -93,7 +105,9 @@ function FindingSection({ title, items }: { title: string; items: DashboardFindi
           <ListItem key={item.id} disablePadding>
             <ListItemText
               primary={
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1} sx={{
+                  alignItems: "center"
+                }}>
                   <StatusBadge
                     status={item.status}
                     label={item.status === 'good' ? 'good' : item.status === 'medium' ? 'medium' : 'bad'}
@@ -120,10 +134,14 @@ function MetricItem({
 }) {
   return (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{
+        color: "text.secondary"
+      }}>
         {label}
       </Typography>
-      <Typography variant="body2" fontWeight={600} data-testid={valueTestId}>
+      <Typography variant="body2" data-testid={valueTestId} sx={{
+        fontWeight: 600
+      }}>
         {value}
       </Typography>
     </Box>
@@ -248,10 +266,20 @@ function App() {
           p: 2.5
         }}
       >
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <Stack direction="row" spacing={1} alignItems="center">
+        <Stack
+          direction="row"
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2
+          }}>
+          <Stack direction="row" spacing={1} sx={{
+            alignItems: "center"
+          }}>
             <Public fontSize="small" color="action" />
-            <Typography variant="subtitle1" fontWeight={700}>
+            <Typography variant="subtitle1" sx={{
+              fontWeight: 700
+            }}>
               The Web Companion: Optimization Hub
             </Typography>
           </Stack>
@@ -273,13 +301,23 @@ function App() {
           <ToggleButton value="security">Security</ToggleButton>
         </ToggleButtonGroup>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary",
+            mb: 1.5
+          }}>
           {dashboardAudienceHighlights[audience].tone}
         </Typography>
 
         <Divider sx={{ my: 1 }} />
         <Box sx={{ mb: 1.5 }}>
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 700,
+              mb: 0.5
+            }}>
             Quality Snapshot
           </Typography>
           <MetricItem label="Commit risk cards" value={`${commitRiskCards.length}`} valueTestId="snapshot-risk-count" />
@@ -301,7 +339,12 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="quality-pulse-section">
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 700,
+              mb: 0.5
+            }}>
             Quality Pulse
           </Typography>
           <MetricItem
@@ -328,7 +371,12 @@ function App() {
             }))}
           />
           <Paper variant="outlined" sx={{ p: 1.25, mt: 1, borderRadius: 2 }}>
-            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: 700,
+                mb: 0.5
+              }}>
               Action Routing
             </Typography>
             <MetricItem label="Owner" value={audienceRoute.owner} />
@@ -344,7 +392,12 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="explainability-section">
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 700,
+              mb: 0.5
+            }}>
             Explainability Traces
           </Typography>
           <FindingSection
@@ -358,7 +411,12 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="trend-risk-section">
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 700,
+              mb: 0.5
+            }}>
             Trend & Risk View
           </Typography>
           <MetricItem label="Trend summary" value={dashboardVisuals.summary} />
@@ -381,7 +439,12 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="job-observability-section">
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 700,
+              mb: 0.5
+            }}>
             Job Observability
           </Typography>
           <MetricItem label="Observed stages" value={`${stages.length}`} valueTestId="job-observability-stage-count" />
@@ -389,7 +452,12 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }}>
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 700,
+              mb: 0.5
+            }}>
             Live Insights Payload
           </Typography>
           <TextField
@@ -424,7 +492,12 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }}>
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 700,
+              mb: 0.5
+            }}>
             Admin Command Bridge
           </Typography>
           <AdminBridgePanel
@@ -436,7 +509,12 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="baseline-management-section">
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 700,
+              mb: 0.5
+            }}>
             Release Baseline Management
           </Typography>
           <TextField
@@ -472,10 +550,17 @@ function App() {
 
         {audience === 'lead' && (
           <Box>
-            <Typography variant="subtitle2" fontWeight={700}>
+            <Typography variant="subtitle2" sx={{
+              fontWeight: 700
+            }}>
               Team Lead Focus
             </Typography>
-            <Typography variant="caption" display="block" sx={{ mb: 1 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                display: "block",
+                mb: 1
+              }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
             <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
@@ -494,10 +579,17 @@ function App() {
 
         {audience === 'manager' && (
           <Box>
-            <Typography variant="subtitle2" fontWeight={700}>
+            <Typography variant="subtitle2" sx={{
+              fontWeight: 700
+            }}>
               Manager Focus
             </Typography>
-            <Typography variant="caption" display="block" sx={{ mb: 1 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                display: "block",
+                mb: 1
+              }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
             <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
@@ -522,10 +614,17 @@ function App() {
 
         {audience === 'executive' && (
           <Box>
-            <Typography variant="subtitle2" fontWeight={700}>
+            <Typography variant="subtitle2" sx={{
+              fontWeight: 700
+            }}>
               Executive Focus
             </Typography>
-            <Typography variant="caption" display="block" sx={{ mb: 1 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                display: "block",
+                mb: 1
+              }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
             <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
@@ -549,10 +648,17 @@ function App() {
 
         {audience === 'security' && (
           <Box>
-            <Typography variant="subtitle2" fontWeight={700}>
+            <Typography variant="subtitle2" sx={{
+              fontWeight: 700
+            }}>
               Security Focus
             </Typography>
-            <Typography variant="caption" display="block" sx={{ mb: 1 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                display: "block",
+                mb: 1
+              }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
             <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
@@ -581,9 +687,17 @@ function App() {
 
         <Divider sx={{ my: 2 }} />
         <Box sx={{ mb: 2 }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              alignItems: "center",
+              mb: 1
+            }}>
             <Accessibility fontSize="small" color="action" />
-            <Typography variant="subtitle2" fontWeight={700}>
+            <Typography variant="subtitle2" sx={{
+              fontWeight: 700
+            }}>
               WCAG 2.1/2.2 AA Accessibility Audit
             </Typography>
           </Stack>
@@ -602,9 +716,17 @@ function App() {
 
         <Divider sx={{ my: 2 }} />
         <Box>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              alignItems: "center",
+              mb: 1
+            }}>
             <Search fontSize="small" color="action" />
-            <Typography variant="subtitle2" fontWeight={700}>
+            <Typography variant="subtitle2" sx={{
+              fontWeight: 700
+            }}>
               SEO, GEO &amp; AEO Performance
             </Typography>
           </Stack>
@@ -624,9 +746,17 @@ function App() {
 
         <Divider sx={{ my: 2 }} />
         <Box>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              alignItems: "center",
+              mb: 1
+            }}>
             <Security fontSize="small" color="action" />
-            <Typography variant="subtitle2" fontWeight={700}>
+            <Typography variant="subtitle2" sx={{
+              fontWeight: 700
+            }}>
               Security &amp; Drupal Review
             </Typography>
           </Stack>
@@ -640,9 +770,17 @@ function App() {
 
         <Divider sx={{ my: 2 }} />
         <Box>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              alignItems: "center",
+              mb: 1
+            }}>
             <Speed fontSize="small" color="action" />
-            <Typography variant="subtitle2" fontWeight={700}>
+            <Typography variant="subtitle2" sx={{
+              fontWeight: 700
+            }}>
               Page Performance Metrics
             </Typography>
           </Stack>
@@ -652,7 +790,9 @@ function App() {
           <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5, gap: 1 }}>
             <Typography variant="body2">Field Data</Typography>
             <Switch checked={fieldData} onChange={() => setFieldData((prev) => !prev)} aria-label="Field or lab data toggle" />
-            <Typography variant="body2" fontWeight={700}>
+            <Typography variant="body2" sx={{
+              fontWeight: 700
+            }}>
               Lab Data
             </Typography>
           </Box>

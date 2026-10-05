@@ -1,38 +1,67 @@
 # Bill of Materials - Rocinante Release Gate
 
-_Current as of 2026-07-09_
+_Current as of 2026-10-05_
 
 This document inventories the release-critical components, dependency surface,
 and governance artifacts that must stay aligned before publishing to `origin`.
 The publish path is protected-branch based: validate on a branch, merge by PR,
 then release from the merged tip.
 
+## Current worktree snapshot — 2026-10-05
+
+The local PR #108 branch is `fix/rocinante-readiness-remediation`, based on
+pushed commit `3020d9e`; the current worktree changes are uncommitted and
+have not run in hosted CI. The supported host is the eframe/winit native
+shell; Tauri bootstrap, runtime/build dependencies, and installer configs are
+removed locally. The 11 prior command names and wire
+shapes remain as host-neutral compatibility metadata. The advisory registry
+and Cargo audit ignore list are empty; local governance and cached-database
+audits pass after all affected packages were removed. A fresh RustSec database
+fetch failed to connect to GitHub. Workspace formatting, all-target/all-feature
+Clippy, and the full serial suite pass locally; the storage suite also passes
+with two threads, while its default-parallel run stalls in the retention case.
+UI typecheck, 63 tests, and production build pass as diagnostics with global
+pnpm 12.8.1, but the pinned 12.9.1 could not be fetched because registry DNS
+failed. The installed macOS URL/restart acceptance passes; AppKit returned
+`accepted=false` for activation, so foregrounding is not claimed. Linux/Windows
+package/lifecycle results and aggregate CI remain unverified on this worktree.
+DuckDB remains a SHA-verified prebuilt and is never compiled from source.
+
 ## 1) Repository identity
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary integration branch: `main`
 - Remote: `origin`
-- Current working slice is `main` after merging `feat/bi-047-decision-paths`.
-- `origin/main` and local `main` share the same tree after the BI-047 reconciliation merge;
-  local history still includes merge checkpoints, but the release inventory matches the remote tip.
-- Product: Rust + Tauri repository analyzer with a bead-backed roadmap
-  execution model and a frontend dashboard surface
+- Current work is on PR #108's remediation branch,
+  `fix/rocinante-readiness-remediation`. Its latest hosted validation head is
+  `1be093a`; the PR remains open and relevant, based on `main` at `cdd29b9`.
+  All 47 inline threads are resolved. The latest hosted aggregate failed on
+  the then-current 17 overdue entries; the local two-entry registry update is
+  awaiting hosted validation.
+- Product: Rust shared-service workspace with a GTK-free native desktop host
+  and a React/Vite preview dashboard
 - Publish model: squash merge or protected PR merge only, no merge commits on
   the default branch
-- Current CI-hardening branch `feat/bi-056-timeout-contract` was merged on PR run `28987645462`, which greened the health, parseability, scope, build-seed, lint, test, and aggregate merge gates.
+- The CI-hardening work in PR run `28987645462` is historical evidence; it does
+  not establish readiness for PR #108's current head.
 
 ## 2) Build, runtime, and release surface
 
-### Backend / Tauri
+### Rust workspace and native desktop host
 
 - `src-tauri/Cargo.toml`
-- `src-tauri/src/main.rs`
+- `src-tauri/crates/rocinante-core/Cargo.toml`
+- `src-tauri/crates/rocinante-core/src/`
+- `src-tauri/crates/rocinante-desktop-shell/Cargo.toml` (`eframe`/`egui` native host MVP)
+- `src-tauri/crates/rocinante-analysis/Cargo.toml` (shared authenticated repository analysis service)
+- `src-tauri/crates/rocinante-desktop-shell/src/`
+- `src-tauri/crates/rocinante-desktop-shell/src/main.rs`
 - `src-tauri/src/lib.rs`
-- `src-tauri/src/auth.rs`
+- `src-tauri/crates/rocinante-analysis/src/auth.rs`
 - `src-tauri/src/storage.rs`
 - `src-tauri/src/scoring.rs`
-- `src-tauri/src/plugins/sanitizer.rs`
-- `src-tauri/src/plugins/parser.rs`
+- `src-tauri/crates/rocinante-analysis/src/plugins/sanitizer.rs`
+- `src-tauri/crates/rocinante-analysis/src/plugins/parser.rs`
 - `rust-toolchain.toml`
 
 ### Frontend / UI
@@ -85,21 +114,49 @@ Core runtime and support crates in `src-tauri/Cargo.toml`:
 
 - `fs2`
 - `serde`
+- `eframe` / `egui` / `winit` for the GTK-free native shell (BI-049)
 - `serde_json`
 - `thiserror`
 - `walkdir`
 - `rusqlite` with `bundled`
-- `tauri` with `wry`
-- `sled`
-- `duckdb` with `bundled`
+- `duckdb` `1.10506.0`, dynamically linked to official prebuilt DuckDB
+  `1.5.6`, the current stable release on 2026-10-04
+([upstream release](https://github.com/duckdb/duckdb/releases/tag/v1.5.6))
+
+Legacy Sled reading is isolated in `tools/sled-migration/`, with its own
+manifest, lockfile, CI tests, dependency check, and audit. The application
+workspace does not depend on Sled.
 - `base64`
 - `hmac`
 - `sha2`
+
+The separate `rocinante-desktop-shell` crate uses `rfd` with default features
+disabled and the XDG portal backend for folder selection, avoiding GTK. Its
+optional `notify-rust` dependency requests success/failure desktop notifications;
+optional `tray-icon` uses its GTK-free `ksni` feature on Linux to provide Show/Quit
+actions and hide-on-close behavior. Optional `fs2` provides the exclusive per-user
+lock for a bounded deep-link inbox; `packaging/linux/rocinante.desktop` declares
+the URI scheme. Per-user installers package the verified `.so`, `.dylib`, or
+`.dll` and register the URL handlers. Local macOS cold/warm URL, tray,
+notification-request, and restart acceptance passes. Hosted CI run
+`37198628846` passes Linux/macOS/Windows URL and saved-state restart acceptance;
+Linux visible notification delivery also passes. Visible macOS/Windows
+notification delivery and physical tray-menu clicks remain unverified.
 - `tempfile` for tests
-- `tauri-build` for the build step
 - `cargo-llvm-cov` for informational backend Rust coverage reporting
 - `cargo-audit` for RustSec dependency audit checks
-- `esbuild` in the UI lockfile is tracked through the Dependabot remediation slice until the alert is closed
+- pnpm `12.9.1` is pinned in `ui/package.json`, CI, and lockfile metadata; the
+  official pnpm release page lists it as latest stable on 2026-10-05. Local
+  typecheck, 63 UI unit tests, and production build pass with installed
+  dependencies under global pnpm `12.8.1`. Exact-pin retrieval was blocked by
+  registry DNS; the hosted pinned-version UI gate remains required. The build
+  reports a 506 KB chunk-size advisory.
+- DuckDB archive, library, and header SHA-256 values are pinned in
+  `scripts/duckdb-prebuilt-artifacts.json`. `scripts/provision_duckdb.py`
+  verifies and stages them before CI Cargo builds; source-build features are
+  rejected by a tested feature guard. The shared storage crate now uses SQLite
+  WAL for ingestion and DuckDB for analytics. A one-time legacy Sled migration
+  is still required before existing Sled installations may upgrade.
 
 ### UI / frontend packages
 
@@ -146,17 +203,33 @@ Packages declared in `ui/package.json`:
   - key/certificate material
   - local DB artifacts
   - build and cache outputs
-- `src-tauri/src/auth.rs` provides the command authorization boundary
+- `src-tauri/crates/rocinante-analysis/src/auth.rs` provides the shared token validation boundary
 - Tests cover authorization and denial behavior in the Rust test suite
 - Secret scanning is enforced in GitHub Actions through TruffleHog
 - Dependency review is enforced on pull requests
 - CodeQL is enabled for the Rust codebase
 - RustSec dependency audit is enforced through `cargo-audit`
 - Advisory exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`
-- `scripts/dependency-floor-proof.sh` records the current GTK/GLib floor
+- Fifteen entries have been removed based on eight upstream withdrawals and
+  seven affected packages absent from both supported lockfiles. The two
+  affected package paths were removed from the supported workspace, so the
+  registry and ignore list are empty. See
+  `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
+- `scripts/dependency-floor-proof.sh` and
+  `scripts/check-desktop-shell-dependencies.sh` reject GTK/GLib/Tauri/Wry
+  dependencies from supported graphs.
 - `scripts/check-esbuild-lock.mjs` enforces UI lockfile floor `esbuild >= 0.28.1`
+- Local `ui/pnpm-lock.yaml` resolves `esbuild@0.28.2`; the Node floor check
+  passes for `0.28.2 >= 0.28.1`.
 - `scripts/check-dependabot-esbuild-alert.sh` enforces advisory-specific Dependabot checks using explicit GHSA filtering.
-- Remote `open` Dependabot state includes `GHSA-wrw7-89jp-8q8g` for `glib`, which remains governed by RT-RC-001.
+- The esbuild alert closed in PR #59; its unrelated historic Dependabot and
+  hosted-audit snapshots above are superseded by the current lockfiles and
+  checks. Query live GitHub state before making any new alert-closure claim.
+- Both supported Rust lockfiles exclude GTK, GLib, Wry, Tauri runtime,
+  `proc-macro-error`, and `glib`. Unfiltered `cargo audit --deny warnings`
+  passes for both against cached RustSec revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; a fresh database refresh and
+  hosted Security run remain pending.
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 - `test` aggregate job in `.github/workflows/ci.yml` is the merge gate for protected-branch checks and depends on parse/scope/lint/test/coverage jobs.
@@ -193,7 +266,52 @@ Before any release reaches `origin/main`, the repository should satisfy:
 7. The final publish uses a protected-branch-safe squash or PR merge.
 8. `origin/main` remains the source of truth; local and remote must be reconciled through merge checkpoints.
 
-CI recovery evidence on `feat/bi-056-timeout-contract` is green and merged; BI-047 is also merged on PR run `28988956969`, and the publish checklist still waits on RT-RC-001 and the remaining release-gate evidence.
+Historical validation snapshot (2026-10-04; published PR head `d2f77a1` before the
+local SQLite changes): Rust formatting, the nine DuckDB provisioner cases, the
+DuckDB feature graph and guard, the CI-scope contract, native-shell installer
+contracts, and the macOS installed lifecycle pass. The DuckDB engine-version
+query returns `1.5.6`. The extracted workspace now passes 83 tests, including
+SQLite WAL, and strict Clippy passes for all storage targets. The root storage,
+transport, backend, admin-ingestion, Tauri-command, and README/API test binaries
+pass 17, 5, 5, 2, 5, and 1 tests with the verified DuckDB runtime. Root
+`cargo check --tests` passes for all test targets; the enclosing root Cargo test
+command did not return and was interrupted. The refreshed unfiltered audit
+reports zero vulnerability findings and four warnings; no advisory exception
+has an owner-approved disposition. The fail-closed governance job still
+reports 17 overdue registry entries. The Tauri package-runtime review thread
+is resolved after the Linux/macOS/Windows package matrix passed on the current
+review head.
+
+Latest validation snapshot (2026-10-04; hosted source head `1be093a`): hosted
+run [37235903810](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903810)
+passed UI quality, full workspace tests, Linux/macOS/Windows URL lifecycle
+acceptance, Linux/macOS/Windows Tauri bundle inspections, build seed, and Rust
+format/Clippy/test lanes. Its aggregate failed on the then-current 17 overdue
+registry entries. Security run
+[`37235903812`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903812)
+passed secret scan, configured Rust audit, and CodeQL. Dependency Review
+[`37235903871`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903871)
+passed. All 47 review threads are resolved. The local follow-up removes eight
+withdrawn advisories and seven entries whose affected packages are absent from
+both supported lockfiles; hosted validation of the resulting two-entry
+registry is pending. The unfiltered 715-package app audit has zero vulnerability
+findings and two warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`); the
+82-package migrator audit has no findings or warnings. Database revision is
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee`. Do not infer owner dispositions or
+renew the remaining exception dates.
+
+The current follow-up adds the audited Sled-to-SQLite migrator. It copies
+`conf`, `db`, and `blobs/` under the storage lock; the 1 MiB off-log-value
+regression test passes. Its focused tests, strict Clippy, formatting, and dependency contracts pass locally. The
+full-workspace Clippy reports no issues, and the full Cargo workspace test
+passes 254 tests across 60 suites after recovering disk space and restoring
+the verified DuckDB prebuilt. Hosted full-workspace tests, core/storage shards,
+UI quality, Rust quality, platform lifecycle, and all three Tauri package
+inspections passed on source head `d703a4a` in run `37233328503`.
+
+Historical CI recovery evidence on `feat/bi-056-timeout-contract` is green and
+merged; BI-047 is also merged on PR run `28988956969`. Neither historic run is
+evidence for PR #108's current head.
 
 This BOM is the release inventory; the checklist in
 `docs/publish-readiness-checklist.html` is the executable gate.

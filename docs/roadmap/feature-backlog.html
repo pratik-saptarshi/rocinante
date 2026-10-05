@@ -17,10 +17,10 @@
   - Dedicated write-optimized KV ingestion tier.
   - Dedicated columnar analytics tier (`duckdb`) for read-heavy aggregation.
 - `F-008A` Storage engine conformance migration:
-  - Ingestion tier persists through BadgerDB sidecar validation and transport checks.
-  - DuckDB remains analytics-only and all transport fallbacks are validated.
+  - SQLite WAL is the default embedded ingestion tier; DuckDB remains analytics-only.
+  - Explicit Badger sidecar settings remain opt-in; removed Sled settings fail with a migration hint.
 - `F-008B` Strict storage boundary enforcement:
-  - Ingestion writes route only to BadgerDB APIs.
+  - Ingestion writes route only to the SQLite ingestion API.
   - Analytical reads/writes for metric marts route only to DuckDB.
 - `F-008D` Retention compliance automation:
   - Short-term raw TTL prune with long-term release rollup retention.
@@ -60,7 +60,7 @@
 - `F-012` Isolated scoring module with versioned algorithm constant and deterministic weight configuration.
 - `F-013` Audit-logged scoring weight changes with admin-only authorization.
 - `F-014` Tauri command surface wired for scan, ingest, promote, aggregate query, scoring, PR ranking, and weight updates.
-- `F-015` Admin UI integration for newly wired Tauri commands (`ingest_event`, `promote_lifecycle`, `query_aggregates`, `committer_scores`, `rank_prs`, `update_scoring_weights`).
+- `F-015` Admin UI integration for newly wired Tauri commands (`ingest_event`, `promote_lifecycle`, `query_aggregates`, `committer_scores`, `rank_prs`, `evaluate_pr_risk`, `update_scoring_weights`).
 - `F-032` Playwright frontend behavioral and functional coverage suite (headless-only).
 - `F-034` Admin PR risk command surface and risk-v1 contract convergence, including the deterministic risk contract, admin-only command surface, and block/allow parity coverage.
 - `F-035` PR risk service abstraction and schema injection for the admin risk evaluator.

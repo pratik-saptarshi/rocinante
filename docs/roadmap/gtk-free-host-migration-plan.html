@@ -1,5 +1,14 @@
 # GTK-Free Host Migration Plan
 
+## Current execution status — 2026-10-05
+
+The native shell and shared Rust crates are implemented locally. The Tauri
+bootstrap, runtime/build dependencies, and installer configuration are removed
+from the supported workspace, and dependency/package contracts pass locally.
+The new Linux/macOS/Windows native package and lifecycle checks have not run on
+this worktree. Keep BI-049/BI-050/BI-051 open until hosted platform evidence
+and direct interactive parity evidence are recorded.
+
 ## Objective
 
 Retire the GTK/GLib-backed desktop host path without losing desktop parity.
@@ -18,8 +27,9 @@ user-visible behavior, backed by host-agnostic Rust core logic.
   implementation changes.
 - Treat browser-sidecar only as a scoped fallback for parity gaps, not as the
   default architecture.
-- Keep temporary Tauri as the explicit stopgap comparison path until the parity
-  matrix is signed off and `BI-047` is complete.
+- Temporary Tauri was the historical comparison path recorded by BI-047. It
+  has been retired from the supported workspace on the current remediation
+  worktree; hosted native validation remains the exit gate.
 
 ## Phase Plan
 
@@ -47,15 +57,80 @@ user-visible behavior, backed by host-agnostic Rust core logic.
 - Keep lifecycle, shell integration, and transport glue in thin adapters.
 - Preserve behavior with core contract tests before the host rewrite.
 
+#### Execution checkpoint — 2026-09-30
+
+- BI-048 is complete. `src-tauri/crates/rocinante-core` has serde as its only direct runtime dependency and contains risk evaluation, budget guard, fix proposal, triage, verifier, authorization claim/admin policy, shared types, baseline scoring, and the admin-authorized release-baseline repository API.
+- Nine core contract tests pass. `cargo check --tests --no-default-features` compiles all Tauri test targets, and the default analytics library check passes. The auth test executable link did not finish in the available run; the feature test targets compile.
+- `rocinante-storage` now owns SQLite WAL ingestion, DuckDB analytics, and admin-authorized release-baseline operations. Tauri re-exports this implementation, and the native shell calls the same adapter with the same path defaults, writer lock, and snapshot refresh semantics. Existing Sled data is preserved and blocks startup until the audited migration utility is complete. `rocinante-analysis` owns shared auth/JWT, repository analysis, Git, and telemetry modules. BI-049 remains in progress; phases 3–4 remain queued.
+
 ### Phase 2: GTK-Free Native Desktop MVP
 
-- Implement a native desktop shell using non-GTK platform primitives.
+- The implementation uses eframe/egui with winit and wgpu for native windows,
+  avoiding the Linux WebKitGTK dependency used by Wry. The React dashboard must
+  be ported to the native UI; a browser-sidecar remains limited to explicit
+  parity exceptions. References: [eframe 0.36.2](https://docs.rs/eframe/0.36.2/eframe/),
+  [Wry Linux platform notes](https://github.com/tauri-apps/wry#platform-considerations).
+- The shell crate is `src-tauri/crates/rocinante-desktop-shell`; its initial
+  window, navigation, startup restoration, and repository selection contracts
+  are covered by `native_shell_contract.rs`. The shared `rocinante-analysis`
+  service crate connects the shell to the existing authenticated scan pipeline
+  and telemetry store without a Tauri runtime dependency.
+  - The shell supports menu navigation, Command/Ctrl+1–4 routes, Command/Ctrl+Q
+  close, and Command/Ctrl+O repository-folder selection through rfd's XDG portal
+  backend. The chosen folder is persisted losslessly, including non-UTF-8 Unix
+  paths and migration from legacy UTF-8 shell state. Repository
+    scanning now uses the shared service, with admin JWT entry, release selection,
+    asynchronous progress/error reporting, shared app-data telemetry storage, and
+    exact saved-metric queries for the selected repository tree and release,
+    including after restart without rescanning. Scan completion requests a
+    success/failure desktop notification through the native platform. Linux CI starts
+    Dunst under Xvfb and verifies the shared notification sender reaches a displayed
+    notification; hosted run 37198628846 confirms Linux-visible notification delivery. The native macOS notification request returned success locally, but visible delivery on
+    macOS and Windows still needs runtime validation. Cold-launch repository links use
+    `rocinante://repository/open?path=<percent-encoded-absolute-path>` and set
+    the selected repository plus Repositories route before the first frame.
+    The tray provides Show and Quit actions, intercepts window-manager close to
+    hide the window, and keeps explicit Quit as an exit path. Its `tray-icon`
+    dependency uses the GTK-free `ksni` feature on Linux; the Linux dependency
+    tree contains no GTK/GLib. `scripts/check-desktop-shell-dependencies.sh` now
+    gates the shell-only Linux graph against GTK, GLib, Tauri, and Wry in CI;
+    BI-051 still requires a whole-release graph gate after Tauri removal.
+    The installed Darwin acceptance confirms first-frame window visibility, tray initialization, and close-to-tray, Show, and Quit through the shared tray action handler; two consecutive runs passed after the first-frame visibility fix; physical menu-click delivery and Linux/Windows tray runtime still need validation. A per-user inbox forwards validated URI launches to the running shell and
+    handles ordinary second-launch activation. It caps pending events at 64,
+    limits each URI to 8 KiB, and sequences writes under a queue lock, cleaning abandoned temporary files on the next enqueue. The Linux desktop entry declares
+    the URI scheme and passes the URL argument; `packaging/linux/install-user.sh`
+    copies a supplied executable into `~/.local/bin` and installs the per-user
+    desktop registration. The GTK-free Linux acceptance job verifies cold and warm URI dispatch through the installed handler plus selected-repository restoration after a clean process restart; hosted run 37198628846 passes Linux/macOS/Windows URL and restart acceptance. The macOS installer creates a `.app` with
+    `CFBundleURLTypes` and invokes Launch Services registration; its package and
+    registration-command contract pass on macOS. Its bundled acceptance now runs
+    the real per-user installer and dispatches cold/warm links with URI-only
+    `open <rocinante-uri>` through the logged-in user's Launch Services database,
+    verifying scheme selection as well as
+    same-process routing and process-restart state restoration. The Windows installer registers
+    the current-user protocol key and passes the URI to the installed executable;
+    its source contract passes. The Windows CI job builds and installs the
+    executable, exercises cold and warm URL dispatch, verifies same-process
+    forwarding, requests clean quit, and checks saved-state restoration in a
+    new process; this acceptance and the bundled macOS cold/warm Launch Services
+    acceptance are wired into the aggregate CI gate, and all three hosted URL and restart acceptance jobs passed in run 37198628846. The native macOS shell now registers a retained
+    `NSAppleEventManager` `kAEGetURL` handler, validates the delivered
+    `rocinante://` URL, and routes it to the UI thread; the shell compiles and
+    its contract suite passes on macOS. The bundled acceptance job checks cold
+    and warm Launch Services delivery plus saved-state restoration after a clean
+    process restart. The Darwin acceptance passed on 2026-09-30 after initializing `NSApplication`
+    before registering the retained URL handler; URI-only cold and warm delivery,
+    same-process routing while minimized, visible-window restoration, and saved-state
+    restoration after clean restart passed locally. The app requests macOS activation on its first UI frame, after URL delivery, and on tray Show. The acceptance helper can inspect and optionally require the frontmost PID; strict mode reported `visible=true`, `frontmost=false` in this automation session, while the normal installed lifecycle acceptance passed. AppKit activation remains a request and foreground success is unproven here. A separate-process forwarding contract verifies the running-instance
+    handoff. The Dashboard renders repository/release metric and plugin summaries from scans or saved metrics and ports static sample accessibility, SEO/GEO/AEO, Drupal security, and performance panels with selectors, plus the quality snapshot and audience-specific focus sections. Static audits are labeled sample audit data and do not provide live audit integrations. Alerts and Settings placeholders and remaining functional parity gaps,
+    interactive visual app-icon launch validation, macOS/Windows
+    notification delivery, physical tray-menu click delivery, Linux/Windows tray runtime, and product-level parity gaps remain open; hosted cold/warm URI delivery and saved-state restart pass on all three platforms in run 37198628846. A read-only `AXIsProcessTrusted` probe returned false for the current macOS automation process; native menu clicks need a separate Accessibility-authorized interactive run. Login autostart is not
+    included in the signed-off startup requirement.
 - Restore the must-have parity items first:
   - window lifecycle
-  - menus and shortcuts
   - dialogs and file selection
-  - tray and notification behavior
+  - notification surface visibility
   - deep links and app launch flow
+  - per-user installation and launch registration
   - persistence and startup restoration
 
 ### Phase 3: Parity Closure and Fallback Containment
