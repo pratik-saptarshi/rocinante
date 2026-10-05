@@ -7,6 +7,10 @@ fn read_repo_file(relative_path: &str) -> String {
         .unwrap_or_else(|err| panic!("read repo file {}: {err}", path.display()))
 }
 
+fn normalize_whitespace(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
 #[test]
 fn publish_gate_documents_backend_rust_coverage_lane() {
     let checklist = read_repo_file("../docs/publish-readiness-checklist.html");
@@ -23,19 +27,25 @@ fn publish_gate_documents_backend_rust_coverage_lane() {
 
 #[test]
 fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
-    let checklist = read_repo_file("../docs/publish-readiness-checklist.html");
-    let bom = read_repo_file("../docs/bill-of-materials.html");
-    let codemap = read_repo_file("../codemap.md");
+    let checklist =
+        normalize_whitespace(&read_repo_file("../docs/publish-readiness-checklist.html"));
+    let bom = normalize_whitespace(&read_repo_file("../docs/bill-of-materials.html"));
+    let codemap = normalize_whitespace(&read_repo_file("../codemap.md"));
 
     assert!(bom.contains("Current work is on the PR #112"));
     assert!(bom.contains("BI-047"));
     assert!(checklist.contains("Current branch snapshot — 2026-10-05"));
     assert!(checklist.contains("fix/weighted-rollup-aggregation"));
     assert!(checklist.contains("PR #112"));
-    assert!(checklist.contains("Newer CI run `37317927760` on `496e1ec`"));
+    assert!(checklist.contains("PR #112 OPEN/MERGEABLE at `b3f0c83`"));
+    assert!(checklist.contains("CI run `37321514028`, Security run `37321514047`"));
+    assert!(checklist.contains("Dependency Review run `37321514294` all succeeded"));
+    assert!(checklist.contains("Two new unresolved review comments"));
+    assert!(checklist.contains("hosted checks on the fix commit are still required"));
     assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
-    assert!(codemap.contains("PR #112 carries the weighted-retention correction"));
-    assert!(codemap.contains("Newer CI run `37317927760`"));
+    assert!(codemap.contains("PR #112 is OPEN/MERGEABLE at `b3f0c83`"));
+    assert!(codemap.contains("CI run `37321514028`, Security run `37321514047`"));
+    assert!(codemap.contains("Two new review comments followed"));
 }
 
 #[test]

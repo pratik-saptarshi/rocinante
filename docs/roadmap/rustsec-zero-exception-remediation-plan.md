@@ -1,18 +1,18 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Current status (2026-10-05; final interactive parity evidence open):** PR #108
+**Current status (2026-10-05; follow-up fixes need hosted validation):** PR #108
 was merged into `origin/main` at `eb83be9da64057dc71838b33edc01a9a2769b0fa`.
-The weighted-retention correction is on PR #112, branch
-`fix/weighted-rollup-aggregation`, based on that main tip. At verified source
-head `ff367c4`, the PR was OPEN/CLEAN; CI run `37305039584` completed with 24
-passed checks, no failures, and one informational coverage skip. Security run
-`37305039580` passed CodeQL, RustSec audit, and secret scan; Dependency Review
-passed. The live Dependabot query returned zero open alerts, and PR #108 has
-zero unresolved review threads. These results apply to `ff367c4`; the latest
-PR head's required checks govern any subsequent evidence sync. The installed macOS
-lifecycle acceptance passes, but physical tray-menu click delivery and
-foreground activation remain open; the latest AppKit request returned
-`accepted=false`. See the phase-by-phase status in
+PR #112 on `fix/weighted-rollup-aggregation` is OPEN/MERGEABLE at `b3f0c83`,
+based on that main tip. CI run `37321514028`, Security run `37321514047`, and
+Dependency Review run `37321514294` passed on that head. Two new review
+findings were raised afterward. The local follow-up now merges existing
+rollup sums/counts when retention runs repeatedly and requires the configured
+token secret at all four baseline compatibility entry points. Focused tests,
+the full workspace (270 tests/64 suites), formatting, and warning-denied
+Clippy pass locally; hosted validation on the follow-up commit is still
+required. The installed macOS lifecycle acceptance passes, but physical
+tray-menu click delivery and foreground activation remain open; the latest
+AppKit request returned `accepted=false`. See the phase-by-phase status in
 [`readiness-closeout-phases-2026-10-05.md`](readiness-closeout-phases-2026-10-05.md).
 
 The root Tauri binary, build script, runtime/build dependencies, command

@@ -13,7 +13,10 @@ isolated in `tools/sled-migration`; this crate never opens or links Sled.
   lifecycle/snapshot management, and `BaselineStore` adapter. A durable
   pending marker makes analytics snapshot publication retry after a committed
   promotion, including idle cycles. It refuses startup while Sled markers
-  exist unless the migration completion marker is valid.
+  exist unless the migration completion marker is valid. Retention promotion
+  merges existing rollup sums and sample counts with newly stale raw rows, so
+  a release that receives later samples retains its full aggregate when rolled
+  up again.
 - `src/admin.rs` contains shared authorization, storage, scoring, and risk
   command services. `execute_admin_bridge_command` dispatches the nine
   companion command names using editable JSON payloads.
@@ -28,7 +31,9 @@ isolated in `tools/sled-migration`; this crate never opens or links Sled.
 - The crate test `shared_baseline_adapter_roundtrips` validates baseline storage
   on the shared adapter.
 - Tauri integration tests continue to cover authorized baseline commands and
-  rejection of non-admin principals.
+  rejection of non-admin principals. The command-compatibility secret-guard
+  test verifies fallback-secret rejection for both path-based and with-store
+  baseline reads and writes.
 - `tools/sled-migration` owns the isolated legacy reader, its separate lockfile,
   format/lint/test CI lane, and dependency graph audit. Run it before upgrading
   a store with Sled `conf`/`db` markers; it preserves the original files and

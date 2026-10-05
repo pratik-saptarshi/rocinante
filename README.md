@@ -355,9 +355,9 @@ before registering it through Launch Services. The installed macOS lifecycle
 acceptance passes cold/warm URL delivery, tray actions, notification request,
 and saved-state restart on this host. The native-shell package matrix builds
 and inspects the Linux, macOS, and Windows installations. Hosted CI run
-`37311344183` passed package/runtime-loader validation and URL/restart
+`37321514028` passed package/runtime-loader validation and URL/restart
 acceptance on all three platforms, plus visible Linux notification delivery,
-on PR #112 source head `27b9e21`. The installed macOS acceptance also passes
+on PR #112 source head `b3f0c83`. The installed macOS acceptance also passes
 locally. Visible notification delivery on macOS and Windows, physical
 tray-menu clicks, and macOS foreground activation still need interactive
 validation. Run the manual macOS check from an interactive macOS terminal:
@@ -367,10 +367,14 @@ ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh
 ```
 
 It waits for real Show/Quit menu selections and verifies frontmost state. The
-latest GitHub refresh confirmed PR #112 at `496e1ec`: platform/UI and security
-checks passed, while the aggregate failed on a stale documentation assertion
-now corrected locally. The replacement hosted run and physical tray result
-remain pending; see the readiness roadmap for run identifiers and evidence.
+latest GitHub refresh confirmed PR #112 OPEN/MERGEABLE at `b3f0c83`, based on
+`main` `eb83be9`; CI, Security, and Dependency Review all passed on that head.
+Two review findings arrived after those checks: repeated retention promotion
+could lose prior samples, and baseline compatibility calls could use the
+fallback signing secret. Both are fixed and locally validated in the current
+follow-up worktree, but still need a commit and hosted rerun. The physical tray
+result also remains pending; see the readiness roadmap for run identifiers and
+evidence.
 Release distribution must sign the completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.

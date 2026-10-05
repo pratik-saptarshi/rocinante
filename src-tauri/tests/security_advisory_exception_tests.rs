@@ -99,8 +99,8 @@ fn zero_exception_security_gate_is_tracked_as_release_blocking() {
     assert!(baseline.contains("docs/roadmap/security-advisory-exceptions.json"));
     assert!(checklist.contains("Dependency registry and audit ignore list are empty"));
     assert!(checklist.contains("Fresh unfiltered audits passed both lockfiles"));
-    assert!(checklist.contains("hosted `rust-audit` and governance passed on `27b9e21`"));
-    assert!(checklist.contains("must rerun on the follow-up head"));
+    assert!(checklist.contains("Security run `37321514047` passed on `b3f0c83`"));
+    assert!(checklist.contains("Rerun on the follow-up fix commit"));
     assert!(checklist.contains("Readiness requires terminal-green checks on the latest PR head"));
     assert!(proof_script.contains("scripts/check-desktop-shell-dependencies.sh"));
     assert!(audit.contains("ignore = []"));
