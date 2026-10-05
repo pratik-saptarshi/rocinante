@@ -1,22 +1,36 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Current status (2026-10-04):** PR #108 remains relevant and open on
-`fix/rocinante-readiness-remediation`. The latest hosted code-validation head is
-`1be093a`; all 47 inline review threads are resolved. CI run
-[`37235903810`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903810)
-passed its Rust, UI, platform lifecycle, package, and contract lanes. Its
-aggregate failed because the then-current registry still had 17 overdue
-entries. Security run
-[`37235903812`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903812)
-and Dependency Review
-[`37235903871`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37235903871)
-passed. A local follow-up now closes 15 entries based on the current RustSec
-database and supported lockfiles; hosted validation of that change is pending.
-The two active findings remain pending security-owner dispositions, with their
-existing overdue review dates unchanged.
+**Current status (2026-10-04, local time):** PR #108 remains open on
+`fix/rocinante-readiness-remediation`, at `d42b2bc3ab3799d04c904d1a1b76c5a5b525e15a`,
+and targets the current `main` tip `cdd29b9`. The latest hosted run is
+[`37249203857`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37249203857):
+Rust formatting, Clippy, workspace/core/storage tests, UI quality, Linux/macOS/
+Windows URL lifecycle, Windows registration, and all three Tauri package
+checks passed. `security-exception-governance` failed on the two remaining
+overdue entries; its dependent `test` aggregate failed. CodeQL was still
+running at the last refresh. The six latest inline findings were checked
+against the current implementation and resolved on the PR. A separate P2
+review finding exposed legacy/stable duplicates in the old `query_metrics`
+adapter; its shared-query fix and regression tests are in the local worktree
+and await the next branch push. Fifteen obsolete registry entries are closed
+with evidence; only `RUSTSEC-2024-0370` and `RUSTSEC-2024-0429` remain, both
+still dated `2026-08-06`. No owner disposition or date renewal is inferred for
+those two findings.
 
 The 2026-10-04 closure evidence is recorded in
 [`rustsec-exception-closure-evidence-2026-10-04.md`](rustsec-exception-closure-evidence-2026-10-04.md).
+
+**Unfiltered audit refresh (2026-10-04):** `rtk cargo audit` refreshed the
+RustSec database to revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories, last updated
+2026-10-03). Audits ran from `/private/tmp`, outside the repository audit
+ignore file. The application lockfile has 715 dependencies, an empty ignore
+list, zero vulnerability-class findings, and exactly two warnings:
+`RUSTSEC-2024-0370` (`proc-macro-error 1.0.4`, unmaintained) and
+`RUSTSEC-2024-0429` (`glib 0.18.5`, unsound). The isolated migrator lockfile
+has 82 dependencies, an empty ignore list, and no findings or warnings. Its
+8-test suite passes. The application audit still fails `--deny warnings` on
+the two active GTK/Tauri paths.
 
 Phase 3 is implemented locally in `tools/sled-migration`: its separate
 lockfile retains the official Sled package identity, its patched graph removes
@@ -36,15 +50,25 @@ RustSec revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`, timestamped
 audit reports the two warnings below. No newer upstream database revision was
 available during this check.
 
-The latest unfiltered app audit reports no vulnerability findings and two
-warnings (`glib 0.18.5` and `proc-macro-error 1.0.4`). The local ignore and
-registry lists now contain only those two live findings. Phase 4 must remove
-those Tauri/GTK paths; the two overdue entries remain fail-closed pending
-security-owner dispositions. The other 15 entries were closed under the
-evidence and maintainer authorization recorded in the closure document. Do not
-remove or renew the two remaining entries without reviewed dispositions.
+The supported application dependency graph still contains the two live paths
+through Tauri/Wry/GTK. Phase 4 must remove those paths before Phase 5 deletes
+the final ignores and registry records; no owner acceptance will be substituted
+for dependency removal. The other 15 entries were closed under the evidence and
+maintainer authorization recorded in the closure document.
 **Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
+
+### Execution ledger (2026-10-04)
+
+| Phase | Status | Evidence and remaining gate |
+|---|---|---|
+| 0 — Baseline and review blockers | Reconciled locally; hosted follow-up pending | Refreshed RustSec data, current branch/base, check run, and review findings were inspected. Six inline findings are fixed and resolved; the separate P2 `query_metrics` finding is fixed locally and must pass hosted validation. Recheck new reviews and CodeQL before final readiness. |
+| 1 — Prebuilt DuckDB | Complete | The official checksum-verified runtime is staged without source compilation; Linux `.deb`, macOS `.app`, Windows NSIS packaging and lifecycle jobs passed in run `37249203857`. |
+| 2 — SQLite ingestion | Implemented; validation current | Hosted workspace/storage tests, Clippy, and formatting passed in run `37249203857`; preserve the existing public command and payload contracts. |
+| 3 — Isolated Sled migration | Complete | Eight migrator tests pass locally; the 82-package migrator lockfile has no findings or warnings in the refreshed 1,290-advisory database. Both supported lockfiles were audited outside the repository ignore configuration. |
+| 4 — Native parity and Tauri/GTK retirement | In progress | The production Tauri package and GTK/GLib paths remain. Phase 4A has captured the eleven registered command contracts; the query deduplication fix is validated locally and awaits push. Phases 4B–4D remain. |
+| 5 — Zero-exception governance | Pending Phase 4 | Fifteen evidence-backed records are closed. Remove the two remaining records and matching ignores only after both affected dependency paths disappear from every supported lockfile. |
+| 6 — Release readiness and docs | Pending | Requires the zero-exception audit, terminal green aggregate/security/platform checks on one final commit, and reconciled docs. |
 
 ## Goal
 
@@ -331,22 +355,94 @@ RustSec findings or warnings.
 
 ### Phase 4 — Finish native-shell parity and retire Tauri/GTK
 
-Use the native shell as the supported desktop host after all required behavior
-is covered. Repository-folder selection satisfies the existing chooser
-requirement. Move integrations to shared services and remove Tauri, Wry,
-GTK/GLib and their macros from every supported target, feature, test, and
-packaging path.
+The native shell is the approved supported desktop host. Repository-folder
+selection satisfies the existing chooser requirement. Preserve command names,
+serialized payloads, authorization, and storage behavior while extracting any
+remaining host-neutral service code. Keep legacy relative analytics/scoring
+paths until BI-058 performs and validates data-preserving migration.
 
-**Validation:** run the existing cold/warm URL, restart, notifications,
-window/tray and registration checks on Linux, macOS, and Windows; after BI-058
-has migrated legacy analytics and scoring stores, validate the per-user
-app-data paths from shortcut, URL handler, and terminal launch; check visible
-interactive behavior where CI cannot observe it; inspect all target/feature
-dependency trees and fail if GTK/GLib/Tauri/Wry remain.
+#### Phase 4A — Capture contracts and ownership boundaries
 
-**Exit gate:** native-host parity has direct test evidence on all three OSes;
-the application and migration graphs contain no affected GTK packages; public
-command and payload contracts remain stable.
+Inventory every command registered by the Tauri host, its request/response
+fixtures, auth requirements, storage effects, and callers in the UI and native
+shell. Classify each implementation as shared service, Tauri adapter, or
+unused/deferred product surface. Record before-change serialization fixtures
+and map each retained action to its shared service.
+
+**Validation:** compile the inventory contract, check every registered command
+is classified exactly once, and prove each retained public payload fixture
+round-trips unchanged. Do not delete handlers until these tests pass.
+
+**Exit gate:** the contract inventory covers all Tauri registrations and has a
+tested target for each retained operation.
+
+**Execution evidence (2026-10-04):** the eleven registered commands, argument
+keys, response types, shared service owners, and current native-shell routes are
+recorded in [`native-shell-command-contract-inventory.md`](native-shell-command-contract-inventory.md).
+The prior `query_metrics` implementation returned both legacy and stable
+snapshots because it discarded repository/release identity before applying
+compatibility filtering. The shared telemetry query now retains that identity
+internally, suppresses legacy rows only when a stable row for the same
+basename/release exists, and keeps its `Vec<AnalysisMetric>` response shape.
+Regression tests cover same-release suppression, older-release visibility,
+and distinct stable repositories sharing a basename. The analysis crate tests
+pass 11/11, strict Clippy passes, formatting passes, and `git diff --check`
+passes. The compiled roadmap contract compares every registered handler name
+to the inventory and passes in `scripts/test-roadmap-doc-contracts.sh`. This
+patch is local and still needs its hosted rerun. PR-risk evaluation has a
+shared storage/core service but no React bridge control; retain its
+command-level access through Phase 4B before removing Tauri.
+
+#### Phase 4B — Move retained services behind host-neutral crates
+
+Move any service logic that remains in `src-tauri/src/` into the appropriate
+shared crate. Keep authorization at the service boundary and keep UI/runtime
+types out of shared crates. Route the native shell through the shared API, not
+through a second implementation.
+
+**Validation:** run service and adapter parity tests, compare the saved request
+and response fixtures, and check public Rust exports used by the shell. The
+shared crate dependency tree must not include Tauri, Wry, GTK, or GLib.
+
+**Exit gate:** every retained native-shell action resolves to one shared
+service implementation and its contract tests pass without the Tauri host.
+
+#### Phase 4C — Remove the Tauri host from supported build surfaces
+
+Remove the Tauri binary/build script, Tauri command macros, runtime and dev
+dependencies, Tauri installer configuration, and Tauri-only package scripts
+after their retained contracts have moved. Keep the React UI checks only for
+surfaces that remain supported, and update the desktop install flow to the
+native shell. Remove Tauri package-build jobs and replace them with required
+native-shell release-package checks that inspect DuckDB placement and loader
+configuration on Linux, macOS, and Windows.
+
+**Validation:** search and build all supported manifests, lockfiles, features,
+tests, and package jobs; fail if Tauri/Wry/GTK/GLib or their host macros remain
+in a supported desktop dependency graph. Verify the package contains the
+checksum-matched DuckDB runtime and starts without developer library paths.
+
+**Exit gate:** the application and migration lockfiles have no Tauri, Wry,
+GTK, or GLib packages, and the native shell is the only supported desktop
+entry point.
+
+#### Phase 4D — Prove native behavior and close parity gaps
+
+Run cold/warm URL delivery, saved-state restart, notification, window/tray,
+and registration checks on Linux, macOS, and Windows. Keep BI-049/BI-050 items
+that require physical UI observation or a product choice open until evidence
+or an explicitly approved defer is recorded. After BI-058 migrates legacy
+analytics and scoring stores, validate the per-user paths from shortcut, URL
+handler, and terminal launch.
+
+**Validation:** require terminal platform CI results on the exact final commit;
+record interactive evidence for behavior CI cannot observe; run the native
+dependency-floor and shared-command contract checks.
+
+**Exit gate:** native-host parity has direct evidence on all three OSes,
+remaining deferrals are approved and documented, supported dependency graphs
+contain no affected GTK packages, and public command/payload contracts remain
+stable.
 
 ### Phase 5 — Remove obsolete governance records and enforce zero exceptions
 

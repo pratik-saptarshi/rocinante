@@ -17,5 +17,6 @@ compile_and_run() {
 }
 
 compile_and_run gtk_free_host_migration_plan_tests gtk_free_host_migration_plan
+compile_and_run native_shell_command_contract_tests native_shell_command_contract
 compile_and_run publish_gate_docs_tests publish_gate_docs
 compile_and_run roadmap_coherence_tests roadmap_coherence
