@@ -1,15 +1,17 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Current status (2026-10-05; follow-up validation in progress):** PR #108 was
-merged into `origin/main` at `eb83be9da64057dc71838b33edc01a9a2769b0fa`.
-The weighted-retention correction is on focused branch
-`fix/weighted-rollup-aggregation`, based on that main tip, in commit `3417e22`.
-Its source tree is identical to previously validated commit `6f6b8cc`; the
-full serial Rust workspace suite, storage suite (21/21), formatting, and
-warning-denied all-target/all-feature Clippy passed on that tree. The new
-branch has not yet received hosted validation, and GitHub API checks remain
-unavailable. The fix for review thread `discussion_r4182447911` still needs a
-reply linked to the follow-up PR.
+**Current status (2026-10-05; closeout in progress):** PR #108 was merged into
+`origin/main` at `eb83be9da64057dc71838b33edc01a9a2769b0fa`. The weighted-
+retention correction is on `fix/weighted-rollup-aggregation`, based on that
+main tip, with current branch head `ea440e450ce5ba5f34e0178d6bc0e1c63e4c1882`.
+PR #112 was last confirmed OPEN and MERGEABLE at remote head `ea440e4`. Its
+workspace run `37294465326` was subsequently cancelled after
+`async_ingestion_engine_applies_retention_before_promotion` exceeded 60 seconds.
+Local changes on the tracked branch are not yet committed or hosted-validated.
+The response linking the weighted-retention correction to PR #112 was posted
+in review thread `discussion_r4182447911`; that thread remains unresolved
+pending same-head hosted confirmation. See the current phase-by-phase status in
+[`readiness-closeout-phases-2026-10-05.md`](readiness-closeout-phases-2026-10-05.md).
 
 The root Tauri binary, build script, runtime/build dependencies, command
 bootstrap, and installer configs have been removed from the supported Rust
@@ -19,27 +21,33 @@ whole-workspace dependency guard also excludes GTK, GLib, Wry, and the Tauri
 runtime. Both the advisory registry and `.cargo/audit.toml` ignore list are now
 empty, and the fail-closed governance contract passes.
 
-`cargo check --offline --workspace --all-targets`, complete test-target
-compilation, formatting, all-target/all-feature Clippy with warnings denied,
-and the full Rust workspace suite in serial mode pass locally. The storage
-suite passes with two test threads (20/20); its default-parallel run stalls on
-this machine in `async_ingestion_engine_applies_retention_before_promotion`,
-so same-head hosted CI must validate the normal parallel lane. Roadmap,
-governance, dependency, DuckDB prebuilt/feature, native-package (6/6), CI-scope,
-and workflow `actionlint` contracts pass. UI typecheck, 63 tests, and the
-production build pass as diagnostics using installed dependencies under global
-pnpm `12.8.1`; the exact pin `12.9.1` is the latest stable release listed by
-[pnpm](https://github.com/pnpm/pnpm/releases/tag/v12.9.1), but retrieval failed
-because `registry.npmjs.org` did not resolve. The pinned UI lane remains
-required. The installed macOS acceptance passes cold/warm URL delivery,
-saved-state restart, tray/window flow, and notification request; the AppKit
-activation request returned false, so foreground activation is not claimed.
-Linux and Windows package/lifecycle checks remain pending. Unfiltered
-`cargo audit --no-fetch --deny warnings` exits successfully for both lockfiles
-against the cached RustSec database (1,290 advisories, revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee`). A fresh database fetch failed to
-connect to GitHub, so current-upstream audit freshness and hosted
-security/platform checks remain unverified.
+Local validation after the latest changes passes: the serial analytics
+workspace suite (269 tests across 63 suites), the storage suite (21/21),
+all-target/all-feature Clippy with warnings denied, formatting, roadmap/publish
+contracts (10/10), governance, DuckDB source-build guard, and desktop
+dependency guard. The retention test now drops its ingestion sender after its
+first promotion; the full local suite no longer stalls. Direct admin storage
+services now require a configured signing secret. Admin-secret guard (1/1),
+admin-service (8/8), admin-ingestion guard (2/2), command compatibility (5/5),
+and scoring-audit (1/1) pass with explicit test-only secrets.
+
+A fresh RustSec database refresh via `rtk cargo audit` succeeded in the
+authorized network route. Both supported lockfiles pass unfiltered
+`--deny warnings`: 517 application and 82 migration-tool dependencies, zero
+findings, database revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290
+advisories; commit time 2026-10-03T10:14:03+02:00). The governance registry and
+Cargo audit ignore list both remain empty. A later unprivileged parallel retry
+could not reach GitHub; it does not supersede the successful sequential
+refresh-and-audit result.
+
+The pinned UI version is pnpm `12.9.1`, but local UI typecheck/tests/build
+could not run because its registry signature lookup failed while
+`registry.npmjs.org` was unreachable. The last hosted UI and Linux/macOS/Windows
+package/lifecycle results were green on remote head `ea440e4`, before the local
+changes; same-head hosted results are required. Local macOS cold/warm URL,
+saved-state restart, tray/window flow, and notification request pass, while
+AppKit activation returned false. Do not claim foreground activation or direct
+physical tray/menu acceptance from the scripted checks.
 
 The 2026-10-04 closure evidence is recorded in
 [`rustsec-exception-closure-evidence-2026-10-04.md`](rustsec-exception-closure-evidence-2026-10-04.md).
@@ -82,7 +90,7 @@ removal.
 **Latest decision record:** [`decision-2026-10-05.md`](../decisions/decision-2026-10-05.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
-### Execution ledger (2026-10-05)
+### Original remediation phase ledger (snapshot from 2026-10-05)
 
 | Phase | Status | Evidence and remaining gate |
 |---|---|---|
@@ -139,7 +147,10 @@ hashes together.
 
 ## Phased execution and validation gates
 
-Execute these phases in order on PR #108's existing branch. A phase closes
+The original plan executed on PR #108's remediation branch, which has since
+merged. Use the active closeout phases in
+[`readiness-closeout-phases-2026-10-05.md`](readiness-closeout-phases-2026-10-05.md)
+for PR #112. A phase closes
 only when its implementation is committed and every validation listed for
 that phase has terminal evidence. Keep the security gate fail-closed throughout
 the work; do not renew or invent advisory acceptance.
@@ -526,11 +537,12 @@ warnings/findings. Confirm the hosting security-audit job also uses no
 exceptions.
 
 **Current validation:** the governance checker and empty-registry contract
-pass. Unfiltered audits with `--deny warnings` pass for both supported
-lockfiles against the cached 1,290-advisory database at revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee`. A fresh database fetch failed to
-connect to GitHub; hosted Security/audit checks on this dependency graph are
-also pending.
+pass. A fresh `rtk cargo audit` database refresh and sequential unfiltered
+audits with `--deny warnings` pass for both supported lockfiles against
+revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories): 517
+application dependencies and 82 migration-tool dependencies, with no findings.
+A later unprivileged parallel retry could not reach GitHub; hosted
+Security/audit checks on the updated PR head remain pending.
 
 **Exit gate:** all 17 dispositions cite evidence; both governance stores are
 empty; refreshed, unfiltered audits pass for all supported lockfiles; the

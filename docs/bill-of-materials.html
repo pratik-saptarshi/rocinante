@@ -9,41 +9,51 @@ then release from the merged tip.
 
 ## Current worktree snapshot — 2026-10-05
 
-The local PR #108 branch is `fix/rocinante-readiness-remediation`, based on
-pushed commit `3020d9e`; the current worktree changes are uncommitted and
-have not run in hosted CI. The supported host is the eframe/winit native
-shell; Tauri bootstrap, runtime/build dependencies, and installer configs are
-removed locally. The 11 prior command names and wire
-shapes remain as host-neutral compatibility metadata. The advisory registry
-and Cargo audit ignore list are empty; local governance and cached-database
-audits pass after all affected packages were removed. A fresh RustSec database
-fetch failed to connect to GitHub. Workspace formatting, all-target/all-feature
-Clippy, and the full serial suite pass locally; the storage suite also passes
-with two threads, while its default-parallel run stalls in the retention case.
-UI typecheck, 63 tests, and production build pass as diagnostics with global
-pnpm 12.8.1, but the pinned 12.9.1 could not be fetched because registry DNS
-failed. The installed macOS URL/restart acceptance passes; AppKit returned
-`accepted=false` for activation, so foregrounding is not claimed. Linux/Windows
-package/lifecycle results and aggregate CI remain unverified on this worktree.
-DuckDB remains a SHA-verified prebuilt and is never compiled from source.
+PR #108 is merged at `origin/main` `eb83be9`. Current work is on the PR #112
+focused follow-up branch `fix/weighted-rollup-aggregation`, based on that main
+tip, at local head `ea440e4`; the worktree is clean. At the last reachable
+GitHub GraphQL snapshot, PR #112 was open and mergeable, all completed checks
+were green, and CodeQL plus `rust-workspace-tests` were still in progress. A
+new status refresh could not reach GitHub, so this is the last-known snapshot,
+not a terminal current status. The reply linking the weighted-retention fix to
+PR #112 was posted on the original PR #108 review thread; thread resolution
+awaits hosted confirmation.
+
+The supported host is the eframe/winit native shell; Tauri bootstrap,
+runtime/build dependencies, and installer configs are removed. The 11 prior
+command names and wire shapes remain as host-neutral compatibility metadata.
+The advisory registry and Cargo audit ignore list are empty; local governance
+passes, and both lockfiles pass against the cached advisory database. A fresh
+RustSec fetch through `rtk cargo audit` failed to connect to GitHub, including
+when using a writable temporary database path. Workspace formatting,
+all-target/all-feature Clippy, and the full serial suite passed on the same
+source tree; this turn's weighted-retention regression passed. The storage
+suite's default-parallel run previously stalled in the retention case, so
+hosted full-workspace tests remain a required gate. Local UI diagnostics passed
+with global pnpm 12.8.1; the pinned version is 12.9.1. The last reachable
+hosted snapshot reported `ui-quality` green. The installed macOS URL/restart
+acceptance passes; AppKit returned `accepted=false` for activation, so
+foregrounding is not claimed. Last-known hosted checks for Linux/macOS URL
+dispatch, Windows registration, and the three-platform native package matrix
+were green; terminal state needs a live refresh. DuckDB remains a SHA-verified
+prebuilt and is never compiled from source.
 
 ## 1) Repository identity
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary integration branch: `main`
 - Remote: `origin`
-- Current work is on PR #108's remediation branch,
-  `fix/rocinante-readiness-remediation`. Its latest hosted validation head is
-  `1be093a`; the PR remains open and relevant, based on `main` at `cdd29b9`.
-  All 47 inline threads are resolved. The latest hosted aggregate failed on
-  the then-current 17 overdue entries; the local two-entry registry update is
-  awaiting hosted validation.
+- PR #108 completed the readiness migration and merged as `eb83be9`. The
+  weighted-retention correction is in PR #112 on
+  `fix/weighted-rollup-aggregation`, based on that main tip. Its last observed
+  hosted snapshot was open/mergeable, with CodeQL and the full workspace tests
+  still running; refresh before treating CI or review-thread status as final.
 - Product: Rust shared-service workspace with a GTK-free native desktop host
   and a React/Vite preview dashboard
 - Publish model: squash merge or protected PR merge only, no merge commits on
   the default branch
 - The CI-hardening work in PR run `28987645462` is historical evidence; it does
-  not establish readiness for PR #108's current head.
+  not establish readiness for PR #112's current head.
 
 ## 2) Build, runtime, and release surface
 

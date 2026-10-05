@@ -2,24 +2,34 @@
 
 ## Current branch snapshot — 2026-10-05
 
-PR #108 is merged at `origin/main` `eb83be9`. The focused follow-up branch
-`fix/weighted-rollup-aggregation`, based on that tip, contains code commit
-`3417e22`. The full serial Rust workspace suite, storage suite (21/21),
-formatting, warning-denied all-target/all-feature Clippy, and roadmap/publish
-contracts pass on that tree. This follow-up
-has not yet received hosted validation. The GitHub PR/check API is unavailable,
-so comment and same-head check state are unverified. Hosted Security, platform,
-aggregate, and UI-pin checks remain required. Tauri
-runtime removal and the native-shell package matrix are implemented locally.
-The previously recorded installed macOS lifecycle acceptance passes; Linux
-and Windows lifecycle/package evidence on the current worktree remains
-unverified. The exception registry and Cargo audit ignores are empty, and the
-governance contract plus cached-database audits pass. UI typecheck, all 63
-unit tests, and the production build passed as local diagnostics under global
-pnpm `12.8.1`; the pinned `12.9.1` could not be fetched because
-`registry.npmjs.org` did not resolve. A fresh RustSec database refresh is also
-still required. Historical green Tauri package and lifecycle runs below do not
-validate the current native-shell worktree.
+PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains the active
+protected review path from branch `fix/weighted-rollup-aggregation` at remote
+head `ea440e4`. Its latest workspace run, `37294465326`, was cancelled after
+`async_ingestion_engine_applies_retention_before_promotion` exceeded 60 seconds;
+the same test stalled in an earlier local full-workspace run. After a
+test-harness change, the local weighted regression and serial storage suite
+passed, and the full serial analytics workspace passed 269 tests across 63
+suites. Warning-denied workspace Clippy and formatting pass locally. The
+cancelled hosted result predates these changes; local admin-secret enforcement
+and documentation edits are uncommitted and have not run in hosted CI.
+
+The security registry and Cargo audit ignore list are empty, and the governance
+checker passes. Fresh, unfiltered `cargo audit --deny warnings` runs passed for
+both supported lockfiles against RustSec database revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories). Hosted audit and
+governance checks must still pass on the updated PR head. The last remote
+snapshot on `ea440e4` had CodeQL, UI, security, URL dispatch, Windows
+registration, and Linux/macOS/Windows package checks green, but those results
+do not validate the uncommitted changes.
+
+The UI pin is pnpm `12.9.1`; local typecheck, tests, and production build could
+not run with that pin because the registry signature lookup failed while
+`registry.npmjs.org` was unreachable. Previously recorded macOS URL/restart,
+tray/window, and notification-request checks passed; AppKit returned
+`accepted=false`, so foregrounding is not claimed. DuckDB remains a
+SHA-verified prebuilt and must never be compiled from source. The current
+aggregate, current-head platform evidence, pinned-pnpm checks, and direct
+physical tray/menu acceptance remain release gates.
 
 This checklist is the required gating artifact for remote publication to
 `origin/main`.
@@ -82,7 +92,7 @@ Secret scan is enabled in GitHub Actions | [x] | `.github/workflows/security.yml
 Dependency review is enabled for pull requests | [x] | `.github/workflows/dependency-review.yml`
 CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL analysis
 Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
-Dependency registry and audit ignore list are empty | [x] | Local registry/ignore state and governance contract pass after all affected packages were removed; the 15 withdrawn/absent entries have evidence in `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`. A fresh database refresh and hosted audit remain pending.
+Dependency registry and audit ignore list are empty | [x] | Local registry/ignore state and governance contract pass after all affected packages were removed; the 15 withdrawn/absent entries have evidence in `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`. Fresh unfiltered audits passed both lockfiles against RustSec revision `ef6173c`; current-head hosted audit/governance checks remain pending.
 Open Dependabot alerts are closed or formally accepted | [ ] | Last live GitHub query on 2026-10-04 found six alerts open on `main`: #13/#14 (`@vitest/mocker`/`vitest`, fixed in 4.1.11), #12 (`serde_with`, fixed in 3.21.0), #10/#7 (`postcss`, fixed in 8.5.23/8.5.18), and #1 (`glib`, fixed in 0.20.0). The esbuild alert was closed then. Current GitHub API refresh failed on 2026-10-05; do not treat the 10-04 query as current state.
 Previously recorded evidence (2026-09-30):
 
@@ -105,10 +115,9 @@ the RustSec database. The pnpm tree has no outdated direct dependencies and
 no known advisories. UI typecheck and production build pass after upgrading to
 MUI 9; unit tests had not returned results at that time. Those historical
 checks do not establish readiness for the current PR head.
-All 17 security-owner reviews remain overdue. Hosted audit and dependency
-checks pass under the existing ignore configuration; the fail-closed
-governance job blocks the aggregate until owner-reviewed dispositions remove
-or justify each applicable exception. No dates or acceptance were inferred.
+Historical status (2026-10-03): all 17 security-owner reviews were overdue at
+that point. No dates or acceptance were inferred. The current zero-entry
+registry and audit-ignore state is recorded above.
 
 Published-head verification (2026-10-04; source head `1be093a`): pnpm `12.9.1` frozen install,
 TypeScript check, all 62 Vitest tests, and production build passed on hosted run
@@ -120,9 +129,10 @@ three-platform Tauri package matrix all passed. For the current follow-up, all 9
 formatting and actionlint pass, and the Tauri bundle contract passes 8/8. DuckDB
 `1.10506.0` / engine `1.5.6` remains an official SHA-pinned prebuilt; no build
 from source is enabled. At that hosted source head, the fail-closed governance
-check reported 17 overdue entries; no owner dispositions or date renewals were
-recorded. The subsequent local registry update leaves two overdue entries and
-awaits a hosted rerun.
+check reported 17 overdue entries at that time. Since then, 15 entries were
+closed under the user-authorized withdrawn-advisory evidence, and the two
+remaining affected package paths were removed from supported lockfiles. The
+updated registry and dependency graphs await hosted validation.
 
 Open Dependabot alerts are verified in CI on release lane | [ ] | `scripts/check-dependabot-esbuild-alert.sh` executes on `main` pushes in `.github/workflows/ci.yml`
 Privacy-sensitive local artifacts are ignored | [x] | `.gitignore` excludes env, cert/key, and DB artifacts
@@ -147,17 +157,17 @@ Criterion | Status | Evidence
 ---|---|---
 Rust formatting passes on current worktree | [x] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` passes.
 Rust lint passes on current worktree | [x] | `cargo clippy --offline --locked --manifest-path src-tauri/Cargo.toml --workspace --all-targets --all-features -- -D warnings` reports no issues.
-Rust tests pass on current worktree | [x] | Full workspace passed locally with `-- --test-threads=1`; default-parallel local storage tests stall on this machine and need same-head hosted confirmation.
-Full Cargo workspace tests pass on current worktree | [x] | Offline locked workspace suite completed successfully in serial mode; earlier hosted run `37233328503` predates these changes.
+Rust tests pass on current worktree | [x] | Offline locked analytics workspace suite passed 269 tests across 63 suites with `-- --test-threads=1`; current same-head hosted confirmation is pending.
+Full Cargo workspace tests pass on current worktree | [x] | Offline locked workspace suite passed locally in serial mode. The cancelled hosted run used the prior remote head and does not validate this worktree.
 DuckDB cannot build from source and has SHA-pinned native artifacts | [x] | `scripts/check-duckdb-features.sh`, its contract test, and `scripts/test_provision_duckdb.py` pass locally; see `scripts/duckdb-prebuilt-artifacts.json`
 Installed app loads the verified DuckDB library on all supported OSes | [ ] | Local macOS bundle/load and lifecycle acceptance passes; Linux/Windows and same-head hosted package checks remain pending.
 Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
 Merge gate (`test`) requires native-shell package jobs | [ ] | Workflow contract is updated locally; same-head hosted aggregate is pending.
-UI unit tests pass with pinned pnpm on current worktree | [ ] | All 63 tests pass locally with global pnpm `12.8.1`; pinned `12.9.1` retrieval failed because `registry.npmjs.org` did not resolve.
-UI typecheck passes with pinned pnpm on current worktree | [ ] | Typecheck passes locally with global pnpm `12.8.1`; rerun with pinned `12.9.1` in the hosted UI quality lane.
-UI production build passes with pinned pnpm on current worktree | [ ] | Production build passes locally with global pnpm `12.8.1`; rerun with pinned `12.9.1` in the hosted UI quality lane.
+UI unit tests pass with pinned pnpm on current worktree | [ ] | Pinned pnpm `12.9.1` could not verify its registry signature because `registry.npmjs.org` was unreachable. Prior hosted `ui-quality` passed at remote head `ea440e4`; rerun on the updated PR head.
+UI typecheck passes with pinned pnpm on current worktree | [ ] | Local pinned-pnpm execution was blocked by registry signature/network access; same-head hosted UI check is required.
+UI production build passes with pinned pnpm on current worktree | [ ] | Local pinned-pnpm execution was blocked by registry signature/network access; same-head hosted UI check is required.
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
 Coverage floor target (informational, enforce in next release) | [ ] | Branch: 85%; Unit: 85%; Integration: 85%; E2E: 85%; target to be promoted to hard fail on a stable CI release lane
 
@@ -177,15 +187,15 @@ Sync local `main` to merged remote tip | [x] | `git merge --no-ff origin/main`
 
 Criterion | Status | Evidence
 ---|---|---
-CI workflow is monitored until terminal state on current worktree | [ ] | No hosted run is available for the local uncommitted changes.
-Security workflow is monitored until terminal state on current worktree | [ ] | Fresh RustSec fetch and hosted Security run are pending.
-Dependency review is monitored until terminal state on current worktree | [ ] | Current branch changes have not run through Dependency Review.
+CI workflow is monitored until terminal state on current worktree | [ ] | Latest known workspace job on PR #112 (`37294465326`) was cancelled after the retention test exceeded 60 seconds; push the local test fix and monitor the new run to completion.
+Security workflow is monitored until terminal state on current worktree | [ ] | Fresh local RustSec audit passes both lockfiles; current-head hosted governance and rust-audit results remain required.
+Dependency review is monitored until terminal state on current worktree | [x] | Dependency Review passed in the last reachable PR #112 check snapshot; refresh before final closeout.
 Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `rust-coverage-lcov` from CI job `rust-coverage`
 
 ## 7) Publish decision
 
 - Publish allowed only when all validation gates are green, the exception registry and audit ignore list are empty, and every supported Rust lockfile passes refreshed `cargo audit --deny warnings`.
-- Local advisory registry and ignore list are empty, and affected package paths have been removed; publish remains blocked until a fresh RustSec audit and hosted governance checks pass.
+- Local advisory registry and ignore list are empty, and affected package paths have been removed; publish remains blocked until hosted governance/audit checks pass on the updated PR head.
 - Native-shell packaging and lifecycle checks must pass on this worktree before RT-RC-002 can close.
 - Release remains blocked until all required current-head checks are terminal and green.
 - Open Dependabot alerts should be closed or explicitly accepted before publish.
@@ -195,9 +205,10 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 
 ## 8) Branch governance and merge checkpoints
 
-- PR #108 is the active protected review path. Its aggregate and platform jobs
-  must finish green on the same final branch commit before publish readiness;
-  no current-head hosted checks are available for the local changes.
+- PR #112 is the active protected review path. Its aggregate and platform jobs
+  must finish green on the same final branch commit before publish readiness.
+  The last reachable snapshot was nonterminal; refresh current checks and
+  review threads before resolving the weighted-retention comment.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`

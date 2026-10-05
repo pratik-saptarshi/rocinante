@@ -22,18 +22,20 @@ fn publish_gate_documents_backend_rust_coverage_lane() {
 }
 
 #[test]
-fn publish_gate_documents_reflect_bi_047_history_and_current_pr_snapshot() {
+fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
     let checklist = read_repo_file("../docs/publish-readiness-checklist.html");
     let bom = read_repo_file("../docs/bill-of-materials.html");
     let codemap = read_repo_file("../codemap.md");
 
-    assert!(bom.contains("Current work is on PR #108's remediation branch"));
+    assert!(bom.contains("Current work is on the PR #112"));
     assert!(bom.contains("BI-047"));
     assert!(checklist.contains("Current branch snapshot — 2026-10-05"));
     assert!(checklist.contains("fix/weighted-rollup-aggregation"));
+    assert!(checklist.contains("PR #112"));
+    assert!(checklist.contains("ea440e4"));
     assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
-    assert!(codemap
-        .contains("The focused branch `fix/weighted-rollup-aggregation` carries commit `3417e22`"));
+    assert!(codemap.contains("PR #112 carries the weighted-retention correction"));
+    assert!(codemap.contains("at `ea440e4`"));
 }
 
 #[test]
