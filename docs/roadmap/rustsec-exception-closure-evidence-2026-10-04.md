@@ -59,3 +59,21 @@ for both lockfiles. The advisory governance checker validates two registry
 entries against two Cargo ignores and still exits nonzero because both review
 dates are overdue. This is the intended fail-closed state until the owner
 dispositions are recorded.
+
+
+## Refresh confirmation (2026-10-05)
+
+The authorized rtk cargo-audit refresh completed using a writable temporary
+clone outside the repository's audit-ignore configuration. The clone fetched
+no newer advisory database commit and remains at revision
+ef6173cbc5c50ec8166f9a5b28f07834144373ee, last committed 2026-10-03.
+
+The unfiltered application audit examined 715 dependencies, found no
+vulnerability-class findings, and reported only RUSTSEC-2024-0370
+(proc-macro-error 1.0.4, unmaintained) and RUSTSEC-2024-0429 (glib 0.18.5,
+unsound). With --deny warnings it correctly exits nonzero. The isolated
+migration lockfile audit examined 82 dependencies and passed --deny warnings
+with no findings or warnings. The application ignore configuration and JSON
+registry still contain only these two active IDs; the governance checker fails
+closed because both review dates are overdue. The clean migration audit and
+withdrawal/absence evidence for the other 15 records are unchanged.

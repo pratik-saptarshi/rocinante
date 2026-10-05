@@ -1,21 +1,36 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Current status (2026-10-04, local time):** PR #108 remains open on
-`fix/rocinante-readiness-remediation`, at `d42b2bc3ab3799d04c904d1a1b76c5a5b525e15a`,
-and targets the current `main` tip `cdd29b9`. The latest hosted run is
-[`37249203857`](https://github.com/pratik-saptarshi/rocinante/actions/runs/37249203857):
-Rust formatting, Clippy, workspace/core/storage tests, UI quality, Linux/macOS/
-Windows URL lifecycle, Windows registration, and all three Tauri package
-checks passed. `security-exception-governance` failed on the two remaining
-overdue entries; its dependent `test` aggregate failed. CodeQL was still
-running at the last refresh. The six latest inline findings were checked
-against the current implementation and resolved on the PR. A separate P2
-review finding exposed legacy/stable duplicates in the old `query_metrics`
-adapter; its shared-query fix and regression tests are in the local worktree
-and await the next branch push. Fifteen obsolete registry entries are closed
-with evidence; only `RUSTSEC-2024-0370` and `RUSTSEC-2024-0429` remain, both
-still dated `2026-08-06`. No owner disposition or date renewal is inferred for
-those two findings.
+**Current status (2026-10-05; local evidence):** the remediation branch is
+fix/rocinante-readiness-remediation at eeaab43bb3e966ca5a915e7b3406fa876aa21e36;
+its cached origin branch ref matches. The last recorded base is main at cdd29b9.
+A live GitHub PR query could not reach api.github.com, so current PR state,
+review-thread state, and hosted results after run 37249203857 are unverified.
+That earlier run passed its recorded code, UI, lifecycle, and Tauri package
+lanes but failed the governance job on the two overdue exceptions.
+
+The current local code slice has seven modified Rust files. Its full Rust
+workspace suite passes 267 tests across 62 suites; all-target/all-feature
+Clippy passes with warnings denied; workspace formatting, roadmap and publish
+contracts (10/10), advisory-governance contracts, CI-scope contract, DuckDB
+no-source-build contract, and native-shell dependency contract pass. The
+checksum-verifying provisioner staged the official DuckDB 1.5.6 prebuilt for
+the tests. A RustSec refresh on 2026-10-05 loaded 1,290 advisories from
+revision ef6173cbc5c50ec8166f9a5b28f07834144373ee (last upstream commit
+2026-10-03). An unfiltered audit outside the repository ignore file reports
+zero vulnerabilities and exactly two warnings: RUSTSEC-2024-0370
+(proc-macro-error 1.0.4, unmaintained) and RUSTSEC-2024-0429 (glib 0.18.5,
+unsound); --deny warnings exits 1. The 82-package migration-tool audit is
+clean. The local fail-closed governance checker validates the two-entry
+registry/ignore mapping and exits 1 because both review dates remain overdue.
+Fifteen obsolete registry entries are closed with evidence. No owner
+disposition or date renewal is inferred for the two live findings; the chosen
+resolution remains removing their dependency paths.
+
+Phase 4 is still required: the root manifest and supported Tauri package retain
+Tauri/Wry/GTK, even though the shared services and GTK-free shell are present.
+Phase 5 cannot close until those active paths are absent from all supported
+lockfiles, then the registry and audit ignores can be emptied and fresh
+unfiltered audits can pass.
 
 The 2026-10-04 closure evidence is recorded in
 [`rustsec-exception-closure-evidence-2026-10-04.md`](rustsec-exception-closure-evidence-2026-10-04.md).
@@ -55,20 +70,20 @@ through Tauri/Wry/GTK. Phase 4 must remove those paths before Phase 5 deletes
 the final ignores and registry records; no owner acceptance will be substituted
 for dependency removal. The other 15 entries were closed under the evidence and
 maintainer authorization recorded in the closure document.
-**Decision record:** [`docs/decisions/decision-2026-10-04.md`](../decisions/decision-2026-10-04.md)
+**Latest decision record:** [`decision-2026-10-05.md`](../decisions/decision-2026-10-05.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
-### Execution ledger (2026-10-04)
+### Execution ledger (2026-10-05)
 
 | Phase | Status | Evidence and remaining gate |
 |---|---|---|
-| 0 — Baseline and review blockers | Reconciled locally; hosted follow-up pending | Refreshed RustSec data, current branch/base, check run, and review findings were inspected. Six inline findings are fixed and resolved; the separate P2 `query_metrics` finding is fixed locally and must pass hosted validation. Recheck new reviews and CodeQL before final readiness. |
+| 0 — Baseline and review blockers | Code validated and committed locally; docs/push/hosted follow-up pending | Three Conventional Commits (seven Rust files) are locally ahead of the cached PR branch. The full workspace suite (267/267 across 62 suites), all-target/all-feature Clippy with warnings denied, rustfmt, roadmap/publish contracts (10/10), advisory-governance contracts, CI-scope contract, DuckDB source-build guard, and native-shell dependency guard pass. Current RustSec refresh confirms two live warnings; the governance checker correctly fails on two overdue reviews. Commit the updated plan/evidence records, push all four commits to the existing PR branch, then refresh GitHub comments/checks; API access was unavailable at last attempt. |
 | 1 — Prebuilt DuckDB | Complete | The official checksum-verified runtime is staged without source compilation; Linux `.deb`, macOS `.app`, Windows NSIS packaging and lifecycle jobs passed in run `37249203857`. |
 | 2 — SQLite ingestion | Implemented; validation current | Hosted workspace/storage tests, Clippy, and formatting passed in run `37249203857`; preserve the existing public command and payload contracts. |
 | 3 — Isolated Sled migration | Complete | Eight migrator tests pass locally; the 82-package migrator lockfile has no findings or warnings in the refreshed 1,290-advisory database. Both supported lockfiles were audited outside the repository ignore configuration. |
-| 4 — Native parity and Tauri/GTK retirement | In progress | The production Tauri package and GTK/GLib paths remain. Phase 4A has captured the eleven registered command contracts; the query deduplication fix is validated locally and awaits push. Phases 4B–4D remain. |
-| 5 — Zero-exception governance | Pending Phase 4 | Fifteen evidence-backed records are closed. Remove the two remaining records and matching ignores only after both affected dependency paths disappear from every supported lockfile. |
-| 6 — Release readiness and docs | Pending | Requires the zero-exception audit, terminal green aggregate/security/platform checks on one final commit, and reconciled docs. |
+| 4 — Native parity and Tauri/GTK retirement | In progress | Phase 4A inventory covers all eleven registered commands and its contract passes. Shared telemetry and admin routing are implemented and locally tested. The production manifest still includes Tauri, tauri-build, and Wry, so the 4C removal gate is not met. Next: complete the native parity map, remove Tauri build/package surfaces, then run all-target dependency checks before 4D platform evidence. |
+| 5 — Zero-exception governance | Partially complete; blocked on Phase 4 dependency removal | Fifteen evidence-backed records are closed locally. Remove the final two registry entries and Cargo ignores only after glib and proc-macro-error are absent from every supported lockfile; then refresh RustSec and run unfiltered --deny warnings audits plus governance fixtures. |
+| 6 — Release readiness and docs | Pending | After 4C/4D and 5 pass, reconcile docs to the exact final commit, run the full local quality suite, and require terminal green aggregate/security/platform checks on the same PR head. |
 
 ## Goal
 
@@ -379,19 +394,18 @@ tested target for each retained operation.
 **Execution evidence (2026-10-04):** the eleven registered commands, argument
 keys, response types, shared service owners, and current native-shell routes are
 recorded in [`native-shell-command-contract-inventory.md`](native-shell-command-contract-inventory.md).
-The prior `query_metrics` implementation returned both legacy and stable
-snapshots because it discarded repository/release identity before applying
-compatibility filtering. The shared telemetry query now retains that identity
-internally, suppresses legacy rows only when a stable row for the same
-basename/release exists, and keeps its `Vec<AnalysisMetric>` response shape.
-Regression tests cover same-release suppression, older-release visibility,
-and distinct stable repositories sharing a basename. The analysis crate tests
-pass 11/11, strict Clippy passes, formatting passes, and `git diff --check`
-passes. The compiled roadmap contract compares every registered handler name
-to the inventory and passes in `scripts/test-roadmap-doc-contracts.sh`. This
-patch is local and still needs its hosted rerun. PR-risk evaluation has a
-shared storage/core service but no React bridge control; retain its
-command-level access through Phase 4B before removing Tauri.
+The shared telemetry query retains repository/release identity internally,
+suppresses legacy rows only when a stable row for the same basename/release
+exists, and keeps its Vec<AnalysisMetric> response shape. PR-risk evaluation
+also routes through the shared JSON admin bridge with its existing token and
+candidate payload; the native shell exposes all nine storage/admin bridge
+actions. Regression and bridge-contract tests cover duplicate suppression,
+older-release visibility, distinct repositories with matching basenames, and
+admin authorization. The current local workspace suite passes 267 tests across
+62 suites, all-target/all-feature Clippy passes with warnings denied, and the
+compiled roadmap contract checks every registered handler against the
+inventory. Hosted validation after the current local changes is unverified
+because GitHub API access failed.
 
 #### Phase 4B — Move retained services behind host-neutral crates
 
