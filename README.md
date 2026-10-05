@@ -356,9 +356,10 @@ lifecycle acceptance passes cold/warm URL delivery, notification request,
 minimize/restore, and saved-state restart on this host. Its default acceptance
 controls exercise tray action routing but do not prove a physical menu click.
 The native-shell package matrix builds and inspects the Linux, macOS, and
-Windows installations. Hosted CI run `37341472090` passed package/runtime-
+Windows installations. Hosted CI run `37346608465` passed package/runtime-
 loader validation and URL/restart acceptance on all three platforms, plus
-visible Linux notification delivery, on PR #112 source head `ce5a1e1`.
+visible Linux notification delivery, on PR #112 documentation head `2fac448`;
+the validated code head is `ce5a1e1`.
 Physical tray-menu clicks and macOS foreground activation remain unverified;
 visible notification delivery on macOS and Windows also needs interactive
 validation. Run the manual macOS check from an interactive macOS terminal:
@@ -368,14 +369,15 @@ ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh
 ```
 
 It requires real Show/Quit menu selections and verifies the Show callback,
-frontmost state, Quit callback, and process exit. Two latest attempts reached
-the Show prompt but timed out without observing the callback; no physical
-Show/Quit acceptance is claimed. The latest GitHub refresh confirmed PR #112
-OPEN/MERGEABLE at `ce5a1e1`, based on `main` `eb83be9`. CI run `37341472090`,
-Security run `37341472140`, and Dependency Review run `37341472151` all passed
-on that head. All three review threads, including the Quit-witness blocker,
-are resolved. Repeated retention preserves prior sums/counts, and the four
-baseline compatibility entry points require a configured signing secret.
+frontmost state, Quit callback, and process exit. The most recent manual run,
+after code head `2fac448`, reached the Show prompt but timed out without
+observing the callback; no physical Show/Quit acceptance is claimed. The
+latest GitHub refresh confirmed PR #112
+OPEN/MERGEABLE at `2fac448`, based on `main` `eb83be9`. CI run `37346608465`,
+Security run `37346608399`, and Dependency Review run `37346608411` all passed
+on that head. All four review threads are resolved, including the scoped
+codemap freshness finding. Repeated retention preserves prior sums/counts, and
+the four baseline compatibility entry points require a configured signing secret.
 See the readiness roadmap for the remaining interactive gate and evidence.
 Release distribution must sign the completed app bundle after packaging.
 

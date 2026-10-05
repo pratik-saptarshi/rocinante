@@ -2,19 +2,19 @@
 
 **Current status (2026-10-05; interactive parity evidence remains open):** PR #108
 was merged into `origin/main` at `eb83be9da64057dc71838b33edc01a9a2769b0fa`.
-PR #112 on `fix/weighted-rollup-aggregation` is OPEN/MERGEABLE at `ce5a1e1`,
-based on that main tip. CI run `37341472090`, Security run `37341472140`, and
-Dependency Review run `37341472151` passed on that head. Three review findings
-were raised and fixed. The follow-up merges existing rollup sums/counts when
-retention runs repeatedly, requires the configured token secret at all four
-baseline compatibility entry points, and requires a Quit-action witness in
-manual macOS acceptance before treating process exit as a tray Quit. Focused
-tests, the full workspace (270 tests/64 suites), formatting, and warning-denied
-Clippy pass locally; all three review threads were resolved after same-head
-hosted validation passed. The scripted installed macOS lifecycle acceptance
-passes, but four manual attempts timed out without observing the physical Show
-callback. Tray-menu delivery and foreground activation remain open; the latest
-AppKit request returned `accepted=false`. See the phase-by-phase status in
+PR #112 on `fix/weighted-rollup-aggregation` is OPEN/MERGEABLE at documentation
+head `2fac448`, based on the current main tip. CI run `37346608465`, Security
+run `37346608399`, and Dependency Review run `37346608411` passed on that head.
+All four review threads are resolved: retention promotion preserves prior
+sums/counts, all four baseline compatibility entry points require the
+configured token secret, manual macOS acceptance requires a Quit-action
+witness, and the scoped codemap records validated results. Focused tests, the
+full workspace (270 tests/64 suites), formatting, and warning-denied Clippy
+pass locally. The scripted installed macOS lifecycle acceptance passes, but
+the most recent manual run after code head `2fac448` timed out at the Show
+prompt without observing the physical Show callback. Tray-menu delivery and
+foreground activation remain open; the latest AppKit request returned
+`accepted=false`. See the phase-by-phase status in
 [`readiness-closeout-phases-2026-10-05.md`](readiness-closeout-phases-2026-10-05.md).
 
 The root Tauri binary, build script, runtime/build dependencies, command
@@ -49,8 +49,9 @@ verify it because its registry signature lookup failed, but hosted `ui-quality`
 passed on source head `ce5a1e1`. Hosted Linux/macOS/Windows package and URL
 lifecycle checks also passed on that head. The scripted local macOS lifecycle
 passed cold/warm URL delivery, close-to-tray, notification request, visible
-restore, and saved-state restart. Two latest manual attempts reached the Show
-prompt but did not observe its callback within 60 seconds. AppKit activation
+restore, and saved-state restart. The most recent manual run after code head
+`2fac448` reached the Show prompt but did not observe its callback within
+60 seconds. AppKit activation
 returned `accepted=false`; do not claim foreground activation or physical
 tray-menu click acceptance from the scripted checks. The current documentation
 sync records the same-head hosted results and its roadmap/publish contracts

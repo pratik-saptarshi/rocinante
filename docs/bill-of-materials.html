@@ -11,9 +11,9 @@ then release from the merged tip.
 
 PR #108 is merged at `origin/main` `eb83be9`. Current work is on the PR #112
 focused follow-up branch `fix/weighted-rollup-aggregation`, based on that main
-tip. GitHub confirmed PR #112 OPEN/MERGEABLE at `ce5a1e1`, based on `main`
-`eb83be9`. CI run `37341472090`, Security run `37341472140`, and Dependency
-Review run `37341472151` all passed on that head; all three review threads
+tip. GitHub confirmed PR #112 OPEN/MERGEABLE at `2fac448`, based on `main`
+`eb83be9`. CI run `37346608465`, Security run `37346608399`, and Dependency
+Review run `37346608411` all passed on that head; all four review threads
 are resolved. Repeated retention preserves existing rollup sums/counts, all
 four baseline compatibility entry points require a configured secret, and the
 manual macOS script requires a Quit-callback witness before accepting exit.
@@ -25,15 +25,15 @@ The supported host is the eframe/winit native shell; Tauri bootstrap,
 runtime/build dependencies, and installer configs are removed. The 11 prior
 command names and wire shapes remain as host-neutral compatibility metadata.
 The advisory registry and Cargo audit ignore list are empty; governance and
-both unfiltered lockfile audits pass. Security run `37341472140` passed
-RustSec audit, CodeQL, and secret scan on `ce5a1e1`; CI run `37341472090`
+both unfiltered lockfile audits pass. Security run `37346608399` passed
+RustSec audit, CodeQL, and secret scan on `2fac448`; CI run `37346608465`
 passed UI quality with pinned pnpm 12.9.1, Rust quality, governance, and
 Linux/macOS/Windows package and URL lifecycle checks. The local installed
 macOS scripted lifecycle acceptance passed cold/warm delivery, close-to-tray,
-notification request, visible restore, and restart restoration. Two recent
-manual attempts reached the Show prompt but timed out without observing the
-Show callback. AppKit returned `accepted=false`; physical tray-menu clicks and
-foreground activation remain unverified. DuckDB remains a
+notification request, visible restore, and restart restoration. The most
+recent manual run after code head `2fac448` reached the Show prompt but timed
+out without observing the Show callback. AppKit returned `accepted=false`;
+physical tray-menu clicks and foreground activation remain unverified. DuckDB remains a
 SHA-verified prebuilt and is never compiled from source.
 
 ## 1) Repository identity
@@ -44,9 +44,10 @@ SHA-verified prebuilt and is never compiled from source.
 - PR #108 completed the readiness migration and merged as `eb83be9`. The
   weighted-retention correction is in PR #112 on
   `fix/weighted-rollup-aggregation`, based on that main tip. CI run
-  `37341472090`, Security run `37341472140`, and Dependency Review run
-  `37341472151` all passed on head `ce5a1e1`; all three review findings are
-  fixed and their threads are resolved.
+  `37346608465`, Security run `37346608399`, and Dependency Review run
+  `37346608411` all passed on head `2fac448`; three implementation findings
+  and the scoped codemap freshness finding are fixed and their threads are
+  resolved.
 - Product: Rust shared-service workspace with a GTK-free native desktop host
   and a React/Vite preview dashboard
 - Publish model: squash merge or protected PR merge only, no merge commits on
@@ -148,7 +149,7 @@ lock for a bounded deep-link inbox; `packaging/linux/rocinante.desktop` declares
 the URI scheme. Per-user installers package the verified `.so`, `.dylib`, or
 `.dll` and register the URL handlers. The scripted local macOS cold/warm URL,
 tray-action routing, notification-request, and restart acceptance passes.
-Hosted CI run `37341472090` passes Linux/macOS/Windows URL and saved-state restart acceptance;
+Hosted CI run `37346608465` passes Linux/macOS/Windows URL and saved-state restart acceptance;
 Linux visible notification delivery also passes. Visible macOS/Windows
 notification delivery and physical tray-menu clicks remain unverified.
 - `tempfile` for tests

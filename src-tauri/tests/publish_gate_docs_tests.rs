@@ -37,16 +37,16 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
     assert!(checklist.contains("Current branch snapshot — 2026-10-05"));
     assert!(checklist.contains("fix/weighted-rollup-aggregation"));
     assert!(checklist.contains("PR #112"));
-    assert!(checklist.contains("PR #112 OPEN/MERGEABLE at `ce5a1e1`"));
-    assert!(checklist.contains("CI run `37341472090`, Security run `37341472140`"));
-    assert!(checklist.contains("Dependency Review run `37341472151` all succeeded"));
-    assert!(checklist.contains("all three"));
+    assert!(checklist.contains("PR #112 OPEN/MERGEABLE at `2fac448`"));
+    assert!(checklist.contains("CI run `37346608465`, Security run `37346608399`"));
+    assert!(checklist.contains("Dependency Review run `37346608411` all succeeded"));
+    assert!(checklist.contains("all four"));
     assert!(checklist.contains("review threads were resolved after the same-head checks passed"));
     assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
-    assert!(codemap.contains("PR #112 is OPEN/MERGEABLE at `ce5a1e1`"));
+    assert!(codemap.contains("PR #112 OPEN/MERGEABLE at `2fac448`"));
     assert!(codemap
-        .contains("CI `37341472090`, Security `37341472140`, and Dependency Review `37341472151`"));
-    assert!(codemap.contains("all three review threads are resolved"));
+        .contains("CI `37346608465`, Security `37346608399`, and Dependency Review `37346608411`"));
+    assert!(codemap.contains("all four review threads are resolved"));
 }
 
 #[test]
