@@ -1,5 +1,5 @@
 use crate::errors::AnalyzerError;
-use crate::git::changed_files_since_tag_path;
+use crate::git::changed_files_since_tag_path_optional;
 use crate::plugins::code_quality::CodeQualityPlugin;
 use crate::plugins::complexity::ComplexityPlugin;
 use crate::plugins::parser::ParserPlugin;
@@ -25,7 +25,25 @@ impl Pipeline {
         repo: RepoTarget,
         release: &str,
     ) -> Result<AnalysisRecord, AnalyzerError> {
-        let changed_files = changed_files_since_tag_path(&repo.path, release)?;
+        let repository_path = repo.path.clone();
+        self.analyze_repo_if_release_exists(repo, release)?
+            .ok_or_else(|| {
+                AnalyzerError::Git(format!(
+                    "release {release:?} does not resolve to a commit in {}",
+                    repository_path.display()
+                ))
+            })
+    }
+
+    pub fn analyze_repo_if_release_exists(
+        &self,
+        repo: RepoTarget,
+        release: &str,
+    ) -> Result<Option<AnalysisRecord>, AnalyzerError> {
+        let Some(changed_files) = changed_files_since_tag_path_optional(&repo.path, release)?
+        else {
+            return Ok(None);
+        };
         let input = AnalysisInput {
             repo: repo.clone(),
             changed_files,
@@ -59,11 +77,11 @@ impl Pipeline {
             scrub_metric(metric);
         }
 
-        Ok(AnalysisRecord {
+        Ok(Some(AnalysisRecord {
             repo_name: repo.name,
             release: release.to_string(),
             metrics,
-        })
+        }))
     }
 }
 

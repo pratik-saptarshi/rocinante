@@ -60,8 +60,24 @@ pub fn changed_files_since_tag_path(
     repo_path: &Path,
     release: &str,
 ) -> Result<Vec<String>, AnalyzerError> {
+    changed_files_since_tag_path_optional(repo_path, release)?.ok_or_else(|| {
+        AnalyzerError::Git(format!(
+            "release {release:?} does not resolve to a commit in {}",
+            repo_path.display()
+        ))
+    })
+}
+
+/// Returns `None` when a non-empty release ref is absent from this repository.
+/// An empty vector in `Some` means the requested repository scope is valid but
+/// has no changed paths; an empty release retains the full-repository scan
+/// convention used by the analysis plugins.
+pub fn changed_files_since_tag_path_optional(
+    repo_path: &Path,
+    release: &str,
+) -> Result<Option<Vec<String>>, AnalyzerError> {
     if release.is_empty() {
-        return Ok(Vec::new());
+        return Ok(Some(Vec::new()));
     }
     let revision = format!("{release}^{{commit}}");
     let output = Command::new("git")
@@ -77,7 +93,7 @@ pub fn changed_files_since_tag_path(
         .map_err(|error| AnalyzerError::Git(error.to_string()))?;
     if !output.status.success() {
         if output.status.code() == Some(1) {
-            return Ok(Vec::new());
+            return Ok(None);
         }
         return Err(AnalyzerError::Git(
             String::from_utf8_lossy(&output.stderr).to_string(),
@@ -85,10 +101,11 @@ pub fn changed_files_since_tag_path(
     }
     let commit = String::from_utf8_lossy(&output.stdout).trim().to_string();
     let diff = git_stdout_path(repo_path, &["diff", "--name-only", &commit, "HEAD"])?;
-    Ok(diff
-        .lines()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-        .map(ToString::to_string)
-        .collect())
+    Ok(Some(
+        diff.lines()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .map(ToString::to_string)
+            .collect(),
+    ))
 }

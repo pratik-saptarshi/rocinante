@@ -6,7 +6,52 @@ use rocinante_analysis::{
     types::{AnalysisMetric, AnalysisRecord},
 };
 use std::fs;
+use std::path::Path;
+use std::process::Command;
 use tempfile::NamedTempFile;
+
+fn initialize_repository(path: &Path, release: Option<&str>) {
+    fs::create_dir_all(path.join("src")).expect("repository source directory");
+    let init = Command::new("git")
+        .args(["init", "--quiet"])
+        .current_dir(path)
+        .output()
+        .expect("git init");
+    assert!(init.status.success(), "git init failed: {:?}", init.stderr);
+    fs::write(path.join("src/lib.rs"), "pub fn repository() {}\n").expect("source file");
+    for args in [
+        vec!["add", "--all"],
+        vec![
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.com",
+            "commit",
+            "--quiet",
+            "-m",
+            "initial",
+        ],
+    ] {
+        let output = Command::new("git")
+            .args(args)
+            .current_dir(path)
+            .output()
+            .expect("git command");
+        assert!(
+            output.status.success(),
+            "git command failed: {:?}",
+            output.stderr
+        );
+    }
+    if let Some(release) = release {
+        let tag = Command::new("git")
+            .args(["tag", release])
+            .current_dir(path)
+            .output()
+            .expect("git tag");
+        assert!(tag.status.success(), "git tag failed: {:?}", tag.stderr);
+    }
+}
 
 #[test]
 fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
@@ -154,6 +199,37 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
             })
         }));
     }
+}
+
+#[test]
+fn release_scan_skips_repositories_without_the_requested_tag() {
+    std::env::set_var(
+        "RUNICIPAL_TOKEN_SECRET",
+        "test-secret-for-repository-scan-32-bytes",
+    );
+    let root = tempfile::tempdir().expect("root directory");
+    let tagged_repository = root.path().join("tagged-repository");
+    let untagged_repository = root.path().join("untagged-repository");
+    initialize_repository(&tagged_repository, Some("release-1"));
+    initialize_repository(&untagged_repository, None);
+
+    let database = NamedTempFile::new().expect("database file");
+    let token = issue_test_token("scan-admin", &["admin"], 300);
+    let (summary, metrics) =
+        run_scan_with_metrics(&token, root.path(), "release-1", database.path())
+            .expect("scan the repository that contains the selected release");
+
+    assert_eq!(summary.records_processed, 1);
+    assert!(!metrics.is_empty());
+    let tagged_metrics =
+        query_repository_metrics(&token, &tagged_repository, "release-1", database.path())
+            .expect("query tagged repository metrics");
+    let untagged_metrics =
+        query_repository_metrics(&token, &untagged_repository, "release-1", database.path())
+            .expect("query untagged repository metrics");
+    assert!(!tagged_metrics.is_empty());
+    assert!(untagged_metrics.is_empty());
+    assert!(metrics.iter().all(|metric| tagged_metrics.contains(metric)));
 }
 
 #[test]

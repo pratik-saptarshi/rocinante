@@ -177,14 +177,35 @@ fn scan_and_persist(
     }
     let pipeline = Pipeline::default();
     let mut records = Vec::with_capacity(repositories.len());
+    let mut scanned_identities = Vec::with_capacity(identities.len());
+    let mut skipped_repositories = Vec::new();
 
-    for repository in repositories {
-        records.push(pipeline.analyze_repo(repository, release)?);
+    for (repository, identity) in repositories.into_iter().zip(identities) {
+        let repository_name = repository.name.clone();
+        if let Some(record) = pipeline.analyze_repo_if_release_exists(repository, release)? {
+            records.push(record);
+            scanned_identities.push(identity);
+        } else {
+            skipped_repositories.push(repository_name);
+        }
+    }
+
+    if records.is_empty() {
+        return Err(AnalyzerError::Git(format!(
+            "release {release:?} was not found in any repository under {}; no metrics were written",
+            root.display()
+        )));
+    }
+    if !skipped_repositories.is_empty() {
+        eprintln!(
+            "skipped repositories without release {release:?}: {}",
+            skipped_repositories.join(", ")
+        );
     }
 
     let mut store = TelemetryStore::open(db_path)?;
     let summary = store.replace_records(&records, release)?;
-    Ok((summary, identities, store))
+    Ok((summary, scanned_identities, store))
 }
 
 fn query_repository_metrics_for_identities(
