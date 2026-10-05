@@ -94,7 +94,8 @@ fn zero_exception_security_gate_is_tracked_as_release_blocking() {
     assert!(baseline.contains("refresh could not connect to GitHub"));
     assert!(baseline.contains("docs/roadmap/security-advisory-exceptions.json"));
     assert!(checklist.contains("Dependency registry and audit ignore list are empty"));
-    assert!(checklist.contains("A fresh database refresh and hosted audit remain pending"));
+    assert!(checklist.contains("Fresh unfiltered audits passed both lockfiles"));
+    assert!(checklist.contains("hosted rust-audit and governance passed on `cf9c1d3`"));
     assert!(checklist.contains(
         "Release remains blocked until all required current-head checks are terminal and green"
     ));
