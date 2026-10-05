@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+manual_tray_acceptance="${ROCINANTE_ACCEPTANCE_MANUAL_TRAY:-0}"
+if [[ "$manual_tray_acceptance" != "0" && "$manual_tray_acceptance" != "1" ]]; then
+  echo "ROCINANTE_ACCEPTANCE_MANUAL_TRAY must be 0 or 1" >&2
+  exit 2
+fi
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 shell_manifest="$repo_root/src-tauri/crates/rocinante-desktop-shell/Cargo.toml"
 shell_binary="$repo_root/src-tauri/target/debug/rocinante-desktop-shell"
@@ -209,14 +215,28 @@ if ! kill -0 "$test_pid" 2>/dev/null; then
   exit 1
 fi
 
-touch "$show_file"
-for _ in {1..45}; do
-  [[ -e "$show_file.received" ]] && break
-  sleep 1
-done
-if [[ ! -e "$show_file.received" ]]; then
-  echo "The native UI did not consume the tray Show request" >&2
-  exit 1
+if [[ "$manual_tray_acceptance" == "1" ]]; then
+  rm -f "$activation_result"
+  echo "Physical tray check: click Rocinante's menu-bar icon and choose Show Rocinante."
+  for _ in {1..60}; do
+    grep -F -x "show_action_started=true" "$activation_result" >/dev/null 2>&1 && break
+    kill -0 "$test_pid" 2>/dev/null || break
+    sleep 1
+  done
+  if ! grep -F -x "show_action_started=true" "$activation_result" >/dev/null 2>&1; then
+    echo "The native Show menu action was not observed after the physical click" >&2
+    exit 1
+  fi
+else
+  touch "$show_file"
+  for _ in {1..45}; do
+    [[ -e "$show_file.received" ]] && break
+    sleep 1
+  done
+  if [[ ! -e "$show_file.received" ]]; then
+    echo "The native UI did not consume the tray Show request" >&2
+    exit 1
+  fi
 fi
 for _ in {1..45}; do
   if grep -Eq '^request_accepted=(true|false)$' "$activation_result" 2>/dev/null; then
@@ -238,7 +258,11 @@ if [[ "$activation_request" != true && "$activation_request" != false ]]; then
   cat "$activation_result" >&2
   exit 1
 fi
-wait_for_native_window_state true "$expected_frontmost"
+if [[ "$manual_tray_acceptance" == "1" ]]; then
+  wait_for_native_window_state true true
+else
+  wait_for_native_window_state true "$expected_frontmost"
+fi
 
 touch "$minimize_file"
 for _ in {1..45}; do
@@ -261,16 +285,30 @@ if [[ "$(sed -n 's/^pid=//p' "$witness")" != "$test_pid" \
   exit 1
 fi
 
-touch "$quit_file"
-for _ in {1..45}; do
-  bundle_pid_is_running "$test_pid" || break
-  sleep 1
-done
+if [[ "$manual_tray_acceptance" == "1" ]]; then
+  echo "Physical tray check: click Rocinante's menu-bar icon and choose Quit."
+  for _ in {1..60}; do
+    bundle_pid_is_running "$test_pid" || break
+    sleep 1
+  done
+else
+  touch "$quit_file"
+  for _ in {1..45}; do
+    bundle_pid_is_running "$test_pid" || break
+    sleep 1
+  done
+fi
 if bundle_pid_is_running "$test_pid"; then
-  echo "The bundled app did not exit cleanly after the acceptance quit request" >&2
+  if [[ "$manual_tray_acceptance" == "1" ]]; then
+    echo "The bundled app did not exit after the physical tray Quit action" >&2
+  else
+    echo "The bundled app did not exit cleanly after the acceptance quit request" >&2
+  fi
   exit 1
 fi
-rm -f "$quit_file"
+if [[ "$manual_tray_acceptance" != "1" ]]; then
+  rm -f "$quit_file"
+fi
 
 : > "$witness"
 open -a "$bundle"
@@ -286,4 +324,8 @@ if [[ -z "$restarted_pid" || -z "$restarted_instance" \
 fi
 test_pid="$restarted_pid"
 
-echo "Bundled cold/warm URL delivery, tray lifecycle, notification request, minimized-window visible restore, and saved-state restart passed (pid $test_pid; AppKit activation request accepted=$activation_request)."
+if [[ "$manual_tray_acceptance" == "1" ]]; then
+  echo "Bundled cold/warm URL delivery, physical tray Show/Quit, frontmost restoration, notification request, minimized-window restore, and saved-state restart passed (pid $test_pid; AppKit activation request accepted=$activation_request)."
+else
+  echo "Bundled cold/warm URL delivery, tray lifecycle, notification request, minimized-window visible restore, and saved-state restart passed (pid $test_pid; AppKit activation request accepted=$activation_request)."
+fi

@@ -360,7 +360,14 @@ acceptance on all three platforms, plus visible Linux notification delivery,
 on PR #112 source head `27b9e21`. The installed macOS acceptance also passes
 locally. Visible notification delivery on macOS and Windows, physical
 tray-menu clicks, and macOS foreground activation still need interactive
-validation. The latest live GitHub refresh could not connect; the last
+validation. Run the manual macOS check from an interactive macOS terminal:
+
+```sh
+ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh
+```
+
+It waits for real Show/Quit menu selections and verifies frontmost state. The
+latest live GitHub refresh could not connect; the last
 successful PR/check snapshot is recorded in the readiness roadmap. Release
 distribution must sign the completed app bundle after packaging.
 

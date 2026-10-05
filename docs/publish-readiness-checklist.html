@@ -171,7 +171,7 @@ Merge gate (`test`) requires native-shell package jobs | [x] | Workflow contract
 UI unit tests pass with pinned pnpm on current worktree | [x] | Hosted `ui-quality` passed on `27b9e21`, including install, typecheck, unit tests, and production build with pinned pnpm `12.9.1`; local registry signature lookup remains unavailable.
 UI typecheck passes with pinned pnpm on current worktree | [x] | Hosted `ui-quality` passed on `27b9e21`; local pinned-pnpm execution was blocked by registry signature/network access.
 UI production build passes with pinned pnpm on current worktree | [x] | Hosted `ui-quality` production build passed on `27b9e21`; local pinned-pnpm execution was blocked by registry signature/network access.
-Physical macOS tray-menu click and foreground activation are validated | [ ] | Installed lifecycle passed through the shared Show/Quit action handler, but it does not synthesize a menu click; the latest AppKit activation request returned `accepted=false`. Requires an interactive Accessibility-authorized run.
+Physical macOS tray-menu click and foreground activation are validated | [ ] | Run `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh` in an interactive macOS terminal. It waits for physical Show and Quit selections, checks the Show callback and frontmost window, and verifies process exit. This manual path does not synthesize UI input; it has not yet been run. AppKit previously returned `accepted=false`.
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
 Coverage floor target (informational, enforce in next release) | [ ] | Branch: 85%; Unit: 85%; Integration: 85%; E2E: 85%; target to be promoted to hard fail on a stable CI release lane
 
