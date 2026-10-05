@@ -77,13 +77,31 @@ maintainer authorization recorded in the closure document.
 
 | Phase | Status | Evidence and remaining gate |
 |---|---|---|
-| 0 — Baseline and review blockers | Code validated and committed locally; docs/push/hosted follow-up pending | Three Conventional Commits (seven Rust files) are locally ahead of the cached PR branch. The full workspace suite (267/267 across 62 suites), all-target/all-feature Clippy with warnings denied, rustfmt, roadmap/publish contracts (10/10), advisory-governance contracts, CI-scope contract, DuckDB source-build guard, and native-shell dependency guard pass. Current RustSec refresh confirms two live warnings; the governance checker correctly fails on two overdue reviews. Commit the updated plan/evidence records, push all four commits to the existing PR branch, then refresh GitHub comments/checks; API access was unavailable at last attempt. |
+| 0 — Baseline and review blockers | Frontend packaging fix implemented locally; hosted validation pending | On branch head `76519cf`, the Tauri packaging contract test passes 9/9 after requiring a production UI build in both platform configs and `frontendDist: ../ui/dist`. `git diff --check` passes. The pnpm invocation did not terminate during local probing and was interrupted, so no local production Tauri bundle is claimed. The GitHub API was unavailable in this attempt; push the change to this existing PR branch, then verify the comment and matrix checks before resolving its thread. The two overdue live RustSec entries remain an independent governance blocker. |
 | 1 — Prebuilt DuckDB | Complete | The official checksum-verified runtime is staged without source compilation; Linux `.deb`, macOS `.app`, Windows NSIS packaging and lifecycle jobs passed in run `37249203857`. |
 | 2 — SQLite ingestion | Implemented; validation current | Hosted workspace/storage tests, Clippy, and formatting passed in run `37249203857`; preserve the existing public command and payload contracts. |
 | 3 — Isolated Sled migration | Complete | Eight migrator tests pass locally; the 82-package migrator lockfile has no findings or warnings in the refreshed 1,290-advisory database. Both supported lockfiles were audited outside the repository ignore configuration. |
 | 4 — Native parity and Tauri/GTK retirement | In progress | Phase 4A inventory covers all eleven registered commands and its contract passes. Shared telemetry and admin routing are implemented and locally tested. The production manifest still includes Tauri, tauri-build, and Wry, so the 4C removal gate is not met. Next: complete the native parity map, remove Tauri build/package surfaces, then run all-target dependency checks before 4D platform evidence. |
 | 5 — Zero-exception governance | Partially complete; blocked on Phase 4 dependency removal | Fifteen evidence-backed records are closed locally. Remove the final two registry entries and Cargo ignores only after glib and proc-macro-error are absent from every supported lockfile; then refresh RustSec and run unfiltered --deny warnings audits plus governance fixtures. |
 | 6 — Release readiness and docs | Pending | After 4C/4D and 5 pass, reconcile docs to the exact final commit, run the full local quality suite, and require terminal green aggregate/security/platform checks on the same PR head. |
+
+### Phase 0 frontend packaging finding (2026-10-05; local validation)
+
+The P1 PR #108 finding reports that Tauri packaged `ui/index.html` from the
+source tree, whose entry point references `/src/main.tsx`; the UI-quality
+artifact is built on a different CI runner and is not available to the bundle
+matrix. The standard and Windows Tauri configs now set `frontendDist` to
+`../ui/dist`. Their `beforeBuildCommand` performs a frozen pnpm install and
+production UI build in the bundle job, then stages the checksum-verified
+DuckDB prebuilt. The Windows command retains its `python` executable spelling.
+
+The DuckDB bundle contract now checks the production asset directory and the
+full build/stage command for both configs. `rtk proxy python3
+scripts/test_prepare_tauri_duckdb_bundle.py` passes 9/9 and
+`rtk git diff --check` passes. A local `pnpm --dir ../ui --version` probe did
+not finish within roughly 25 seconds and was interrupted; this does not count
+as pnpm, UI-build, or platform-bundle validation. GitHub API access failed in
+this attempt, so publication and hosted CI/thread state are still pending.
 
 ## Goal
 

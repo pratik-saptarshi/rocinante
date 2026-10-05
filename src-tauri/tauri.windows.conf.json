@@ -1,6 +1,6 @@
 {
   "build": {
-    "beforeBuildCommand": "python scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle",
+    "beforeBuildCommand": "pnpm --dir ../ui install --frozen-lockfile && pnpm --dir ../ui run build && python scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle",
     "beforeBundleCommand": "python scripts/prepare-tauri-duckdb-bundle.py"
   }
 }

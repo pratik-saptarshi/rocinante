@@ -223,6 +223,7 @@ class BundlePreparationTests(unittest.TestCase):
         )
         for icon in config["bundle"]["icon"]:
             self.assertTrue((tauri_root / icon).is_file(), f"Missing Tauri bundle icon {icon}")
+        self.assertEqual(config["build"]["frontendDist"], "../ui/dist")
         stage_runtime_step = workflow.index("Stage verified DuckDB before loading Tauri resources")
         build_bundle_step = workflow.index("Build production Tauri bundle")
         self.assertLess(stage_runtime_step, build_bundle_step)
@@ -245,7 +246,7 @@ class BundlePreparationTests(unittest.TestCase):
         self.assertTrue((tauri_root / "tauri-resources" / "README.txt").is_file())
         self.assertEqual(
             config["build"]["beforeBuildCommand"],
-            "python3 scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle",
+            "pnpm --dir ../ui install --frozen-lockfile && pnpm --dir ../ui run build && python3 scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle",
         )
         self.assertEqual(
             config["build"]["beforeBundleCommand"],
@@ -253,7 +254,7 @@ class BundlePreparationTests(unittest.TestCase):
         )
         self.assertEqual(
             windows_config["build"]["beforeBuildCommand"],
-            "python scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle",
+            "pnpm --dir ../ui install --frozen-lockfile && pnpm --dir ../ui run build && python scripts/provision_duckdb.py --stage-runtime-for-tauri-bundle",
         )
         self.assertEqual(
             windows_config["build"]["beforeBundleCommand"],
