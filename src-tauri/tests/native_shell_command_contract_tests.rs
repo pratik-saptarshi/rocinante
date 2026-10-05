@@ -8,26 +8,32 @@ fn read_repo_file(relative_path: &str) -> String {
 }
 
 #[test]
-fn inventory_matches_every_registered_tauri_command_once() {
-    let source = read_repo_file("src/app_support.rs");
-    let handler_marker = ".invoke_handler(tauri::generate_handler![";
-    let handler_body = source
-        .split_once(handler_marker)
-        .expect("registered handler table")
+fn inventory_matches_every_migrated_command_and_wire_shape_once() {
+    let source = read_repo_file("src/command_compat.rs");
+    let contract_marker = "pub const MIGRATED_COMMAND_CONTRACTS: [(&str, &str, &str); 11] = [";
+    let contract_body = source
+        .split_once(contract_marker)
+        .expect("migrated command contract")
         .1
-        .split_once("])")
-        .expect("end of registered handler table")
+        .split_once("];")
+        .expect("end of migrated command contract")
         .0;
-    let registered = handler_body
-        .split(|character: char| !character.is_ascii_alphanumeric() && character != '_')
-        .filter(|identifier| !identifier.is_empty())
-        .map(str::to_string)
+    let contracts = contract_body
+        .split("),")
+        .filter_map(|line| {
+            let fields = line
+                .split('"')
+                .enumerate()
+                .filter_map(|(index, field)| (index % 2 == 1).then_some(field))
+                .collect::<Vec<_>>();
+            (fields.len() == 3).then(|| fields.into_iter().map(str::to_string).collect::<Vec<_>>())
+        })
         .collect::<Vec<_>>();
 
     let inventory = read_repo_file("../docs/roadmap/native-shell-command-contract-inventory.md");
     let rows = inventory
         .lines()
-        .skip_while(|line| !line.starts_with("| Registered command |"))
+        .skip_while(|line| !line.starts_with("| Migrated command |"))
         .skip(2)
         .take_while(|line| line.starts_with("| `"))
         .map(|line| {
@@ -46,24 +52,30 @@ fn inventory_matches_every_registered_tauri_command_once() {
                 !columns[4].trim().is_empty(),
                 "service owner is documented: {line}"
             );
-            command
+            vec![
+                command,
+                columns[2].replace('`', "").trim().to_string(),
+                columns[3].replace('`', "").trim().to_string(),
+            ]
         })
         .collect::<Vec<_>>();
 
-    assert_eq!(registered.len(), 11, "handler registration count changed");
+    assert_eq!(
+        contracts.len(),
+        11,
+        "all migrated command contracts are recorded"
+    );
     assert_eq!(
         rows.len(),
-        registered.len(),
-        "inventory has every handler once"
+        contracts.len(),
+        "inventory has every contract once"
     );
-    assert_eq!(
-        rows, registered,
-        "inventory follows the registered command list"
-    );
-    let unique = rows.iter().collect::<HashSet<_>>();
-    assert_eq!(
-        unique.len(),
-        rows.len(),
-        "inventory has no duplicate command"
-    );
+    for (inventory_row, contract) in rows.iter().zip(&contracts) {
+        assert_eq!(
+            inventory_row, contract,
+            "inventory preserves command wire shape"
+        );
+    }
+    let unique = contracts.iter().map(|row| &row[0]).collect::<HashSet<_>>();
+    assert_eq!(unique.len(), contracts.len(), "no duplicate command names");
 }

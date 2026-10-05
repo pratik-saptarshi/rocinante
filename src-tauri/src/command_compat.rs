@@ -4,17 +4,55 @@ use crate::risk_contract::PrRiskEvaluation;
 use crate::storage::BaselineStore;
 use crate::types::PrCandidate;
 
+/// Stable names and wire shapes from the retired host, retained as a
+/// host-neutral migration contract while the native shell calls shared APIs.
+pub const MIGRATED_COMMAND_CONTRACTS: [(&str, &str, &str); 11] = [
+    (
+        "run_scan",
+        "payload: { token, root, release }",
+        "TelemetryImportSummary",
+    ),
+    (
+        "query_metrics",
+        "token, optional name, optional release",
+        "Vec<AnalysisMetric> (plugin, key, value, details)",
+    ),
+    ("ingest_event", "token, event", "unit / JSON null"),
+    ("promote_lifecycle", "token", "promoted event count (usize)"),
+    (
+        "query_aggregates",
+        "token, optional name, optional release",
+        "Vec<TelemetryPoint>",
+    ),
+    (
+        "committer_scores",
+        "token, optional name, optional release",
+        "Vec<CommitterScore>",
+    ),
+    ("rank_prs", "token, prs", "Vec<PrRanking>"),
+    ("evaluate_pr_risk", "token, candidate", "PrRiskEvaluation"),
+    ("query_release_baseline", "token, repoName", "optional f64"),
+    (
+        "reseed_release_baseline",
+        "token, repoName, baselineComplexity",
+        "f64",
+    ),
+    (
+        "update_scoring_weights",
+        "token, weights",
+        "unit / JSON null",
+    ),
+];
+
 fn authorize_baseline_access(token: &str) -> Result<(), String> {
     let principal = decode_principal(token).map_err(|e| e.to_string())?;
     require_admin(&principal).map_err(|e| e.to_string())
 }
 
-#[tauri::command]
 pub fn evaluate_pr_risk(token: String, candidate: PrCandidate) -> Result<PrRiskEvaluation, String> {
     admin::evaluate_pr_risk(&token, candidate).map_err(|e| e.to_string())
 }
 
-#[tauri::command]
 pub fn query_release_baseline(
     token: String,
     kv_path: String,
@@ -26,7 +64,6 @@ pub fn query_release_baseline(
     query_release_baseline_with_store(token, store, repo_name)
 }
 
-#[tauri::command]
 pub fn reseed_release_baseline(
     token: String,
     kv_path: String,

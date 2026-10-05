@@ -6,7 +6,7 @@ use repo_analyzer_core::types::PrCandidate;
 use tempfile::tempdir;
 
 #[test]
-fn tauri_command_evaluate_pr_risk_uses_the_default_schema() {
+fn command_compat_evaluate_pr_risk_uses_the_default_schema() {
     let token = issue_test_token("alice", &["admin"], 3600);
     let candidate = PrCandidate {
         pr_id: "pr-21".to_string(),
@@ -30,7 +30,7 @@ fn tauri_command_evaluate_pr_risk_uses_the_default_schema() {
 }
 
 #[test]
-fn tauri_command_rejects_non_admin_pr_risk_evaluation() {
+fn command_compat_rejects_non_admin_pr_risk_evaluation() {
     let token = issue_test_token("bob", &["reader"], 3600);
     let candidate = PrCandidate {
         pr_id: "pr-22".to_string(),
@@ -50,7 +50,7 @@ fn tauri_command_rejects_non_admin_pr_risk_evaluation() {
 }
 
 #[test]
-fn tauri_command_release_baseline_roundtrips() {
+fn command_compat_release_baseline_roundtrips() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
@@ -86,7 +86,7 @@ fn tauri_command_release_baseline_roundtrips() {
 }
 
 #[test]
-fn tauri_command_release_baseline_store_facade_roundtrips() {
+fn command_compat_release_baseline_store_facade_roundtrips() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
@@ -116,7 +116,7 @@ fn tauri_command_release_baseline_store_facade_roundtrips() {
 }
 
 #[test]
-fn tauri_command_release_baseline_rejects_non_admin_before_opening_store() {
+fn command_compat_release_baseline_rejects_non_admin_before_opening_store() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
