@@ -79,22 +79,6 @@ pub fn activate_application() -> bool {
     accepted
 }
 
-pub fn request_application_termination_after_ui_pass() {
-    if let Some(main_thread) = MainThreadMarker::new() {
-        let application = NSApplication::sharedApplication(main_thread);
-        // Winit closes its windows from applicationWillTerminate. Deferring the
-        // request lets the current eframe UI callback return before that happens.
-        unsafe {
-            let _: () = msg_send![
-                &*application,
-                performSelector: sel!(terminate:),
-                withObject: None::<&AnyObject>,
-                afterDelay: 0.01
-            ];
-        }
-    }
-}
-
 pub fn register(
     sender: Sender<String>,
     repaint_context: Arc<Mutex<Option<eframe::egui::Context>>>,
