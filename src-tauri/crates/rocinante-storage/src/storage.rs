@@ -13,15 +13,14 @@ use rocinante_core::baseline::{score_baseline_components, BaselineScoreInput};
 use rusqlite::{params as sqlite_params, Connection as SqliteConnection};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::fs;
 use std::fs::OpenOptions;
 use std::path::Path;
 use std::path::PathBuf;
-#[cfg(test)]
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, RecvTimeoutError, SyncSender};
-use std::sync::{Arc, Mutex, MutexGuard, RwLock};
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock, RwLock, Weak};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 #[cfg(unix)]
@@ -104,11 +103,84 @@ pub enum AnalyticsQueryMode {
     Mutable,
 }
 
+#[derive(Debug)]
+struct AnalyticsSnapshotLease {
+    path: PathBuf,
+    retired: AtomicBool,
+}
+
+impl Drop for AnalyticsSnapshotLease {
+    fn drop(&mut self) {
+        if self.retired.load(Ordering::Acquire) {
+            let _ = fs::remove_file(&self.path);
+        }
+    }
+}
+
+type AnalyticsSnapshotLeaseRegistry = HashMap<PathBuf, Weak<AnalyticsSnapshotLease>>;
+
+static ANALYTICS_SNAPSHOT_LEASES: OnceLock<Mutex<AnalyticsSnapshotLeaseRegistry>> = OnceLock::new();
+
+fn analytics_snapshot_leases() -> &'static Mutex<AnalyticsSnapshotLeaseRegistry> {
+    ANALYTICS_SNAPSHOT_LEASES.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn absolute_analytics_snapshot_path(path: &Path) -> PathBuf {
+    if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join(path)
+    }
+}
+
+fn register_analytics_snapshot_lease(
+    path: &str,
+    snapshot_id: u64,
+) -> Option<Arc<AnalyticsSnapshotLease>> {
+    if snapshot_id == 0 {
+        return None;
+    }
+    let path = absolute_analytics_snapshot_path(Path::new(path));
+    let mut leases = analytics_snapshot_leases()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    if let Some(lease) = leases.get(&path).and_then(Weak::upgrade) {
+        return Some(lease);
+    }
+
+    let lease = Arc::new(AnalyticsSnapshotLease {
+        path: path.clone(),
+        retired: AtomicBool::new(false),
+    });
+    leases.insert(path, Arc::downgrade(&lease));
+    Some(lease)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(from = "AnalyticsSnapshotDescriptor")]
 pub struct AnalyticsSnapshot {
     pub path: String,
     pub snapshot_id: u64,
     pub immutable: bool,
+    #[serde(skip)]
+    _lease: Option<Arc<AnalyticsSnapshotLease>>,
+}
+
+#[derive(Deserialize)]
+struct AnalyticsSnapshotDescriptor {
+    path: String,
+    snapshot_id: u64,
+    immutable: bool,
+}
+
+impl From<AnalyticsSnapshotDescriptor> for AnalyticsSnapshot {
+    fn from(descriptor: AnalyticsSnapshotDescriptor) -> Self {
+        let mut snapshot = Self::new(&descriptor.path, descriptor.snapshot_id);
+        snapshot.immutable = descriptor.immutable;
+        snapshot
+    }
 }
 
 impl AnalyticsSnapshot {
@@ -117,6 +189,7 @@ impl AnalyticsSnapshot {
             path: path.to_string(),
             snapshot_id,
             immutable: true,
+            _lease: register_analytics_snapshot_lease(path, snapshot_id),
         }
     }
 
@@ -900,6 +973,9 @@ impl DualLayerStore {
             .parent()
             .filter(|path| !path.as_os_str().is_empty())
             .unwrap_or_else(|| Path::new("."));
+        let mut leases = analytics_snapshot_leases()
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
         for entry in fs::read_dir(parent).map_err(|error| {
             AnalyzerError::Io(format!("analytics snapshot cleanup failed: {error}"))
         })? {
@@ -923,7 +999,14 @@ impl DualLayerStore {
                 })?
                 .is_file()
             {
-                fs::remove_file(entry.path()).map_err(|error| {
+                let path = entry.path();
+                let lease_key = absolute_analytics_snapshot_path(&path);
+                if let Some(lease) = leases.get(&lease_key).and_then(Weak::upgrade) {
+                    lease.retired.store(true, Ordering::Release);
+                    continue;
+                }
+                leases.remove(&lease_key);
+                fs::remove_file(path).map_err(|error| {
                     AnalyzerError::Io(format!("analytics snapshot cleanup failed: {error}"))
                 })?;
             }
@@ -1586,7 +1669,7 @@ impl DualLayerStore {
             .promotion_barrier
             .read()
             .unwrap_or_else(|e| e.into_inner());
-        let snapshot_path = self.analytics_read_path(snapshot);
+        let snapshot_path = self.analytics_read_path(snapshot)?;
         let conn =
             Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());
@@ -1648,18 +1731,29 @@ impl DualLayerStore {
         Err(analytics_feature_unavailable())
     }
 
-    fn analytics_read_path(&self, snapshot: &AnalyticsSnapshot) -> String {
+    fn analytics_read_path(&self, snapshot: &AnalyticsSnapshot) -> Result<String, AnalyzerError> {
         if snapshot.snapshot_id > 0 {
             let replica_path = self.snapshot_path(snapshot.snapshot_id);
             if Path::new(&replica_path).exists() {
-                return replica_path;
+                return Ok(replica_path);
             }
+            let requested_path = Path::new(&snapshot.path);
+            if absolute_analytics_snapshot_path(requested_path)
+                != absolute_analytics_snapshot_path(Path::new(&self.columnar_path))
+                && requested_path.exists()
+            {
+                return Ok(snapshot.path.clone());
+            }
+            return Err(AnalyzerError::Db(format!(
+                "immutable analytics snapshot {} is no longer available",
+                snapshot.snapshot_id
+            )));
         }
 
         if Path::new(&snapshot.path).exists() {
-            snapshot.path.clone()
+            Ok(snapshot.path.clone())
         } else {
-            self.columnar_path.clone()
+            Ok(self.columnar_path.clone())
         }
     }
 
@@ -1674,7 +1768,7 @@ impl DualLayerStore {
             .read()
             .unwrap_or_else(|e| e.into_inner());
         let snapshot = self.read_snapshot_for_query();
-        let snapshot_path = self.analytics_read_path(&snapshot);
+        let snapshot_path = self.analytics_read_path(&snapshot)?;
         let conn =
             Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let name = scrub_text(&query.name.clone().unwrap_or_default());
@@ -1897,10 +1991,12 @@ mod queue_lag_tests {
 #[cfg(test)]
 mod sqlite_ingestion_tests {
     use super::{
-        now_ts, prefix_successor, CommitIngestionEvent, DualLayerStore, SqliteIngestionDb,
+        now_ts, prefix_successor, AdminQuery, AnalyticsQueryMode, AnalyticsSnapshot,
+        CommitIngestionEvent, DualLayerStore, SqliteIngestionDb,
     };
     use crate::types::TelemetryPoint;
     use duckdb::Connection as DuckConnection;
+    use std::path::PathBuf;
     use std::thread;
     use tempfile::tempdir;
 
@@ -2158,6 +2254,102 @@ mod sqlite_ingestion_tests {
             })
             .expect("count analytics snapshot rows");
         assert_eq!(rows, 1);
+    }
+
+    #[test]
+    fn retained_snapshot_stays_immutable_until_its_handle_is_dropped() {
+        let dir = tempdir().expect("temporary directory");
+        let kv_path = dir.path().join("kv");
+        let columnar_path = dir.path().join("analytics.duckdb");
+        let store = DualLayerStore::open(
+            kv_path.to_str().expect("kv path"),
+            columnar_path.to_str().expect("columnar path"),
+        )
+        .expect("open dual layer store");
+
+        let mut baseline = event("snapshot-baseline");
+        baseline.release = "baseline".to_string();
+        store
+            .ingest_commit_event(&baseline)
+            .expect("ingest baseline event");
+        store
+            .promote_to_columnar()
+            .expect("publish baseline snapshot");
+
+        let retained_snapshot = store.read_snapshot_for_query();
+        let retained_path = PathBuf::from(&retained_snapshot.path);
+        assert!(retained_path.exists());
+
+        let mut later = event("snapshot-later");
+        later.release = "later".to_string();
+        later.telemetry[0].metric_value = 13.0;
+        store
+            .ingest_commit_event(&later)
+            .expect("ingest later event");
+        store.promote_to_columnar().expect("publish later snapshot");
+
+        assert!(
+            retained_path.exists(),
+            "the live snapshot handle retains its file"
+        );
+        let retained_points = store
+            .aggregate_by_query_with_snapshot(
+                &AdminQuery {
+                    name: None,
+                    release: Some("later".to_string()),
+                },
+                &retained_snapshot,
+                AnalyticsQueryMode::ReadOnly,
+            )
+            .expect("query the retained snapshot");
+        assert!(retained_points.is_empty());
+        let current_points = store
+            .aggregate_by_query(&AdminQuery {
+                name: None,
+                release: Some("later".to_string()),
+            })
+            .expect("query the current snapshot");
+        assert!(!current_points.is_empty());
+        assert_eq!(current_points[0].metric_value, 13.0);
+
+        drop(retained_snapshot);
+        let mut newest = event("snapshot-newest");
+        newest.release = "newest".to_string();
+        store
+            .ingest_commit_event(&newest)
+            .expect("ingest newest event");
+        store
+            .promote_to_columnar()
+            .expect("publish newest snapshot");
+        assert!(
+            !retained_path.exists(),
+            "retired snapshot is removed after its final handle is dropped"
+        );
+    }
+
+    #[test]
+    fn deleted_versioned_snapshot_never_falls_back_to_mutable_database() {
+        let dir = tempdir().expect("temporary directory");
+        let kv_path = dir.path().join("kv");
+        let columnar_path = dir.path().join("analytics.duckdb");
+        let store = DualLayerStore::open(
+            kv_path.to_str().expect("kv path"),
+            columnar_path.to_str().expect("columnar path"),
+        )
+        .expect("open dual layer store");
+        let snapshot = AnalyticsSnapshot::new(columnar_path.to_str().expect("columnar path"), 42);
+
+        let error = store
+            .aggregate_by_query_with_snapshot(
+                &AdminQuery {
+                    name: None,
+                    release: None,
+                },
+                &snapshot,
+                AnalyticsQueryMode::ReadOnly,
+            )
+            .expect_err("a missing versioned snapshot must fail closed");
+        assert!(error.to_string().contains("snapshot 42"));
     }
 
     #[test]
