@@ -23,7 +23,7 @@ which retains the original investigation and implementation history.
 | 3 — Preserve DuckDB binary-only packaging | Retain the SHA-256-verified official shared library and prohibit `bundled`, `bundled-cmake`, and any other source-build feature. | Run the DuckDB feature guard and provisioner contracts; inspect all supported package jobs and installed runtime evidence for Linux, macOS, and Windows. | The local DuckDB feature guard and provisioner contracts pass. On `27b9e21`, the Linux, macOS, and Windows native-shell package jobs passed, including runtime/loader checks; DuckDB remains a checksum-verified prebuilt and no source build is allowed. |
 | 4 — Validate UI and native acceptance | Validate the pinned pnpm UI lane and installed shell behavior: cold/warm URL delivery, saved-state restart, Linux notification and dependency-floor checks, plus platform packaging. | Required UI, package, registration, URL-dispatch, notification, dependency-floor, and aggregate CI checks terminate green at one PR head. Record any behavior the scripts do not exercise as open acceptance. | Hosted `ui-quality` passed on `27b9e21` using pinned pnpm `12.9.1`; Linux/macOS URL delivery, Windows registration, all package jobs, and Linux visible notification acceptance passed. The local installed macOS acceptance passed cold/warm delivery, close-to-tray/Show/Quit handling, notification request, visible restore, and saved-state restart. AppKit returned `accepted=false`; physical menu delivery and frontmost restoration remain open. Opt-in manual verification is `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh`; it waits for actual Show and Quit selections, checks frontmost state after Show, and verifies process exit. |
 | 5 — Resolve review comments and keep complex work tracked | Keep the weighted-retention PR #108 comment linked to its fix. Confirm other findings are fixed or have concrete roadmap acceptance criteria (including BI-060 operation draining and atomic persistence). | Refresh PR #108/#112 review threads; resolve only findings whose implementation and required validation are complete. Confirm deferred work has owner-independent scope, acceptance criteria, and a test plan in the roadmap/bead tracker. | The weighted-retention and admin-secret threads were replied to with validation evidence and resolved; identity and shutdown/persistence follow-ups are resolved or tracked under BI-060. The last live GraphQL refresh returned zero unresolved PR #112 review threads. Refreshing GitHub during this pass failed, so current thread state is not newly verified. |
-| 6 — Reconcile evidence and release decision | Synchronize roadmap, test plan, BOM, publish checklist, codemap, and dated decision record to actual results. | Run roadmap/publish contracts and `git diff --check`; only mark hosted/platform checks complete with terminal evidence. PR #112 must have a green aggregate and no unresolved blocking review comments before it is considered ready for protected merge. | Local roadmap/publish contracts passed 10/10, the targeted security suite passed 5/5, Rust formatting and `git diff --check` passed; the latest hosted CI run `37311344183` on `27b9e21` passed 24 checks with no failures and one informational coverage skip. Security and Dependency Review also passed. Direct physical tray-menu and foreground-activation evidence remains open. Current GitHub state could not be refreshed in this pass. |
+| 6 — Reconcile evidence and release decision | Synchronize roadmap, test plan, BOM, publish checklist, codemap, and dated decision record to actual results. | Run roadmap/publish contracts and `git diff --check`; only mark hosted/platform checks complete with terminal evidence. PR #112 must have a green aggregate and no unresolved blocking review comments before it is considered ready for protected merge. | Local roadmap/publish contracts passed 10/10, the targeted security suite passed 5/5, Rust formatting and `git diff --check` passed; the latest hosted CI run `37311344183` on `27b9e21` passed 24 checks with no failures and one informational coverage skip. Security and Dependency Review also passed. On `2a904b0`, the manual-tray contract, formatting, roadmap/governance, DuckDB, desktop dependency-floor, and diff checks pass locally. Direct physical tray-menu and foreground-activation evidence remains open. Current GitHub state could not be refreshed in this pass. |
 
 ## Execution log — 2026-10-05
 
@@ -44,6 +44,28 @@ which retains the original investigation and implementation history.
   passed cached `--no-fetch --deny warnings` scans against database revision
   `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories); this does not
   replace a future database refresh.
+
+### Current local closeout validation — commit `2a904b0`
+
+- Commit `2a904b0` (`test(desktop): add manual macOS tray acceptance`) was
+  pushed to the existing `fix/weighted-rollup-aggregation` branch. GitHub
+  PR/check queries and a remote-ref refresh then failed because
+  `api.github.com` and `github.com` could not be resolved; hosted status for
+  `2a904b0` is unverified.
+- `bash -n scripts/test-macos-url-dispatch.sh`, the desktop-shell
+  `macos_installation` contract test (1/1), roadmap contracts (10/10), the
+  advisory governance checker (0 registry entries and 0 ignores), the DuckDB
+  prebuilt-only guard, the desktop dependency-floor guard, Rust formatting,
+  and `git diff --check` passed on this worktree.
+- The RustSec database refresh failed. Both supported lockfiles passed cached
+  `--no-fetch --deny warnings` scans against revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories; 517 app and
+  82 migration-tool dependencies). Cargo emitted a crates.io index lock warning
+  but returned success with no audit findings. This is not a fresh-database
+  audit.
+- The manual tray mode has not been run on an interactive macOS desktop. A
+  person still needs to select Show and Quit and record the resulting
+  frontmost/process-exit evidence.
 
 ### Earlier progress snapshot — before replacement hosted validation
 
