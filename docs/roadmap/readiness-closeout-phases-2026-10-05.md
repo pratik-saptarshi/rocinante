@@ -31,7 +31,7 @@ which retains the original investigation and implementation history.
 |---|---|---|---|
 | 7 — Reconcile current evidence | Update current-state roadmap, test plan, security roadmaps, README, codemap, BOM, publish checklist, and dated decision summary to PR head `e9d6d3a` and its successful hosted runs. Preserve older run data as history. | Run `bash scripts/test-roadmap-doc-contracts.sh`, inspect current summaries for stale-head references, and require `rtk git diff --check` to pass. | Complete locally. Current summaries cite `e9d6d3a` and runs `37328034504`, `37328034651`, and `37328034502`; older `3748d5b` references remain as dated history. All 10 roadmap/publish contract tests and `rtk git diff --check` pass. Hosted validation of this documentation refresh follows the push. |
 | 8 — Complete interactive macOS acceptance | Run the opt-in installed-app check on this interactive Mac and physically choose Show and Quit from the app menu. Require frontmost state after Show and successful process exit after Quit. | Run with `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1` and leave strict cold-launch frontmost mode unset; manual mode checks frontmost after the physical Show action. Require a zero exit and the script's success witness. | Still open. The strict cold-launch attempt stopped before tray prompts (`visible=true`, `frontmost=false`). Two manual-mode attempts installed and registered the bundle, passed cold URL, notification, and close-to-tray setup, then each timed out after 60 seconds without observing `show_action_started=true`. Warm URL, Show foreground, Quit, and restart remain unverified. No physical Show/Quit acceptance is claimed; retry when a person can click Show and Quit during the prompts. |
-| 9 — Final closeout audit | Record the interactive result, rerun document contracts and diff checks, push the existing PR branch, and refresh all hosted checks at its new head. | Require green aggregate CI, Security, and Dependency Review at one head, no unresolved blocking comments, and all required roadmap acceptance evidence. | Follow-up commit `c88062d` is on PR #112. Security run `37335883407` and Dependency Review run `37335883632` passed; the security run includes successful RustSec audit, CodeQL, and secret scan. CI run `37335883596` is still running. Workspace tests, governance, UI quality, and platform package/URL lifecycle jobs passed, but `rust-quality-gates` has remained in Linux dependency installation since 15:51 UTC; downstream Rust lint has not started, so the aggregate is not green. Local formatting, the focused 5-test advisory suite, all 10 roadmap/publish contracts, and `git diff --check` pass. Phase 8 remains open. |
+| 9 — Final closeout audit | Record the interactive result, rerun document contracts and diff checks, push the existing PR branch, and refresh all hosted checks at its new head. | Require green aggregate CI, Security, and Dependency Review at one head, no unresolved blocking comments, and all required roadmap acceptance evidence. | On evidence head `6555587`, CI run `37339337822`, Security run `37339337692`, and Dependency Review run `37339337795` all passed; CI included Rust format, Clippy, core/storage/workspace tests, governance, UI, and Linux/macOS/Windows package and lifecycle jobs. PR #112 remains OPEN/MERGEABLE with both review threads resolved. The `c88062d` CI run was cancelled by the subsequent evidence-only push while its native dependency setup/gate was still running. Local format, focused advisory suite, 10 roadmap/publish contracts, and `git diff --check` pass. Phase 8 remains open; final readiness is not claimed. |
 
 ## Execution log — 2026-10-05
 
@@ -91,18 +91,30 @@ refresh were pushed in `c88062d`; its replacement run is recorded below.
 
 ### Follow-up hosted validation and macOS retry — `c88062d`
 
-CI run `37335883596` on the current PR head passed workspace tests, security
-governance, UI quality, native package jobs, and URL lifecycle jobs. Its
-`rust-quality-gates` job remains in the Linux native dependency installation
-step, started at 15:51 UTC, with no terminal result; downstream Rust lint has
-not started. Security run `37335883407` passed RustSec audit, CodeQL, and
-secret scan. Dependency Review run `37335883632` passed.
+CI run `37335883596` passed workspace tests, security governance, UI quality,
+native package jobs, and URL lifecycle jobs before the subsequent evidence-
+only push cancelled it while `rust-quality-gates` was still running Linux
+dependency installation and the CI gate contract. The full lint gate was not
+reached on this attempt. Security run `37335883407` passed RustSec audit,
+CodeQL, and secret scan. Dependency Review run `37335883632` passed.
 
 A repeated manual macOS run rebuilt the app, confirmed the DuckDB 1.5.6
 prebuilt, installed and registered the temporary app, passed cold URL,
 notification, and close-to-tray setup, then timed out after 60 seconds without
 observing `show_action_started=true`. The Show action, warm URL, foreground
 state, Quit action, and restart were not verified.
+
+### Latest complete hosted validation — `6555587`
+
+On head `65555870a22ddade2cae3592e97eb8d0b7446654`, CI run `37339337822`,
+Security run `37339337692`, and Dependency Review run `37339337795` all
+completed successfully. CI passed Rust formatting, Clippy, core/storage/full
+workspace tests, security governance, UI quality, and Linux/macOS/Windows
+package and lifecycle jobs. Security passed RustSec audit, CodeQL, and secret
+scan. The informational coverage job was skipped as configured. PR #112
+remains OPEN/MERGEABLE at this evidence head with both review threads resolved.
+The interactive macOS Show/Quit attempt still timed out at the Show prompt, so
+Phase 8 remains open and the roadmap is not complete.
 
 ### Review findings after green checks on `b3f0c83`
 
