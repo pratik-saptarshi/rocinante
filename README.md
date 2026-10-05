@@ -354,12 +354,14 @@ the app-relative loader path, and declares the scheme in the `.app` bundle
 before registering it through Launch Services. The installed macOS lifecycle
 acceptance passes cold/warm URL delivery, tray actions, notification request,
 and saved-state restart on this host. The native-shell package matrix builds
-and inspects the Linux, macOS, and Windows installations; local macOS
-acceptance passes, while current-head hosted package results and Linux and
-Windows acceptance remain pending.
+and inspects the Linux, macOS, and Windows installations. Hosted CI run
+`37305039584` passed package/runtime-loader validation and URL/restart acceptance
+on all three platforms, plus visible Linux notification delivery, on PR #112
+source head `ff367c4`. The installed macOS acceptance also passes locally.
 Visible notification delivery on macOS and Windows, physical tray-menu clicks,
-and macOS foreground activation still need interactive validation. Release
-distribution must sign the completed app bundle after packaging.
+and macOS foreground activation still need interactive validation. Verify the
+latest PR checks after subsequent changes. Release distribution must sign the
+completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.
 

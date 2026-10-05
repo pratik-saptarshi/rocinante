@@ -11,13 +11,14 @@ DuckDB remains a checksum-verified prebuilt shared library and is never
 compiled from source. PR #108 is merged; follow-up branch
 `fix/weighted-rollup-aggregation` is the active PR #112 review path. The stale
 test assertion was corrected in commit `8285ee6`, followed by readiness-doc
-syncs on the same branch. CI run `37302536069` on parent head `cf9c1d3` passed UI quality,
-Rust quality, security, governance, dependency review, platform packaging, and
-URL checks; its core and workspace test jobs failed on a stale checklist
-assertion. The correction and updated readiness records are pushed at
-`8285ee6`; local documentation contracts and targeted security tests pass.
-CodeQL was still running in the last reachable snapshot, and a fresh GitHub
-status refresh failed to connect. Do not treat hosted readiness as complete.
+syncs on the same branch. On verified PR source head `ff367c4`, CI run
+`37305039584` completed with 24 passed checks, no failures, and one configured
+coverage skip. Security run `37305039580` passed CodeQL, RustSec audit, and
+secret scan; Dependency Review passed. UI, Rust quality/tests, aggregate,
+Linux/macOS/Windows packages and URL lifecycle also passed. PR #108 has no
+unresolved review threads and the live Dependabot query returned no open
+alerts. The evidence above applies to ff367c4; readiness for a newer PR head depends on terminal-green hosted checks for that exact head. Manual physical
+tray-menu clicks and macOS foreground activation remain unverified.
 
 ## Project Responsibility
 Rocinante is a cross-language planning and execution workspace for AI quality
@@ -150,13 +151,13 @@ desktop host.
 
 ## Governance and Execution Snapshot
 
-- PR #108 is merged into current `origin/main` at `eb83be9`. PR #112 carries the weighted-retention correction on `fix/weighted-rollup-aggregation`; corrected test contract `8285ee6` and subsequent readiness-doc syncs are pushed. The test preserves `metric_sum` and `sample_count` in aggregate metrics and committer scoring. The full serial workspace suite, storage suite (21/21), formatting, warning-denied Clippy, and roadmap/publish contracts pass locally. A response linking the PR #108 review thread to PR #112 was posted. CI run `37302536069` on parent head `cf9c1d3` failed on a stale security-checklist assertion in two Rust test jobs; the local correction passes. CodeQL was still in progress in that snapshot; current hosted state needs refresh.
-- Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration locally. Native package contract tests pass 6/6; Linux/macOS/Windows package and current-worktree lifecycle checks still need hosted evidence.
-- The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty; governance contracts and cached-database audits pass. A fresh RustSec database retrieval was blocked by GitHub connectivity.
+- PR #108 is merged into current `origin/main` at `eb83be9`. PR #112 carries the weighted-retention correction on `fix/weighted-rollup-aggregation`; the full serial workspace suite, storage suite (21/21), formatting, warning-denied Clippy, and roadmap/publish contracts pass locally. Hosted CI run `37305039584` and Security run `37305039580` passed on source head `ff367c4`; the two formerly unresolved PR #108 threads are resolved with this evidence.
+- Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration. The native package and URL lifecycle jobs passed on Linux/macOS/Windows in run `37305039584`. Direct physical tray-menu validation remains open.
+- The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty; both supported lockfiles pass a fresh audit, and hosted governance plus RustSec audit passed. The live Dependabot alert query returned zero open alerts.
 - On the latest local code, full-workspace tests pass serially, the storage suite passes 21/21, formatting passes, and all-target/all-feature Clippy passes with warnings denied. Earlier worktree evidence also covers `cargo check --offline --workspace --all-targets` and test-target compilation.
-- Rust formatting, CI scope, DuckDB prebuilt-only, native packaging, dependency-guard, governance, and roadmap contracts have local pass evidence. The last reachable hosted snapshot showed Security and platform checks green, but full-workspace tests failed on a stale assertion and CodeQL remained in progress. The correction is pushed at `8285ee6`; the status refresh failed.
-- pnpm `12.9.1` is pinned and was verified as the latest stable release on 2026-10-05. Typecheck, all 63 UI tests, and the production build passed as diagnostics with global pnpm `12.8.1`; the last reachable PR #112 snapshot reported the pinned `ui-quality` lane green.
-- Previously recorded installed macOS acceptance passes cold/warm URL delivery, saved-state restart, tray/window flow, and the notification request. AppKit returned `accepted=false`; foreground activation is not claimed. Linux/Windows and same-head hosted platform checks remain pending.
+- Rust formatting, CI scope, DuckDB prebuilt-only, native packaging, dependency-guard, governance, and roadmap contracts have local pass evidence. The hosted aggregate and required checks passed on `ff367c4`; one informational coverage job was skipped.
+- pnpm `12.9.1` is pinned and was verified as the latest stable release on 2026-10-05. Hosted `ui-quality` passed with the pin, including typecheck, UI tests, and production build; local registry signature lookup remains unavailable.
+- The installed macOS acceptance passes cold/warm URL delivery, saved-state restart, close-to-tray/Show/Quit handling, visible restore, and notification request. AppKit returned `accepted=false`, and physical tray-menu clicks were not exercised; foreground activation remains unverified.
 
 ## Design Patterns
 

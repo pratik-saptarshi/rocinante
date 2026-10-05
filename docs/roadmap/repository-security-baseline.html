@@ -4,11 +4,14 @@
 
 The remediation worktree has removed Tauri/Wry and GTK/GLib from the supported
 application graph. The two remaining RustSec packages were eliminated by
-retiring their dependency path; no security-owner exception is recorded. The
+retiring their dependency paths; no security-owner exception is recorded. The
 registry and Cargo audit ignore list are empty, governance contracts pass, and
-unfiltered audits pass against the cached RustSec database. A fresh database
-refresh could not connect to GitHub. Hosted security and native package checks
-for this worktree are still pending, so release remains blocked.
+both supported lockfiles pass unfiltered audits on refreshed RustSec revision
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee`. On PR #112 source head `ff367c4`,
+hosted RustSec audit, governance, CodeQL, secret scan, aggregate, and all native
+package/lifecycle jobs passed; the live Dependabot query found no open alerts.
+The remaining release evidence is an interactive macOS tray-menu click and
+foreground activation; the latest local AppKit request returned `accepted=false`.
 
 ## Main Branch Standards
 
@@ -34,12 +37,12 @@ for this worktree are still pending, so release remains blocked.
 - Open Dependabot alerts are tracked as release blockers until remediated or explicitly accepted.
 - Dependency audit exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`.
 - `scripts/dependency-floor-proof.sh` and `scripts/check-desktop-shell-dependencies.sh` reject GTK/GLib, Tauri/Wry, and tracked advisory packages from supported workspace graphs.
-- `scripts/check-security-advisory-exceptions.py` remains fail-closed; its registry is empty and its local contract passes. Hosted execution on the changed branch is pending.
+- `scripts/check-security-advisory-exceptions.py` remains fail-closed; its registry is empty and its local contract passes. Hosted governance and audit passed on PR #112 source head `ff367c4`; verify terminal-green required checks on the latest PR head.
 
 ## Release Blockers
 
-- `RT-RC-001` remains open until a fresh RustSec database audit and hosted governance run verify the empty exception state.
-- Release readiness is blocked until refreshed audits, native platform checks, and the same-head aggregate pass.
-- `R3-F08` / BI-052: the UI lockfile resolves `esbuild@0.28.2`; the last live alert query on 2026-09-30 confirmed the tracked esbuild alert was closed. Other Dependabot alert state needs a fresh query before release.
+- `RT-RC-001`'s fresh unfiltered audits and hosted governance/security checks passed on `ff367c4`; use the latest PR checks for final status and keep the separate interactive native parity gate visible.
+- Release readiness is blocked until required checks pass after the current documentation sync and an interactive macOS tray-menu click/foreground result is recorded.
+- `R3-F08` / BI-052: the UI lockfile resolves `esbuild@0.28.2`; the live Dependabot endpoint returned zero open alerts on 2026-10-05.
 - Historical hosted CI run [37198628846](https://github.com/pratik-saptarshi/rocinante/actions/runs/37198628846) passed the former Tauri lifecycle and package lanes but failed the then-current 17-record governance gate. It does not validate the present native-shell worktree.
-- Current supported lockfiles contain no GTK, GLib, Wry, Tauri runtime, `proc-macro-error`, or `glib` packages. Cached-database unfiltered audits pass with `--deny warnings`; the RustSec revision is `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (last updated 2026-10-03). GitHub connectivity prevented a fresh database refresh.
+- Current supported lockfiles contain no GTK, GLib, Wry, Tauri runtime, `proc-macro-error`, or `glib` packages. Fresh unfiltered audits pass with `--deny warnings` on RustSec revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (last updated 2026-10-03); hosted audit, governance, and CodeQL passed on source head `ff367c4`.

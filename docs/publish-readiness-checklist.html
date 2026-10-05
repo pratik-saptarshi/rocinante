@@ -4,31 +4,33 @@
 
 PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains the active
 protected review path from branch `fix/weighted-rollup-aggregation`. The stale
-test assertion was corrected in `8285ee6`, followed by readiness-doc syncs on
-the same branch. CI run `37302536069` on parent head `cf9c1d3` passed UI quality, Rust quality,
-formatting, Clippy, RustSec audit, governance, dependency review, all three
-native packages, URL dispatch, and Windows registration. Its core and full
-workspace test jobs failed on the same obsolete text assertion in
-`security_advisory_exception_tests`. That assertion is corrected and pushed at
-`8285ee6`, and the full serial analytics workspace passes 269 tests across 63
-suites. The GitHub checks API could not be reached after the push; require a
-green replacement aggregate and CodeQL run before release readiness.
+test assertion was corrected in `8285ee6`. At verified PR head `ff367c4`, CI
+run `37305039584` completed with 24 passed checks, no failures, and one
+informational coverage skip. The UI, Rust tests and quality, aggregate, Linux/
+macOS/Windows packages, URL lifecycle, Linux notification, and governance
+checks passed. Security run `37305039580` passed CodeQL, RustSec audit, and
+secret scan; Dependency Review also passed. PR #112 was OPEN/CLEAN, and PR #108
+has zero unresolved review threads. The live Dependabot alert query returned no
+open alerts. This evidence is tied to `ff367c4`; assess readiness with terminal
+required-check results for PR #112's latest head.
 
 The security registry and Cargo audit ignore list are empty, and the governance
 checker passes. Fresh, unfiltered audits passed both supported lockfiles
 against RustSec database revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`
-(1,290 advisories). Hosted `rust-audit` and governance also passed on parent
-head `cf9c1d3`; verify replacement results on pushed head `8285ee6`.
+(1,290 advisories). Hosted `rust-audit` and governance passed on `ff367c4` in
+run `37305039580`/`37305039584`; use current PR #112 checks to validate any
+later evidence sync.
 
 The UI pin is pnpm `12.9.1`; local execution could not verify its registry
 signature while `registry.npmjs.org` was unreachable, but hosted `ui-quality`
-passed on parent head `cf9c1d3`. Repeat the hosted check on corrected head
-`8285ee6`.
-Previously recorded macOS URL/restart, tray/window, and notification-request
-checks passed; AppKit returned `accepted=false`, so foregrounding is not
-claimed. DuckDB remains a SHA-verified prebuilt and must never be compiled from
-source. The replacement aggregate, CodeQL, same-head platform results, and
-direct physical tray/menu acceptance remain release gates.
+passed on `ff367c4` with pinned pnpm `12.9.1`; use current PR #112 checks for
+the latest head. The installed macOS acceptance passed cold/warm URL delivery,
+close-to-tray/Show/Quit handling, notification request, visible restore, and
+saved-state restart. AppKit returned `accepted=false`, so foregrounding is not
+claimed, and physical tray-menu clicks remain unverified. DuckDB remains a
+SHA-verified prebuilt and must never be compiled from source. Readiness requires
+terminal-green checks on the latest PR head; interactive tray-menu and
+foreground evidence remain open.
 
 This checklist is the required gating artifact for remote publication to
 `origin/main`.
@@ -91,8 +93,8 @@ Secret scan is enabled in GitHub Actions | [x] | `.github/workflows/security.yml
 Dependency review is enabled for pull requests | [x] | `.github/workflows/dependency-review.yml`
 CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL analysis
 Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
-Dependency registry and audit ignore list are empty | [x] | Local registry/ignore state and governance contract pass after all affected packages were removed; the 15 withdrawn/absent entries have evidence in `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`. Fresh unfiltered audits passed both lockfiles against RustSec revision `ef6173c`; hosted rust-audit and governance passed on parent `cf9c1d3` and must rerun on pushed head `8285ee6`.
-Open Dependabot alerts are closed or formally accepted | [ ] | Last live GitHub query on 2026-10-04 found six alerts open on `main`: #13/#14 (`@vitest/mocker`/`vitest`, fixed in 4.1.11), #12 (`serde_with`, fixed in 3.21.0), #10/#7 (`postcss`, fixed in 8.5.23/8.5.18), and #1 (`glib`, fixed in 0.20.0). The esbuild alert was closed then. Current GitHub API refresh failed on 2026-10-05; do not treat the 10-04 query as current state.
+Dependency registry and audit ignore list are empty | [x] | Local registry/ignore state and governance contract pass after all affected packages were removed; the 15 withdrawn/absent entries have evidence in `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`. Fresh unfiltered audits passed both lockfiles against RustSec revision `ef6173c`; hosted `rust-audit` and governance passed on `ff367c4` in runs `37305039580`/`37305039584`; use current PR #112 checks to verify later evidence syncs.
+Open Dependabot alerts are closed or formally accepted | [x] | Live GitHub API query on 2026-10-05 returned zero open alerts.
 Previously recorded evidence (2026-09-30):
 
 - Remediation branch local checks on 2026-10-03: Rust formatting, roadmap and
@@ -156,17 +158,18 @@ Criterion | Status | Evidence
 ---|---|---
 Rust formatting passes on current worktree | [x] | `cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check` passes.
 Rust lint passes on current worktree | [x] | `cargo clippy --offline --locked --manifest-path src-tauri/Cargo.toml --workspace --all-targets --all-features -- -D warnings` reports no issues.
-Rust tests pass on current worktree | [x] | Offline locked analytics workspace suite passed 269 tests across 63 suites with `-- --test-threads=1`; current same-head hosted confirmation is pending.
-Full Cargo workspace tests pass on current worktree | [x] | Offline locked workspace suite passed locally in serial mode. The cancelled hosted run used the prior remote head and does not validate this worktree.
+Rust tests pass on current worktree | [x] | Offline locked analytics workspace suite passed 269 tests across 63 suites with `-- --test-threads=1`; hosted core, storage, and `rust-workspace-tests` passed in run `37305039584` on `ff367c4`.
+Full Cargo workspace tests pass on current worktree | [x] | Serial local workspace and hosted full-workspace jobs passed; run `37305039584` also passed the aggregate `test` gate on `ff367c4`.
 DuckDB cannot build from source and has SHA-pinned native artifacts | [x] | `scripts/check-duckdb-features.sh`, its contract test, and `scripts/test_provision_duckdb.py` pass locally; see `scripts/duckdb-prebuilt-artifacts.json`
-Installed app loads the verified DuckDB library on all supported OSes | [ ] | Local macOS bundle/load and lifecycle acceptance passes; Linux/Windows and same-head hosted package checks remain pending.
+Installed app loads the verified DuckDB library on all supported OSes | [x] | Linux, macOS, and Windows native-shell package jobs passed with runtime/loader checks in CI run `37305039584` on `ff367c4`; local macOS installed acceptance also passed.
 Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
-Merge gate (`test`) requires native-shell package jobs | [ ] | Workflow contract is updated locally; same-head hosted aggregate is pending.
-UI unit tests pass with pinned pnpm on current worktree | [ ] | Pinned pnpm `12.9.1` could not verify its registry signature because `registry.npmjs.org` was unreachable. Hosted `ui-quality` passed at parent head `cf9c1d3`; rerun on the current PR head.
-UI typecheck passes with pinned pnpm on current worktree | [ ] | Local pinned-pnpm execution was blocked by registry signature/network access; same-head hosted UI check is required.
-UI production build passes with pinned pnpm on current worktree | [ ] | Local pinned-pnpm execution was blocked by registry signature/network access; same-head hosted UI check is required.
+Merge gate (`test`) requires native-shell package jobs | [x] | Workflow contract and hosted aggregate passed in CI run `37305039584` on `ff367c4`; all three required package jobs passed.
+UI unit tests pass with pinned pnpm on current worktree | [x] | Hosted `ui-quality` passed on `ff367c4`, including install, typecheck, unit tests, and production build with pinned pnpm `12.9.1`; local registry signature lookup remains unavailable.
+UI typecheck passes with pinned pnpm on current worktree | [x] | Hosted `ui-quality` passed on `ff367c4`; local pinned-pnpm execution was blocked by registry signature/network access.
+UI production build passes with pinned pnpm on current worktree | [x] | Hosted `ui-quality` production build passed on `ff367c4`; local pinned-pnpm execution was blocked by registry signature/network access.
+Physical macOS tray-menu click and foreground activation are validated | [ ] | Installed lifecycle passed through the shared Show/Quit action handler, but it does not synthesize a menu click; the latest AppKit activation request returned `accepted=false`. Requires an interactive Accessibility-authorized run.
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
 Coverage floor target (informational, enforce in next release) | [ ] | Branch: 85%; Unit: 85%; Integration: 85%; E2E: 85%; target to be promoted to hard fail on a stable CI release lane
 
@@ -186,18 +189,18 @@ Sync local `main` to merged remote tip | [x] | `git merge --no-ff origin/main`
 
 Criterion | Status | Evidence
 ---|---|---
-CI workflow is monitored until terminal state on current worktree | [ ] | Run `37302536069` on parent head `cf9c1d3` failed on an obsolete checklist-text assertion; correction `8285ee6` is pushed, but the checks API could not be reached to inspect its replacement run.
-Security workflow is monitored until terminal state on current worktree | [ ] | Fresh local RustSec audit, hosted governance, and hosted rust-audit passed on `cf9c1d3`; verify the replacement security run on the current PR head.
-Dependency review is monitored until terminal state on current worktree | [x] | Dependency Review passed in the last reachable PR #112 check snapshot; refresh before final closeout.
-Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `rust-coverage-lcov` from CI job `rust-coverage`
+CI workflow is monitored until terminal state on verified source head `ff367c4` | [x] | CI run `37305039584` completed with 24 passed, 0 failed, and one informational coverage skip; verify required checks on the latest PR head.
+Security workflow is monitored until terminal state on verified source head `ff367c4` | [x] | Security run `37305039580` completed with CodeQL, rust-audit, and secret scan successful; verify required checks on the latest PR head.
+Dependency review is monitored until terminal state on verified source head `ff367c4` | [x] | Dependency Review passed; verify required checks on the latest PR head.
+Rust coverage artifact is retained for review | [ ] | `rust-coverage` was skipped as configured on this pull-request run; no artifact was produced.
 
 ## 7) Publish decision
 
-- Publish allowed only when all validation gates are green, the exception registry and audit ignore list are empty, and every supported Rust lockfile passes refreshed `cargo audit --deny warnings`.
-- Local advisory registry and ignore list are empty, and affected package paths have been removed; publish remains blocked until hosted governance/audit checks pass on the updated PR head.
-- Native-shell packaging and lifecycle checks must pass on this worktree before RT-RC-002 can close.
-- Release remains blocked until all required current-head checks are terminal and green.
-- Open Dependabot alerts should be closed or explicitly accepted before publish.
+- CI, Security, Dependency Review, hosted UI, full Rust tests, and all three platform package/lifecycle jobs passed on PR #112 head `ff367c4`; the registry and ignore list are empty, both lockfiles pass the refreshed unfiltered audit, and the live Dependabot query found no open alerts.
+- For each evidence update, require terminal-green hosted checks on the resulting PR head. Keep DuckDB prebuilt-only and never compile it from source.
+- The installed macOS lifecycle passed, but physical tray-menu click delivery and foreground activation remain open acceptance gates; the latter returned `accepted=false`.
+- BI-049/BI-050 interactive parity evidence remains required before RT-RC-002 can close.
+- Release readiness requires terminal-green checks on the latest PR head and the interactive tray-menu/foreground evidence recorded.
 - If any CI job fails, fix the branch and rerun the gate before merging.
 - If the branch contains docs-only changes, the same gating still applies.
 - If `main` is not aligned to `origin/main` ancestry, halt publish workflow until a sync checkpoint PR is merged.
@@ -205,9 +208,9 @@ Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `r
 ## 8) Branch governance and merge checkpoints
 
 - PR #112 is the active protected review path. Its aggregate and platform jobs
-  must finish green on the same final branch commit before publish readiness.
-  The last reachable snapshot was nonterminal; refresh current checks and
-  review threads before resolving the weighted-retention comment.
+  passed on `ff367c4`, and PR #108 has zero unresolved threads after the
+  weighted-retention and admin-secret fixes were validated. Publish readiness
+  requires terminal-green checks on the latest PR head.
 - Feature slice merges should be checkpointed through PR review with explicit evidence updates in:
   - `docs/bill-of-materials.md`
   - `docs/publish-readiness-checklist.html`

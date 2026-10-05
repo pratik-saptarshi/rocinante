@@ -91,17 +91,15 @@ fn zero_exception_security_gate_is_tracked_as_release_blocking() {
     let audit = read_repo_file("../.cargo/audit.toml");
 
     assert!(baseline.contains("Current local status (2026-10-05)"));
-    assert!(baseline.contains("refresh could not connect to GitHub"));
+    assert!(baseline.contains("both supported lockfiles pass unfiltered audits"));
+    assert!(baseline.contains("live Dependabot query found no open alerts"));
     assert!(baseline.contains("docs/roadmap/security-advisory-exceptions.json"));
     assert!(checklist.contains("Dependency registry and audit ignore list are empty"));
     assert!(checklist.contains("Fresh unfiltered audits passed both lockfiles"));
-    assert!(checklist.contains("Hosted `rust-audit` and governance also passed on parent"));
-    assert!(
-        checklist.contains("head `cf9c1d3`; verify replacement results on pushed head `8285ee6`")
-    );
-    assert!(checklist.contains(
-        "Release remains blocked until all required current-head checks are terminal and green"
-    ));
+    assert!(checklist.contains("hosted `rust-audit` and governance passed on `ff367c4`"));
+    assert!(checklist.contains("use current PR #112 checks to validate any"));
+    assert!(checklist
+        .contains("Release readiness requires terminal-green checks on the latest PR head"));
     assert!(proof_script.contains("scripts/check-desktop-shell-dependencies.sh"));
     assert!(audit.contains("ignore = []"));
 }

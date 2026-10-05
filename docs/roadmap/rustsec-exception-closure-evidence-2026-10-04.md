@@ -4,10 +4,12 @@
 dispositions below remain evidence-backed. Phase 4C subsequently removed the
 two remaining affected package paths from both supported lockfiles, without
 security-owner acceptance or review-date extension. The active registry and
-Cargo audit ignore list are empty, and the governance checker passes. Current
-cached-database audits pass; a fresh database fetch and hosted Security check
-remain pending. Sections below that describe two retained exceptions are the
-pre-retirement snapshot and are superseded by the dependency-avoidance closure.
+Cargo audit ignore list are empty, both lockfiles pass fresh unfiltered audits,
+and hosted governance, RustSec audit, and CodeQL passed on PR #112 source head
+`ff367c4`. The live Dependabot query returned zero open alerts. Sections below
+that describe two retained exceptions are the pre-retirement snapshot and are
+superseded by the dependency-avoidance closure. Final readiness must use
+terminal-green hosted checks from the latest PR head.
 
 This records the evidence for closing 15 entries from
 `security-advisory-exceptions.json` and `.cargo/audit.toml`. The RustSec
