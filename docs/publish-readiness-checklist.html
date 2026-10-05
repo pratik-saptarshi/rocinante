@@ -4,14 +4,13 @@
 
 PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains open on `fix/weighted-rollup-aggregation`; current shutdown source `b95a8c1` sets eframe `run_and_return=false` after the previous hosted macOS run proved Quit was received but the process stayed resident.
 
-Local formatting, 52 desktop-shell tests, the full 270-test/64-suite workspace, and warning-denied Clippy pass. The current installed macOS acceptance is inconclusive locally: Launch Services refused the temporary bundle (`-10822`), and direct unbundled execution did not record startup. The earlier green checks on `2fac448` and earlier local lifecycle passes predate this shutdown setting.
+Local formatting, 52 desktop-shell tests, the full 270-test/64-suite workspace, and warning-denied Clippy pass. The current installed macOS acceptance is inconclusive locally: Launch Services refused the temporary bundle (`-10822`), and direct unbundled execution did not record startup. The earlier green checks on `2fac448` and local lifecycle passes predate this shutdown setting. Prior Security run `37346608399` passed on `2fac448`, but does not validate the current shutdown change.
 
 Same-head CI, Security, and Dependency Review must finish successfully before readiness can advance. GitHub Status reported degraded Actions performance at 2026-10-05 19:33 UTC. Previous queued runs on the parent head were cancelled by the subsequent documentation update; fresh runs for the final docs/source head are required. The review comments about the failed manual Show attempt and current quit validation remain open until documented and revalidated.
 
 The dated shutdown roadmap and decision record contain the investigation and acceptance gates. DuckDB remains prebuilt-only, and no physical Show/Quit, frontmost activation, or current-candidate saved-state restart is claimed.
 
-This checklist is the required gating artifact for remote publication to `origin/main`.This checklist is the required gating artifact for remote publication to
-`origin/main`.
+This checklist is the required gating artifact for remote publication to `origin/main`.
 
 Current planning artifacts that must stay in sync:
 
@@ -139,14 +138,14 @@ Rust lint passes on current worktree | [x] | `cargo clippy --offline --locked --
 Rust tests pass on current worktree | [x] | Offline locked full workspace suite passes 270 tests across 64 suites with `-- --test-threads=1`, including the retention re-rollup regression and fallback-secret compatibility test. CI run `37346608465` passed on `2fac448`.
 Full Cargo workspace tests pass on current worktree | [x] | Serial local workspace suite passes 270/64. CI run `37346608465` passed on the same head, including core and storage test shards.
 DuckDB cannot build from source and has SHA-pinned native artifacts | [x] | `scripts/check-duckdb-features.sh`, its contract test, and `scripts/test_provision_duckdb.py` pass locally; see `scripts/duckdb-prebuilt-artifacts.json`
-Installed app loads the verified DuckDB library on all supported OSes | [x] | Linux, macOS, and Windows native-shell package jobs passed with runtime/loader checks in CI run `37346608465` on `2fac448`; local scripted macOS lifecycle acceptance also passed. Physical tray clicks remain open.
+Installed app loads the verified DuckDB library on all supported OSes | [ ] | Package and loader checks passed on earlier head `2fac448`; rerun on the final source/docs head, including the current macOS quit path.
 Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `cargo llvm-cov --locked --manifest-path src-tauri/Cargo.toml --lcov --output-path target/coverage/lcov.info`
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
-Merge gate (`test`) requires native-shell package jobs | [x] | Workflow contract and hosted aggregate passed in CI run `37346608465` on `2fac448`; all three required package jobs passed.
-UI unit tests pass with pinned pnpm on current worktree | [x] | Hosted `ui-quality` passed on `2fac448`, including install, typecheck, unit tests, and production build with pinned pnpm `12.9.1`; local registry signature lookup remains unavailable.
-UI typecheck passes with pinned pnpm on current worktree | [x] | Hosted `ui-quality` passed on `2fac448`; local pinned-pnpm execution was blocked by registry signature/network access.
-UI production build passes with pinned pnpm on current worktree | [x] | Hosted `ui-quality` production build passed on `2fac448`; local pinned-pnpm execution was blocked by registry signature/network access.
+Merge gate (`test`) requires native-shell package jobs | [ ] | The aggregate passed on earlier head `2fac448`; current same-head CI and package/lifecycle jobs must finish green.
+UI unit tests pass with pinned pnpm on current worktree | [ ] | Hosted UI quality passed on `2fac448` with pnpm `12.9.1`; rerun on the final branch head.
+UI typecheck passes with pinned pnpm on current worktree | [ ] | Hosted UI quality passed on `2fac448`; rerun on the final branch head.
+UI production build passes with pinned pnpm on current worktree | [ ] | Hosted production build passed on `2fac448`; rerun on the final branch head.
 Physical macOS tray-menu click and foreground activation are validated | [ ] | Run `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh` on an interactive macOS desktop. The script waits for physical Show and Quit selections, checks the Show and Quit witnesses, verifies frontmost state, and confirms process exit. The most recent manual run after code head `2fac448` timed out at the Show prompt without observing its callback; the required path has not passed. AppKit previously returned `accepted=false`.
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
 Coverage floor target (informational, enforce in next release) | [ ] | Branch: 85%; Unit: 85%; Integration: 85%; E2E: 85%; target to be promoted to hard fail on a stable CI release lane
@@ -167,14 +166,14 @@ Sync local `main` to merged remote tip | [x] | `git merge --no-ff origin/main`
 
 Criterion | Status | Evidence
 ---|---|---
-CI workflow is monitored until terminal state on PR head `2fac448` | [x] | CI run `37346608465` passed.
-Security workflow is monitored until terminal state on PR head `2fac448` | [x] | Security run `37346608399` passed RustSec audit, CodeQL, and secret scan.
-Dependency review is monitored until terminal state on PR head `2fac448` | [x] | Dependency Review run `37346608411` passed.
+CI workflow is monitored until terminal state on the final PR head | [ ] | Current run is pending; do not infer readiness from the previous green head.
+Security workflow is monitored until terminal state on the final PR head | [ ] | Current run is queued; previous RustSec/CodeQL/secret-scan results are historical.
+Dependency review is monitored until terminal state on the final PR head | [ ] | Current run is queued; the earlier pass was on `2fac448`.
 Rust coverage artifact is retained for review | [ ] | `rust-coverage` was skipped as configured on this pull-request run; no artifact was produced.
 
 ## 7) Publish decision
 
-- The latest fully green aggregate is CI run `37346608465` on `2fac448`. Security run `37346608399` and Dependency Review run `37346608411` also passed. The three implementation fixes and scoped-codemap correction were validated locally and hosted at that head; all four threads are resolved.
+- The latest fully green aggregate remains historical: CI `37346608465`, Security `37346608399`, and Dependency Review `37346608411` passed on `2fac448`. Current source `b95a8c1` changes shutdown behavior; same-head workflows and two shutdown review comments remain open.
 - For each evidence update, require terminal-green hosted checks on the resulting PR head. Keep DuckDB prebuilt-only and never compile it from source.
 - The scripted installed macOS lifecycle passed, but the most recent manual run after code head `2fac448` timed out without a Show callback. Tray-menu delivery and foreground activation remain open acceptance gates; AppKit returned `accepted=false`.
 - BI-049/BI-050 interactive parity evidence remains required before RT-RC-002 can close.
