@@ -37,25 +37,10 @@ authenticated repository analysis, and persistence/admin services.
 
 ## Validation
 
-- Workspace formatting, warning-denied all-target/all-feature Clippy, and the
-  full serial test suite pass locally (270 tests across 64 suites); the
-  security-advisory contract suite passes 5/5 after updating stale
-  documentation assertions. The latest targeted documentation checks pass
-  both publish/security integration suites (8 tests total), and the roadmap
-  contracts pass 10/10.
-- The dependency guard requires GTK, GLib, Wry, Tauri runtime, and tracked
-  advisory packages to be absent from supported workspace graphs.
-- CI defines required Linux, macOS, and Windows native-shell package and
-  lifecycle checks. On PR #112 documentation head `2fac448`, CI run
-  `37346608465` passed the aggregate, core/storage/full-workspace tests,
-  formatting, Clippy, UI checks, security governance, platform packages and
-  lifecycle, Windows registration, Linux notifications, and dependency-floor
-  contracts. Security run `37346608399` passed RustSec audit, CodeQL, and
-  secret scan; Dependency Review run `37346608411` passed. Earlier failures
-  on `37317927760` and `496e1ec` were superseded by these green same-head runs.
-- The physical macOS tray Show/Quit acceptance remains open. The most recent
-  manual run after code head `2fac448` timed out at the Show prompt without
-  observing its callback. The validation script also requires a Quit-action
-  witness before it accepts process exit.
-- DuckDB source-build features remain prohibited; CI stages official
-  checksum-verified binaries before building or packaging.
+- Local Rust formatting passes with `rtk cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`; the isolated Sled migrator formatting check also passes.
+- The desktop-shell suite passes 52 tests across 9 suites. The full serial workspace passes 270 tests across 64 suites, and warning-denied workspace Clippy passes locally.
+- Hosted CI on source head `fe5b2eb` failed macOS URL dispatch. Its log records `quit_control_received=true`, `quit_action_started=true`, and a resident process after the tray icon was dropped and the viewport was closed.
+- Source head `b95a8c1` sets eframe `run_and_return=false`; same-head hosted CI, Security, and Dependency Review remain required. The prior green results on `2fac448` do not validate this change.
+- The latest local installed lifecycle attempt was inconclusive: Launch Services refused the temporary bundle (`-10822`), and direct execution of the unbundled binary did not record startup. Do not mark packaged macOS acceptance complete.
+- The manual Show attempt after `2fac448` timed out at the Show prompt without observing its callback. Physical Show/Quit and foreground acceptance remain open.
+- DuckDB source-build features remain prohibited; CI stages official checksum-verified binaries before building or packaging.

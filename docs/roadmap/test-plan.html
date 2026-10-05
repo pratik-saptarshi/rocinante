@@ -2,24 +2,11 @@
 
 ## Current execution status — 2026-10-05
 
-The active remediation worktree retires the Tauri host and preserves its
-eleven command payload contracts as host-neutral metadata. GitHub confirmed PR
-#112 OPEN/MERGEABLE at `ce5a1e1`, based on `main` `eb83be9`. CI run
-`37341472090`, Security run `37341472140`, and Dependency Review run
-`37341472151` all passed on that head. Three review findings were reported and
-fixed: retention re-rollup merges old sums/counts with new raw samples, all
-compatibility baseline entry points reject the fallback signing secret, and
-manual macOS acceptance requires a Quit-action witness before it accepts
-process exit. All three threads were resolved after same-head hosted
-validation. The full offline serial workspace passes 270 tests across 64
-suites, with formatting and warning-denied Clippy passing. The scripted
-installed macOS lifecycle passes cold/warm URL delivery, close-to-tray,
-notification request, visible restore, and saved-state restart. The most
-recent manual run after code head `2fac448` reached the Show prompt but timed out
-without observing its callback. AppKit returned `accepted=false`; foreground
-activation and physical
-tray-menu clicks remain unverified. The hosted workflow results above are tied
-to `ce5a1e1`; manual macOS Show/Quit and foreground activation remain open.
+PR #112 remains open on `fix/weighted-rollup-aggregation`, based on `main` `eb83be9`. Current shutdown source `b95a8c1` sets eframe `run_and_return=false`. Hosted CI on `fe5b2eb` recorded both Quit-control receipt and callback witness, yet the process remained resident after viewport close. The code change addresses the event-loop mode; same-head hosted packaged-app validation is still required.
+
+Local formatting, 52 desktop-shell tests across 9 suites, the full serial workspace (270 tests across 64 suites), and warning-denied Clippy pass. The local installed-app run is inconclusive because sandboxed Launch Services refused the temporary app bundle (`-10822`), while direct unbundled execution did not record startup. Previous green checks and local lifecycle results predate `run_and_return=false`.
+
+At 2026-10-05 19:33 UTC, GitHub Status reported Actions degraded performance. CI, Security, and Dependency Review must be terminal-green on the final branch head before readiness changes. The manual Show attempt after `2fac448` timed out without observing its callback. Physical Show/Quit, foreground activation, and saved-state restart on the current candidate remain open. The detailed evidence is in the dated shutdown roadmap and decision record.
 
 ## Testing Strategy
 
@@ -49,11 +36,10 @@ to `ce5a1e1`; manual macOS Show/Quit and foreground activation remain open.
     typecheck, 62 unit tests, and production build pass locally.
   - Phase 1 disables DuckDB source-build features and stages the official
     binding-matched native binaries by SHA-256. Provisioner and feature-graph
-    contract tests pass. The macOS bundle contract and a real `.app` package
-    pass loader inspection; the installed macOS lifecycle passes cold/warm
-    Launch Services URLs, tray actions, notification request, and saved-state
-    restart. Linux and Windows installed-runtime checks remain open for
-    hosted CI.
+    contract tests pass. The macOS bundle contract and earlier `.app` package
+    passed loader inspection; the installed lifecycle evidence predates the
+    current `run_and_return=false` shutdown change. Hosted macOS validation of
+    the current source candidate remains required.
   - Phase 2 now uses SQLite WAL for default ingestion and DuckDB for analytics.
     The shared workspace passes 83 tests, including 9 storage unit tests; root
     storage (17), transport (5), backend (5), admin-ingestion (2), command-compatibility

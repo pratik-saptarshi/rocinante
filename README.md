@@ -349,36 +349,12 @@ runtime path. The Windows installer
 copies the executable into `%LOCALAPPDATA%` and registers a current-user
 `rocinante://` command under `HKCU`; it places the matching `duckdb.dll` beside
 the executable. Its PowerShell source contract is checked on this host.
-The macOS installer embeds `libduckdb.dylib` in `Contents/Frameworks`, rewrites
-the app-relative loader path, and declares the scheme in the `.app` bundle
-before registering it through Launch Services. The scripted installed macOS
-lifecycle acceptance passes cold/warm URL delivery, notification request,
-minimize/restore, and saved-state restart on this host. Its default acceptance
-controls exercise tray action routing but do not prove a physical menu click.
-The native-shell package matrix builds and inspects the Linux, macOS, and
-Windows installations. Hosted CI run `37346608465` passed package/runtime-
-loader validation and URL/restart acceptance on all three platforms, plus
-visible Linux notification delivery, on PR #112 documentation head `2fac448`;
-the validated code head is `ce5a1e1`.
-Physical tray-menu clicks and macOS foreground activation remain unverified;
-visible notification delivery on macOS and Windows also needs interactive
-validation. Run the manual macOS check from an interactive macOS terminal:
+The macOS installer embeds `libduckdb.dylib` in `Contents/Frameworks`, rewrites the app-relative loader path, and declares the scheme in the `.app` bundle before registering it through Launch Services. An earlier installed lifecycle run passed URL delivery, tray-action routing, notifications, minimize/restore, and saved-state restart, but it predates the current eframe event-loop exit setting. Hosted CI run `37360802367` on source head `fe5b2eb` consumed the Quit request and recorded `quit_action_started=true`, yet the app remained resident. Source head `b95a8c1` sets `run_and_return=false`; the final packaged-app lifecycle must still validate that change.
 
-```sh
-ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh
-```
+The native-shell package matrix previously passed Linux, macOS, and Windows packaging and URL lifecycle on documentation head `2fac448`. Those results do not validate the later shutdown candidate. Local formatting, 52 desktop-shell tests, the 270-test/64-suite workspace, and warning-denied Clippy pass on the candidate. The current installed macOS test could not complete in this sandbox: Launch Services refused the temporary bundle (`-10822`), and direct launch did not record startup. Treat local installed acceptance as inconclusive.
 
-It requires real Show/Quit menu selections and verifies the Show callback,
-frontmost state, Quit callback, and process exit. The most recent manual run,
-after code head `2fac448`, reached the Show prompt but timed out without
-observing the callback; no physical Show/Quit acceptance is claimed. The
-latest GitHub refresh confirmed PR #112
-OPEN/MERGEABLE at `2fac448`, based on `main` `eb83be9`. CI run `37346608465`,
-Security run `37346608399`, and Dependency Review run `37346608411` all passed
-on that head. All four review threads are resolved, including the scoped
-codemap freshness finding. Repeated retention preserves prior sums/counts, and
-the four baseline compatibility entry points require a configured signing secret.
-See the readiness roadmap for the remaining interactive gate and evidence.
+The current source fix is documented in `docs/roadmap/macos-native-shutdown-remediation-2026-10-05.md` and `docs/decisions/decision-2026-10-05.md`. Same-head hosted CI, Security, and Dependency Review remain required. GitHub Status reported Actions degraded performance at 2026-10-05 19:33 UTC; queued runs are not passes. The manual run after code head `2fac448` reached the Show prompt but timed out without observing its callback. Physical Show/Quit and foreground acceptance remain unverified. DuckDB stays prebuilt-only and is never compiled from source.
+
 Release distribution must sign the completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.

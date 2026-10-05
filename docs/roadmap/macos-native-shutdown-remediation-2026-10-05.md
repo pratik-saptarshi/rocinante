@@ -158,3 +158,5 @@ Dependency Review were queued. [GitHub Status](https://www.githubstatus.com/)
 reported an active Actions degraded-performance incident beginning at 19:11
 UTC that day. Treat the queue delay as external status, not as a pass or code
 failure; retain the gate until the actual same-head runs finish.
+
+The prior runs queued for source head `b95a8c1` were cancelled after the documentation commit moved the branch to `2e6c8e4`. Fresh required runs on the final source/documentation tree are still required.

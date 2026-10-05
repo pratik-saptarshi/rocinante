@@ -2,16 +2,9 @@
 
 ## Current implementation status — 2026-10-05
 
-The current remediation worktree uses the eframe/winit native shell and has
-removed Tauri from supported manifests and lockfiles. Hosted Linux/macOS/Windows
-package and URL lifecycle checks passed on PR #112 source head `ff367c4`; local
-Darwin lifecycle acceptance also passed cold/warm delivery, close-to-tray,
-Show/Quit handling, notification request, visible restore, and saved-state
-restart. BI-049/BI-050 remain open for broader parity work. Current gaps include
-physical tray-menu delivery, macOS foreground activation, Linux/Windows tray
-runtime, visible macOS/Windows notifications, visual icon launch validation,
-and unresolved product scope for file import and placeholder routes. The
-latest AppKit activation request returned `accepted=false`.
+The current source candidate is `b95a8c1`. Hosted CI on `fe5b2eb` consumed the Quit callback but the process remained alive. The candidate now sets eframe `run_and_return=false`; the final packaged macOS lifecycle is pending same-head hosted validation. The previous Linux/macOS/Windows package and URL checks passed on `2fac448`, before this shutdown change. Local current-candidate Rust formatting, tests, and Clippy pass, but local installed acceptance is inconclusive because sandboxed Launch Services refused the temporary bundle (`-10822`).
+
+Physical tray-menu delivery, macOS foreground activation, Linux/Windows tray runtime, visible macOS/Windows notifications, visual icon launch validation, and broader product-scope items remain open. The most recent manual Show attempt after `2fac448` timed out without observing its callback; no physical Show/Quit acceptance is claimed.
 
 ## Scope and Timestamp
 
@@ -66,7 +59,7 @@ notification helper through Dunst under Xvfb and verifies the daemon receives
 the notification; hosted run 37198628846 passed on 2026-10-04, including visible Linux delivery. Visible notification delivery
 on macOS and Windows remains unverified.
 
-macOS cold/warm URL dispatch, visible-window restoration after minimizing, saved-state process restart, tray icon initialization, close-to-tray, Show restoration, and Quit pass the installed local acceptance. The native shell requests visible, unminimized window state on its first UI frame; two consecutive runs passed after adding this startup request. Show/Quit are exercised through the same action handler used by tray callbacks; physical menu-click delivery remains untested. A read-only `AXIsProcessTrusted` probe returned false for the current automation process, so no automated UI click was attempted and no Accessibility permission was changed. The opt-in manual acceptance mode `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh` now waits for physical Show and Quit selections, checks the Show callback and frontmost window, and verifies process exit; it was run after code head `2fac448` on 2026-10-05. The latest run installed and registered the app, passed cold URL, notification, and close-to-tray setup, then timed out at the Show prompt without observing `show_action_started=true`. No physical Show/Quit acceptance is claimed. The Show and URL paths request macOS app activation. The latest installed acceptance on 2026-10-05 recorded `request_accepted=false`; strict mode previously reported `visible=true/frontmost=false`, so foreground activation remains unverified until the manual result is recorded. The native macOS notification request returned success locally, but visible delivery remains unverified; hosted run `37311344183` confirms Linux visible notification delivery; visible macOS/Windows notification delivery remains unverified.
+Earlier installed acceptance on the pre-`run_and_return=false` candidate passed cold/warm URL dispatch, visible-window restoration after minimizing, saved-state process restart, tray initialization, close-to-tray, and automated Show/Quit action routing. That result does not validate the current shutdown code. The latest hosted diagnostic on `fe5b2eb` recorded the Quit callback but showed the process still resident. The current candidate uses `run_and_return=false` and awaits a successful packaged macOS lifecycle. The manual attempt after `2fac448` installed and registered the app, passed cold URL, notification, and close-to-tray setup, then timed out at the Show prompt without observing `show_action_started=true`. Physical Show/Quit, frontmost activation, and current-candidate restart remain unverified; AppKit activation previously returned `accepted=false`.
 
 The shared Rocinante icon is now included in the native window, the macOS app
 bundle, the Linux launcher installation, and the Windows Start Menu shortcut

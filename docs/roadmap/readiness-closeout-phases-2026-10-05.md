@@ -329,3 +329,7 @@ verified in this run; warm URL, foreground state, Quit, and saved-state restart
 remain unverified. Phase 8 and release readiness remain open. The accompanying
 documentation refresh records these results; its local contracts and hosted
 checks must be recorded separately from the green `2fac448` runs.
+
+## MacOS shutdown remediation status — 2026-10-05
+
+Source candidate `b95a8c1` sets eframe `run_and_return=false` after hosted CI proved the Quit callback ran but the app remained resident on `fe5b2eb`. Local formatting, 52 desktop-shell tests, the 270-test/64-suite workspace, and warning-denied Clippy pass. The local installed acceptance is inconclusive under the sandbox's Launch Services restrictions. Earlier CI and local lifecycle passes predate this change. Same-head CI, Security, Dependency Review, and packaged macOS lifecycle results remain required; GitHub Status reported Actions degraded performance at 19:33 UTC. Do not advance publication or close review threads until fresh checks finish and the parity matrix records the current result.

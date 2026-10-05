@@ -2,35 +2,15 @@
 
 ## Current branch snapshot — 2026-10-05
 
-PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains the active
-protected review path from branch `fix/weighted-rollup-aggregation`. GitHub
-App refresh on 2026-10-05 confirmed PR #112 OPEN/MERGEABLE at `2fac448`, based
-on `main` `eb83be9`. CI run `37346608465`, Security run `37346608399`, and
-Dependency Review run `37346608411` all succeeded on that head; all four
-review threads were resolved after the same-head checks passed. The last
-recorded Dependabot query found no open alerts; it was not refreshed in this
-pass.
+PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains open on `fix/weighted-rollup-aggregation`; current shutdown source `b95a8c1` sets eframe `run_and_return=false` after the previous hosted macOS run proved Quit was received but the process stayed resident.
 
-The security registry and Cargo audit ignore list are empty, and the governance
-checker passes. Security run `37346608399` passed RustSec audit, CodeQL, and
-secret scan on `2fac448`. The run does not expose the fetched database SHA;
-cached no-fetch audit results and the last recorded advisory-database revision
-remain documented in the security roadmap.
+Local formatting, 52 desktop-shell tests, the full 270-test/64-suite workspace, and warning-denied Clippy pass. The current installed macOS acceptance is inconclusive locally: Launch Services refused the temporary bundle (`-10822`), and direct unbundled execution did not record startup. The earlier green checks on `2fac448` and earlier local lifecycle passes predate this shutdown setting.
 
-The UI pin is pnpm `12.9.1`; local execution could not verify its registry
-signature while `registry.npmjs.org` was unreachable, but hosted `ui-quality`
-passed on `2fac448` with pinned pnpm `12.9.1`. The scripted installed macOS
-lifecycle passed cold/warm URL delivery, close-to-tray, notification request,
-visible restore, and saved-state restart. The most recent manual run after code
-head `2fac448` reached the Show prompt but timed out without observing
-the Show callback. AppKit
-returned `accepted=false`, so foregrounding is not claimed, and physical
-tray-menu clicks remain unverified. DuckDB remains a SHA-verified prebuilt and
-must never be compiled from source. Readiness requires terminal-green checks
-on the latest PR head; interactive tray-menu and foreground evidence remain
-open.
+Same-head CI, Security, and Dependency Review must finish successfully before readiness can advance. GitHub Status reported degraded Actions performance at 2026-10-05 19:33 UTC. Previous queued runs on the parent head were cancelled by the subsequent documentation update; fresh runs for the final docs/source head are required. The review comments about the failed manual Show attempt and current quit validation remain open until documented and revalidated.
 
-This checklist is the required gating artifact for remote publication to
+The dated shutdown roadmap and decision record contain the investigation and acceptance gates. DuckDB remains prebuilt-only, and no physical Show/Quit, frontmost activation, or current-candidate saved-state restart is claimed.
+
+This checklist is the required gating artifact for remote publication to `origin/main`.This checklist is the required gating artifact for remote publication to
 `origin/main`.
 
 Current planning artifacts that must stay in sync:
