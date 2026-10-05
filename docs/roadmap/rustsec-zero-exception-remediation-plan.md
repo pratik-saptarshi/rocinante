@@ -338,10 +338,11 @@ GTK/GLib and their macros from every supported target, feature, test, and
 packaging path.
 
 **Validation:** run the existing cold/warm URL, restart, notifications,
-window/tray and registration checks on Linux, macOS, and Windows; validate
-stable per-user app-data paths from shortcut, URL handler, and terminal launch;
-check visible interactive behavior where CI cannot observe it; inspect all
-target/feature dependency trees and fail if GTK/GLib/Tauri/Wry remain.
+window/tray and registration checks on Linux, macOS, and Windows; after BI-058
+has migrated legacy analytics and scoring stores, validate the per-user
+app-data paths from shortcut, URL handler, and terminal launch; check visible
+interactive behavior where CI cannot observe it; inspect all target/feature
+dependency trees and fail if GTK/GLib/Tauri/Wry remain.
 
 **Exit gate:** native-host parity has direct test evidence on all three OSes;
 the application and migration graphs contain no affected GTK packages; public
