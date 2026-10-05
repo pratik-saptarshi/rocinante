@@ -30,11 +30,10 @@ fn publish_gate_documents_reflect_bi_047_history_and_current_pr_snapshot() {
     assert!(bom.contains("Current work is on PR #108's remediation branch"));
     assert!(bom.contains("BI-047"));
     assert!(checklist.contains("Current branch snapshot — 2026-10-05"));
-    assert!(checklist.contains("fix/rocinante-readiness-remediation"));
+    assert!(checklist.contains("fix/weighted-rollup-aggregation"));
     assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
-    assert!(codemap.contains(
-        "Branch `fix/rocinante-readiness-remediation` includes Rust fix commit `6f6b8cc`"
-    ));
+    assert!(codemap
+        .contains("The focused branch `fix/weighted-rollup-aggregation` carries commit `3417e22`"));
 }
 
 #[test]

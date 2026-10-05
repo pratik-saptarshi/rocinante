@@ -1,14 +1,15 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Current status (2026-10-05; local remediation in progress):** work is on
-`fix/rocinante-readiness-remediation`; the last verified base was `main` at
-`cdd29b9f9a1f20269d1c50595a4b4d53d5fbc3e4`. The branch includes commit
-`6f6b8cc`, which fixes the weighted-retention review finding and passes the
-full serial Rust workspace
-suite, storage suite, formatting, and warning-denied Clippy. This follow-up
-has not yet received same-head hosted validation or a PR-thread reply. GitHub
-API and web refresh attempts failed, so the live PR and check state are
-unverified.
+**Current status (2026-10-05; follow-up validation in progress):** PR #108 was
+merged into `origin/main` at `eb83be9da64057dc71838b33edc01a9a2769b0fa`.
+The weighted-retention correction is on focused branch
+`fix/weighted-rollup-aggregation`, based on that main tip, in commit `3417e22`.
+Its source tree is identical to previously validated commit `6f6b8cc`; the
+full serial Rust workspace suite, storage suite (21/21), formatting, and
+warning-denied all-target/all-feature Clippy passed on that tree. The new
+branch has not yet received hosted validation, and GitHub API checks remain
+unavailable. The fix for review thread `discussion_r4182447911` still needs a
+reply linked to the follow-up PR.
 
 The root Tauri binary, build script, runtime/build dependencies, command
 bootstrap, and installer configs have been removed from the supported Rust
@@ -866,10 +867,29 @@ hosted validation for these review follow-ups is pending.
 
 Review thread [`discussion_r4182447911`](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4182447911)
 found that analytics averaged each retained rollup as one sample when it was
-combined with newer raw samples. Commit `6f6b8cc` now carries `metric_sum` and
+combined with newer raw samples. Follow-up commit `3417e22` carries `metric_sum` and
 `sample_count` through both aggregate queries and committer scoring, then
 computes the combined weighted average. The integration test creates two
 rolled-up values plus a live value and checks both query paths. The storage
 suite passes 21/21, the full serial workspace suite passes, formatting and
 all-target/all-feature Clippy pass. The thread still needs a response and
-same-head hosted confirmation after the branch update.
+same-head hosted confirmation in the focused follow-up branch.
+
+## Adversarial review of current `origin/main` — 2026-10-05
+
+The refreshed local `origin/main` tip is `eb83be9` (PR #108 merge). Its
+48-hour history contains the DuckDB, Serde, base64, and Rustls lockfile
+updates, the 0.2.1 release commit, and the PR #108 merge. The lockfile-only
+updates do not change application code; no additional defect was identified
+in those diffs. The pre-merge main manifest had enabled DuckDB's `bundled`
+feature, which upstream documents as compiling DuckDB source. PR #108 removed
+that feature; current main pins `duckdb 1.10506.0` with default features off,
+and includes the prebuilt provisioning and source-build guard. That explicit
+binary-only requirement is now satisfied in current main.
+
+The remaining adversarial finding is the weighted-rollup defect above: current
+main still averages each historical rollup as one row when combined with raw
+samples. The focused follow-up branch fixes both aggregate metrics and
+committer scoring, with regression coverage for rollup plus live samples. The
+live GitHub PR/check API could not be refreshed, so hosted check state is not
+claimed.

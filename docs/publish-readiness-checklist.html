@@ -2,13 +2,14 @@
 
 ## Current branch snapshot — 2026-10-05
 
-The remediation branch includes pushed commit `6f6b8cc`, which fixes weighted
-retention aggregation in both metric queries
-and committer scoring. The full serial Rust workspace suite, storage suite
-(21/21), formatting, and warning-denied all-target/all-feature Clippy pass on
-that implementation. The latest GitHub API and web refresh attempts failed,
-so PR comments and same-head check results are unverified; hosted Security,
-platform, aggregate, and UI-pin checks remain required. Tauri
+PR #108 is merged at `origin/main` `eb83be9`. The focused follow-up branch
+`fix/weighted-rollup-aggregation`, based on that tip, contains code commit
+`3417e22`. The full serial Rust workspace suite, storage suite (21/21),
+formatting, warning-denied all-target/all-feature Clippy, and roadmap/publish
+contracts pass on that tree. This follow-up
+has not yet received hosted validation. The GitHub PR/check API is unavailable,
+so comment and same-head check state are unverified. Hosted Security, platform,
+aggregate, and UI-pin checks remain required. Tauri
 runtime removal and the native-shell package matrix are implemented locally.
 The previously recorded installed macOS lifecycle acceptance passes; Linux
 and Windows lifecycle/package evidence on the current worktree remains

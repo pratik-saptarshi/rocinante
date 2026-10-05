@@ -142,7 +142,7 @@ desktop host.
 
 ## Governance and Execution Snapshot
 
-- Branch `fix/rocinante-readiness-remediation` includes Rust fix commit `6f6b8cc`, which corrects weighted aggregation for retained samples in metrics and committer scoring. GitHub API and web refresh attempts failed, so PR-thread and same-head check states are unverified.
+- PR #108 is merged into current `origin/main` at `eb83be9`. The focused branch `fix/weighted-rollup-aggregation` carries commit `3417e22`, which corrects weighted aggregation for retained samples in metrics and committer scoring. Its full serial workspace suite, storage suite (21/21), formatting, warning-denied Clippy, and roadmap/publish contracts pass locally; hosted checks and the PR-thread response are pending.
 - Phase 4C removes the Tauri executable, runtime/build dependencies, bootstrap, and installer configuration locally. Native package contract tests pass 6/6; Linux/macOS/Windows package and current-worktree lifecycle checks still need hosted evidence.
 - The 15 withdrawn or absent advisory records have evidence-backed closures, and the two affected package paths have been removed. The registry and audit ignore list are empty; governance contracts and cached-database audits pass. A fresh RustSec database retrieval was blocked by GitHub connectivity.
 - On the latest local code, full-workspace tests pass serially, the storage suite passes 21/21, formatting passes, and all-target/all-feature Clippy passes with warnings denied. Earlier worktree evidence also covers `cargo check --offline --workspace --all-targets` and test-target compilation.
