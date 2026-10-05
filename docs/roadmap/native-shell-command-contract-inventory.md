@@ -20,18 +20,18 @@ change these payloads.
 | `query_aggregates` | `token`, optional `name`, optional `release` | `Vec<TelemetryPoint>` | `rocinante-storage::admin::query_aggregates`, also routed by the shared admin bridge. |
 | `committer_scores` | `token`, optional `name`, optional `release` | `Vec<CommitterScore>` | `rocinante-storage::admin::committer_scores`, also routed by the shared admin bridge. |
 | `rank_prs` | `token`, `prs` | `Vec<PrRanking>` | `rocinante-storage::admin::rank_prs`, also routed by the shared admin bridge. |
-| `evaluate_pr_risk` | `token`, `candidate` | `PrRiskEvaluation` | `rocinante-storage::admin::evaluate_pr_risk` backed by the shared core risk contract. |
+| `evaluate_pr_risk` | `token`, `candidate` | `PrRiskEvaluation` | `rocinante-storage::admin::evaluate_pr_risk` backed by the shared core risk contract and routed by the shared admin bridge. |
 | `query_release_baseline` | `token`, `repoName` | optional `f64` | `rocinante-storage::admin::query_release_baseline`, also routed by the shared admin bridge. |
 | `reseed_release_baseline` | `token`, `repoName`, `baselineComplexity` | `f64` | `rocinante-storage::admin::reseed_release_baseline`, also routed by the shared admin bridge. |
 | `update_scoring_weights` | `token`, `weights` | unit / JSON `null` | `rocinante-storage::admin::update_scoring_weights`, also routed by the shared admin bridge. |
 
 Tauri's command adapter accepts camel-case names for multiword parameters;
 the shared bridge also accepts the existing camel-case baseline payload keys.
-The React bridge currently exercises the eight storage/admin bridge actions.
-Scanning and saved-metric loading have native-shell UI paths. PR-risk
-evaluation remains available as a shared service; Phase 4B must retain its
-command-level access or document a compatibility decision before removing the
-Tauri adapter.
+The React admin panel exposes seven actions, including PR-risk evaluation
+through the registered Tauri command. The GTK-free native shell exposes all
+nine storage/admin bridge actions, including PR-risk evaluation through shared
+JSON dispatch. Scanning and saved-metric loading have native-shell UI paths.
+The command name and `{ token, candidate }` payload remain stable across hosts.
 
 ## Validation Evidence
 
@@ -39,6 +39,9 @@ Tauri adapter.
   registered command above maps to a shared analysis, storage, or core service.
 - `rocinante-storage/tests/admin_bridge_contract.rs` checks bridge command
   names, JSON request fields, response values, and admin authorization.
+- `evaluate_pr_risk` is routed through the shared JSON bridge with its existing
+  `{ token, candidate }` payload and role check; the React admin panel exposes
+  the same registered command.
 - `rocinante-analysis/tests/repository_scan.rs` covers authenticated scanning
   and saved metrics. `legacy_metric_query.rs` covers stable/legacy duplicate
   suppression and confirms older release rows remain visible.
@@ -46,13 +49,22 @@ Tauri adapter.
 - The new telemetry compatibility tests pass (2/2); all analysis crate tests
   pass (11 tests across 5 suites), and strict analysis Clippy, workspace
   formatting, and `git diff --check` pass locally.
+- Phase 4B local validation on 2026-10-04: storage bridge contract tests pass
+  (3/3), the native-shell sample-payload contract passes (1/1), and Clippy for
+  storage plus desktop-shell all-targets passes with warnings denied. Workspace
+  Rust formatting passes. TypeScript build checking passes; Vitest passes all
+  63 tests and Vite production build succeeds with its existing chunk-size
+  advisory. These UI commands used installed local binaries because the pinned
+  `pnpm@12.9.1` launch could not complete registry signature verification in
+  this environment. Roadmap doc contracts (10/10) and advisory checker
+  contracts pass. The live advisory governance check remains blocked by the
+  two overdue, unresolved owner dispositions listed in the decision record.
+  Hosted validation for this worktree head is pending.
 
 ## Phase 4B Work Remaining
 
 - Keep the eleven request/response shapes covered without `tauri::command`
   macros or Tauri runtime types.
-- Keep PR-risk evaluation callable through the host-neutral application
-  boundary.
 - Move or remove the remaining Tauri adapter and package bootstrap only after
   native parity gates in BI-049/BI-050 are accepted.
 - Preserve the present working-directory defaults for analytics and scoring

@@ -70,6 +70,21 @@ export interface AdminRankPrsPayload {
   }>;
 }
 
+export interface AdminEvaluatePrRiskPayload {
+  token: string;
+  candidate: {
+    pr_id: string;
+    repo_name: string;
+    author: string;
+    release: string;
+    file_risk: number;
+    author_velocity: number;
+    approval_fidelity: number;
+    files?: AdminPrFileSignal[];
+    circuit_breaker_triggered?: boolean;
+  };
+}
+
 export interface AdminUpdateWeightsPayload {
   token: string;
   weights: {
@@ -90,6 +105,7 @@ export type AdminBridgeCommand =
   | 'query_aggregates'
   | 'committer_scores'
   | 'rank_prs'
+  | 'evaluate_pr_risk'
   | 'query_release_baseline'
   | 'reseed_release_baseline'
   | 'update_scoring_weights';
@@ -100,6 +116,7 @@ type AdminCommandArgs = {
   query_aggregates: AdminQueryPayload;
   committer_scores: AdminCommitterScoresPayload;
   rank_prs: AdminRankPrsPayload;
+  evaluate_pr_risk: AdminEvaluatePrRiskPayload;
   query_release_baseline: AdminReleaseBaselineQueryPayload;
   reseed_release_baseline: AdminReleaseBaselineReseedPayload;
   update_scoring_weights: AdminUpdateWeightsPayload;

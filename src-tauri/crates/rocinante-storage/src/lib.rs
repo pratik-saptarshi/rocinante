@@ -35,12 +35,13 @@ use errors::AnalyzerError;
 use serde::Deserialize;
 use storage::BaselineStore;
 
-pub const ADMIN_BRIDGE_COMMANDS: [&str; 8] = [
+pub const ADMIN_BRIDGE_COMMANDS: [&str; 9] = [
     "ingest_event",
     "promote_lifecycle",
     "query_aggregates",
     "committer_scores",
     "rank_prs",
+    "evaluate_pr_risk",
     "query_release_baseline",
     "reseed_release_baseline",
     "update_scoring_weights",
@@ -143,6 +144,14 @@ pub fn execute_admin_bridge_command(
                 request.prs,
                 weights_path,
             )?)?
+        }
+        "evaluate_pr_risk" => {
+            #[derive(Deserialize)]
+            struct Request {
+                candidate: types::PrCandidate,
+            }
+            let request: Request = decode_payload(payload)?;
+            encode_payload(admin::evaluate_pr_risk(token, request.candidate)?)?
         }
         "query_release_baseline" => {
             #[derive(Deserialize)]

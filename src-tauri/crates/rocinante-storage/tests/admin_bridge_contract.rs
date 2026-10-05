@@ -10,6 +10,7 @@ fn admin_bridge_command_names_match_the_companion_contract() {
             "query_aggregates",
             "committer_scores",
             "rank_prs",
+            "evaluate_pr_risk",
             "query_release_baseline",
             "reseed_release_baseline",
             "update_scoring_weights",
@@ -113,6 +114,30 @@ fn companion_admin_bridge_payloads_use_shared_admin_services() {
     .expect("authorized PR ranking");
     assert_eq!(result.as_array().expect("ranking array").len(), 1);
 
+    let candidate = serde_json::json!({
+        "pr_id":"pr-001",
+        "repo_name":"repo-a",
+        "author":"ui",
+        "release":"v1.0.0",
+        "file_risk":0.9,
+        "author_velocity":0.1,
+        "approval_fidelity":0.1,
+        "files":[{"path":"src/ui-bridge.ts","risk":0.72}],
+        "circuit_breaker_triggered":true
+    });
+    let result = rocinante_storage::execute_admin_bridge_command(
+        "evaluate_pr_risk",
+        &token,
+        serde_json::json!({"candidate":candidate}),
+        &kv_path,
+        &columnar_path,
+        &weights_path,
+        &audit_path,
+    )
+    .expect("authorized PR risk evaluation");
+    assert_eq!(result["pr_id"], "pr-001");
+    assert_eq!(result["decision"], "Block");
+
     let result = rocinante_storage::execute_admin_bridge_command(
         "update_scoring_weights",
         &token,
@@ -159,5 +184,17 @@ fn companion_admin_bridge_payloads_use_shared_admin_services() {
         &audit_path,
     )
     .expect_err("reader must be denied");
+    assert!(error.to_string().contains("permission denied"));
+
+    let error = rocinante_storage::execute_admin_bridge_command(
+        "evaluate_pr_risk",
+        &reader,
+        serde_json::json!({"candidate":{"pr_id":"pr-001","repo_name":"repo-a","author":"ui","release":"v1.0.0","file_risk":0.4,"author_velocity":0.6,"approval_fidelity":0.9}}),
+        &kv_path,
+        &columnar_path,
+        &weights_path,
+        &audit_path,
+    )
+    .expect_err("reader must not evaluate admin PR risk");
     assert!(error.to_string().contains("permission denied"));
 }

@@ -1329,6 +1329,9 @@ mod native_ui {
             "rank_prs" => {
                 r#"{"prs":[{"pr_id":"pr-001","repo_name":"sample-repo","author":"ui","release":"v1.0.0","file_risk":0.4,"author_velocity":0.6,"approval_fidelity":0.9,"files":[{"path":"src/ui-bridge.ts","risk":0.72}],"circuit_breaker_triggered":true}]}"#
             }
+            "evaluate_pr_risk" => {
+                r#"{"candidate":{"pr_id":"pr-001","repo_name":"sample-repo","author":"ui","release":"v1.0.0","file_risk":0.4,"author_velocity":0.6,"approval_fidelity":0.9,"files":[{"path":"src/ui-bridge.ts","risk":0.72}],"circuit_breaker_triggered":true}}"#
+            }
             "query_release_baseline" => r#"{"repoName":"sample-repo"}"#,
             "reseed_release_baseline" => r#"{"repoName":"sample-repo","baselineComplexity":18.5}"#,
             "update_scoring_weights" => {

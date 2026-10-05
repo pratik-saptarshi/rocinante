@@ -1,6 +1,7 @@
 import type {
   AdminBridgeCommand,
   AdminCommitterScoresPayload,
+  AdminEvaluatePrRiskPayload,
   AdminIngestPayload,
   AdminPromotePayload,
   AdminQueryPayload,
@@ -16,6 +17,7 @@ export type AdminBridgeArgsMap = {
   query_aggregates: AdminQueryPayload;
   committer_scores: AdminCommitterScoresPayload;
   rank_prs: AdminRankPrsPayload;
+  evaluate_pr_risk: AdminEvaluatePrRiskPayload;
   query_release_baseline: AdminReleaseBaselineQueryPayload;
   reseed_release_baseline: AdminReleaseBaselineReseedPayload;
   update_scoring_weights: AdminUpdateWeightsPayload;
@@ -32,6 +34,7 @@ export const ADMIN_BRIDGE_ACTIONS = [
   { command: 'query_aggregates', label: 'Query Aggregates' },
   { command: 'committer_scores', label: 'Committer Scores' },
   { command: 'rank_prs', label: 'Rank PRs' },
+  { command: 'evaluate_pr_risk', label: 'Evaluate PR Risk' },
   { command: 'update_scoring_weights', label: 'Update Scoring Weights' }
 ] as const satisfies readonly AdminBridgeAction[];
 
@@ -96,6 +99,25 @@ export function buildAdminBridgeArgs(token: string): AdminBridgeArgsMap {
           circuit_breaker_triggered: true
         }
       ]
+    },
+    evaluate_pr_risk: {
+      token,
+      candidate: {
+        pr_id: 'pr-001',
+        repo_name: 'sample-repo',
+        author: 'ui',
+        release: 'v1.0.0',
+        file_risk: 0.4,
+        author_velocity: 0.6,
+        approval_fidelity: 0.9,
+        files: [
+          {
+            path: 'src/ui-bridge.ts',
+            risk: 0.72
+          }
+        ],
+        circuit_breaker_triggered: true
+      }
     },
     update_scoring_weights: {
       token,

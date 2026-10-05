@@ -142,6 +142,43 @@ describe('tauri admin bridge', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('invokes PR risk evaluation with the stable candidate payload', async () => {
+    const invoke = vi.fn().mockResolvedValue({ decision: 'Block' });
+    setAdminInvokeForTesting(invoke);
+
+    const result = await invokeAdminCommand('evaluate_pr_risk', {
+      token: 'alice:admin',
+      candidate: {
+        pr_id: 'pr-001',
+        repo_name: 'sample-repo',
+        author: 'ui',
+        release: 'v1.0.0',
+        file_risk: 0.4,
+        author_velocity: 0.6,
+        approval_fidelity: 0.9,
+        files: [{ path: 'src/ui-bridge.ts', risk: 0.72 }],
+        circuit_breaker_triggered: true
+      }
+    });
+
+    expect(invoke).toHaveBeenCalledWith('evaluate_pr_risk', {
+      token: 'alice:admin',
+      candidate: {
+        pr_id: 'pr-001',
+        repo_name: 'sample-repo',
+        author: 'ui',
+        release: 'v1.0.0',
+        file_risk: 0.4,
+        author_velocity: 0.6,
+        approval_fidelity: 0.9,
+        files: [{ path: 'src/ui-bridge.ts', risk: 0.72 }],
+        circuit_breaker_triggered: true
+      }
+    });
+    expect(result.ok).toBe(true);
+    expect(result.message).toContain('Block');
+  });
+
   it('invokes scoring weight updates with representative weights', async () => {
     const invoke = vi.fn().mockResolvedValue('updated');
     setAdminInvokeForTesting(invoke);

@@ -9,6 +9,7 @@ describe('admin bridge contract helpers', () => {
       { command: 'query_aggregates', label: 'Query Aggregates' },
       { command: 'committer_scores', label: 'Committer Scores' },
       { command: 'rank_prs', label: 'Rank PRs' },
+      { command: 'evaluate_pr_risk', label: 'Evaluate PR Risk' },
       { command: 'update_scoring_weights', label: 'Update Scoring Weights' }
     ]);
   });
@@ -26,6 +27,8 @@ describe('admin bridge contract helpers', () => {
     expect(args.rank_prs.prs).toHaveLength(1);
     expect(args.rank_prs.prs[0].files).toHaveLength(1);
     expect(args.rank_prs.prs[0].circuit_breaker_triggered).toBe(true);
+    expect(args.evaluate_pr_risk.candidate.pr_id).toBe('pr-001');
+    expect(args.evaluate_pr_risk.candidate.circuit_breaker_triggered).toBe(true);
     expect(args.update_scoring_weights.weights.version).toBe('v1');
   });
 

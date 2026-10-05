@@ -16,7 +16,7 @@ SEO, Drupal security, and performance reference panels.
   metrics; it does not infer risk from generic metric values.
 - The Dashboard release-baseline controls use the shared `rocinante-storage`
   authorization and persistence adapter and execute off the UI thread.
-- The admin command bridge offers all eight companion actions through a command
+- The admin command bridge offers all nine shared actions through a command
   selector and editable JSON payload, using the same shared services as Tauri.
 - `src/dashboard_insights.rs` ports the companion's sample commit-risk,
   bottleneck, opportunity, quality-pulse, audience recommendation/routing,
