@@ -12,6 +12,7 @@ use fs2::FileExt;
 use rocinante_core::baseline::{score_baseline_components, BaselineScoreInput};
 use rusqlite::{params as sqlite_params, Connection as SqliteConnection};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::fs::OpenOptions;
 use std::path::Path;
@@ -68,6 +69,8 @@ pub struct AsyncIngestionMetrics {
     pub promotion_count: usize,
     pub enqueue_rejections: usize,
     pub max_queue_lag_ms: u64,
+    pub background_error_count: usize,
+    pub last_background_error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -446,6 +449,8 @@ pub struct AsyncIngestionEngine {
     promotion_count: Arc<AtomicUsize>,
     enqueue_rejections: Arc<AtomicUsize>,
     max_queue_lag_ms: Arc<AtomicU64>,
+    background_error_count: Arc<AtomicUsize>,
+    last_background_error: Arc<Mutex<Option<String>>>,
 }
 
 impl AsyncIngestionEngine {
@@ -498,10 +503,14 @@ impl AsyncIngestionEngine {
         let promotion_count = Arc::new(AtomicUsize::new(0));
         let enqueue_rejections = Arc::new(AtomicUsize::new(0));
         let max_queue_lag_ms = Arc::new(AtomicU64::new(0));
+        let background_error_count = Arc::new(AtomicUsize::new(0));
+        let last_background_error = Arc::new(Mutex::new(None));
         let queue_depth_bg = Arc::clone(&queue_depth);
         let _max_queue_depth_bg = Arc::clone(&max_queue_depth);
         let promotion_count_bg = Arc::clone(&promotion_count);
         let max_queue_lag_bg = Arc::clone(&max_queue_lag_ms);
+        let background_error_count_bg = Arc::clone(&background_error_count);
+        let last_background_error_bg = Arc::clone(&last_background_error);
         let promotion_interval = Duration::from_millis(promotion_interval_ms.max(1));
         let mut last_promotion = Instant::now();
         let retention_bg = retention_policy;
@@ -511,7 +520,13 @@ impl AsyncIngestionEngine {
             match rx.recv_timeout(promotion_interval) {
                 Ok((evt, queued_at)) => {
                     queue_depth_bg.fetch_sub(1, Ordering::AcqRel);
-                    let _ = store_for_worker.ingest_commit_event(&evt);
+                    if let Err(error) = store_for_worker.ingest_commit_event(&evt) {
+                        record_background_error(
+                            &background_error_count_bg,
+                            &last_background_error_bg,
+                            error,
+                        );
+                    }
                     update_max_u64(
                         &max_queue_lag_bg,
                         duration_to_millis_ceil(queued_at.elapsed()),
@@ -520,10 +535,24 @@ impl AsyncIngestionEngine {
                     if last_promotion.elapsed() >= promotion_interval {
                         match &retention_bg {
                             Some(policy) => {
-                                let _ = store.promote_to_columnar_with_retention(policy, now_ts());
+                                if let Err(error) =
+                                    store.promote_to_columnar_with_retention(policy, now_ts())
+                                {
+                                    record_background_error(
+                                        &background_error_count_bg,
+                                        &last_background_error_bg,
+                                        error,
+                                    );
+                                }
                             }
                             None => {
-                                let _ = store.promote_to_columnar();
+                                if let Err(error) = store.promote_to_columnar() {
+                                    record_background_error(
+                                        &background_error_count_bg,
+                                        &last_background_error_bg,
+                                        error,
+                                    );
+                                }
                             }
                         }
                         promotion_count_bg.fetch_add(1, Ordering::AcqRel);
@@ -533,10 +562,24 @@ impl AsyncIngestionEngine {
                 Err(RecvTimeoutError::Timeout) => {
                     match &retention_bg {
                         Some(policy) => {
-                            let _ = store.promote_to_columnar_with_retention(policy, now_ts());
+                            if let Err(error) =
+                                store.promote_to_columnar_with_retention(policy, now_ts())
+                            {
+                                record_background_error(
+                                    &background_error_count_bg,
+                                    &last_background_error_bg,
+                                    error,
+                                );
+                            }
                         }
                         None => {
-                            let _ = store.promote_to_columnar();
+                            if let Err(error) = store.promote_to_columnar() {
+                                record_background_error(
+                                    &background_error_count_bg,
+                                    &last_background_error_bg,
+                                    error,
+                                );
+                            }
                         }
                     }
                     promotion_count_bg.fetch_add(1, Ordering::AcqRel);
@@ -553,6 +596,8 @@ impl AsyncIngestionEngine {
             promotion_count,
             enqueue_rejections,
             max_queue_lag_ms,
+            background_error_count,
+            last_background_error,
         })
     }
 
@@ -577,6 +622,12 @@ impl AsyncIngestionEngine {
             promotion_count: self.promotion_count.load(Ordering::Acquire),
             enqueue_rejections: self.enqueue_rejections.load(Ordering::Acquire),
             max_queue_lag_ms: self.max_queue_lag_ms.load(Ordering::Acquire),
+            background_error_count: self.background_error_count.load(Ordering::Acquire),
+            last_background_error: self
+                .last_background_error
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .clone(),
         }
     }
 
@@ -597,6 +648,15 @@ impl AsyncIngestionEngine {
     }
 }
 
+fn record_background_error(
+    count: &AtomicUsize,
+    last_error: &Mutex<Option<String>>,
+    error: AnalyzerError,
+) {
+    count.fetch_add(1, Ordering::AcqRel);
+    *last_error.lock().unwrap_or_else(|e| e.into_inner()) = Some(error.to_string());
+}
+
 impl DualLayerStore {
     pub fn open(kv_path: &str, columnar_path: &str) -> Result<Self, AnalyzerError> {
         let kv_lock = Self::acquire_kv_lock(kv_path)?;
@@ -609,7 +669,7 @@ impl DualLayerStore {
             latest_snapshot_id: Arc::new(AtomicU64::new(0)),
         };
         this.init_columnar()?;
-        let _ = this.refresh_analytics_snapshot(0)?;
+        this.cleanup_analytics_snapshots(None)?;
         Ok(this)
     }
 
@@ -679,9 +739,23 @@ impl DualLayerStore {
         Ok(lock_file)
     }
 
-    fn event_prefix(timestamp: i64, commit_id: &str) -> String {
-        let shard = shard_suffix(commit_id);
-        format!("evt:{timestamp}:{shard}:{commit_id}")
+    fn event_prefix(timestamp: i64, event: &CommitIngestionEvent) -> String {
+        let mut identity = Sha256::new();
+        for part in [
+            event.repo_name.as_bytes(),
+            event.release.as_bytes(),
+            event.commit_id.as_bytes(),
+        ] {
+            identity.update((part.len() as u64).to_be_bytes());
+            identity.update(part);
+        }
+        let digest = identity.finalize();
+        let shard = digest[0] % 16;
+        let digest_hex = digest
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        format!("evt:{timestamp}:{shard}:{digest_hex}")
     }
 
     fn parse_event_timestamp(key: &str) -> Option<i64> {
@@ -760,6 +834,63 @@ impl DualLayerStore {
         format!("{:}.snapshot-{:}.duckdb", self.columnar_path, snapshot_id)
     }
 
+    fn cleanup_analytics_snapshots(
+        &self,
+        keep_snapshot_id: Option<u64>,
+    ) -> Result<(), AnalyzerError> {
+        let columnar_path = Path::new(&self.columnar_path);
+        let Some(file_name) = columnar_path.file_name().and_then(|name| name.to_str()) else {
+            return Ok(());
+        };
+        let prefix = format!("{file_name}.snapshot-");
+        let parent = columnar_path
+            .parent()
+            .filter(|path| !path.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."));
+        for entry in fs::read_dir(parent).map_err(|error| {
+            AnalyzerError::Io(format!("analytics snapshot cleanup failed: {error}"))
+        })? {
+            let entry = entry.map_err(|error| {
+                AnalyzerError::Io(format!("analytics snapshot cleanup failed: {error}"))
+            })?;
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            if !name.starts_with(&prefix) {
+                continue;
+            }
+            let keep_name = keep_snapshot_id
+                .map(|snapshot_id| format!("{file_name}.snapshot-{snapshot_id}.duckdb"));
+            if keep_name.as_deref() == Some(name.as_ref()) {
+                continue;
+            }
+            if entry
+                .file_type()
+                .map_err(|error| {
+                    AnalyzerError::Io(format!("analytics snapshot cleanup failed: {error}"))
+                })?
+                .is_file()
+            {
+                fs::remove_file(entry.path()).map_err(|error| {
+                    AnalyzerError::Io(format!("analytics snapshot cleanup failed: {error}"))
+                })?;
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "analytics")]
+    fn publish_analytics_snapshot(&self) -> Result<(), AnalyzerError> {
+        let snapshot_id = Self::next_snapshot_id();
+        if !self.validate_and_publish_snapshot(snapshot_id, 0)? {
+            return Err(AnalyzerError::Db(
+                "published analytics snapshot did not pass validation".to_string(),
+            ));
+        }
+        self.latest_snapshot_id
+            .store(snapshot_id, Ordering::Release);
+        self.cleanup_analytics_snapshots(Some(snapshot_id))
+    }
+
     fn next_snapshot_id() -> u64 {
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -812,7 +943,7 @@ impl DualLayerStore {
             p.details = scrub_text(&p.details);
         }
 
-        let key = Self::event_prefix(ts, &clean.commit_id);
+        let key = Self::event_prefix(ts, &clean);
         let bytes = serde_json::to_vec(&clean).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         self.kv.insert(key.as_bytes(), &bytes)
     }
@@ -916,7 +1047,10 @@ impl DualLayerStore {
         let pruned = self.prune_raw_events(policy, now_ts)?;
         let mut stats = self.promote_to_columnar_no_lock()?;
         stats.pruned_events = pruned;
-        self.prune_analytics_releases_with_retention(policy)?;
+        let retention_changed = self.prune_analytics_releases_with_retention(policy)?;
+        if stats.promoted_events > 0 || retention_changed {
+            self.publish_analytics_snapshot()?;
+        }
         Ok(stats)
     }
 
@@ -935,7 +1069,11 @@ impl DualLayerStore {
             .promotion_barrier
             .write()
             .unwrap_or_else(|e| e.into_inner());
-        self.promote_to_columnar_no_lock()
+        let stats = self.promote_to_columnar_no_lock()?;
+        if stats.promoted_events > 0 {
+            self.publish_analytics_snapshot()?;
+        }
+        Ok(stats)
     }
 
     #[cfg(not(feature = "analytics"))]
@@ -993,10 +1131,7 @@ impl DualLayerStore {
             conn.execute("CHECKPOINT", [])
                 .map_err(|e| AnalyzerError::Db(e.to_string()))?;
         }
-        let snapshot_id = self.latest_snapshot_id.load(Ordering::Acquire);
-        if snapshot_id != 0 {
-            let _ = self.refresh_analytics_snapshot(snapshot_id)?;
-        }
+        self.publish_analytics_snapshot()?;
         Ok(baseline_complexity)
     }
 
@@ -1014,14 +1149,8 @@ impl DualLayerStore {
         let pending = self.kv.scan_prefix(b"evt:")?;
         let (acknowledged_keys, promoted) = self.commit_pending_events_to_columnar(&pending)?;
         self.kv.remove_many(&acknowledged_keys)?;
-        self.prune_expired_promoted_event_receipts(now_ts())?;
-
-        let snapshot_id = Self::next_snapshot_id();
-        if self.validate_and_publish_snapshot(snapshot_id, promoted)? {
-            self.latest_snapshot_id
-                .store(snapshot_id, Ordering::Release);
-        } else {
-            self.latest_snapshot_id.store(0, Ordering::Release);
+        if !pending.is_empty() {
+            self.prune_expired_promoted_event_receipts(now_ts())?;
         }
 
         Ok(LifecycleStats {
@@ -1158,14 +1287,17 @@ impl DualLayerStore {
     fn prune_analytics_releases_with_retention(
         &self,
         policy: &RetentionPolicy,
-    ) -> Result<(), AnalyzerError> {
+    ) -> Result<bool, AnalyzerError> {
         let keep_releases = match policy.max_release_partitions_to_keep() {
             Some(keep) => keep,
-            None => return Ok(()),
+            None => return Ok(false),
         };
 
-        let conn =
+        let mut conn =
             Connection::open(&self.columnar_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
+        let transaction = conn
+            .transaction()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
 
         let purge_rollup_sql = "
             WITH ranked AS (
@@ -1184,7 +1316,8 @@ impl DualLayerStore {
                 SELECT repo_name, release FROM ranked WHERE rn > ?1
             )
         ";
-        conn.execute(purge_rollup_sql, params![keep_releases])
+        let purged_rollups = transaction
+            .execute(purge_rollup_sql, params![keep_releases])
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
         let rollup_sql = "
@@ -1221,7 +1354,8 @@ impl DualLayerStore {
                 h.repo_name, h.release, h.committer, h.plugin, h.metric_key
         ";
 
-        conn.execute(rollup_sql, params![keep_releases])
+        let rolled_up = transaction
+            .execute(rollup_sql, params![keep_releases])
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
 
         let purge_sql = "
@@ -1242,16 +1376,20 @@ impl DualLayerStore {
             )
         ";
 
-        conn.execute(purge_sql, params![keep_releases])
+        let purged_history = transaction
+            .execute(purge_sql, params![keep_releases])
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        Ok(())
+        transaction
+            .commit()
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
+        Ok(purged_rollups > 0 || rolled_up > 0 || purged_history > 0)
     }
 
     #[cfg(not(feature = "analytics"))]
     fn prune_analytics_releases_with_retention(
         &self,
         _policy: &RetentionPolicy,
-    ) -> Result<(), AnalyzerError> {
+    ) -> Result<bool, AnalyzerError> {
         Err(analytics_feature_unavailable())
     }
 
@@ -1266,7 +1404,7 @@ impl DualLayerStore {
             Connection::open(&snapshot_path).map_err(|e| AnalyzerError::Db(e.to_string()))?;
         let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM telemetry_history", [], |r| r.get(0))
-            .unwrap_or(0);
+            .map_err(|error| AnalyzerError::Db(error.to_string()))?;
         Ok(count >= min_rows as i64)
     }
 
@@ -1661,14 +1799,6 @@ impl rocinante_core::baseline::ReleaseBaselineRepository for BaselineStore {
     }
 }
 
-fn shard_suffix(commit_id: &str) -> String {
-    let mut checksum: u16 = 0;
-    for byte in commit_id.as_bytes() {
-        checksum = checksum.wrapping_add(*byte as u16);
-    }
-    format!("{:02x}", checksum % 16)
-}
-
 fn now_ts() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -1849,7 +1979,7 @@ mod sqlite_ingestion_tests {
         .expect("open dual layer store");
         let event = event("receipt-retirement");
         let event_timestamp = now_ts() + 10;
-        let event_key = DualLayerStore::event_prefix(event_timestamp, &event.commit_id);
+        let event_key = DualLayerStore::event_prefix(event_timestamp, &event);
         let event_bytes = serde_json::to_vec(&event).expect("serialize event");
         store
             .kv
@@ -1904,6 +2034,50 @@ mod sqlite_ingestion_tests {
     }
 
     #[test]
+    fn same_second_events_with_shared_commit_id_keep_repository_and_release_identity() {
+        let dir = tempdir().expect("temporary directory");
+        let kv_path = dir.path().join("kv");
+        let columnar_path = dir.path().join("analytics.duckdb");
+        let store = DualLayerStore::open(
+            kv_path.to_str().expect("kv path"),
+            columnar_path.to_str().expect("columnar path"),
+        )
+        .expect("open dual layer store");
+
+        let first = event("shared-commit");
+        let mut second = first.clone();
+        second.repo_name = "repo-b".to_string();
+        let mut third = first.clone();
+        third.release = "v2.0.0".to_string();
+        let timestamp = now_ts() + 10;
+        let events = [first, second, third];
+        let keys = events
+            .iter()
+            .map(|event| DualLayerStore::event_prefix(timestamp, event))
+            .collect::<std::collections::HashSet<_>>();
+        assert_eq!(keys.len(), events.len());
+
+        for event in &events {
+            let key = DualLayerStore::event_prefix(timestamp, event);
+            let value = serde_json::to_vec(event).expect("serialize event");
+            store
+                .kv
+                .insert(key.as_bytes(), &value)
+                .expect("insert event with shared commit id");
+        }
+
+        let promoted = store.promote_to_columnar().expect("promote events");
+        assert_eq!(promoted.promoted_events, 3);
+        let connection = DuckConnection::open(&columnar_path).expect("open DuckDB");
+        let rows: i64 = connection
+            .query_row("SELECT COUNT(*) FROM telemetry_history", [], |row| {
+                row.get(0)
+            })
+            .expect("count event rows");
+        assert_eq!(rows, 3);
+    }
+
+    #[test]
     fn duckdb_receipt_prevents_duplicate_after_commit_before_sqlite_ack() {
         let dir = tempdir().expect("temporary directory");
         let kv_path = dir.path().join("kv");
@@ -1914,7 +2088,7 @@ mod sqlite_ingestion_tests {
         )
         .expect("open dual layer store");
         let event = event("restart-replay");
-        let event_key = DualLayerStore::event_prefix(now_ts() - 10, &event.commit_id);
+        let event_key = DualLayerStore::event_prefix(now_ts() - 10, &event);
         let event_bytes = serde_json::to_vec(&event).expect("serialize event");
         store
             .kv

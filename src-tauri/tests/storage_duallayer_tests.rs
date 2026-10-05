@@ -54,6 +54,26 @@ fn write_raw_event(kv_path: &Path, key: &[u8], payload: &[u8]) {
         .expect("insert raw event");
 }
 
+fn snapshot_files_for(database_path: &Path) -> Vec<std::path::PathBuf> {
+    let file_name = database_path
+        .file_name()
+        .expect("database file name")
+        .to_string_lossy();
+    let prefix = format!("{file_name}.snapshot-");
+    let parent = database_path.parent().expect("database parent");
+    fs::read_dir(parent)
+        .expect("read snapshot directory")
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with(&prefix)
+                .then_some(entry.path())
+        })
+        .collect()
+}
+
 fn sample_event(id: &str) -> CommitIngestionEvent {
     CommitIngestionEvent {
         commit_id: id.to_string(),
@@ -141,6 +161,62 @@ fn promotes_events_and_reads_aggregates() {
 
     assert_eq!(points.len(), 1);
     assert_eq!(points[0].metric_key, "estimated_cyclomatic_complexity");
+}
+
+#[test]
+fn empty_promotions_skip_snapshots_and_real_promotions_replace_old_snapshots() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
+
+    for _ in 0..3 {
+        assert_eq!(
+            store
+                .promote_to_columnar()
+                .expect("empty promotion")
+                .promoted_events,
+            0
+        );
+    }
+    assert!(snapshot_files_for(&col).is_empty());
+
+    store
+        .ingest_commit_event(&sample_event("snapshot-one"))
+        .expect("ingest first event");
+    assert_eq!(
+        store
+            .promote_to_columnar()
+            .expect("promote first event")
+            .promoted_events,
+        1
+    );
+    let first_snapshot = snapshot_files_for(&col);
+    assert_eq!(first_snapshot.len(), 1);
+
+    store.promote_to_columnar().expect("idle promotion");
+    assert_eq!(snapshot_files_for(&col), first_snapshot);
+
+    store
+        .ingest_commit_event(&sample_event("snapshot-two"))
+        .expect("ingest second event");
+    store.promote_to_columnar().expect("promote second event");
+    let current_snapshots = snapshot_files_for(&col);
+    assert_eq!(current_snapshots.len(), 1);
+    assert_ne!(current_snapshots[0], first_snapshot[0]);
+    assert!(!first_snapshot[0].exists());
+
+    drop(store);
+    let _reopened = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("reopen store");
+    assert!(snapshot_files_for(&col).is_empty());
 }
 
 #[test]
@@ -245,8 +321,9 @@ fn stores_raw_events_with_sharded_keys() {
     assert_eq!(parts.len(), 4);
     assert_eq!(parts[0], "evt");
     assert!(parts[1].chars().all(|c| c.is_ascii_digit()));
-    assert_eq!(parts[3], "deadbeefcafec0de");
-    assert_eq!(parts[2].len(), 2);
+    assert!(parts[2].parse::<u8>().expect("numeric shard") < 16);
+    assert_eq!(parts[3].len(), 64, "event identity is a SHA-256 digest");
+    assert!(parts[3].chars().all(|c| c.is_ascii_hexdigit()));
 }
 
 #[test]
@@ -506,6 +583,61 @@ fn async_ingestion_engine_queues_events_before_promotion() {
         thread::sleep(Duration::from_millis(100));
     }
     assert_eq!(queue_depth, 0);
+}
+
+#[test]
+fn async_idle_promotion_timeouts_do_not_create_snapshot_files() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let engine = AsyncIngestionEngine::start_with_interval(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+        2,
+        5,
+    )
+    .expect("start async engine");
+
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while engine.promotion_count() < 3 && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(2));
+    }
+    assert!(
+        engine.promotion_count() >= 3,
+        "idle promotion timeouts did not run"
+    );
+    assert!(snapshot_files_for(&col).is_empty());
+}
+
+#[test]
+fn async_ingestion_reports_background_storage_errors() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
+    let engine =
+        AsyncIngestionEngine::start_with_store(store, 2, 5, None).expect("start async engine");
+    let mut invalid_event = sample_event("invalid-float");
+    invalid_event.telemetry[0].metric_value = f64::NAN;
+    engine
+        .enqueue(invalid_event)
+        .expect("enqueue event for worker");
+
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while engine.metrics().background_error_count == 0 && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(2));
+    }
+    let metrics = engine.metrics();
+    assert!(metrics.background_error_count > 0);
+    assert!(metrics
+        .last_background_error
+        .as_deref()
+        .is_some_and(|message| !message.is_empty()));
+    assert_eq!(metrics.queue_depth, 0);
 }
 
 #[test]
