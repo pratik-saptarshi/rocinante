@@ -4,23 +4,25 @@
 
 PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains the active
 protected review path from branch `fix/weighted-rollup-aggregation`, currently
-at remote head `cf9c1d3`. CI run `37302536069` passed UI quality, Rust quality,
+at remote head `8285ee6`. CI run `37302536069` on parent head `cf9c1d3` passed UI quality, Rust quality,
 formatting, Clippy, RustSec audit, governance, dependency review, all three
 native packages, URL dispatch, and Windows registration. Its core and full
 workspace test jobs failed on the same obsolete text assertion in
-`security_advisory_exception_tests`. That assertion is corrected locally, and
-the full serial analytics workspace passes 269 tests across 63 suites. Push
-that test correction and require a green replacement aggregate and CodeQL run.
+`security_advisory_exception_tests`. That assertion is corrected and pushed at
+`8285ee6`, and the full serial analytics workspace passes 269 tests across 63
+suites. The GitHub checks API could not be reached after the push; require a
+green replacement aggregate and CodeQL run before release readiness.
 
 The security registry and Cargo audit ignore list are empty, and the governance
 checker passes. Fresh, unfiltered audits passed both supported lockfiles
 against RustSec database revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee`
-(1,290 advisories). Hosted `rust-audit` and governance also passed on `cf9c1d3`;
-rerun them after the test-contract correction.
+(1,290 advisories). Hosted `rust-audit` and governance also passed on parent
+head `cf9c1d3`; verify replacement results on pushed head `8285ee6`.
 
 The UI pin is pnpm `12.9.1`; local execution could not verify its registry
 signature while `registry.npmjs.org` was unreachable, but hosted `ui-quality`
-passed on `cf9c1d3`. Repeat the hosted check after the test-contract correction.
+passed on parent head `cf9c1d3`. Repeat the hosted check on corrected head
+`8285ee6`.
 Previously recorded macOS URL/restart, tray/window, and notification-request
 checks passed; AppKit returned `accepted=false`, so foregrounding is not
 claimed. DuckDB remains a SHA-verified prebuilt and must never be compiled from
@@ -88,7 +90,7 @@ Secret scan is enabled in GitHub Actions | [x] | `.github/workflows/security.yml
 Dependency review is enabled for pull requests | [x] | `.github/workflows/dependency-review.yml`
 CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL analysis
 Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
-Dependency registry and audit ignore list are empty | [x] | Local registry/ignore state and governance contract pass after all affected packages were removed; the 15 withdrawn/absent entries have evidence in `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`. Fresh unfiltered audits passed both lockfiles against RustSec revision `ef6173c`; hosted rust-audit and governance passed on `cf9c1d3` and must rerun after the corrective test-contract commit.
+Dependency registry and audit ignore list are empty | [x] | Local registry/ignore state and governance contract pass after all affected packages were removed; the 15 withdrawn/absent entries have evidence in `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`. Fresh unfiltered audits passed both lockfiles against RustSec revision `ef6173c`; hosted rust-audit and governance passed on parent `cf9c1d3` and must rerun on pushed head `8285ee6`.
 Open Dependabot alerts are closed or formally accepted | [ ] | Last live GitHub query on 2026-10-04 found six alerts open on `main`: #13/#14 (`@vitest/mocker`/`vitest`, fixed in 4.1.11), #12 (`serde_with`, fixed in 3.21.0), #10/#7 (`postcss`, fixed in 8.5.23/8.5.18), and #1 (`glib`, fixed in 0.20.0). The esbuild alert was closed then. Current GitHub API refresh failed on 2026-10-05; do not treat the 10-04 query as current state.
 Previously recorded evidence (2026-09-30):
 
@@ -161,7 +163,7 @@ Backend Rust coverage report is generated | [x] | CI job `rust-coverage` runs `c
 Backend Rust coverage is informational | [x] | CI job `rust-coverage` installs `cargo-llvm-cov`, emits `target/coverage/lcov.info`, and does not enforce thresholds yet
 Quality gates and test stages are isolated | [x] | `.github/workflows/ci.yml` uses `rust-quality-gates` and matrix `rust-tests` jobs with `fail-fast: false` on test shards
 Merge gate (`test`) requires native-shell package jobs | [ ] | Workflow contract is updated locally; same-head hosted aggregate is pending.
-UI unit tests pass with pinned pnpm on current worktree | [ ] | Pinned pnpm `12.9.1` could not verify its registry signature because `registry.npmjs.org` was unreachable. Hosted `ui-quality` passed at remote head `cf9c1d3`; rerun on the corrected PR head.
+UI unit tests pass with pinned pnpm on current worktree | [ ] | Pinned pnpm `12.9.1` could not verify its registry signature because `registry.npmjs.org` was unreachable. Hosted `ui-quality` passed at parent head `cf9c1d3`; rerun on corrected head `8285ee6`.
 UI typecheck passes with pinned pnpm on current worktree | [ ] | Local pinned-pnpm execution was blocked by registry signature/network access; same-head hosted UI check is required.
 UI production build passes with pinned pnpm on current worktree | [ ] | Local pinned-pnpm execution was blocked by registry signature/network access; same-head hosted UI check is required.
 Browser tests are headless-only and pass | [x] | `ui/playwright.config.ts`, `ui/e2e/app.spec.ts`
@@ -183,8 +185,8 @@ Sync local `main` to merged remote tip | [x] | `git merge --no-ff origin/main`
 
 Criterion | Status | Evidence
 ---|---|---
-CI workflow is monitored until terminal state on current worktree | [ ] | Latest CI run `37302536069` failed on an obsolete checklist-text assertion; push the local assertion fix and monitor the replacement run to completion.
-Security workflow is monitored until terminal state on current worktree | [ ] | Fresh local RustSec audit, hosted governance, and hosted rust-audit pass; rerun the hosted security gate after the corrective test commit.
+CI workflow is monitored until terminal state on current worktree | [ ] | Run `37302536069` on parent head `cf9c1d3` failed on an obsolete checklist-text assertion; correction `8285ee6` is pushed, but the checks API could not be reached to inspect its replacement run.
+Security workflow is monitored until terminal state on current worktree | [ ] | Fresh local RustSec audit, hosted governance, and hosted rust-audit passed on `cf9c1d3`; verify the replacement security run after correction `8285ee6`.
 Dependency review is monitored until terminal state on current worktree | [x] | Dependency Review passed in the last reachable PR #112 check snapshot; refresh before final closeout.
 Rust coverage artifact is retained for review | [ ] | GitHub Actions artifact `rust-coverage-lcov` from CI job `rust-coverage`
 
