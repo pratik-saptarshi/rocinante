@@ -1901,6 +1901,10 @@ mod native_ui {
             eframe::icon_data::from_png_bytes(include_bytes!("../packaging/icons/rocinante.png"))
                 .expect("bundled application icon must be a valid PNG");
         let options = eframe::NativeOptions {
+            // Keep the native shell in one event loop for its lifetime. Closing
+            // the last viewport must exit the app instead of returning to an
+            // outer run loop that keeps the process alive.
+            run_and_return: false,
             viewport: egui::ViewportBuilder::default()
                 .with_title(profile.title)
                 .with_inner_size([profile.width as f32, profile.height as f32])

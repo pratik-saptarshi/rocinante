@@ -191,6 +191,7 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     assert!(shell_source.contains("ROCINANTE_ACCEPTANCE_ACTIVATION_RESULT"));
     assert!(shell_source.contains("quit_action_started=true\\n"));
     assert!(shell_source.contains("drop(self.tray_icon.take());"));
+    assert!(shell_source.contains("run_and_return: false"));
     assert!(shell_source.contains("ctx.send_viewport_cmd(egui::ViewportCommand::Close);"));
     assert!(!shell_source.contains("request_application_termination_after_ui_pass"));
     assert!(!macos_url_source.contains("performSelector: sel!(terminate:)"));
