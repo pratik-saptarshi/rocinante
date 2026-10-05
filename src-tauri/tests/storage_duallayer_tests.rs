@@ -457,6 +457,88 @@ fn prunes_old_releases_and_preserves_queryability_by_rollup() {
 }
 
 #[test]
+fn aggregates_and_scores_weighted_rollups_with_live_samples() {
+    let dir = tempdir().expect("tmp");
+    let kv = dir.path().join("kv");
+    let col = dir.path().join("analytics.duckdb");
+    let store = DualLayerStore::open(
+        kv.to_str().expect("kv path"),
+        col.to_str().expect("col path"),
+    )
+    .expect("open");
+
+    for (commit_id, release, metric_value) in [
+        ("old-1", "r2019", 5.0),
+        ("old-2", "r2019", 15.0),
+        ("kept-1", "r2020", 0.0),
+        ("kept-2", "r2021", 1.0),
+    ] {
+        let mut event = sample_event_with_release(commit_id, release);
+        event.telemetry[0].metric_value = metric_value;
+        store.ingest_commit_event(&event).expect("ingest event");
+    }
+
+    let retention = RetentionPolicy {
+        raw_ttl_secs: 3600,
+        max_release_partitions: Some(2),
+    };
+    let stats = store
+        .promote_to_columnar_with_retention(&retention, now_ts_for_test())
+        .expect("promote with retention");
+    assert_eq!(stats.promoted_events, 4);
+
+    let mut new_event = sample_event_with_release("new-r2019", "r2019");
+    new_event.telemetry[0].metric_value = 25.0;
+    store
+        .ingest_commit_event(&new_event)
+        .expect("ingest live sample for rolled-up release");
+    store.promote_to_columnar().expect("promote live sample");
+
+    let query = AdminQuery {
+        name: Some("repo-a".to_string()),
+        release: Some("r2019".to_string()),
+    };
+    let points = store.aggregate_by_query(&query).expect("aggregate metrics");
+    let complexity = points
+        .iter()
+        .find(|point| point.metric_key == "estimated_cyclomatic_complexity")
+        .expect("complexity metric");
+    assert!((complexity.metric_value - 15.0).abs() < 1e-9);
+
+    let scores = store
+        .compute_committer_scores(
+            &query,
+            &ScoringWeights {
+                version: "weighted-rollup-test".to_string(),
+                complexity_weight: 1.0,
+                coverage_weight: 0.0,
+                churn_weight: 0.0,
+                pipeline_weight: 0.0,
+                pr_file_risk_weight: 0.0,
+                pr_velocity_weight: 0.0,
+                pr_approval_weight: 0.0,
+            },
+        )
+        .expect("score committer");
+    assert_eq!(scores.len(), 1);
+    let conn = Connection::open(col.to_str().expect("col path")).expect("open analytics");
+    let baseline_complexity: f64 = conn
+        .query_row(
+            "SELECT baseline_complexity FROM repo_baseline WHERE repo_name = ?1",
+            params!["repo-a"],
+            |row| row.get(0),
+        )
+        .expect("read baseline");
+    assert!(baseline_complexity < 15.0);
+    let expected_complexity_component = 100.0 / (1.0 + (15.0 - baseline_complexity).max(0.0));
+    assert!(
+        (scores[0].complexity_component - expected_complexity_component).abs() < 1e-9,
+        "expected weighted complexity score {expected_complexity_component}, got {:?}",
+        scores[0]
+    );
+}
+
+#[test]
 fn prunes_release_partitions_per_repo_without_cross_repo_drift() {
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");

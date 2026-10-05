@@ -1676,12 +1676,20 @@ impl DualLayerStore {
         let release = scrub_text(&query.release.clone().unwrap_or_default());
         let mut stmt = conn
             .prepare(
-                "SELECT plugin, metric_key, AVG(metric_value) AS avg_value, MIN(details) AS details
+                "SELECT
+                   plugin,
+                   metric_key,
+                   CASE
+                     WHEN SUM(sample_count) = 0 THEN 0.0
+                     ELSE SUM(metric_sum) / SUM(sample_count)
+                   END AS avg_value,
+                   MIN(details) AS details
                  FROM (
                    SELECT
                      plugin,
                      metric_key,
-                     metric_value,
+                     metric_value AS metric_sum,
+                     1 AS sample_count,
                      details,
                      repo_name,
                      release
@@ -1690,10 +1698,8 @@ impl DualLayerStore {
                    SELECT
                      plugin,
                      metric_key,
-                     CASE
-                       WHEN sample_count = 0 THEN 0.0
-                       ELSE metric_sum / sample_count
-                     END AS metric_value,
+                     metric_sum,
+                     sample_count,
                      details,
                      repo_name,
                      release
@@ -1781,7 +1787,8 @@ impl DualLayerStore {
                 h.repo_name,
                 h.release,
                 h.metric_key,
-                h.metric_value
+                h.metric_value AS metric_sum,
+                1 AS sample_count
               FROM telemetry_history h
               UNION ALL
               SELECT
@@ -1789,16 +1796,21 @@ impl DualLayerStore {
                 h.repo_name,
                 h.release,
                 h.metric_key,
-                CASE WHEN h.sample_count = 0 THEN 0.0 ELSE h.metric_sum / h.sample_count END
+                h.metric_sum,
+                h.sample_count
               FROM telemetry_history_rollup h
             )
             SELECT
               h.committer,
               h.repo_name,
-              AVG(CASE WHEN h.metric_key = 'estimated_cyclomatic_complexity' THEN h.metric_value END) AS complexity,
-              AVG(CASE WHEN h.metric_key = 'coverage_delta' THEN h.metric_value END) AS coverage_delta,
-              AVG(CASE WHEN h.metric_key = 'churn_efficiency' THEN h.metric_value END) AS churn_efficiency,
-              AVG(CASE WHEN h.metric_key = 'pipeline_success' THEN h.metric_value END) AS pipeline_success,
+              SUM(CASE WHEN h.metric_key = 'estimated_cyclomatic_complexity' THEN h.metric_sum END)
+                / NULLIF(SUM(CASE WHEN h.metric_key = 'estimated_cyclomatic_complexity' THEN h.sample_count END), 0) AS complexity,
+              SUM(CASE WHEN h.metric_key = 'coverage_delta' THEN h.metric_sum END)
+                / NULLIF(SUM(CASE WHEN h.metric_key = 'coverage_delta' THEN h.sample_count END), 0) AS coverage_delta,
+              SUM(CASE WHEN h.metric_key = 'churn_efficiency' THEN h.metric_sum END)
+                / NULLIF(SUM(CASE WHEN h.metric_key = 'churn_efficiency' THEN h.sample_count END), 0) AS churn_efficiency,
+              SUM(CASE WHEN h.metric_key = 'pipeline_success' THEN h.metric_sum END)
+                / NULLIF(SUM(CASE WHEN h.metric_key = 'pipeline_success' THEN h.sample_count END), 0) AS pipeline_success,
               b.baseline_complexity
             FROM effective_metrics h
             LEFT JOIN repo_baseline b ON b.repo_name = h.repo_name
