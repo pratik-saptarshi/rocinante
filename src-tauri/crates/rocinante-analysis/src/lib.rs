@@ -218,6 +218,7 @@ fn query_repository_metrics_for_identities(
         .map(|identity| identity.stable_name.clone())
         .collect::<Vec<_>>();
     let mut metrics = store.query_repositories(&stable_names, release)?;
+    let stored_stable_names_by_basename = store.stable_repository_names_by_basename()?;
     let stable_releases_by_name = metrics.iter().fold(
         HashMap::<String, HashSet<String>>::new(),
         |mut releases_by_name, metric| {
@@ -230,6 +231,7 @@ fn query_repository_metrics_for_identities(
     );
 
     let mut stable_releases_by_legacy_name = HashMap::<String, HashSet<String>>::new();
+    let mut stable_names_by_legacy_name = HashMap::<String, HashSet<String>>::new();
     let mut ordered_legacy_names = Vec::new();
     let mut seen_legacy_names = HashSet::new();
     for identity in identities {
@@ -240,6 +242,10 @@ fn query_repository_metrics_for_identities(
             let releases = stable_releases_by_legacy_name
                 .entry(legacy_name.clone())
                 .or_default();
+            stable_names_by_legacy_name
+                .entry(legacy_name.clone())
+                .or_default()
+                .insert(identity.stable_name.clone());
             if let Some(stable_releases) = stable_releases_by_name.get(&identity.stable_name) {
                 releases.extend(stable_releases.iter().cloned());
             }
@@ -249,15 +255,36 @@ fn query_repository_metrics_for_identities(
     // Older telemetry may only have the repository basename. If multiple
     // discovered repositories share it, query that ambiguous alias once and
     // suppress only releases already represented by any matching stable row.
+    // Rebind a legacy row only when its alias maps to one discovered identity
+    // and the stored stable identities do not show a basename collision.
+    // Ambiguous basenames remain under their legacy name because their original
+    // repository cannot be determined safely, including when a single folder
+    // is selected from a workspace that previously contained duplicate names.
     for legacy_name in ordered_legacy_names {
         let stable_releases = &stable_releases_by_legacy_name[&legacy_name];
         let legacy_metrics =
             store.query_repositories(std::slice::from_ref(&legacy_name), release)?;
-        metrics.extend(
-            legacy_metrics
-                .into_iter()
-                .filter(|metric| !stable_releases.contains(&metric.release)),
-        );
+        let stable_names = &stable_names_by_legacy_name[&legacy_name];
+        let stable_name = if stable_names.len() == 1 {
+            let stable_name = stable_names.iter().next().expect("one stable identity");
+            let stored_names = stored_stable_names_by_basename.get(&legacy_name);
+            let stored_identity_is_unique = match stored_names {
+                None => true,
+                Some(names) => names.len() == 1 && names.contains(stable_name),
+            };
+            (legacy_name.contains('/') || stored_identity_is_unique).then_some(stable_name)
+        } else {
+            None
+        };
+        for mut metric in legacy_metrics
+            .into_iter()
+            .filter(|metric| !stable_releases.contains(&metric.release))
+        {
+            if let Some(stable_name) = stable_name {
+                metric.repo_name = stable_name.clone();
+            }
+            metrics.push(metric);
+        }
     }
     Ok(metrics)
 }

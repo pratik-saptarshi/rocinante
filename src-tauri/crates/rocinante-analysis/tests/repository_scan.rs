@@ -166,12 +166,23 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
     assert!(!stored_metrics
         .iter()
         .any(|metric| metric.key.starts_with("legacy_stale_metric_")));
+    let repo_one_stable_name = metrics
+        .iter()
+        .find(|metric| metric.repo_name.starts_with("repo-one "))
+        .expect("stable repo-one identity")
+        .repo_name
+        .clone();
     assert!(historic_metrics.iter().any(|metric| {
-        metric.repo_name == "repo-one" && metric.key == "legacy_metric_repo-one"
+        metric.repo_name == repo_one_stable_name && metric.key == "legacy_metric_repo-one"
     }));
-    assert!(historic_metrics.iter().any(|metric| {
-        metric.repo_name == "group-a/shared" && metric.key == "legacy_metric_group-a/shared"
-    }));
+    let group_a_shared_legacy_metric = historic_metrics
+        .iter()
+        .find(|metric| metric.key == "legacy_metric_group-a/shared")
+        .expect("legacy group-a/shared metric");
+    assert_ne!(group_a_shared_legacy_metric.repo_name, "group-a/shared");
+    assert!(group_a_shared_legacy_metric
+        .repo_name
+        .starts_with("shared "));
     assert_eq!(
         historic_metrics
             .iter()
@@ -193,6 +204,11 @@ fn scans_repositories_and_persists_sanitized_metrics_without_a_host_runtime() {
         let selected_metrics = query_repository_metrics(&token, &path, "", database.path())
             .expect("query a repository selected by its own directory");
         assert!(!selected_metrics.is_empty());
+        if path.ends_with("repo-one") {
+            assert!(selected_metrics
+                .iter()
+                .all(|metric| metric.repo_name == repo_one_stable_name));
+        }
         assert!(selected_metrics.iter().all(|selected| {
             stored_metrics.iter().any(|scanned| {
                 scanned.repo_name == selected.repo_name && scanned.key == selected.key

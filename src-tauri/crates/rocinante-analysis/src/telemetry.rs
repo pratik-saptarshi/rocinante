@@ -288,6 +288,26 @@ impl TelemetryStore {
         }
         Ok(out)
     }
+
+    pub(crate) fn stable_repository_names_by_basename(
+        &self,
+    ) -> Result<HashMap<String, HashSet<String>>, AnalyzerError> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT DISTINCT repo_name FROM telemetry")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+        let mut names_by_basename = HashMap::<String, HashSet<String>>::new();
+        for row in rows {
+            let repo_name = row?;
+            if let Some(basename) = stable_identity_basename(&repo_name) {
+                names_by_basename
+                    .entry(basename.to_string())
+                    .or_default()
+                    .insert(repo_name);
+            }
+        }
+        Ok(names_by_basename)
+    }
 }
 
 fn stable_identity_basename(repo_name: &str) -> Option<&str> {
