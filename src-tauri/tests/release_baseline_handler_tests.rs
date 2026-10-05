@@ -7,6 +7,10 @@ use tempfile::tempdir;
 
 #[test]
 fn release_baseline_commands_roundtrip_through_store() {
+    std::env::set_var(
+        "RUNICIPAL_TOKEN_SECRET",
+        "baseline-handler-test-secret-with-32-bytes",
+    );
     let dir = tempdir().expect("tmp");
     let kv = dir.path().join("kv");
     let col = dir.path().join("analytics.duckdb");
