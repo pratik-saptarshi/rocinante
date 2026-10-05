@@ -303,6 +303,18 @@ if [[ "$manual_tray_acceptance" == "1" ]]; then
 else
   touch "$quit_file"
   for _ in {1..45}; do
+    [[ -e "$quit_file.received" ]] && break
+    bundle_pid_is_running "$test_pid" || break
+    sleep 1
+  done
+  if [[ ! -e "$quit_file.received" ]]; then
+    echo "The native UI did not consume the automated Quit request" >&2
+    if [[ -f "$activation_result" ]]; then
+      cat "$activation_result" >&2
+    fi
+    exit 1
+  fi
+  for _ in {1..45}; do
     bundle_pid_is_running "$test_pid" || break
     sleep 1
   done
@@ -313,6 +325,19 @@ if bundle_pid_is_running "$test_pid"; then
   else
     echo "The bundled app did not exit cleanly after the acceptance quit request" >&2
   fi
+  echo "Quit acceptance diagnostics:" >&2
+  if [[ -e "$quit_file.received" ]]; then
+    echo "quit_control_received=true" >&2
+  else
+    echo "quit_control_received=false" >&2
+  fi
+  if [[ -f "$activation_result" ]]; then
+    cat "$activation_result" >&2
+  fi
+  if [[ -f "$witness" ]]; then
+    cat "$witness" >&2
+  fi
+  ps -p "$test_pid" -o pid= -o stat= -o command= >&2 || true
   exit 1
 fi
 if [[ "$manual_tray_acceptance" != "1" ]]; then
