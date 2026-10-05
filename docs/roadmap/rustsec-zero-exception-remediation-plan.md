@@ -835,3 +835,27 @@ The unfiltered app audit has zero vulnerability findings and exactly the two
 warnings; the unfiltered migrator audit has no findings or warnings. The
 governance checker validates the two-entry mapping and exits nonzero because
 both owner reviews are overdue. The gate remains fail-closed.
+
+## PR #108 review follow-up (2026-10-05)
+
+Review thread [`discussion_r4182304432`](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4182304432)
+reported that old-release rows kept a legacy repository label beside newer
+stable-ID rows. The analysis query now rebinds a legacy row to the discovered
+stable identity only when the alias has one candidate and the telemetry store
+contains no competing stable identity for that basename. Ambiguous basenames
+remain under the legacy label, including when querying one folder from a
+workspace that has already stored multiple stable identities. The repository
+scan contract covers workspace and selected-folder results.
+
+Review thread [`discussion_r4182304443`](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4182304443)
+reported that the shell can quit while detached operations are still writing,
+including non-atomic scoring-weight and audit-file updates. This multi-operation
+shutdown and persistence change is tracked in BI-060 in
+`docs/roadmap/bead-issue-tracker.html`; its acceptance criteria require
+operation draining or deferred quit and an atomic write of weights and their
+audit record.
+
+**Local verification:** workspace `fmt --check`, Clippy with warnings denied,
+the full serial workspace test suite, the native-shell tests in default and
+no-default feature modes, and the roadmap/publish contracts pass. Same-head
+hosted validation for these review follow-ups is pending.

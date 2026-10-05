@@ -183,7 +183,7 @@ Security/aggregate checks remain pending.
 ## Existing Test Coverage Additions
 
 - Historical PR #108 review regressions (before Phase 4C retired the Tauri host):
-  - The analysis scan tests check path-stable repository IDs across workspace and direct-folder selection, distinguish duplicate basenames, and use legacy basename/tree-relative telemetry aliases only when the requested stable identity has no rows for that release. A row is never returned under both old and new identities.
+  - The analysis scan tests check path-stable repository IDs across workspace and direct-folder selection, distinguish duplicate basenames, and use legacy basename/tree-relative telemetry aliases only when the requested stable identity has no rows for that release. A uniquely attributable legacy row is rebound to its stable identity; a basename with multiple stored stable identities stays under its legacy label. A row is never returned under both old and new identities.
   - The storage test checks legacy working-directory defaults for the analytics and scoring stores until BI-058 implements a data-preserving migration, while preserving explicit environment overrides; the separate analysis `telemetry.db` remains per-user with its legacy-file migration.
   - The macOS installer test records nested signing order and verifies the final app bundle after Mach-O edits.
   - The CI scope contract selected Rust checks for toolchain and Cargo config paths and required successful Linux, macOS, and Windows Tauri bundle jobs at the aggregate gate; Phase 4C replaced that matrix with native-shell package jobs.
