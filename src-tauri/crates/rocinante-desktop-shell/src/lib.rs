@@ -649,7 +649,6 @@ mod native_ui {
                     WindowCloseBehavior::Exit => {
                         self.state.dispatch(NavigationAction::Close);
                         self.persist_shell_state(frame);
-
                     }
                 }
             }
