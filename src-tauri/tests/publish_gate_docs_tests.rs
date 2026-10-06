@@ -33,7 +33,7 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
     let codemap = normalize_whitespace(&read_repo_file("../codemap.md"));
 
     assert!(bom.contains("Current shutdown source uses the shared `quit_explicitly` helper"));
-    assert!(bom.contains("flushes storage before removing the tray icon"));
+    assert!(bom.contains("flush storage before removing the tray icon"));
     assert!(bom.contains("`std::process::exit(0)` on macOS"));
     assert!(bom.contains("BI-047"));
     assert!(checklist.contains("Current branch snapshot — 2026-10-06"));
@@ -43,11 +43,11 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
     assert!(checklist.contains("Native-shell packaging and all downstream validation jobs were skipped"));
     assert!(checklist.contains("Security run `37403699221`"));
     assert!(checklist.contains("Dependency Review run `37403699223` passed"));
-    assert!(codemap.contains("Current shutdown implementation uses the shared `quit_explicitly` helper"));
+    assert!(codemap.contains("Current shutdown source uses the shared `quit_explicitly` helper"));
     assert!(codemap.contains("Same-head CI run `37403699282` failed"));
-    assert!(codemap.contains("native-shell packaging and all downstream validation jobs were skipped"));
+    assert!(codemap.contains("native-shell packaging and downstream validation jobs were skipped"));
 
-    assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
+    assert!(codemap.contains("Current Architecture Status (2026-10-06)"));
 }
 
 #[test]
