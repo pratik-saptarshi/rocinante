@@ -1,12 +1,12 @@
 # Test Plan (TDD Roadmap)
 
-## Current execution status — 2026-10-05
+## Current execution status — 2026-10-06
 
-PR #112 remains open on `fix/weighted-rollup-aggregation`, based on `main` `eb83be9`. Current shutdown source `b95a8c1` sets eframe `run_and_return=false`. Hosted CI on `fe5b2eb` recorded both Quit-control receipt and callback witness, yet the process remained resident after viewport close. The code change addresses the event-loop mode; same-head hosted packaged-app validation is still required.
+PR #112 merged at `035c290`. Final PR source head `bb2d170` passed aggregate CI (`37417428474`), Security (`37417428663`), and Dependency Review (`37417428598`). The tested macOS quit implementation synchronously saves state and flushes storage, drops the tray icon, then exits via `std::process::exit(0)`; this replaces the earlier `run_and_return=false` candidate. The aggregate and platform jobs cover build/test/package paths, not physical tray-menu interaction.
 
-Local formatting, 52 desktop-shell tests across 9 suites, the full serial workspace (270 tests across 64 suites), and warning-denied Clippy pass. The local installed-app run is inconclusive because sandboxed Launch Services refused the temporary app bundle (`-10822`), while a standalone executable attempt aborted before startup because dyld could not load `@rpath/libduckdb.dylib` (`no LC_RPATH`). That attempt did not exercise the installed app. A later direct execution of the signed bundle binary also aborted in AppKit during `NSApplication::sharedApplication` from `macos_url::register`, before a window appeared. That shell-launched attempt bypassed Launch Services inside this sandbox and does not validate a user-installed app. Previous green checks and local lifecycle results predate `run_and_return=false`.
+The latest recorded manual Show attempt after `2fac448` timed out without a witnessed callback and predates the hard-exit source. The user's later report that the app did not come up cleanly is a reproduction lead; the precise failure and cause have not been established. Do not report current installed-app stability, physical Show/Quit, foreground restoration, or saved-state restart as passed until a fresh installed-app run observes each result. Capture launch logs/crash evidence if startup fails.
 
-At 2026-10-05 19:33 UTC, GitHub Status reported Actions degraded performance. CI, Security, and Dependency Review must be terminal-green on the final branch head before readiness changes. The manual Show attempt after `2fac448` timed out without observing its callback. Physical Show/Quit, foreground activation, and saved-state restart on the current candidate remain open. The detailed evidence is in the dated shutdown roadmap and decision record.
+Earlier sandbox Launch Services, dyld, and direct AppKit failures did not exercise a user-installed app. The current physical acceptance gate is open; use the dated shutdown remediation plan for steps and evidence.
 
 ## Testing Strategy
 
