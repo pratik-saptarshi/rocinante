@@ -79,12 +79,6 @@ pub fn activate_application() -> bool {
     accepted
 }
 
-pub fn terminate_application() {
-    if let Some(main_thread) = MainThreadMarker::new() {
-        NSApplication::sharedApplication(main_thread).terminate(None);
-    }
-}
-
 pub fn register(
     sender: Sender<String>,
     repaint_context: Arc<Mutex<Option<eframe::egui::Context>>>,

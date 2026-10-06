@@ -11,7 +11,12 @@ SEO, Drupal security, and performance reference panels.
 
 - `src/lib.rs` owns native application state, navigation, window/tray behavior,
   scan and saved-metric tasks, notification delivery, and the eframe UI. The
-  first UI frame requests a visible, unminimized window and macOS activation. Tray Show sends visibility/focus commands before waking the UI loop; installed Darwin lifecycle acceptance passes, while strict mode reports visible=true, activation_policy=0 (Regular), active=false, and frontmost=false in this automation session.
+  first UI frame requests a visible, unminimized window and macOS activation.
+  Tray Show sends visibility/focus commands before waking the UI loop. Prior
+  installed Darwin lifecycle results are historical and do not validate the
+  current shutdown candidate; strict mode previously reported visible=true,
+  activation_policy=0 (Regular), active=false, and frontmost=false in this
+  automation session.
 - `src/dashboard.rs` builds deterministic summaries from actual repository
   metrics; it does not infer risk from generic metric values.
 - The Dashboard release-baseline controls use the shared `rocinante-storage`
@@ -44,11 +49,19 @@ SEO, Drupal security, and performance reference panels.
   `tests/windows_registration.rs` cover inbox, installer, protocol, and
   acceptance wiring contracts. The installed Darwin acceptance exercises
   cold/warm/restart URL delivery, close-to-tray, Show/Quit action handling,
-  window visibility, and a successful native notification request. It requests activation through `NSRunningApplication` and `NSApplication`. The acceptance helper reports visibility, frontmost state, activation policy, and active state; strict mode reported a Regular, visible app that was not active or frontmost in this automation session. It does not prove visible notification delivery or physical tray-menu clicks. OS
+  window visibility, and a successful native notification request. It requests activation through `NSRunningApplication` and `NSApplication`. The acceptance helper reports visibility, frontmost state, activation policy, and active state; strict mode reported a Regular, visible app that was not active or frontmost in this automation session. It does not prove visible notification delivery or physical tray-menu clicks. An opt-in manual mode now waits for actual menu events. OS
   acceptance scripts exercise installed lifecycle behavior.
+- Explicit tray Quit, Command-Q, and in-app Quit share a path that synchronously
+  persists shell state and flushes eframe storage, drops the tray icon, then
+  calls `std::process::exit(0)` on macOS. Linux and Windows retain eframe close.
+  This skips macOS destructors and shutdown hooks; same-head CI and bundled
+  acceptance remain pending for the current candidate.
 - Hosted Linux/Windows lifecycle evidence, visible notification delivery,
   physical tray-menu clicks, the import selection decision, Linux/Windows tray
   runtime, and visual launch checks remain in BI-049.
 - A read-only `AXIsProcessTrusted` probe returned false for the current macOS
-  automation process; no permission was changed. Physical tray-menu delivery
-  requires an Accessibility-authorized interactive acceptance run.
+  automation process; no permission was changed. The opt-in manual mode
+  `ROCINANTE_ACCEPTANCE_MANUAL_TRAY=1 bash scripts/test-macos-url-dispatch.sh`
+  waits for real tray-menu Show/Quit selections and verifies frontmost state
+  and process exit without synthesizing input. It still needs an interactive
+  run.

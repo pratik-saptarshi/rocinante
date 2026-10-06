@@ -1447,27 +1447,6 @@ impl DualLayerStore {
             .transaction()
             .map_err(|error| AnalyzerError::Db(error.to_string()))?;
 
-        let purge_rollup_sql = "
-            WITH ranked AS (
-                SELECT
-                    repo_name,
-                    release,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY repo_name
-                        ORDER BY MAX(ts) DESC, MAX(release) DESC
-                    ) AS rn
-                FROM telemetry_history
-                GROUP BY repo_name, release
-            )
-            DELETE FROM telemetry_history_rollup
-            WHERE (repo_name, release) IN (
-                SELECT repo_name, release FROM ranked WHERE rn > ?1
-            )
-        ";
-        let purged_rollups = transaction
-            .execute(purge_rollup_sql, params![keep_releases])
-            .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-
         let rollup_sql = "
             WITH ranked AS (
                 SELECT
@@ -1482,24 +1461,63 @@ impl DualLayerStore {
             ),
             stale_releases AS (
                 SELECT repo_name, release FROM ranked WHERE rn > ?1
+            ),
+            rollup_inputs AS (
+                SELECT
+                    existing.repo_name,
+                    existing.release,
+                    existing.committer,
+                    existing.plugin,
+                    existing.metric_key,
+                    existing.metric_sum,
+                    existing.sample_count,
+                    existing.details
+                FROM telemetry_history_rollup existing
+                INNER JOIN stale_releases r
+                    ON r.repo_name = existing.repo_name
+                   AND r.release = existing.release
+
+                UNION ALL
+
+                SELECT
+                    h.repo_name,
+                    h.release,
+                    h.committer,
+                    h.plugin,
+                    h.metric_key,
+                    h.metric_value AS metric_sum,
+                    1 AS sample_count,
+                    h.details
+                FROM telemetry_history h
+                INNER JOIN stale_releases r
+                    ON r.repo_name = h.repo_name
+                   AND r.release = h.release
+            ),
+            merged_rollups AS (
+                SELECT
+                    repo_name,
+                    release,
+                    committer,
+                    plugin,
+                    metric_key,
+                    SUM(metric_sum) AS metric_sum,
+                    SUM(sample_count) AS sample_count,
+                    MIN(details) AS details
+                FROM rollup_inputs
+                GROUP BY repo_name, release, committer, plugin, metric_key
             )
-            INSERT INTO telemetry_history_rollup
+            INSERT OR REPLACE INTO telemetry_history_rollup
                 (repo_name, release, committer, plugin, metric_key, metric_sum, sample_count, details)
             SELECT
-                h.repo_name,
-                h.release,
-                h.committer,
-                h.plugin,
-                h.metric_key,
-                SUM(h.metric_value),
-                COUNT(*),
-                MIN(h.details)
-            FROM telemetry_history h
-            INNER JOIN stale_releases r
-                ON r.repo_name = h.repo_name
-               AND r.release = h.release
-            GROUP BY
-                h.repo_name, h.release, h.committer, h.plugin, h.metric_key
+                repo_name,
+                release,
+                committer,
+                plugin,
+                metric_key,
+                metric_sum,
+                sample_count,
+                details
+            FROM merged_rollups
         ";
 
         let rolled_up = transaction
@@ -1527,7 +1545,7 @@ impl DualLayerStore {
         let purged_history = transaction
             .execute(purge_sql, params![keep_releases])
             .map_err(|e| AnalyzerError::Db(e.to_string()))?;
-        let changed = purged_rollups > 0 || rolled_up > 0 || purged_history > 0;
+        let changed = rolled_up > 0 || purged_history > 0;
         if changed {
             self.mark_snapshot_publication_pending()?;
         }
@@ -1676,12 +1694,20 @@ impl DualLayerStore {
         let release = scrub_text(&query.release.clone().unwrap_or_default());
         let mut stmt = conn
             .prepare(
-                "SELECT plugin, metric_key, AVG(metric_value) AS avg_value, MIN(details) AS details
+                "SELECT
+                   plugin,
+                   metric_key,
+                   CASE
+                     WHEN SUM(sample_count) = 0 THEN 0.0
+                     ELSE SUM(metric_sum) / SUM(sample_count)
+                   END AS avg_value,
+                   MIN(details) AS details
                  FROM (
                    SELECT
                      plugin,
                      metric_key,
-                     metric_value,
+                     metric_value AS metric_sum,
+                     1 AS sample_count,
                      details,
                      repo_name,
                      release
@@ -1690,10 +1716,8 @@ impl DualLayerStore {
                    SELECT
                      plugin,
                      metric_key,
-                     CASE
-                       WHEN sample_count = 0 THEN 0.0
-                       ELSE metric_sum / sample_count
-                     END AS metric_value,
+                     metric_sum,
+                     sample_count,
                      details,
                      repo_name,
                      release
@@ -1781,7 +1805,8 @@ impl DualLayerStore {
                 h.repo_name,
                 h.release,
                 h.metric_key,
-                h.metric_value
+                h.metric_value AS metric_sum,
+                1 AS sample_count
               FROM telemetry_history h
               UNION ALL
               SELECT
@@ -1789,16 +1814,21 @@ impl DualLayerStore {
                 h.repo_name,
                 h.release,
                 h.metric_key,
-                CASE WHEN h.sample_count = 0 THEN 0.0 ELSE h.metric_sum / h.sample_count END
+                h.metric_sum,
+                h.sample_count
               FROM telemetry_history_rollup h
             )
             SELECT
               h.committer,
               h.repo_name,
-              AVG(CASE WHEN h.metric_key = 'estimated_cyclomatic_complexity' THEN h.metric_value END) AS complexity,
-              AVG(CASE WHEN h.metric_key = 'coverage_delta' THEN h.metric_value END) AS coverage_delta,
-              AVG(CASE WHEN h.metric_key = 'churn_efficiency' THEN h.metric_value END) AS churn_efficiency,
-              AVG(CASE WHEN h.metric_key = 'pipeline_success' THEN h.metric_value END) AS pipeline_success,
+              SUM(CASE WHEN h.metric_key = 'estimated_cyclomatic_complexity' THEN h.metric_sum END)
+                / NULLIF(SUM(CASE WHEN h.metric_key = 'estimated_cyclomatic_complexity' THEN h.sample_count END), 0) AS complexity,
+              SUM(CASE WHEN h.metric_key = 'coverage_delta' THEN h.metric_sum END)
+                / NULLIF(SUM(CASE WHEN h.metric_key = 'coverage_delta' THEN h.sample_count END), 0) AS coverage_delta,
+              SUM(CASE WHEN h.metric_key = 'churn_efficiency' THEN h.metric_sum END)
+                / NULLIF(SUM(CASE WHEN h.metric_key = 'churn_efficiency' THEN h.sample_count END), 0) AS churn_efficiency,
+              SUM(CASE WHEN h.metric_key = 'pipeline_success' THEN h.metric_sum END)
+                / NULLIF(SUM(CASE WHEN h.metric_key = 'pipeline_success' THEN h.sample_count END), 0) AS pipeline_success,
               b.baseline_complexity
             FROM effective_metrics h
             LEFT JOIN repo_baseline b ON b.repo_name = h.repo_name

@@ -1,5 +1,5 @@
 use crate::admin;
-use crate::auth::{decode_principal, require_admin};
+use crate::auth::{decode_principal, require_admin, require_configured_token_secret};
 use crate::risk_contract::PrRiskEvaluation;
 use crate::storage::BaselineStore;
 use crate::types::PrCandidate;
@@ -45,6 +45,7 @@ pub const MIGRATED_COMMAND_CONTRACTS: [(&str, &str, &str); 11] = [
 ];
 
 fn authorize_baseline_access(token: &str) -> Result<(), String> {
+    require_configured_token_secret().map_err(|e| e.to_string())?;
     let principal = decode_principal(token).map_err(|e| e.to_string())?;
     require_admin(&principal).map_err(|e| e.to_string())
 }
@@ -81,8 +82,7 @@ pub fn query_release_baseline_with_store(
     store: BaselineStore,
     repo_name: String,
 ) -> Result<Option<f64>, String> {
-    let principal = decode_principal(&token).map_err(|e| e.to_string())?;
-    require_admin(&principal).map_err(|e| e.to_string())?;
+    authorize_baseline_access(&token)?;
     store
         .read_release_baseline(&repo_name)
         .map_err(|e| e.to_string())
@@ -94,8 +94,7 @@ pub fn reseed_release_baseline_with_store(
     repo_name: String,
     baseline_complexity: f64,
 ) -> Result<f64, String> {
-    let principal = decode_principal(&token).map_err(|e| e.to_string())?;
-    require_admin(&principal).map_err(|e| e.to_string())?;
+    authorize_baseline_access(&token)?;
     store
         .reseed_release_baseline(&repo_name, baseline_complexity)
         .map_err(|e| e.to_string())

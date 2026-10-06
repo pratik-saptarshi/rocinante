@@ -139,6 +139,16 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     assert!(acceptance_script.contains("request_succeeded=true"));
     assert!(acceptance_script.contains("ROCINANTE_ACCEPTANCE_ACTIVATION_RESULT"));
     assert!(acceptance_script.contains("request_accepted="));
+    assert!(acceptance_script.contains("ROCINANTE_ACCEPTANCE_MANUAL_TRAY"));
+    assert!(acceptance_script.contains("ROCINANTE_ACCEPTANCE_MANUAL_TRAY:-0"));
+    assert!(acceptance_script.contains("otool -l \"$bundle_binary\""));
+    assert!(acceptance_script.contains("@executable_path/../Frameworks"));
+    assert!(acceptance_script.contains("codesign --verify --deep --strict \"$bundle\""));
+    assert!(acceptance_script.contains("show_action_started=true"));
+    assert!(acceptance_script.contains("quit_action_started=true"));
+    assert!(acceptance_script.contains("wait_for_native_window_state true true"));
+    assert!(acceptance_script.contains("choose Show Rocinante"));
+    assert!(acceptance_script.contains("choose Quit"));
     assert!(acceptance_script.contains("wait_for_native_window_state false \"*\""));
     assert!(acceptance_script.contains("ROCINANTE_ACCEPTANCE_REQUIRE_FRONTMOST"));
     assert!(acceptance_script.contains("wait_for_native_window_state true \"$expected_frontmost\""));
@@ -182,9 +192,22 @@ fn macos_installer_builds_url_handler_bundle_and_registers_it() {
     assert!(shell_source.contains("ROCINANTE_ACCEPTANCE_NOTIFICATION_RESULT"));
     assert!(shell_source.contains("super::macos_url::activate_application()"));
     assert!(shell_source.contains("ROCINANTE_ACCEPTANCE_ACTIVATION_RESULT"));
+    assert!(shell_source.contains("quit_action_started=true\\n"));
+    assert!(shell_source.contains("drop(self.tray_icon.take());"));
+    assert!(shell_source.contains("run_and_return: false"));
+    assert!(shell_source.contains("ctx.send_viewport_cmd(egui::ViewportCommand::Close);"));
+    assert!(!shell_source.contains("request_application_termination_after_ui_pass"));
+    assert!(!macos_url_source.contains("performSelector: sel!(terminate:)"));
+    assert!(!macos_url_source.contains(".terminate(None)"));
     assert!(acceptance_script.contains("kill -KILL \"$process_id\""));
     assert!(acceptance_script.contains("packaging/macos/install-user.sh"));
-    assert!(acceptance_script.contains("rm -f \"$quit_file\"\n\n: > \"$witness\""));
+    assert!(acceptance_script.contains(
+        r#"if [[ "$manual_tray_acceptance" != "1" ]]; then
+  rm -f "$quit_file"
+fi
+
+: > "$witness""#
+    ));
     assert!(acceptance_script.contains("open -a \"$bundle\"\nwait_for_applied_path \"$warm_path\""));
     assert!(acceptance_script.contains("restarted_pid=\"$(sed -n 's/^pid=//p' \"$witness\")\""));
     let validation = Command::new("plutil")

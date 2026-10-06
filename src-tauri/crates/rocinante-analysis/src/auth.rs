@@ -22,7 +22,7 @@ pub fn require_configured_token_secret() -> Result<(), AnalyzerError> {
     match std::env::var("RUNICIPAL_TOKEN_SECRET") {
         Ok(secret) if secret.len() >= 32 && secret != "dev-secret-key" => Ok(()),
         _ => Err(AnalyzerError::Integrity(
-            "RUNICIPAL_TOKEN_SECRET must be configured with at least 32 bytes to scan repositories"
+            "RUNICIPAL_TOKEN_SECRET must be configured with at least 32 bytes for administrative services"
                 .into(),
         )),
     }

@@ -349,17 +349,13 @@ runtime path. The Windows installer
 copies the executable into `%LOCALAPPDATA%` and registers a current-user
 `rocinante://` command under `HKCU`; it places the matching `duckdb.dll` beside
 the executable. Its PowerShell source contract is checked on this host.
-The macOS installer embeds `libduckdb.dylib` in `Contents/Frameworks`, rewrites
-the app-relative loader path, and declares the scheme in the `.app` bundle
-before registering it through Launch Services. The installed macOS lifecycle
-acceptance passes cold/warm URL delivery, tray actions, notification request,
-and saved-state restart on this host. The native-shell package matrix builds
-and inspects the Linux, macOS, and Windows installations; local macOS
-acceptance passes, while current-head hosted package results and Linux and
-Windows acceptance remain pending.
-Visible notification delivery on macOS and Windows, physical tray-menu clicks,
-and macOS foreground activation still need interactive validation. Release
-distribution must sign the completed app bundle after packaging.
+The macOS installer embeds `libduckdb.dylib` in `Contents/Frameworks`, rewrites the app-relative loader path, and declares the scheme in the `.app` bundle before registering it through Launch Services. Hosted CI run `37360802367` on `fe5b2eb` consumed the earlier Quit request but the app remained resident after viewport close. The current implementation routes tray Quit, Command-Q, and in-app Quit through `quit_explicitly`, which saves shell state and flushes storage before removing the tray icon and calling `std::process::exit(0)` on macOS. Linux and Windows retain eframe viewport close, and ordinary close-to-tray still hides the window. CI run `37404464369` completed with aggregate `test` failure on PR head `d598d59`: `rust-workspace-tests` and `rust-tests (core)` failed because a security-doc contract still pinned historical Security-run wording, and `rust-lint (fmt)` failed on rustfmt wrapping in the publish-doc contract. `ci-workflow-parse`, UI typecheck/unit/build, Linux/macOS/Windows URL and native-shell package jobs, `rust-tests (storage)`, Clippy, and advisory governance passed. Security run `37404464610` passed Rust audit, secret scan, and CodeQL; Dependency Review run `37404464411` passed. These results describe `d598d59`; the current follow-up contract and readiness commits require fresh same-head checks.
+
+The native-shell package matrix and URL lifecycle passed on documentation head `2fac448`, before the current shutdown helper; this is historical evidence only. Local formatting, 52 desktop-shell tests, the 270-test/64-suite workspace, and warning-denied Clippy were run on the earlier `b95a8c1` `run_and_return=false` candidate only. No local compile, test, or installed-app acceptance has validated the current helper or its direct macOS process exit. CI run `37404464369` completed with aggregate `test` failure on PR head `d598d59`: `rust-workspace-tests` and `rust-tests (core)` failed because a security-doc contract still pinned historical Security-run wording, and `rust-lint (fmt)` failed on rustfmt wrapping in the publish-doc contract. `ci-workflow-parse`, UI typecheck/unit/build, Linux/macOS/Windows URL and native-shell package jobs, `rust-tests (storage)`, Clippy, and advisory governance passed. Security run `37404464610` passed Rust audit, secret scan, and CodeQL; Dependency Review run `37404464411` passed. These results describe `d598d59`; the current follow-up contract and readiness commits require fresh same-head checks.
+
+The current source fix is documented in `docs/roadmap/macos-native-shutdown-remediation-2026-10-05.md` and `docs/decisions/decision-2026-10-05.md`. CI run `37404464369` completed with aggregate `test` failure on PR head `d598d59`: `rust-workspace-tests` and `rust-tests (core)` failed because a security-doc contract still pinned historical Security-run wording, and `rust-lint (fmt)` failed on rustfmt wrapping in the publish-doc contract. `ci-workflow-parse`, UI typecheck/unit/build, Linux/macOS/Windows URL and native-shell package jobs, `rust-tests (storage)`, Clippy, and advisory governance passed. Security run `37404464610` passed Rust audit, secret scan, and CodeQL; Dependency Review run `37404464411` passed. These results describe `d598d59`; the current follow-up contract and readiness commits require fresh same-head checks. The manual run after code head `2fac448` reached the Show prompt but timed out without observing its callback. Physical Show/Quit and foreground acceptance remain unverified. DuckDB stays prebuilt-only and is never compiled from source.
+
+Release distribution must sign the completed app bundle after packaging.
 
 > If you are only validating pipeline outputs and not running the desktop shell, running tests and targeted Rust unit tests above is usually sufficient for CI-style verification.
 

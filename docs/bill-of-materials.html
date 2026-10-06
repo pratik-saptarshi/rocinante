@@ -7,43 +7,32 @@ and governance artifacts that must stay aligned before publishing to `origin`.
 The publish path is protected-branch based: validate on a branch, merge by PR,
 then release from the merged tip.
 
-## Current worktree snapshot — 2026-10-05
+## Current worktree snapshot — 2026-10-06
 
-The local PR #108 branch is `fix/rocinante-readiness-remediation`, based on
-pushed commit `3020d9e`; the current worktree changes are uncommitted and
-have not run in hosted CI. The supported host is the eframe/winit native
-shell; Tauri bootstrap, runtime/build dependencies, and installer configs are
-removed locally. The 11 prior command names and wire
-shapes remain as host-neutral compatibility metadata. The advisory registry
-and Cargo audit ignore list are empty; local governance and cached-database
-audits pass after all affected packages were removed. A fresh RustSec database
-fetch failed to connect to GitHub. Workspace formatting, all-target/all-feature
-Clippy, and the full serial suite pass locally; the storage suite also passes
-with two threads, while its default-parallel run stalls in the retention case.
-UI typecheck, 63 tests, and production build pass as diagnostics with global
-pnpm 12.8.1, but the pinned 12.9.1 could not be fetched because registry DNS
-failed. The installed macOS URL/restart acceptance passes; AppKit returned
-`accepted=false` for activation, so foregrounding is not claimed. Linux/Windows
-package/lifecycle results and aggregate CI remain unverified on this worktree.
-DuckDB remains a SHA-verified prebuilt and is never compiled from source.
+PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains open on `fix/weighted-rollup-aggregation`, head `8f4080b`. Current shutdown source uses the shared `quit_explicitly` helper to save shell state and flush storage before removing the tray icon and calling `std::process::exit(0)` on macOS; the earlier `b95a8c1` candidate used eframe `run_and_return=false`.
+
+CI run `37404464369` completed with aggregate `test` failure on PR head `d598d59`: `rust-workspace-tests` and `rust-tests (core)` failed because a security-doc contract still pinned historical Security-run wording, and `rust-lint (fmt)` failed on rustfmt wrapping in the publish-doc contract. `ci-workflow-parse`, UI typecheck/unit/build, Linux/macOS/Windows URL and native-shell package jobs, `rust-tests (storage)`, Clippy, and advisory governance passed. Security run `37404464610` passed Rust audit, secret scan, and CodeQL; Dependency Review run `37404464411` passed. These results describe `d598d59`; the current follow-up contract and readiness commits require fresh same-head checks.
+
+Local formatting, the 52-test desktop-shell suite, the 270-test/64-suite workspace, and warning-denied Clippy were run on the earlier `b95a8c1` candidate only. The installed macOS lifecycle is inconclusive locally: Launch Services refused the temporary bundle (`-10822`), a standalone executable failed before startup due to missing `@rpath/libduckdb.dylib`, and direct signed-bundle execution aborted in AppKit before a window appeared. None exercised the current helper. The security registry and audit ignore list are empty; the UI pin remains pnpm `12.9.1`; DuckDB remains a SHA-verified prebuilt and is never compiled from source. The manual Show attempt timed out; physical Show/Quit, foreground activation, and saved-state restart on the current candidate remain unverified. See the shutdown roadmap and dated decision for remaining gates.
 
 ## 1) Repository identity
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary integration branch: `main`
 - Remote: `origin`
-- Current work is on PR #108's remediation branch,
-  `fix/rocinante-readiness-remediation`. Its latest hosted validation head is
-  `1be093a`; the PR remains open and relevant, based on `main` at `cdd29b9`.
-  All 47 inline threads are resolved. The latest hosted aggregate failed on
-  the then-current 17 overdue entries; the local two-entry registry update is
-  awaiting hosted validation.
+- PR #108 completed the readiness migration and merged as `eb83be9`. The
+  weighted-retention correction is in PR #112 on
+  `fix/weighted-rollup-aggregation`, based on that main tip. CI run
+  `37346608465`, Security run `37346608399`, and Dependency Review run
+  `37346608411` all passed on head `2fac448`; three implementation findings
+  and the scoped codemap freshness finding are fixed and their threads are
+  resolved.
 - Product: Rust shared-service workspace with a GTK-free native desktop host
   and a React/Vite preview dashboard
 - Publish model: squash merge or protected PR merge only, no merge commits on
   the default branch
 - The CI-hardening work in PR run `28987645462` is historical evidence; it does
-  not establish readiness for PR #108's current head.
+  not establish readiness for PR #112's current head.
 
 ## 2) Build, runtime, and release surface
 
@@ -137,9 +126,9 @@ optional `tray-icon` uses its GTK-free `ksni` feature on Linux to provide Show/Q
 actions and hide-on-close behavior. Optional `fs2` provides the exclusive per-user
 lock for a bounded deep-link inbox; `packaging/linux/rocinante.desktop` declares
 the URI scheme. Per-user installers package the verified `.so`, `.dylib`, or
-`.dll` and register the URL handlers. Local macOS cold/warm URL, tray,
-notification-request, and restart acceptance passes. Hosted CI run
-`37198628846` passes Linux/macOS/Windows URL and saved-state restart acceptance;
+`.dll` and register the URL handlers. The scripted local macOS cold/warm URL,
+tray-action routing, notification-request, and restart acceptance passes.
+Hosted CI run `37346608465` passes Linux/macOS/Windows URL and saved-state restart acceptance;
 Linux visible notification delivery also passes. Visible macOS/Windows
 notification delivery and physical tray-menu clicks remain unverified.
 - `tempfile` for tests
@@ -228,8 +217,8 @@ Packages declared in `ui/package.json`:
 - Both supported Rust lockfiles exclude GTK, GLib, Wry, Tauri runtime,
   `proc-macro-error`, and `glib`. Unfiltered `cargo audit --deny warnings`
   passes for both against cached RustSec revision
-  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; a fresh database refresh and
-  hosted Security run remain pending.
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; hosted RustSec audit, governance,
+  CodeQL, and secret scan passed on PR head `27b9e21` in run `37311344136`.
 - Backend Rust coverage runs in the informational `rust-coverage` CI job
   through `cargo-llvm-cov`
 - `test` aggregate job in `.github/workflows/ci.yml` is the merge gate for protected-branch checks and depends on parse/scope/lint/test/coverage jobs.
