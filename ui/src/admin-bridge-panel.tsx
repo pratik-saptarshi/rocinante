@@ -5,7 +5,7 @@ import type { AdminBridgeCommand } from './tauri-admin';
 export interface AdminBridgePanelProps {
   adminToken: string;
   adminResult: string;
-  adminBusy: boolean;
+  adminBusy?: boolean;
   onAdminTokenChange: (token: string) => void;
   onRunAdminCommand: (command: AdminBridgeCommand) => void;
 }
@@ -13,7 +13,7 @@ export interface AdminBridgePanelProps {
 export function AdminBridgePanel({
   adminToken,
   adminResult,
-  adminBusy,
+  adminBusy = false,
   onAdminTokenChange,
   onRunAdminCommand
 }: AdminBridgePanelProps) {
