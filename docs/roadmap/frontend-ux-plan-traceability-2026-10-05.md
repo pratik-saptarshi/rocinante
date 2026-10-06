@@ -48,3 +48,7 @@ The review scored 3.7/10, classified UX-01–UX-10 as P2 and UX-11–UX-13 as P3
 | P2 | CI owner | Require hosted Playwright success in aggregate CI and verify its required-check status | BI-5u3.1.3 |
 
 The complete acceptance criteria, test plans, cross-PR gates, and Beads dependencies are maintained in the [roadmap](remediation-roadmap-2026-10-05.md) and [dated Beads issue snapshot](frontend-ux-remediation-beads-2026-10-05.jsonl). The snapshot omits owner, creator, and timestamp metadata; remote Beads sync remains unverified. UX-specific integration history is append-only in [the dated integration log](frontend-ux-plan-integration_log-2026-10-05.jsonl).
+
+## Implementation review follow-up
+
+The Phase 1 quality review found no blocker in the empty-state copy fix. Its optional note identified an awkward fallback when a populated risk record has no reason factors. The UI now states that no risk factors were provided for that commit, and the unit test covers both the trend rationale and ranking rationale. This is an informational polish follow-up, not an additional panel finding or Beads issue.

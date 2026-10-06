@@ -62,6 +62,5 @@ quality-pulse sample recommendations and hard-coded sample action routes. The
 implementation now derives available recommendations from present telemetry,
 suppresses sample fallback recommendations for imported data, and leaves action
 routes empty with an “Awaiting telemetry” window until data-grounded routing is
-available. The pulse score requires at least one commit-risk and one bottleneck record. Empty arrays mean no observations and show an unavailable score; partial imports missing either input also show unavailable instead of 100/100. Empty-import component, helper, and browser
-assertions cover both findings.
+available. The pulse score requires at least one commit-risk and one bottleneck record. Empty arrays mean no observations and show an unavailable score; partial imports missing either input also show unavailable instead of 100/100. Visual, security, recommendation, and score empty states now use source-neutral copy. Empty-import component, helper, and browser assertions cover all three review findings.
 Hosted same-head validation is required before marking the finding complete.
