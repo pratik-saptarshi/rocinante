@@ -45,7 +45,6 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
     assert!(codemap.contains("Same-head CI, Security, and Dependency Review are pending"));
 
     assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
-
 }
 
 #[test]
