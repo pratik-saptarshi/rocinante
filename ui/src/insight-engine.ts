@@ -58,6 +58,8 @@ export interface OpportunityCard {
 
 export interface DashboardInsights {
   commitRiskCards: CommitRiskCard[];
+  /** Complete validated commit risk set for summaries that must ignore display limits. */
+  allCommitRiskCards?: CommitRiskCard[];
   bottlenecks: BottleneckCard[];
   opportunities: OpportunityCard[];
   stages: InsightStage[];
@@ -158,6 +160,7 @@ export function buildDashboardInsights(payload?: InsightPayload, limits: Insight
 
   return {
     commitRiskCards: limitList(commits, limits.risks),
+    allCommitRiskCards: commits,
     bottlenecks: stages.map((stage) => stageToBottleneck(stage, latencyCeiling)),
     opportunities: limitList(signals, limits.opportunities),
     stages

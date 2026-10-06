@@ -141,4 +141,67 @@ describe('buildQualityPulse', () => {
     expect(pulse.actionRoutes.security.actions).toEqual(['No dependency or automation-failure signals were found in the imported commits.']);
     expect(pulse.actionRoutes.executive.window).toBe('Awaiting telemetry');
   });
+
+  it('routes hidden imported security signals without treating hidden non-security risks as signals', () => {
+    const insights = buildDashboardInsights(
+      {
+        commits: [
+          {
+            id: 'visible-non-security',
+            files: 24,
+            changedLines: 900,
+            dependencyChanges: 0,
+            testTouch: true,
+            failedAutomations: 0
+          },
+          {
+            id: 'hidden-security',
+            files: 1,
+            changedLines: 8,
+            dependencyChanges: 1,
+            testTouch: true,
+            failedAutomations: 0
+          }
+        ],
+        stages: []
+      },
+      { risks: 1 }
+    );
+    const pulse = buildQualityPulse(insights, { allowSampleFallbacks: false });
+
+    expect(insights.commitRiskCards.map(({ id }) => id)).toEqual(['visible-non-security']);
+    expect(pulse.securitySignalCount).toBe(1);
+    expect(pulse.actionRoutes.security.actions).toEqual(['hidden-security: review dependency risk.']);
+
+    const nonSecurityInsights = buildDashboardInsights(
+      {
+        commits: [
+          {
+            id: 'visible-security-free',
+            files: 24,
+            changedLines: 900,
+            dependencyChanges: 0,
+            testTouch: true,
+            failedAutomations: 0
+          },
+          {
+            id: 'hidden-non-security',
+            files: 10,
+            changedLines: 300,
+            dependencyChanges: 0,
+            testTouch: true,
+            failedAutomations: 0
+          }
+        ],
+        stages: []
+      },
+      { risks: 1 }
+    );
+    const nonSecurityPulse = buildQualityPulse(nonSecurityInsights, { allowSampleFallbacks: false });
+
+    expect(nonSecurityPulse.securitySignalCount).toBe(0);
+    expect(nonSecurityPulse.actionRoutes.security.actions).toEqual([
+      'No dependency or automation-failure signals were found in the imported commits.'
+    ]);
+  });
 });

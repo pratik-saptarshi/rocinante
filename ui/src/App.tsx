@@ -170,7 +170,7 @@ function App() {
   const audienceRoute = qualityPulse.actionRoutes[audience];
   const topOpps = opportunities.slice(0, 2);
 
-  const securitySignals = commitRiskCards.filter((risk) =>
+  const securitySignals = (insights.allCommitRiskCards ?? commitRiskCards).filter((risk) =>
     risk.reasons.some((item) => item === 'Dependency risk' || item === 'Automation failures')
   );
 

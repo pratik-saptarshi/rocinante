@@ -108,4 +108,33 @@ describe('buildDashboardInsights', () => {
     expect(insights.opportunities).toHaveLength(1);
     expect(insights.opportunities[0]?.id).toBe('high-opportunity');
   });
+
+  it('keeps security signals from validated commits when risk cards are display-limited', () => {
+    const insights = buildDashboardInsights(
+      {
+        commits: [
+          {
+            id: 'visible-non-security',
+            files: 24,
+            changedLines: 900,
+            dependencyChanges: 0,
+            testTouch: true,
+            failedAutomations: 0
+          },
+          {
+            id: 'hidden-security',
+            files: 1,
+            changedLines: 8,
+            dependencyChanges: 1,
+            testTouch: true,
+            failedAutomations: 0
+          }
+        ]
+      },
+      { risks: 1 }
+    );
+
+    expect(insights.commitRiskCards.map(({ id }) => id)).toEqual(['visible-non-security']);
+    expect(insights.allCommitRiskCards?.map(({ id }) => id)).toContain('hidden-security');
+  });
 });

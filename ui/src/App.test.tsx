@@ -156,6 +156,34 @@ describe('Optimization sidebar layout', () => {
     expect(within(qualityPulseSection).getByText(/route-commit: review dependency risk and automation failures/)).toBeInTheDocument();
   });
 
+  it('keeps a display-limited security signal visible in the imported count and route', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: {
+        value: JSON.stringify({
+          limits: { risks: 1 },
+          commits: [
+            { id: 'visible-non-security', files: 24, changedLines: 900, dependencyChanges: 0, testTouch: true, failedAutomations: 0 },
+            { id: 'hidden-security', files: 1, changedLines: 8, dependencyChanges: 1, testTouch: true, failedAutomations: 0 }
+          ],
+          stages: [],
+          signals: []
+        })
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('pulse-security-count')).toHaveTextContent('1');
+    expect(screen.getAllByText(/visible-non-security/i).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Security' }));
+
+    const qualityPulseSection = screen.getByTestId('quality-pulse-section');
+    expect(within(qualityPulseSection).getByText('hidden-security: review dependency risk.')).toBeInTheDocument();
+    expect(screen.getAllByText(/hidden-security/).length).toBeGreaterThan(1);
+  });
+
   it('renders trend and risk visuals from the shared insight helper', () => {
     render(<App />);
 

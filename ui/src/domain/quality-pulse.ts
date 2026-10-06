@@ -60,6 +60,16 @@ function rankRiskCards(commitRiskCards: CommitRiskCard[]): CommitRiskCard[] {
   return [...commitRiskCards].sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
 }
 
+function getAllCommitRiskCards(insights: DashboardInsights): CommitRiskCard[] {
+  return insights.allCommitRiskCards ?? insights.commitRiskCards;
+}
+
+function getSecuritySignals(insights: DashboardInsights): CommitRiskCard[] {
+  return rankRiskCards(getAllCommitRiskCards(insights).filter((risk) =>
+    risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')
+  ));
+}
+
 function rankOpportunities(opportunities: OpportunityCard[]): OpportunityCard[] {
   return [...opportunities].sort((left, right) => right.priorityScore - left.priorityScore || left.id.localeCompare(right.id));
 }
@@ -81,9 +91,7 @@ function buildRecommendations(
   const [topRisk] = rankedRiskCards;
   const [topOpportunity, secondOpportunity] = rankedOpportunities;
   const criticalStages = insights.bottlenecks.filter((item) => item.status === 'critical' || item.status === 'high');
-  const securitySignals = rankedRiskCards.filter((risk) =>
-    risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')
-  );
+  const securitySignals = getSecuritySignals(insights);
 
   const lead = rankedRiskCards.slice(0, 2).map((risk, index) => ({
     id: `lead-${index + 1}`,
@@ -155,9 +163,8 @@ function buildRoutes(
     const rankedRiskCards = rankRiskCards(insights.commitRiskCards);
     const actionableBottlenecks = insights.bottlenecks.filter((item) => item.status !== 'good');
     const rankedOpportunities = rankOpportunities(insights.opportunities);
-    const securitySignals = rankedRiskCards.filter((risk) =>
-      risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')
-    );
+    const securitySignals = getSecuritySignals(insights);
+    const allCommitRiskCards = getAllCommitRiskCards(insights);
 
     return {
       lead: insights.commitRiskCards.length === 0
@@ -186,7 +193,7 @@ function buildRoutes(
             window: 'Current import',
             actions: rankedOpportunities.slice(0, 2).map((opportunity) => `${opportunity.title} (score ${opportunity.priorityScore}).`)
           },
-      security: insights.commitRiskCards.length === 0
+      security: allCommitRiskCards.length === 0
         ? { owner: 'Security Operations', window: 'Awaiting telemetry', actions: [] }
         : {
             owner: 'Security Operations',
@@ -231,9 +238,7 @@ export function buildQualityPulse(
   const [topRisk] = rankRiskCards(insights.commitRiskCards);
   const topOpportunity = rankOpportunities(insights.opportunities)[0];
   const topBottleneck = [...insights.bottlenecks].sort((left, right) => right.impact - left.impact)[0];
-  const securitySignalCount = insights.commitRiskCards.filter((risk) =>
-    risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')
-  ).length;
+  const securitySignalCount = getSecuritySignals(insights).length;
   const opportunityCount = insights.opportunities.length;
   const calculatedScore = Math.max(45, 100 - riskBuckets.high * 10 - bottleneckBuckets.critical * 15 - bottleneckBuckets.high * 5);
   // Imported empty collections contain no observations; a score needs both inputs.
