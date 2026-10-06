@@ -24,14 +24,17 @@ applicability contract.
 | `bash scripts/test-roadmap-doc-contracts.sh` | Passed: 10 tests across parity, command inventory, publish gate, and roadmap coherence. |
 | `actionlint -oneline -ignore 'unknown permission scope "vulnerability-alerts"' .github/workflows/ci.yml .github/workflows/security.yml` | Passed using the repository-configured ignore. Unignored actionlint reports this unsupported-permission-scope diagnostic at `.github/workflows/ci.yml:429`. |
 | TypeScript project build (`ui/node_modules/.bin/tsc -b`) | Passed. |
-| Vitest (`ui/node_modules/.bin/vitest run`) | Passed after populated-route remediation: 13 files, 79 tests, including no-data and imported-route assertions. |
+| Vitest (`ui/node_modules/.bin/vitest run`) | Passed after the security display-limit remediation: 13 files, 82 tests, including no-data, imported-route, and hidden-security-signal assertions. |
 | Production build (`ui/node_modules/.bin/vite build`) | Passed with Vite 8.3.2. Vite emitted the existing warning that one minified chunk exceeds 500 kB. |
 | `git diff --check` | Passed after implementation and documentation updates. |
 | Playwright (`ui/node_modules/.bin/playwright test`) | Blocked by the sandbox: the configured web server cannot bind `127.0.0.1:4173` (`listen EPERM`). No browser tests ran locally. |
 | Playwright discovery (`ui/node_modules/.bin/playwright test --list`, from `ui/`) | Passed: all 8 browser tests were discovered, including malformed JSON recovery. |
-| Hosted UI quality, Playwright, aggregate CI, Rust workspace/lints, and three-platform package/URL lanes | Passed on PR #114 code head `71bf9e5990428ac0603eeb370837bd954c4ef1f2` in CI run [37411802567](https://github.com/pratik-saptarshi/rocinante/actions/runs/37411802567). |
-| Hosted RustSec audit, CodeQL, and secret scan | Passed on the same code head in Security run [37411802526](https://github.com/pratik-saptarshi/rocinante/actions/runs/37411802526). |
-| Dependency Review | Passed on the same code head in run [37411802611](https://github.com/pratik-saptarshi/rocinante/actions/runs/37411802611). |
+| Earlier hosted UI quality, Playwright, aggregate CI, Rust workspace/lints, and three-platform package/URL lanes | Passed on the earlier PR #114 code head `71bf9e5990428ac0603eeb370837bd954c4ef1f2` in CI run [37411802567](https://github.com/pratik-saptarshi/rocinante/actions/runs/37411802567). This is historical evidence and does not cover the subsequent security display-limit fix. |
+| Earlier hosted RustSec audit, CodeQL, and secret scan | Passed on the earlier code head `71bf9e5990428ac0603eeb370837bd954c4ef1f2` in Security run [37411802526](https://github.com/pratik-saptarshi/rocinante/actions/runs/37411802526). |
+| Earlier Dependency Review | Passed on the earlier code head `71bf9e5990428ac0603eeb370837bd954c4ef1f2` in run [37411802611](https://github.com/pratik-saptarshi/rocinante/actions/runs/37411802611). |
+| Current hosted UI quality, Playwright, aggregate CI, Rust workspace/lints, and platform lanes | Passed on exact security-fix code head `75edab266f1fbc65d7fdacb55abca49f25125e35` in CI run [37416787765](https://github.com/pratik-saptarshi/rocinante/actions/runs/37416787765). |
+| Current hosted RustSec audit, CodeQL, and secret scan | Passed on code head `75edab266f1fbc65d7fdacb55abca49f25125e35` in Security run [37416787763](https://github.com/pratik-saptarshi/rocinante/actions/runs/37416787763). |
+| Current Dependency Review | Passed on code head `75edab266f1fbc65d7fdacb55abca49f25125e35` in run [37416787782](https://github.com/pratik-saptarshi/rocinante/actions/runs/37416787782). |
 
 The worktree pins pnpm 12.9.1. The available host executable reports pnpm
 12.8.1 and hangs when invoked, so the UI checks above ran through the existing
@@ -40,17 +43,23 @@ installation path works in this environment.
 
 ## Hosted acceptance and remaining exit criteria
 
-- Hosted `ui-quality`, `ui-playwright`, aggregate `test`, Rust workspace,
-  formatting, Clippy, package and URL lifecycle matrices, security governance,
-  RustSec audit, CodeQL, secret scan, and Dependency Review passed on code head
-  `71bf9e5990428ac0603eeb370837bd954c4ef1f2`.
+- Hosted checks on the original code head `71bf9e5990428ac0603eeb370837bd954c4ef1f2`
+  are historical. After the security display-limit fix, hosted UI quality,
+  Playwright, aggregate CI, Rust workspace/lints, platform lanes, security
+  governance, RustSec audit, CodeQL, secret scan, and Dependency Review passed
+  on exact code head `75edab266f1fbc65d7fdacb55abca49f25125e35` in the three runs
+  listed above. This document-only update is later than that tested head; its
+  hosted checks must be rerun before Phase 1 can close.
 - Hosted `ui-quality` passed with the pinned pnpm 12.9.1. The local pinned
   executable remained unavailable; local checks used existing `node_modules/.bin`
   tools.
 - The protected `main` branch at base `d4bc8e7` requires `test` and `codeql`. The aggregate `test` job depends on `ui-playwright`, making the browser gate transitively required; `ui-playwright` is not a separate branch-protection context.
-- The Phase 1 child Beads are closed against these results. Keep milestone
-  `BI-5u3.1` open until PR #114 merges through the protected flow; this record
-  does not claim a merge.
+- Child Bead `BI-5u3.1.9` (preserve security signals beyond the display limit)
+  is implemented and the fix passed hosted checks on code head
+  `75edab266f1fbc65d7fdacb55abca49f25125e35`. Leave it open until the updated
+  documentation commit passes hosted checks and the related review thread is
+  resolved. Keep milestone `BI-5u3.1` open until PR #114 merges through the
+  protected flow; this record does not claim a merge.
 - Local Playwright remains blocked by sandbox networking; this is not a test
   pass; hosted Playwright passed on the recorded code head.
 
@@ -88,5 +97,19 @@ The next P2 review comment found that the Top Risk Commit trace rendered a blank
 
 A sixth P2 review comment found empty commit/stage trend cards still read as green zero/healthy results. Those cards now show Unavailable with neutral status when there are no records; observed healthy results remain distinct. Bead `BI-5u3.1.6` carries the acceptance criteria and test plan.
 
-A seventh P2 review comment found populated imports were still routed to Awaiting telemetry. Bead `BI-5u3.1.8` captures the follow-up. Per-audience routes now use the imported records; absent audience data remains awaiting, sample routes are unchanged. After this fix, TypeScript, Vitest (13 files / 79 tests), production build, and discovery of all 8 Playwright tests pass locally. The build retains the existing >500 kB chunk warning. Full local browser execution remains blocked by sandbox `EPERM` binding `127.0.0.1:4173`.
-Hosted same-head validation is required before marking the findings complete.
+A seventh P2 review comment found populated imports were still routed to Awaiting telemetry. Bead `BI-5u3.1.8` captures the follow-up. Per-audience routes now use the imported records; absent audience data remains awaiting, sample routes are unchanged. At that milestone, TypeScript, Vitest (13 files / 79 tests), production build, and discovery of all 8 Playwright tests passed locally. The build retains the existing >500 kB chunk warning. Full local browser execution remains blocked by sandbox `EPERM` binding `127.0.0.1:4173`. Subsequent security-signal regression additions bring the current Vitest result to 13 files / 82 tests, as recorded above. The populated-route changes and later security display-limit fix both have hosted evidence on code head `75edab266f1fbc65d7fdacb55abca49f25125e35`; the doc-only commit still needs its own hosted checks.
+
+The current P2 review finding identified that security signals beyond the
+`limits.risks` display cap could disappear from the pulse count,
+recommendations, and route. The implementation now classifies the full
+validated commit-risk set for counts, recommendations, and routes while
+keeping the rendered risk-card list bounded. The Security panel shows at most
+three details and reports how many additional signals were omitted. Regression
+coverage verifies a hidden security signal remains counted and actionable
+without expanding the displayed list. The fix was reviewed in commits
+`a07e113` (`fix(ui): preserve security signals beyond display limit`),
+`f58cb06` (`fix(ui): cap rendered security signal details`), and `685ba9f`
+(`test(ui): cover hidden security recommendations`). These commits are on
+code head `75edab266f1fbc65d7fdacb55abca49f25125e35`; hosted evidence for that
+head is recorded above. Bead `BI-5u3.1.9` remains open pending successful hosted
+checks for this documentation update and resolution of the review thread.
