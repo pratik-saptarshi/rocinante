@@ -1,7 +1,109 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { ThemeProvider } from '@mui/material';
 import { setAdminInvokeForTesting } from './tauri-admin';
+import { appTheme } from './theme';
+
+
+describe('Phase 3 accessibility and control behavior', () => {
+  it('provides a main landmark, a page heading, and honest preview controls', () => {
+    render(<App />);
+
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 1, name: 'The Web Companion: Optimization Hub' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 2 }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Run Full Audit' })).toBeDisabled();
+    expect(screen.getByText('Audit execution is unavailable in this preview.')).toBeVisible();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    expect(screen.getByText(/Page-specific and site-wide selection is unavailable/i)).toBeVisible();
+  });
+
+  it('associates the unavailable field and lab selector with its visible label', () => {
+    render(<App />);
+
+    const selector = screen.getByRole('switch', {
+      name: 'Field and lab data selection unavailable in this preview'
+    });
+    expect(selector).toBeDisabled();
+    expect(selector).not.toBeChecked();
+    fireEvent.keyDown(selector, { key: ' ' });
+    expect(selector).not.toBeChecked();
+  });
+
+  it('keeps duplicate stage severities attached to their own telemetry rows', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: {
+        value: JSON.stringify({
+          commits: [],
+          stages: [
+            { name: 'duplicate', queueDepth: 0, throughput: 10, avgLatencyMs: 100 },
+            { name: 'duplicate', queueDepth: 10, throughput: 2, avgLatencyMs: 3000 }
+          ],
+          signals: []
+        })
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    const observability = screen.getByTestId('job-observability-section');
+    const healthyRow = within(observability).getByText(/duplicate: queue 0, throughput 10, lag 100ms/i).closest('li');
+    const criticalRow = within(observability).getByText(/duplicate: queue 10, throughput 2, lag 3000ms/i).closest('li');
+    expect(healthyRow).toHaveTextContent('good');
+    expect(criticalRow).toHaveTextContent('bad');
+  });
+
+  it('announces pending and completed admin bridge results through one status region', async () => {
+    let resolveCommand: ((value: unknown) => void) | undefined;
+    setAdminInvokeForTesting(() => new Promise((resolve) => { resolveCommand = resolve; }));
+    render(<App />);
+
+    const result = screen.getByRole('status', { name: '' });
+    fireEvent.click(screen.getByRole('button', { name: 'Ingest Event' }));
+    expect(result).toHaveTextContent('Running ingest_event');
+    expect(result).toHaveAttribute('aria-busy', 'true');
+
+    resolveCommand?.({ accepted: true });
+    await waitFor(() => expect(result).toHaveTextContent('OK ingest_event'));
+    expect(result).toHaveAttribute('aria-busy', 'false');
+  });
+
+  it('announces bridge errors as final status text', async () => {
+    setAdminInvokeForTesting(async () => { throw new Error('bridge offline'); });
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ingest Event' }));
+    await waitFor(() => expect(screen.getByTestId('admin-bridge-result')).toHaveTextContent('ERR ingest_event: bridge offline'));
+  });
+
+  it('keeps enabled primary and outlined button text above 4.5:1 contrast', () => {
+    render(<ThemeProvider theme={appTheme}><App /></ThemeProvider>);
+    const parseRgb = (value: string) => {
+      const channels = value.match(/[\\d.]+/g)?.slice(0, 3).map(Number);
+      if (!channels || channels.length !== 3) throw new Error(`Unexpected computed color: ${value}`);
+      return channels.map((channel) => {
+        const normalized = channel / 255;
+        return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+    };
+    const contrast = (foreground: string, background: string) => {
+      const luminance = (color: string) => {
+        const [red, green, blue] = parseRgb(color);
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+      };
+      const values = [luminance(foreground), luminance(background)].sort((left, right) => right - left);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    };
+
+    const contained = screen.getByRole('button', { name: 'Apply Payload' });
+    const outlined = screen.getByRole('button', { name: 'Reset to Sample' });
+    const containedStyle = getComputedStyle(contained);
+    const outlinedStyle = getComputedStyle(outlined);
+    expect(contrast(containedStyle.color, containedStyle.backgroundColor)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(outlinedStyle.color, 'rgb(255, 255, 255)')).toBeGreaterThanOrEqual(4.5);
+  });
+});
 
 afterEach(() => {
   setAdminInvokeForTesting(null);
@@ -62,9 +164,10 @@ describe('Optimization sidebar layout', () => {
     expect(screen.getByText(/SEO, GEO & AEO Performance/i)).toBeInTheDocument();
     expect(screen.getByText(/Security & Drupal Review/i)).toBeInTheDocument();
     expect(screen.getByText(/Page Performance Metrics/i)).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Current Page/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Site-Wide/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/Run Full Audit/i)).toBeInTheDocument();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Run Full Audit/i })).toBeDisabled();
+    expect(screen.getByText(/Page-specific and site-wide selection is unavailable/i)).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /Field and lab data selection unavailable/i })).toBeDisabled();
     expect(screen.getByText(/Answer Engine Optimization/i)).toBeInTheDocument();
     expect(screen.getByText(/General Site Security/i)).toBeInTheDocument();
     expect(screen.getByText(/Field Data/i)).toBeInTheDocument();
