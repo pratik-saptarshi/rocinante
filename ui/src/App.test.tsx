@@ -593,4 +593,25 @@ describe('Optimization sidebar layout', () => {
       expect(label).toHaveTextContent(/static example content; not derived from imported telemetry/i);
     }
   });
+
+  it('uses configured latency severity in Job Observability', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: {
+        value: JSON.stringify({
+          payload: {
+            commits: [{ id: 'safe-commit', files: 1, changedLines: 8, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+            stages: [{ name: 'slow-stage', queueDepth: 0, throughput: 10, avgLatencyMs: 750 }],
+            signals: []
+          },
+          limits: { latencyP95Ms: 200 }
+        })
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    const observability = screen.getByTestId('job-observability-section');
+    expect(within(observability).getByText('medium')).toBeVisible();
+    expect(within(observability).getByText(/slow-stage: queue 0, throughput 10, lag 750ms/i)).toBeVisible();
+  });
 });
