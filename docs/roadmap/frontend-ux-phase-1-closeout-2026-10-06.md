@@ -106,7 +106,8 @@ validated commit-risk set for counts, recommendations, and routes while
 keeping the rendered risk-card list bounded. The Security panel shows at most
 three details and reports how many additional signals were omitted. Regression
 coverage verifies a hidden security signal remains counted and actionable
-without expanding the displayed list. The fix was reviewed in commits
+without expanding the displayed list. The fix and its regression coverage are
+captured in three commits:
 `a07e113` (`fix(ui): preserve security signals beyond display limit`),
 `f58cb06` (`fix(ui): cap rendered security signal details`), and `685ba9f`
 (`test(ui): cover hidden security recommendations`). These commits are on
