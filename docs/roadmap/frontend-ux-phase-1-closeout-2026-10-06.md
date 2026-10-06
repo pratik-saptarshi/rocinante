@@ -24,7 +24,7 @@ applicability contract.
 | `bash scripts/test-roadmap-doc-contracts.sh` | Passed: 10 tests across parity, command inventory, publish gate, and roadmap coherence. |
 | `actionlint -oneline -ignore 'unknown permission scope "vulnerability-alerts"' .github/workflows/ci.yml .github/workflows/security.yml` | Passed using the repository-configured ignore. Unignored actionlint reports this unsupported-permission-scope diagnostic at `.github/workflows/ci.yml:429`. |
 | TypeScript project build (`ui/node_modules/.bin/tsc -b`) | Passed. |
-| Vitest (`ui/node_modules/.bin/vitest run`) | Passed after PR-review remediation: 13 files, 76 tests. |
+| Vitest (`ui/node_modules/.bin/vitest run`) | Passed after PR-review remediation: 13 files, 76 tests, including no-data risk and bottleneck trace assertions. |
 | Production build (`ui/node_modules/.bin/vite build`) | Passed with Vite 8.3.2. Vite emitted the existing warning that one minified chunk exceeds 500 kB. |
 | `git diff --check` | Passed after implementation and documentation updates. |
 | Playwright (`ui/node_modules/.bin/playwright test`) | Blocked by the sandbox: the configured web server cannot bind `127.0.0.1:4173` (`listen EPERM`). No browser tests ran locally. |
@@ -64,4 +64,5 @@ implementation now derives available recommendations from present telemetry,
 suppresses sample fallback recommendations for imported data, and leaves action
 routes empty with an “Awaiting telemetry” window until data-grounded routing is
 available. The pulse score requires at least one commit-risk and one bottleneck record. Empty arrays mean no observations and show an unavailable score; partial imports missing either input also show unavailable instead of 100/100. Visual, security, recommendation, score, and bottleneck empty states now use source-neutral copy. Empty-import component, helper, and browser assertions cover these review findings. A fourth P2 review comment found that the bottleneck metric and explanation still said “review” for no-data imports; both now show Unavailable and explain that no bottleneck records are available, while sample mode retains its fallback.
+The next P2 review comment found that the Top Risk Commit trace rendered a blank identifier with a good status when imports had no commits. The trace now says Unavailable, explains that no commit-risk records are available, and uses a neutral status; sample and populated imported modes retain their behavior. Bead `BI-5u3.1.5` tracks the new acceptance criteria and test plan. TypeScript, all 76 Vitest tests, production build, and discovery of all 8 Playwright tests pass locally after this fix.
 Hosted same-head validation is required before marking the findings complete.
