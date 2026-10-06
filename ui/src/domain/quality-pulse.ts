@@ -17,7 +17,7 @@ export interface PulseRoute {
 export interface QualityPulse {
   overallScore: number | null;
   securitySignalCount: number;
-  topBottleneckName: string;
+  topBottleneckName: string | null;
   topRiskCommitId: string;
   topOpportunityTitle: string;
   opportunityCount: number;
@@ -202,7 +202,7 @@ export function buildQualityPulse(
   return {
     overallScore,
     securitySignalCount,
-    topBottleneckName: topBottleneck?.name ?? 'review',
+    topBottleneckName: topBottleneck?.name ?? (allowSampleFallbacks ? 'review' : null),
     opportunityCount,
     topRiskCommitId: topRisk?.id ?? '',
     topOpportunityTitle: topOpportunity?.title ?? 'trim flaky tests',

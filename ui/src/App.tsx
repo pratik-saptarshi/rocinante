@@ -366,7 +366,7 @@ function App() {
           />
           <MetricItem
             label="Top bottleneck"
-            value={qualityPulse.topBottleneckName}
+            value={qualityPulse.topBottleneckName ?? 'Unavailable'}
             valueTestId="pulse-top-bottleneck"
           />
           <FindingSection

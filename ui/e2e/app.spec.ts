@@ -89,6 +89,8 @@ test.describe('frontend behavior', () => {
     await expect(qualityPulse.getByText(/trim flaky tests|sample window|high-risk commit A-124/i)).toHaveCount(0);
     await expect(qualityPulse.getByText('Awaiting telemetry')).toHaveCount(1);
     await expect(qualityPulse.getByTestId('pulse-score')).toHaveText('Unavailable');
+    await expect(qualityPulse.getByTestId('pulse-top-bottleneck')).toHaveText('Unavailable');
+    await expect(page.getByTestId('explainability-section').getByText(/Top Bottleneck: Unavailable — No bottleneck records are available for this import\./)).toBeVisible();
     await page.getByRole('button', { name: 'Security' }).click();
     await expect(page.getByText('No critical security signals are available.')).toBeVisible();
     await expect(page.getByText(/sample window/i)).toHaveCount(0);

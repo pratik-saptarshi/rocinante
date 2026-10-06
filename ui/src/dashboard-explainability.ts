@@ -31,9 +31,14 @@ export function buildExplainabilityTraces(pulse: QualityPulse): ExplainabilityTr
     {
       id: 'explain-bottleneck',
       title: 'Top Bottleneck',
-      summary: pulse.topBottleneckName,
-      detail: pulse.bottleneckBuckets.critical > 0 ? 'Critical stage limits delivery confidence.' : 'No critical stage is currently suppressing flow.',
-      status: pulse.bottleneckBuckets.critical > 0 ? 'bad' : 'medium'
+      summary: pulse.topBottleneckName ?? 'Unavailable',
+      detail:
+        pulse.topBottleneckName === null
+          ? 'No bottleneck records are available for this import.'
+          : pulse.bottleneckBuckets.critical > 0
+            ? 'Critical stage limits delivery confidence.'
+            : 'No critical stage is currently suppressing flow.',
+      status: pulse.topBottleneckName === null ? 'medium' : pulse.bottleneckBuckets.critical > 0 ? 'bad' : 'medium'
     },
     {
       id: 'explain-opportunity',

@@ -110,11 +110,20 @@ describe('Optimization sidebar layout', () => {
     expect(within(qualityPulseSection).queryByText(/A-124|trim flaky tests|sample window/i)).not.toBeInTheDocument();
     expect(within(qualityPulseSection).getByText('Awaiting telemetry')).toBeInTheDocument();
     expect(within(qualityPulseSection).getByTestId('pulse-score')).toHaveTextContent('Unavailable');
+    expect(within(qualityPulseSection).getByTestId('pulse-top-bottleneck')).toHaveTextContent('Unavailable');
     expect(within(qualityPulseSection).queryByText(/high-risk commit/i)).not.toBeInTheDocument();
+    expect(within(screen.getByTestId('explainability-section')).getByText(/Top Bottleneck: Unavailable — No bottleneck records are available for this import\./)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Security' }));
     expect(screen.getByText('No critical security signals are available.')).toBeInTheDocument();
     expect(screen.queryByText(/sample window/i)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: { value: JSON.stringify({ commits: [{ id: 'partial-import', files: 1, changedLines: 1, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }], signals: [] }) }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+    expect(within(screen.getByTestId('quality-pulse-section')).getByTestId('pulse-top-bottleneck')).toHaveTextContent('Unavailable');
+    expect(within(screen.getByTestId('explainability-section')).getByText(/Top Bottleneck: Unavailable — No bottleneck records are available for this import\./)).toBeInTheDocument();
   });
 
   it('renders trend and risk visuals from the shared insight helper', () => {

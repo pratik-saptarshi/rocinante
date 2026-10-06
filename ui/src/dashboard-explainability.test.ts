@@ -99,6 +99,13 @@ describe('dashboard explainability', () => {
       detail: 'A pulse score requires at least one commit-risk record and one bottleneck record; one or both input sets are empty.',
       status: 'medium'
     });
+    expect(buildExplainabilityTraces(pulse)[2]).toEqual({
+      id: 'explain-bottleneck',
+      title: 'Top Bottleneck',
+      summary: 'Unavailable',
+      detail: 'No bottleneck records are available for this import.',
+      status: 'medium'
+    });
   });
 
   it('explains which score inputs are required when an import is partial', () => {
