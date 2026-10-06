@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Frontend UX Adversarial Review · Rocinante</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+<style>
+:root{color-scheme:light;--ink:#172033;--muted:#526078;--line:#d7deea;--paper:#f5f7fb;--accent:#284c9b}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+a{color:#1f4a9b;text-decoration:underline;text-underline-offset:2px}.skip{position:absolute;left:-9999px}.skip:focus{left:1rem;top:1rem;background:white;padding:.7rem;z-index:20}
+.wrap{max-width:1280px;margin:auto;padding:1.25rem}.banner{background:#fee2e2;color:#7f1d1d;border:2px solid #dc2626;padding:1rem 1.25rem;border-radius:.7rem;margin:1rem 0}
+.card{background:#fff;border:1px solid var(--line);border-radius:.8rem;padding:1rem;box-shadow:0 2px 8px #1e293b0d}
+.grid{display:grid;gap:1rem}.grid4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}.grid2{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+.small{font-size:.85rem;color:var(--muted)}.stat{font-size:1.8rem;font-weight:750}.tag{display:inline-block;border-radius:99px;padding:.1rem .55rem;background:#e9eef8;font-size:.78rem;font-weight:700;margin:.12rem}
+button,select,input{font:inherit}button,select,input[type=search]{border:1px solid #9aa8be;border-radius:.4rem;background:#fff;padding:.45rem .65rem}button{cursor:pointer}button:hover{background:#eef3ff}button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #e59b12;outline-offset:2px}
+summary{cursor:pointer;font-weight:700;padding:.45rem 0}details>details{border-top:1px solid #e6eaf1;padding:.15rem .35rem}
+.controls{display:flex;flex-wrap:wrap;gap:.6rem;align-items:end}.controls label{display:grid;gap:.2rem;font-size:.83rem;font-weight:650}
+.issue-card{margin:.85rem 0;border:1px solid var(--line);border-left:6px solid #d18a10;border-radius:.7rem;background:white;padding:.6rem 1rem}
+.issue-card[data-severity="P3"]{border-left-color:#5f6f8d}.issue-card[hidden]{display:none}
+.evidence{white-space:pre-wrap;overflow-wrap:anywhere}.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:1rem}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.65rem}.agent{text-align:left}.agent b{display:block}.avatar{display:inline-grid;place-items:center;border-radius:50%;width:2rem;height:2rem;background:#dbe7ff;color:#183b83;font-weight:800;margin-right:.45rem}
+footer{margin:2rem 0;color:var(--muted);border-top:1px solid var(--line);padding-top:1rem}
+@media(max-width:640px){.wrap{padding:.7rem}.card{padding:.8rem}.controls>*{width:100%}}
+@media print{body{background:white}.no-print,canvas,.charts{display:none!important}.issue-card,details{break-inside:avoid}a{color:inherit}}
+</style>
+</head>
+<body>
+<a class="skip" href="#issues">Skip to findings</a>
+<main class="wrap">
+<div class="banner" role="alert"><strong>⚠️ COMPRESSED RUN — Independent Phase 14 Opus judge unavailable; Phase 14.5 omitted.</strong><p class="mb-0">Three independent reviewer perspectives, claim verification, tier refinement, and six targeted verifications completed. The primary reviewer wrote a disclosed synthesis in place of the independent judge. Treat the ruling as medium confidence; the Overseer judge gate is incomplete.</p></div>
+<header class="card">
+<p class="small">Rocinante · Frontend user experience · 2026-10-05 · HEAD e9d6d3a</p>
+<h1 class="text-3xl font-bold">Frontend UX Adversarial Review</h1>
+<p class="text-lg"><strong>Verdict:</strong> Revise before relying on the browser preview for user decisions.</p>
+<p>Blind scores: 4/10, 4/10, 3/10 · mean <strong>3.7/10</strong> · 13 action items · no P0/P1.</p>
+<p class="small">Scope: React/Vite browser preview only. Static source and installed MUI review; no browser run, screenshot, user study, viewport validation, keyboard task test, or screen-reader test. Model availability forced Astra substitutes across the panel, so correlated blind spots remain possible.</p>
+</header>
+<section aria-label="Summary statistics" class="grid grid4 mt-4">
+<div class="card"><div class="small">P2 findings</div><div class="stat">10</div></div>
+<div class="card"><div class="small">P3 findings</div><div class="stat">3</div></div>
+<div class="card"><div class="small">Verification</div><div class="stat">6</div><div class="small">targeted checks, all confirmed</div></div>
+<div class="card"><div class="small">P0 / P1</div><div class="stat">0</div></div>
+</section>
+<section class="card mt-4">
+<details><summary>Panel gallery · click a reviewer to filter their findings</summary><div id="gallery" class="gallery mt-3"></div><p class="small">Support roles include a completeness auditor, a targeted accessibility verifier, and the primary synthesis. The synthesis is not an independent judge.</p></details>
+</section>
+<section class="charts mt-4" aria-label="Review charts">
+<div class="card"><h2 class="text-xl font-bold">Evidence status</h2><div style="position:relative;height:220px;width:100%"><canvas id="confidenceChart" aria-label="Evidence status distribution"></canvas></div></div>
+<div class="card"><h2 class="text-xl font-bold">Verification tiers</h2><div style="position:relative;height:220px;width:100%"><canvas id="tierChart" aria-label="Verification tier distribution"></canvas></div></div>
+<div class="card"><h2 class="text-xl font-bold">Finding verdicts</h2><div style="position:relative;height:220px;width:100%"><canvas id="verdictChart" aria-label="Finding verdict distribution"></canvas></div></div>
+<div class="card"><h2 class="text-xl font-bold">Review pipeline</h2><div style="position:relative;height:220px;width:100%"><canvas id="pipelineChart" aria-label="Counts at review stages"></canvas></div><p class="small">13 final items; 13 claim rows reviewed in Phase 10; 6 targeted source checks in Phase 13; zero P0/P1 claims.</p></div>
+</section>
+<section id="issues" class="card mt-4">
+<h2 class="text-2xl font-bold">Actionable findings</h2>
+<div class="controls no-print" aria-label="Finding filters and sorting">
+<label>Search<input id="search" type="search" placeholder="Search findings" accesskey="/"></label>
+<label>Severity<select id="severity"><option value="">All</option><option>P2</option><option>P3</option></select></label>
+<label>Tier<select id="tier"><option value="">All</option><option>Light</option><option>Standard</option><option>Deep</option></select></label>
+<label>Verdict<select id="verdict"><option value="">All</option><option>VR_CONFIRMED</option><option>VERIFIED</option><option>PARTIAL</option><option>UNVERIFIED</option></select></label>
+<label>Epistemic label<select id="epistemic"><option value="">All</option><option>VERIFIED</option><option>PARTIAL</option><option>WEB-VERIFIED</option><option>UNVERIFIED</option></select></label>
+<label>Sort<select id="sort"><option value="severity">Severity</option><option value="confidence">Evidence status</option><option value="tier">Tier</option></select></label>
+<button id="expandAll" type="button">Expand all</button><button id="collapseAll" type="button">Collapse all</button><button id="clear" type="button">Clear filters</button>
+</div>
+<p id="resultCount" class="small" aria-live="polite"></p>
+<div id="issueList"></div>
+</section>
+<section class="grid grid2 mt-4">
+<div class="card"><h2 class="text-xl font-bold">Panel ruling</h2><p>The preview should be revised before users rely on its recommendations. Priority order: preserve data truth, align guidance and metrics with active input, then repair accessibility semantics and validate responsive behavior.</p><p class="small">UX-12 remains conditional on audience intent. UX-13 is a validation question, not a confirmed usability defect.</p><a href="state/phase_14_judge_analysis.md">Read the disclosed primary synthesis</a></div>
+<div class="card"><h2 class="text-xl font-bold">Review artifacts</h2><ul><li><a href="review_panel_report.md">Structured report</a></li><li><a href="review_panel_process.md">Chronological process and transcripts</a></li><li><a href="state/phase_10_claim_verification.md">Claim verification</a></li><li><a href="state/phase_12b_tier_refinement.md">Tier refinement</a></li></ul><p class="small">Charts and syntax highlighting use Tailwind, Chart.js, and Prism.js CDNs and need an internet connection. Findings remain readable if those services fail.</p></div>
+</section>
+<footer>Overseer v3.2.0 · generated 2026-10-05</footer>
+</main>
+<script>
+const issues=[{"id":"UX-01","severity":"P2","title":"Empty or blank input silently becomes sample data","tier":"Standard","verdict":"VERIFIED","epistemic":"VERIFIED","raised":["usability","accessibility","trust"],"narrative":"An explicitly empty collection can select sample seeds, and blank Apply resets displayed insights. Users can read synthetic results as imported results unless the state is clearly labeled.","evidence":"ui/src/insight-engine.ts:146-153; ui/src/App.tsx:190-213.","verification":"Phase 10 source verification. No persisted data is modified; this concerns displayed in-memory insights.","verificationLink":"state/phase_10_claim_verification.md","debate":"All three reviewer perspectives raised data/sample ambiguity. Debate did not withdraw the behavior claim.","fix":"Distinguish missing, empty, sample, and imported states. Keep the last valid view on invalid input; make reset intent explicit. Verify empty arrays, missing arrays, blank Apply, and reset transitions.","related":[["UX-02","Static findings need provenance"],["UX-04","Invalid payload shape can reach render"]]},{"id":"UX-02","severity":"P2","title":"Static audit findings lack persistent provenance","tier":"Standard","verdict":"VERIFIED","epistemic":"VERIFIED","raised":["trust"],"narrative":"Audit/security/performance values and guidance remain hard-coded after telemetry import. “Example guidance” is a partial cue, but not a source label for every section.","evidence":"ui/src/App.tsx:704,737-744,763-768,787-788; ui/src/dashboard-content.ts:35-55.","verification":"Phase 10 verified the static source path and qualified the partial “Example guidance” cue.","verificationLink":"state/phase_10_claim_verification.md","debate":"Trust/provenance concern remained; avoid claiming there is no cue anywhere because one example section is labeled.","fix":"Label every static section as sample/example, or derive its values from the active input. Preserve provenance in imported, sample, and empty states.","related":[["UX-01","Sample and imported state ambiguity"],["UX-05","Recommendations ignore active input"]]},{"id":"UX-03","severity":"P2","title":"Some controls imply behavior they do not perform","tier":"Light","verdict":"PARTIAL","epistemic":"PARTIAL","raised":["usability","accessibility","trust"],"narrative":"Run Full Audit is enabled without a handler; SEO tabs change selected title but not result data; Field/Lab state changes without changing the represented values. The source behavior is clear, while intended preview semantics are not fully established.","evidence":"ui/src/App.tsx:705-714,733-745,787-798.","verification":"Phase 10 verified handler/state paths. No browser click test was run.","verificationLink":"state/phase_10_claim_verification.md","debate":"Reviewers agreed on the source behavior; the claim is qualified around whether the controls are intentionally illustrative.","fix":"Disable or label preview-only controls, or implement the advertised action and data switch. Confirm the outcome changes visibly.","related":[["UX-02","Static findings need provenance"],["UX-09","Field/Lab switch needs an input name"]]},{"id":"UX-04","severity":"P2","title":"Schema-invalid telemetry can reach an uncaught render failure","tier":"Standard","verdict":"VR_CONFIRMED","epistemic":"VERIFIED","raised":["auditor"],"narrative":"A syntactically valid payload with an object-valued stage name is cast through the import path, propagated into Quality Pulse, and rendered as a React child. No error boundary is present at the app entry. This is statically traced, not runtime reproduced.","evidence":"ui/src/App.tsx:197-203,360-363,135-145; ui/src/insight-engine.ts:126; ui/src/domain/quality-pulse.ts:178; ui/src/main.tsx:15-21.","verification":"Phase 13 targeted source trace: VR_CONFIRMED. The verifier confirmed the path across parser, model, projection, and render.","verificationLink":"state/phase_13_verification_UX04.md","debate":"Added by the completeness audit; no dispute about the traced source path. Runtime impact was not tested.","fix":"Validate element types and finite ranges before replacing state. Preserve the prior valid view and identify invalid fields; consider a render boundary for defense in depth.","related":[["UX-01","Input fallback and reset behavior"],["UX-05","Recommendations ignore active input"]]},{"id":"UX-05","severity":"P2","title":"Healthy telemetry can still show critical advice and sample routes","tier":"Standard","verdict":"VR_CONFIRMED","epistemic":"VERIFIED","raised":["auditor"],"narrative":"Quality Pulse can fall back to a review stage and emit unconditional red manager warnings. Route construction is static and does not receive active telemetry; the Team Lead route includes sample A-124 guidance.","evidence":"ui/src/domain/quality-pulse.ts:75-107,138-160; ui/src/App.tsx:365-390.","verification":"Phase 13 targeted source trace: VR_CONFIRMED. It confirmed the fallback/unconditional severity and the independent hard-coded route path.","verificationLink":"state/phase_13_verification_UX05.md","debate":"Completeness-audit addition; no disagreement after source tracing. Keep impact scoped to displayed recommendations.","fix":"Derive warnings/routes from current records, show a healthy state when none apply, and identify illustrative routes as samples.","related":[["UX-02","Static findings need provenance"],["UX-06","Severity differs across views"],["UX-07","Score explanation contradicts formula"]]},{"id":"UX-06","severity":"P2","title":"Stage severity can conflict between dashboard views","tier":"Standard","verdict":"VR_CONFIRMED","epistemic":"VERIFIED","raised":["auditor"],"narrative":"Job Observability uses fixed latency thresholds while the insight model uses configurable latencyP95Ms. A stage can therefore look good in one view and critical in another for the same data.","evidence":"ui/src/App.tsx:178-187,441-451,595-607; ui/src/dashboard-contract.ts:17-25; ui/src/insight-engine.ts:107-131.","verification":"Phase 13 targeted trace confirmed both classifiers and the configurable threshold. Source-derived example: queue 0, latency 750ms, configured ceiling 200ms.","verificationLink":"state/phase_13_verification_UX06.md","debate":"Completeness-audit addition; the contradiction is source-derived, not an observed screenshot.","fix":"Use one shared severity classifier, or clearly label the different criteria and ensure their labels do not imply a single shared status.","related":[["UX-05","Recommendations ignore active input"],["UX-07","Score explanation contradicts formula"]]},{"id":"UX-07","severity":"P2","title":"Opportunity explanation claims a score contribution that does not exist","tier":"Standard","verdict":"VR_CONFIRMED","epistemic":"VERIFIED","raised":["auditor"],"narrative":"The explanation says opportunity signals are boosting the score. The score formula uses high-risk commit and critical/high bottleneck counts; opportunity count is returned separately and never adjusts the score.","evidence":"ui/src/dashboard-explainability.ts:35-43; ui/src/insight-engine.ts:146; ui/src/domain/quality-pulse.ts:163-180; ui/src/App.tsx:165,352,407.","verification":"Phase 13 targeted trace: VR_CONFIRMED. Holding commits and stages constant, changing opportunities cannot change the traced overall score.","verificationLink":"state/phase_13_verification_UX07.md","debate":"Completeness-audit addition; no disagreement after formula trace.","fix":"Remove the boosting claim or include opportunities in the actual formula and explain their weight. Derive explanation and score from the same components.","related":[["UX-05","Recommendations ignore active input"],["UX-06","Severity differs across views"]]},{"id":"UX-08","severity":"P2","title":"Default primary button text contrast is below 4.5:1","tier":"Standard","verdict":"VR_CONFIRMED","epistemic":"WEB-VERIFIED","raised":["auditor"],"narrative":"The primary blue #5577cc paired with white text calculates to 4.2884:1. This is below WCAG 2.2 SC 1.4.3’s 4.5:1 threshold for normal-size text, for the enabled unhovered default state.","evidence":"ui/src/main.tsx:6-12; installed MUI 9.4 palette/button styles; ui/src/App.tsx:480,705-714. Contrast: 4.2884134003:1.","verification":"Phase 13 resolved MUI color selection, button text size, and contrast math. No rendered/computed-style audit was run.","verificationLink":"state/phase_13_verification_UX08.md","debate":"Completeness-audit addition. Do not generalize this one measured state to a complete WCAG audit.","fix":"Darken the primary token or choose a compliant text/background pairing. Check enabled, hover, focus, disabled, outlined, and theme variants.","related":[["UX-09","Switch input lacks accessible name"],["UX-10","Statuses lack live announcements"]]},{"id":"UX-09","severity":"P2","title":"Field/Lab switch label is forwarded to the wrapper, not the input","tier":"Standard","verdict":"VR_CONFIRMED","epistemic":"VERIFIED","raised":["accessibility_verify"],"narrative":"The JSX passes aria-label to MUI Switch, but installed MUI 9.4 routes that attribute to the SwitchBase wrapper. Input props are separate, and adjacent Field Data/Lab Data text is not associated with the switch input.","evidence":"ui/src/App.tsx:790-798; installed MUI Switch.mjs:254-255,264,295-301,318-319; SwitchBase.mjs:108-113,164-176,198-201.","verification":"Phase 13 targeted dependency-source trace: VR_CONFIRMED. Exact accessibility tree and assistive-technology output were not tested.","verificationLink":"state/phase_13_verification_UX09.md","debate":"The label forwarding issue is confirmed from the installed component implementation; dynamic AT impact remains untested.","fix":"Use slotProps.input with an accessible name, or associate the visible label with the actual input. Name the checked state clearly.","related":[["UX-03","Field/Lab selector does not switch values"],["UX-08","Default primary text contrast"]]},{"id":"UX-10","severity":"P2","title":"Admin/baseline results and successful updates lack explicit status semantics","tier":"Standard","verdict":"VERIFIED","epistemic":"VERIFIED","raised":["accessibility"],"narrative":"Admin and baseline outputs are rendered as plain captions, and successful Apply/Reset has no explicit success status. Invalid JSON does use role=alert, but the textarea has no explicit error/helper association.","evidence":"ui/src/admin-bridge-panel.tsx:34-36; ui/src/App.tsx:190-213,463-490,544-546.","verification":"Phase 10 verified markup. Screen-reader announcement, focus movement, and command timing were not tested.","verificationLink":"state/phase_10_claim_verification.md","debate":"Reviewers converged on absent explicit status feedback; exact assistive announcement behavior remains unverified.","fix":"Expose async results and success/failure transitions through appropriate status semantics. Connect validation errors to the textarea and confirm keyboard/AT behavior.","related":[["UX-09","Switch input lacks accessible name"],["UX-11","Page and tab semantics need structure"]]},{"id":"UX-11","severity":"P3","title":"Heading, main landmark, and tab-panel semantics are incomplete","tier":"Standard","verdict":"VERIFIED","epistemic":"VERIFIED","raised":["accessibility"],"narrative":"The root/Paper structure has no main landmark, section titles use subtitle variants mapped by installed MUI to h6, and SEO tabs lack explicit tab/panel IDs and relationships.","evidence":"ui/src/App.tsx:249-268,280,315,342,733-745; installed MUI Typography.js:101-112.","verification":"Phase 10 verified markup and MUI mapping. Rendered screen-reader navigation was not tested.","verificationLink":"state/phase_10_claim_verification.md","debate":"Source-level omissions are clear; actual navigation impact requires a rendered accessibility check.","fix":"Add a main landmark, meaningful heading levels, and tab-to-panel associations; inspect the rendered DOM and test assistive navigation.","related":[["UX-09","Switch input lacks accessible name"],["UX-10","Statuses lack live announcements"]]},{"id":"UX-12","severity":"P3","title":"Browser preview recovery copy names a Tauri runtime","tier":"Deep","verdict":"PARTIAL","epistemic":"PARTIAL","raised":["trust"],"narrative":"Tauri bridge fallback messages mention a Tauri desktop runtime, while UI documentation describes a browser compatibility preview and separate native Rust shell. Harness intent and audience determine whether the wording is misleading.","evidence":"ui/src/tauri-admin.ts:146-150,182-188; ui/codemap.md:3-7,16-26.","verification":"Phase 10 partial: the text/documentation boundary is established, but user-facing impact depends on intent.","verificationLink":"state/phase_10_claim_verification.md","debate":"Trust concern versus usability view that the harness may intentionally exercise the bridge contract. Left conditional.","fix":"Confirm who uses the browser preview and its contract; then revise runtime messaging or explicitly label the preview’s bridge checks.","related":[["UX-02","Static findings need provenance"],["UX-03","Some controls are illustrative"]]},{"id":"UX-13","severity":"P3","title":"Layout density and ordering need viewport/task validation","tier":"Deep","verdict":"UNVERIFIED","epistemic":"UNVERIFIED","raised":["usability"],"narrative":"Source shows a 340px right-aligned column and detailed role content after payload/admin/baseline forms. Role recommendations also appear near the top. No clipping or task failure has been demonstrated.","evidence":"ui/src/App.tsx:248-267,365-390,454-547,551-686.","verification":"Phase 10 left impact unverified; no responsive viewport or task test was run.","verificationLink":"state/phase_10_claim_verification.md","debate":"Retained as a design question only; source facts do not establish impairment.","fix":"Test representative tasks at narrow widths and zoom; adjust reflow and section order only if observed task friction supports it.","related":[["UX-01","Import task state"],["UX-03","Action clarity"]]}];
+const panel=[{"id":"usability","name":"UX Usability","role":"Task-flow & interaction critic","detail":"Phase 3, 4, 5, 7 · final 4/10","avatar":"U"},{"id":"accessibility","name":"UX Accessibility","role":"Accessible interaction critic","detail":"Phase 3, 4, 5, 7 · final 4/10","avatar":"A"},{"id":"trust","name":"UX Trust","role":"Data provenance & product trust","detail":"Phase 3, 4, 5, 7 · final 3/10","avatar":"T"},{"id":"auditor","name":"Completeness Auditor","role":"Cross-module edge-case scan","detail":"Added UX-04 through UX-08","avatar":"C"},{"id":"accessibility_verify","name":"Accessibility Verifier","role":"Phase 13 MUI input naming","detail":"UX-09 · VR_CONFIRMED","avatar":"V"},{"id":"judge","name":"Primary Synthesis","role":"Orchestrator synthesis","detail":"No independent Opus judge available","avatar":"S"}];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sections=[
+ ["Narrative","narrative"],["Code Evidence","evidence"],["Raised by","raised"],["Verification Trail","verification"],
+ ["Debate","debate"],["Judge Ruling","judge"],["Fix Recommendation","fix"],["Cross-references","related"],["Epistemic Tags","tags"],["Prior Runs","prior"]
+];
+function listContent(key,x){
+ if(key==="raised") return x.raised.map(id=>{const p=panel.find(p=>p.id===id);return p?esc(p.name):esc(id)}).join(", ");
+ if(key==="related") return x.related.map(([id,label])=>'<a href="#issue-'+esc(id)+'"><strong>'+esc(id)+'</strong> — '+esc(label)+'</a>').join("<br>");
+ if(key==="tags") return '<span title="Source or dependency behavior checked; not a runtime observation" class="tag">'+esc(x.epistemic)+'</span><p class="small">VERIFIED: source/dependency path supports claim. PARTIAL: only part established. WEB-VERIFIED: external criterion checked. UNVERIFIED: impact needs rendered/task evidence.</p>';
+ if(key==="evidence") return '<pre class="evidence"><code class="language-plaintext">'+esc(x.evidence)+'</code></pre>';
+ if(key==="verification") return esc(x.verification)+'<p><a href="'+esc(x.verificationLink)+'">Open full verification record</a></p>';
+ if(key==="debate") return esc(x.debate);
+ if(key==="judge") return esc("Primary orchestrator synthesis: "+x.verdict+". No independent Opus judge was available; see the compressed-run notice and synthesis artifact.");
+ if(key==="prior") return "No prior-run comparison data. This was one panel run.";
+ return esc(x[key]||"");
+}
+function renderIssue(x){
+ const sectionsHtml=sections.map(([label,key])=>{
+   const content=listContent(key,x);
+   const has=key==="prior" ? false : Boolean(content);
+   return '<details><summary>'+label+'</summary><div class="evidence">'+(has?content:'No '+label+' data')+'</div></details>';
+ }).join("");
+ return '<details class="issue-card" id="issue-'+esc(x.id)+'" data-id="'+esc(x.id)+'" data-severity="'+esc(x.severity)+'" data-tier="'+esc(x.tier)+'" data-verdict="'+esc(x.verdict)+'" data-epistemic="'+esc(x.epistemic)+'" data-confidence="'+(x.epistemic==="UNVERIFIED"?1:x.epistemic==="PARTIAL"?2:3)+'" data-raised="'+esc(x.raised.join(","))+'"><summary><span class="tag">'+esc(x.severity)+'</span><span class="tag">'+esc(x.id)+'</span><strong>'+esc(x.title)+'</strong><span class="tag">'+esc(x.tier)+'</span><span class="tag">'+esc(x.verdict)+'</span><span class="tag">COMPRESSED</span></summary><div class="small">Evidence status: '+(x.epistemic==="UNVERIFIED"?"Impact unverified":x.epistemic==="PARTIAL"?"Partial evidence":"Source or criterion verified")+'</div>'+sectionsHtml+'</details>';
+}
+const list=document.getElementById("issueList");
+const reviewerFilter={value:""};
+function renderGallery(){
+ const g=document.getElementById("gallery");
+ g.innerHTML=panel.map(p=>'<button type="button" class="agent" data-agent="'+esc(p.id)+'" aria-pressed="false"><span class="avatar" aria-hidden="true">'+esc(p.avatar)+'</span><b>'+esc(p.name)+'</b>'+esc(p.role)+'<br><span class="small">'+esc(p.detail)+'</span></button>').join("");
+ g.querySelectorAll("[data-agent]").forEach(b=>b.addEventListener("click",()=>{reviewerFilter.value=reviewerFilter.value===b.dataset.agent?"":b.dataset.agent;g.querySelectorAll("[data-agent]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.agent===reviewerFilter.value)));applyFilters()}));
+}
+function renderIssues(){
+ const order={P2:0,P3:1,Light:0,Standard:1,Deep:2};
+ const evidenceOrder=x=>x.epistemic==="UNVERIFIED"?0:x.epistemic==="PARTIAL"?1:2;
+ const sort=document.getElementById("sort").value;
+ const sorted=[...issues].sort((a,b)=>sort==="confidence"?evidenceOrder(a)-evidenceOrder(b):sort==="tier"?order[a.tier]-order[b.tier]:order[a.severity]-order[b.severity]||a.id.localeCompare(b.id));
+ list.innerHTML=sorted.map(renderIssue).join("");
+ applyFilters();
+ try{if(window.Prism)Prism.highlightAll()}catch(_){}
+}
+function applyFilters(){
+ const q=document.getElementById("search").value.toLowerCase();
+ const sev=document.getElementById("severity").value,tier=document.getElementById("tier").value,ver=document.getElementById("verdict").value,epi=document.getElementById("epistemic").value;
+ let shown=0;
+ list.querySelectorAll(".issue-card").forEach(card=>{
+ const txt=card.textContent.toLowerCase();
+ const raised=card.dataset.raised.split(",");
+ const ok=(!q||txt.includes(q))&&(!sev||card.dataset.severity===sev)&&(!tier||card.dataset.tier===tier)&&(!ver||card.dataset.verdict===ver)&&(!epi||card.dataset.epistemic===epi)&&(!reviewerFilter.value||raised.includes(reviewerFilter.value));
+ card.hidden=!ok;if(ok)shown++;
+ });
+ document.getElementById("resultCount").textContent=shown+" of "+issues.length+" findings shown"+(reviewerFilter.value?" for selected panelist.":".");
+}
+renderGallery();renderIssues();
+["search","severity","tier","verdict","epistemic"].forEach(id=>document.getElementById(id).addEventListener("input",applyFilters));
+document.getElementById("sort").addEventListener("change",renderIssues);
+document.getElementById("expandAll").addEventListener("click",()=>document.querySelectorAll("#issueList details").forEach(d=>d.open=true));
+document.getElementById("collapseAll").addEventListener("click",()=>document.querySelectorAll("#issueList details").forEach(d=>d.open=false));
+document.getElementById("clear").addEventListener("click",()=>{["search","severity","tier","verdict","epistemic"].forEach(id=>document.getElementById(id).value="");reviewerFilter.value="";document.querySelectorAll("[data-agent]").forEach(x=>x.setAttribute("aria-pressed","false"));applyFilters()});
+document.addEventListener("keydown",e=>{
+ if(e.key==="/"&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){e.preventDefault();document.getElementById("search").focus();return}
+ if(!["ArrowDown","ArrowUp","Home","End","Enter"].includes(e.key))return;
+ const cards=[...list.querySelectorAll(".issue-card:not([hidden])")];
+ if(!cards.length)return;
+ const index=cards.findIndex(c=>c===document.activeElement||c.contains(document.activeElement));
+ if(e.key==="Enter"&&document.activeElement.matches(".issue-card>summary")){e.preventDefault();document.activeElement.parentElement.open=!document.activeElement.parentElement.open;return}
+ let next=index;
+ if(e.key==="ArrowDown")next=Math.min(cards.length-1,index<0?0:index+1);
+ if(e.key==="ArrowUp")next=Math.max(0,index<0?0:index-1);
+ if(e.key==="Home")next=0;if(e.key==="End")next=cards.length-1;
+ if(next!==index||e.key==="Home"||e.key==="End"){e.preventDefault();cards[next].querySelector("summary").focus()}
+});
+function deepLink(){const id=decodeURIComponent(location.hash.slice(1));if(!id)return;const card=document.getElementById(id);if(card){card.open=true;card.scrollIntoView({behavior:"smooth",block:"start"})}}
+window.addEventListener("hashchange",deepLink);deepLink();
+let printOpen=[];
+window.addEventListener("beforeprint",()=>{printOpen=[...document.querySelectorAll("#issueList details")].map(d=>d.open);document.querySelectorAll("#issueList details").forEach(d=>d.open=true)});
+window.addEventListener("afterprint",()=>document.querySelectorAll("#issueList details").forEach((d,i)=>d.open=printOpen[i]||false));
+function charts(){
+ if(!window.Chart){document.querySelectorAll(".charts .card").forEach(c=>{const p=document.createElement("p");p.className="small";p.textContent="Chart unavailable; counts are listed in the report.";c.appendChild(p)});return}
+ const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}}};
+ try{
+ new Chart(document.getElementById("confidenceChart"),{type:"doughnut",data:{labels:["Source or criterion verified","Partial evidence","Impact unverified"],datasets:[{data:[10,2,1],backgroundColor:["#2854a2","#d18a10","#718096"]}]},options:base});
+ new Chart(document.getElementById("tierChart"),{type:"doughnut",data:{labels:["Light","Standard","Deep"],datasets:[{data:[1,10,2],backgroundColor:["#6f8e54","#3266b0","#825e9b"]}]},options:base});
+ new Chart(document.getElementById("verdictChart"),{type:"bar",data:{labels:["VR_CONFIRMED","VERIFIED","PARTIAL","UNVERIFIED"],datasets:[{label:"Findings",data:[6,4,2,1],backgroundColor:"#5577cc"}]},options:{...base,indexAxis:"y",scales:{x:{beginAtZero:true,ticks:{precision:0}}}}});
+ new Chart(document.getElementById("pipelineChart"),{type:"bar",data:{labels:["Final items","Phase 10 claim rows","Phase 13 targeted","P0/P1"],datasets:[{label:"Count",data:[13,13,6,0],backgroundColor:["#5577cc","#497d65","#d18a10","#718096"]}]},options:{...base,scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+ }catch(e){document.querySelectorAll(".charts .card").forEach(c=>{const p=document.createElement("p");p.className="small";p.textContent="Charts could not load; counts remain available in the summary.";c.appendChild(p)})}
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" onload="charts()" onerror="document.querySelectorAll('.charts .card').forEach(c=>{if(!c.querySelector('p.small')){const p=document.createElement('p');p.className='small';p.textContent='Chart unavailable; counts remain in the summary.';c.appendChild(p)}})"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js" onload="try{Prism.highlightAll()}catch(e){}" onerror="console.info('Prism unavailable; code remains readable as plain text')"></script>
+</body>
+</html>
