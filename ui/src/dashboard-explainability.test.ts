@@ -31,9 +31,9 @@ describe('dashboard explainability', () => {
       },
       {
         id: 'explain-opportunity',
-        title: 'Opportunity Lift',
+        title: 'Opportunity Signals',
         summary: 'Trim flaky tests',
-        detail: '3 opportunity signal(s) are boosting the score.',
+        detail: '3 opportunity signal(s) are available to review; opportunities do not affect the pulse score.',
         status: 'good'
       }
     ]);
@@ -78,9 +78,9 @@ describe('dashboard explainability', () => {
       },
       {
         id: 'explain-opportunity',
-        title: 'Opportunity Lift',
+        title: 'Opportunity Signals',
         summary: 'Reduce release coupling',
-        detail: '1 opportunity signal(s) are boosting the score.',
+        detail: '1 opportunity signal(s) are available to review; opportunities do not affect the pulse score.',
         status: 'good'
       }
     ]);
@@ -123,5 +123,27 @@ describe('dashboard explainability', () => {
 
     expect(pulse.overallScore).toBeNull();
     expect(buildExplainabilityTraces(pulse)[0].detail).toContain('at least one commit-risk record and one bottleneck record');
+  });
+
+  it('keeps opportunity signals out of the pulse score and explains that clearly', () => {
+    const payload = {
+      commits: [{ id: 'safe-commit', files: 1, changedLines: 8, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+      stages: [{ name: 'healthy-stage', queueDepth: 1, throughput: 10, avgLatencyMs: 100 }]
+    };
+    const withoutOpportunities = buildQualityPulse(
+      buildDashboardInsights({ ...payload, signals: [] }),
+      { allowSampleFallbacks: false }
+    );
+    const withOpportunities = buildQualityPulse(
+      buildDashboardInsights({
+        ...payload,
+        signals: [{ id: 'op-1', area: 'build', title: 'Reduce build time', impact: 5, effort: 2, confidence: 0.9 }]
+      }),
+      { allowSampleFallbacks: false }
+    );
+
+    expect(withOpportunities.overallScore).toBe(withoutOpportunities.overallScore);
+    expect(buildExplainabilityTraces(withOpportunities)[3].detail).toContain('opportunities do not affect the pulse score');
+    expect(buildExplainabilityTraces(withOpportunities)[3].detail).not.toMatch(/boost|contribut/i);
   });
 });
