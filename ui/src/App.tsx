@@ -646,7 +646,7 @@ function App() {
               }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
-            <Typography component="h2" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
+            <Typography component="h3" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Bottleneck Radar
             </Typography>
             <List dense disablePadding>
@@ -681,7 +681,7 @@ function App() {
               }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
-            <Typography component="h2" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
+            <Typography component="h3" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Top Improvement Opportunities
             </Typography>
             <List dense disablePadding>
@@ -715,7 +715,7 @@ function App() {
               }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
-            <Typography component="h2" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
+            <Typography component="h3" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Security-Weighted Commit Signals
             </Typography>
             <FindingSection
