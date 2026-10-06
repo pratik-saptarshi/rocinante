@@ -43,3 +43,13 @@ installation path works in this environment.
 - Branch protection and required-check configuration have not been validated.
 - Local Playwright remains blocked by sandbox networking; this is not a test
   pass and does not replace hosted browser validation.
+
+## Payload compatibility note
+
+The public envelope and field names are unchanged, and the legacy/null envelope
+form remains supported. Import validation is now stricter: present rows must
+contain all required fields with valid finite numeric values, and supplied
+limits must be finite and non-negative where applicable. Callers that previously
+sent incomplete rows or malformed limits must correct those payloads; the UI now
+keeps the last good view and reports the validation error instead of accepting
+bad values that could later crash rendering.
