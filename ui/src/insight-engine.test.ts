@@ -17,6 +17,15 @@ describe('buildDashboardInsights', () => {
     expect(insights.opportunities).toHaveLength(3);
   });
 
+  it('preserves explicitly empty collections instead of substituting sample records', () => {
+    const insights = buildDashboardInsights({ commits: [], stages: [], signals: [] });
+
+    expect(insights.commitRiskCards).toEqual([]);
+    expect(insights.bottlenecks).toEqual([]);
+    expect(insights.opportunities).toEqual([]);
+    expect(insights.stages).toEqual([]);
+  });
+
   it('derives custom payload insights from telemetry envelopes', () => {
     const insights = buildDashboardInsights(
       {
