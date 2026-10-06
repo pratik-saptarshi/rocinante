@@ -44,7 +44,7 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 | UX-13 responsive layout/task fit | UNVERIFIED | 0.45 | Partial | Defer; test viewports/tasks and change layout only if impairment reproduces | `BI-5u3.5.2` / M4 |
 | PR #114 review: security signal outside display limit | VERIFIED | 0.90 | Full | Fix is on PR #114; classify the full dataset, retain bounded details, disclose omitted count, and test recommendations/routes beyond the card cap | `BI-5u3.1.9` / M1 |
 | PR #114 review: critical manager stage hidden by truncation | VERIFIED | 0.95 | Full | Rank critical stages ahead of high stages by status and impact before selecting two manager actions | `BI-5u3.1.10` / M1 |
-| PR #118 review follow-up: duplicate stage names overwrite severity lookup | VERIFIED | 0.90 | Full | Bundle in Phase 3; associate severity by row identity/order and add a mixed healthy/critical duplicate-name regression | `BI-5u3.7` / M3 follow-up |
+| PR #118 review follow-up: duplicate stage names overwrite severity lookup | VERIFIED | 0.90 | Full | Bundle in Phase 3; associate severity by row identity/order and add a mixed healthy/critical duplicate-name regression | `BI-5u3.4.6` / M3 follow-up |
 
 **Disposition totals:** panel findings: 0 must-fix, 11 bundled, 2 deferred, 0 informational. PR review supplement: 2 P2 bundled follow-ups; both fixes are implemented and independently reviewed, with exact-head hosted gates and one review thread still blocking Phase 1 close. No governance veto was triggered by the panel’s P0/P1 rules. Scope remains the browser preview.
 
@@ -88,12 +88,12 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 - Each fixed/example section identifies its source; imported-derived sections identify the active imported data.
 - Complete healthy data never shows unconditional critical warnings or unrelated sample routes. Empty data has a truthful empty/unavailable state.
 - No route or recommendation is presented as derived from current data unless its source record supports it; any retained example is clearly labeled illustrative.
-- Views use the same stage-severity classifier and configured latency threshold; duplicate stage names retain each row's own computed severity and do not inherit a neighbor's status.
+- Views use the same stage-severity classifier and configured latency threshold. Duplicate stage names will be covered by `BI-5u3.4.6` in Phase 3 so every row retains its own computed severity.
 - Score explanations name only formula inputs. Opportunity-only changes cannot be described as raising the score unless the score formula actually includes them.
 
 **Test plan**
 
-- Unit-test severity boundaries and each score component, including opportunity-only input changes; regress duplicate stage names with different statuses and verify each rendered row keeps its own status.
+- Unit-test severity boundaries and each score component, including opportunity-only input changes. Phase 3 adds a duplicate-name component regression and verifies row-specific status.
 - Component-test provenance and routes for empty, healthy, and critical payloads.
 - Playwright verifies healthy and critical payload guidance, no false critical route, and clear sample labeling.
 - Run frozen install, typecheck, complete Vitest suite, production build, Playwright, and exact-head hosted required checks.
@@ -160,7 +160,8 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 | `.1.9` | New PR review follow-up: full-dataset security classification independent of card display limit | Security record after limit still counted/routed; non-security control case | Closed locally against `a334cf9`; tracker and closeout evidence merged in PR #116; exact-head hosted checks passed |
 | `.1.10` | PR review follow-up: rank critical manager stages before the two-action limit | Later critical stage wins over earlier highs in recommendation and route; impact ordering and deterministic ties | Closed locally against `a334cf9`; tracker and closeout evidence merged in PR #116; exact-head hosted checks passed |
 | `BI-5u3.3` + `.3.1`–`.3.4` | M2 UX-02/05/06/07: provenance, data-derived warnings/routes, consistent severity, truthful formula explanation | Score/severity unit tests; healthy/empty/critical component + E2E tests | Closed by PR #118 `ce1e05d`; exact-head hosted checks green |
-| `BI-5u3.4` + `.4.1`–`.4.5` | M3 UX-03/08/09/10/11: honest unavailable controls, AA contrast, meaningful switch name, async status announcements, main/heading semantics; remove nonfunctional SEO tabs pending real scope data | DOM/accessibility assertions, computed contrast, keyboard and browser checks; manual screen-reader spot check | Open; Phase 3 implementation branch active, hosted and human checks pending |
+| `BI-5u3.4` + `.4.1`–`.4.5` | M3 UX-03/08/09/10/11 plus `BI-5u3.4.6`: honest unavailable controls, AA contrast, meaningful switch name, async status announcements, main/heading semantics; remove nonfunctional SEO tabs pending real scope data; preserve per-row severity for duplicate stage names | DOM/accessibility assertions, computed contrast, keyboard and browser checks, duplicate-name mixed-severity regression; manual screen-reader spot check | Open; Phase 3 implementation branch active, hosted and human checks pending |
+| `BI-5u3.4.6` | PR #118 follow-up: keep severity attached to each duplicate-named telemetry stage row | Mixed healthy/critical duplicate-name Testing Library regression; full UI and same-head hosted checks | Open; included in Phase 3 branch |
 | `BI-5u3.5` + `.5.1`–`.5.2` | M4 UX-12/13: document audience/copy contract; validate responsive task fit before code | Decision note; viewport/zoom screenshots and task results | Open; blocked on Phase 3 |
 
 Detailed per-issue acceptance criteria and test plans are stored in the Beads descriptions and the current [UX Beads snapshot](frontend-ux-remediation-beads-2026-10-06.jsonl). The local Beads IDs and history are not confirmed synchronized to a remote tracker.
