@@ -52,9 +52,82 @@ test.describe('frontend behavior', () => {
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
     await expect(page.getByTestId('snapshot-opportunity-count')).toHaveText('1');
     await expect(page.getByText('browser-001 score 12 (good)')).toBeVisible();
+    await expect(page.getByTestId('telemetry-data-state')).toHaveText('Imported telemetry is displayed.');
+    const qualityPulse = page.getByTestId('quality-pulse-section');
+    await expect(qualityPulse.getByText('Current import')).toBeVisible();
+    await expect(qualityPulse.getByText(/browser-001: good risk \(score 12\)/)).toBeVisible();
+    await expect(qualityPulse.getByText(/A-124|Sprint now|sample window/i)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Executive' }).click();
+    await expect(qualityPulse.getByText(/Cache invalidation \(score/)).toBeVisible();
+    await page.getByRole('button', { name: 'Security' }).click();
+    await expect(qualityPulse.getByText(/No dependency or automation-failure signals were found/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Reset to Sample' }).click();
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('3');
+    await expect(page.getByTestId('telemetry-data-state')).toHaveText('Sample telemetry is displayed.');
+  });
+
+  test('keeps last-good data after an invalid import and represents an empty import explicitly', async ({ page }) => {
+    await page.goto('/');
+    const jsonInput = page.getByLabel('Telemetry payload JSON');
+
+    await jsonInput.fill(JSON.stringify({
+      commits: [{ id: 'browser-good', files: 1, changedLines: 8, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+      stages: [{ name: 'review', queueDepth: 1, throughput: 8, avgLatencyMs: 200 }],
+      signals: []
+    }));
+    await page.getByRole('button', { name: 'Apply Payload' }).click();
+    await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
+
+    await jsonInput.fill(JSON.stringify({
+      commits: [{ id: 'bad', files: 1, changedLines: 8, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+      stages: [{ name: { label: 'review' }, queueDepth: 1, throughput: 8, avgLatencyMs: 200 }],
+      signals: []
+    }));
+    await page.getByRole('button', { name: 'Apply Payload' }).click();
+    await expect(page.getByRole('alert')).toContainText('stages[0].name');
+    await expect(page.getByText('browser-good score 3 (good)')).toBeVisible();
+    await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
+
+    await jsonInput.fill(JSON.stringify({ commits: [], stages: [], signals: [] }));
+    await page.getByRole('button', { name: 'Apply Payload' }).click();
+    await expect(page.getByTestId('telemetry-data-state')).toHaveText('This imported payload contains no telemetry records.');
+    await expect(page.getByTestId('snapshot-risk-count')).toHaveText('0');
+    const qualityPulse = page.getByTestId('quality-pulse-section');
+    await expect(qualityPulse.getByText(/trim flaky tests|sample window|high-risk commit A-124/i)).toHaveCount(0);
+    await expect(qualityPulse.getByText('Awaiting telemetry')).toHaveCount(1);
+    await expect(qualityPulse.getByTestId('pulse-score')).toHaveText('Unavailable');
+    await expect(qualityPulse.getByTestId('pulse-top-bottleneck')).toHaveText('Unavailable');
+    await expect(page.getByTestId('explainability-section').getByText(/Top Bottleneck: Unavailable — No bottleneck records are available for this import\./)).toBeVisible();
+    await expect(page.getByTestId('explainability-section').getByText(/Top Risk Commit: Unavailable — No commit-risk records are available for this import\./)).toBeVisible();
+    const trendRisk = page.getByTestId('trend-risk-section');
+    await expect(trendRisk.getByText(/PR Risk Trajectory: Unavailable — No commit-risk records are available\./)).toBeVisible();
+    await expect(trendRisk.getByText(/Bottleneck Pressure: Unavailable — No bottleneck records are available\./)).toBeVisible();
+    await page.getByRole('button', { name: 'Security' }).click();
+    await expect(page.getByText('No critical security signals are available.')).toBeVisible();
+    await expect(page.getByText(/sample window/i)).toHaveCount(0);
+  });
+
+  test('announces malformed JSON and keeps the last-good dashboard visible', async ({ page }) => {
+    await page.goto('/');
+    const jsonInput = page.getByLabel('Telemetry payload JSON');
+
+    await jsonInput.fill(JSON.stringify({
+      commits: [{ id: 'last-good-json', files: 2, changedLines: 15, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+      stages: [],
+      signals: []
+    }));
+    await page.getByRole('button', { name: 'Apply Payload' }).click();
+    await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
+    await expect(page.getByText('last-good-json score 6 (good)')).toBeVisible();
+
+    await jsonInput.fill('{ commits: [');
+    await page.getByRole('button', { name: 'Apply Payload' }).click();
+
+    await expect(page.getByRole('alert')).toContainText('Invalid telemetry payload');
+    await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
+    await expect(page.getByText('last-good-json score 6 (good)')).toBeVisible();
+    await expect(jsonInput).toHaveAttribute('aria-invalid', 'true');
   });
 
   test('surfaces the admin bridge fallback in desktop-absent browsers', async ({ page }) => {

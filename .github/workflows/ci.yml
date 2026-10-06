@@ -110,6 +110,45 @@ jobs:
       - name: Build production UI
         run: pnpm run build
 
+  ui-playwright:
+    name: UI Playwright
+    needs: [ci-workflow-parse]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+      - name: Install UI dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright Chromium and system dependencies
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run browser end-to-end tests
+        run: pnpm run test:e2e
+      - name: Upload Playwright report and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-playwright-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ui/playwright-report/
+            ui/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
   ci-scope:
     needs: [ci-workflow-parse]
     runs-on: ubuntu-latest
@@ -796,6 +835,7 @@ jobs:
       - security-exception-governance
       - ci-scope
       - ui-quality
+      - ui-playwright
       - rust-workspace-tests
       - windows-registration
       - macos-url-dispatch
@@ -835,6 +875,13 @@ jobs:
 
           if [[ "${{ needs.ui-quality.result }}" != "success" ]]; then
             echo "UI typecheck, unit tests, or production build failed or was skipped unexpectedly"
+            exit 1
+          fi
+
+          # UI Playwright is currently applicable to every CI event. Keep it
+          # required here so a skipped browser job cannot bypass UI PR coverage.
+          if [[ "${{ needs.ui-playwright.result }}" != "success" ]]; then
+            echo "UI Playwright browser tests failed or were skipped unexpectedly"
             exit 1
           fi
 

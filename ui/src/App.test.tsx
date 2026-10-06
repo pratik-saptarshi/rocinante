@@ -98,6 +98,114 @@ describe('Optimization sidebar layout', () => {
     expect(screen.getByTestId('pulse-top-bottleneck')).toBeInTheDocument();
   });
 
+  it('does not show sample recommendations or action routes for an empty import', () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: { value: JSON.stringify({ commits: [], stages: [], signals: [] }) }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    const qualityPulseSection = screen.getByTestId('quality-pulse-section');
+    expect(within(qualityPulseSection).queryByText(/A-124|trim flaky tests|sample window/i)).not.toBeInTheDocument();
+    expect(within(qualityPulseSection).getByText('Awaiting telemetry')).toBeInTheDocument();
+    expect(within(qualityPulseSection).getByTestId('pulse-score')).toHaveTextContent('Unavailable');
+    expect(within(qualityPulseSection).getByTestId('pulse-top-bottleneck')).toHaveTextContent('Unavailable');
+    expect(within(qualityPulseSection).queryByText(/high-risk commit/i)).not.toBeInTheDocument();
+    expect(within(screen.getByTestId('explainability-section')).getByText(/Top Bottleneck: Unavailable — No bottleneck records are available for this import\./)).toBeInTheDocument();
+    expect(within(screen.getByTestId('explainability-section')).getByText(/Top Risk Commit: Unavailable — No commit-risk records are available for this import\./)).toBeInTheDocument();
+    const trendRiskSection = screen.getByTestId('trend-risk-section');
+    expect(within(trendRiskSection).getByText(/PR Risk Trajectory: Unavailable — No commit-risk records are available\./)).toBeInTheDocument();
+    expect(within(trendRiskSection).getByText(/Bottleneck Pressure: Unavailable — No bottleneck records are available\./)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Security' }));
+    expect(screen.getByText('No critical security signals are available.')).toBeInTheDocument();
+    expect(screen.queryByText(/sample window/i)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: { value: JSON.stringify({ commits: [{ id: 'partial-import', files: 1, changedLines: 1, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }], signals: [] }) }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+    expect(within(screen.getByTestId('quality-pulse-section')).getByTestId('pulse-top-bottleneck')).toHaveTextContent('Unavailable');
+    expect(within(screen.getByTestId('explainability-section')).getByText(/Top Bottleneck: Unavailable — No bottleneck records are available for this import\./)).toBeInTheDocument();
+  });
+
+  it('derives visible action routing from populated imported telemetry', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: {
+        value: JSON.stringify({
+          commits: [{ id: 'route-commit', files: 4, changedLines: 520, dependencyChanges: 1, testTouch: false, failedAutomations: 1 }],
+          stages: [{ name: 'route-review', queueDepth: 12, throughput: 4, avgLatencyMs: 2400 }],
+          signals: [{ id: 'route-signal', area: 'build', title: 'Shorten route build', impact: 5, effort: 2, confidence: 0.9 }]
+        })
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    const qualityPulseSection = screen.getByTestId('quality-pulse-section');
+    expect(within(qualityPulseSection).getByText('Current import')).toBeInTheDocument();
+    expect(within(qualityPulseSection).getByText(/route-commit: high risk \(score .*Dependency risk/)).toBeInTheDocument();
+    expect(within(qualityPulseSection).queryByText(/A-124|This week|Sprint now|sample window/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manager' }));
+    expect(within(qualityPulseSection).getByText(/route-review: critical pressure/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Executive' }));
+    expect(within(qualityPulseSection).getByText(/Shorten route build \(score/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Security' }));
+    expect(within(qualityPulseSection).getByText(/route-commit: review dependency risk and automation failures/)).toBeInTheDocument();
+  });
+
+  it('keeps full security counts and routes when detail cards are display-limited', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: {
+        value: JSON.stringify({
+          limits: { risks: 1 },
+          commits: [
+            { id: 'visible-non-security', files: 24, changedLines: 900, dependencyChanges: 0, testTouch: true, failedAutomations: 0 },
+            ...Array.from({ length: 5 }, (_, index) => ({
+              id: `hidden-security-${index + 1}`,
+              files: 1,
+              changedLines: 8,
+              dependencyChanges: 1,
+              testTouch: true,
+              failedAutomations: 0
+            }))
+          ],
+          stages: [],
+          signals: []
+        })
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('pulse-security-count')).toHaveTextContent('5');
+    expect(screen.getAllByText(/visible-non-security/i).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Security' }));
+
+    const qualityPulseSection = screen.getByTestId('quality-pulse-section');
+    expect(
+      within(qualityPulseSection).getByText(
+        'Security-sensitive signals from hidden-security-1 should be reviewed before release.'
+      )
+    ).toBeInTheDocument();
+    expect(within(qualityPulseSection).getByText('hidden-security-1: review dependency risk.')).toBeInTheDocument();
+    expect(within(qualityPulseSection).getByText('hidden-security-2: review dependency risk.')).toBeInTheDocument();
+
+    const securityDetailSection = screen.getByTestId('security-detail-section');
+    const securityDetailList = within(securityDetailSection).getByRole('list');
+    expect(within(securityDetailList).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(securityDetailSection).getByText('hidden-security-1: Dependency risk')).toBeInTheDocument();
+    expect(within(securityDetailSection).getByText('hidden-security-3: Dependency risk')).toBeInTheDocument();
+    expect(within(securityDetailSection).queryByText(/hidden-security-[45]/)).not.toBeInTheDocument();
+    expect(within(securityDetailSection).getByTestId('security-signals-overflow')).toHaveTextContent(
+      '2 more security signals not shown.'
+    );
+  });
+
   it('renders trend and risk visuals from the shared insight helper', () => {
     render(<App />);
 
@@ -301,7 +409,7 @@ describe('Optimization sidebar layout', () => {
     fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), { target: { value: 'oops: bad json' } });
     fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/Invalid JSON payload/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/Invalid telemetry payload/i);
   });
 
   it('resets to sample data when payload input is cleared', () => {
@@ -323,27 +431,80 @@ describe('Optimization sidebar layout', () => {
     ).toBeInTheDocument();
   });
 
-  it(
-    'falls back to sample data when payload field is intentionally emptied',
-    () => {
-      render(<App />);
+  it('does not reset to sample data when Apply is blank and keeps the last good view on invalid schema', () => {
+    render(<App />);
+    const input = screen.getByLabelText(/Telemetry payload JSON/i);
+    const lastGoodPayload = {
+      commits: [{ id: 'last-good', files: 2, changedLines: 10, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+      stages: [{ name: 'review', queueDepth: 1, throughput: 12, avgLatencyMs: 200 }],
+      signals: []
+    };
 
-      fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
-        target: {
-          value: JSON.stringify({
-            commits: [{ id: 'temp', files: 2, changedLines: 10, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }]
-          })
-        }
-      });
-      fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
-      expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
+    fireEvent.change(input, { target: { value: JSON.stringify(lastGoodPayload) } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/Imported telemetry/i);
 
-      fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), { target: { value: '   ' } });
-      fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
-      expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('3');
-    },
-    10000
-  );
+    fireEvent.change(input, { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
+    expect(screen.getByRole('alert')).toHaveTextContent(/Enter a telemetry payload/i);
+
+    fireEvent.change(input, {
+      target: {
+        value: JSON.stringify({
+          commits: lastGoodPayload.commits,
+          stages: [{ name: { label: 'review' }, queueDepth: 1, throughput: 12, avgLatencyMs: 200 }],
+          signals: []
+        })
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
+    expect(screen.getAllByText(/last-good score/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('alert')).toHaveTextContent(/stages\[0\]\.name/);
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(input).toHaveAttribute('aria-describedby', 'telemetry-payload-error');
+  });
+
+  it('shows an explicit empty imported state without substituting sample telemetry', () => {
+    render(<App />);
+    const input = screen.getByLabelText(/Telemetry payload JSON/i);
+    fireEvent.change(input, { target: { value: JSON.stringify({ commits: [], stages: [], signals: [] }) } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/no telemetry records/i);
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('snapshot-bottleneck-count')).toHaveTextContent('0 critical, 0 high');
+    expect(screen.getByTestId('snapshot-opportunity-count')).toHaveTextContent('0');
+  });
+
+  it('does not call a partial explicitly empty payload a complete no-records import', () => {
+    render(<App />);
+    const input = screen.getByLabelText(/Telemetry payload JSON/i);
+    fireEvent.change(input, { target: { value: JSON.stringify({ commits: [] }) } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/some telemetry collections are omitted/i);
+    expect(screen.getByTestId('telemetry-data-state')).not.toHaveTextContent(/contains no telemetry records/i);
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('snapshot-bottleneck-count')).toHaveTextContent('0 critical, 0 high');
+    expect(screen.getByTestId('snapshot-opportunity-count')).toHaveTextContent('0');
+  });
+
+  it('distinguishes missing fields and reset sample data from imported data', () => {
+    render(<App />);
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/Sample telemetry/i);
+    const input = screen.getByLabelText(/Telemetry payload JSON/i);
+    fireEvent.change(input, { target: { value: '{}' } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/fields are missing/i);
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('snapshot-bottleneck-count')).toHaveTextContent('0 critical, 0 high');
+    expect(screen.getByTestId('snapshot-opportunity-count')).toHaveTextContent('0');
+    fireEvent.click(screen.getByRole('button', { name: /Reset to Sample/i }));
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/Sample telemetry/i);
+  });
 
   it(
     'applies payload envelope with nested limits and removes security matches',
@@ -375,7 +536,7 @@ describe('Optimization sidebar layout', () => {
       expect(screen.getByTestId('snapshot-opportunity-count')).toHaveTextContent('1');
 
       fireEvent.click(screen.getByRole('button', { name: 'Security' }));
-      expect(screen.getAllByText(/No critical security signals in sample window/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/No critical security signals are available/i).length).toBeGreaterThanOrEqual(1);
     },
     10000
   );

@@ -1,6 +1,6 @@
 # Frontend UX Remediation Roadmap — 2026-10-05
 
-**Status:** Phase 0 planning complete; Phase 1 is next. Product implementation and UX validation have not run.
+**Status (updated 2026-10-06):** Phase 0 planning is complete. Phase 1 code and its seven review follow-ups are implemented on PR #114 code head `71bf9e5990428ac0603eeb370837bd954c4ef1f2`. Hosted CI (`test`, including UI Playwright), Security (CodeQL, RustSec, secret scan), and Dependency Review passed on that head. Local validation and the local browser sandbox limitation are recorded in the [Phase 1 validation note](frontend-ux-phase-1-closeout-2026-10-06.md). Phase 1 milestone `BI-5u3.1` remains open pending protected merge; its implementation child Beads are closed. Branch protection was verified at main `d4bc8e7`: required contexts are `test` and `codeql`, and aggregate `test` includes `ui-playwright`. Phases 2–4 remain planned.
 **Source review:** [Frontend UX adversarial panel](../reviews/2026-10-05-frontend-user-experience/review_panel_report.md) · [process transcript](../reviews/2026-10-05-frontend-user-experience/review_panel_process.md)
 **Panel result:** 3.7/10 mean; 10 P2, 3 P3; no P0/P1. Six targeted source checks confirmed UX-04 through UX-09. The independent Opus judge phase was unavailable and is disclosed in the source report. The per-finding plan integration is in the [frontend UX traceability ledger](frontend-ux-plan-traceability-2026-10-05.md).
 
@@ -15,7 +15,7 @@ The scope is the browser preview in `ui/`. This roadmap does not establish that 
 - Review findings and evidence: [review report](../reviews/2026-10-05-frontend-user-experience/review_panel_report.md), [process transcript](../reviews/2026-10-05-frontend-user-experience/review_panel_process.md), [HTML report](../reviews/2026-10-05-frontend-user-experience/review_panel_report.html), and its `state/` records.
 - UI source of truth: `ui/src/`; UI entry and test contracts are summarized in `ui/codemap.md`.
 - Current package manager pin: pnpm `12.9.1`.
-- Current hosted `ui-quality` steps in `.github/workflows/ci.yml`: frozen install, `pnpm exec tsc -b`, `pnpm exec vitest run`, and `pnpm run build`. `ui/package.json` also defines `pnpm run test:e2e`, but the current `ui-quality` job does not invoke it. Bead `BI-5u3.1.3` tracks a hosted Playwright gate; until that check is implemented and its branch-protection requirement is verified, do not claim hosted E2E coverage.
+- Hosted `ui-quality` runs frozen install, `pnpm exec tsc -b`, `pnpm exec vitest run`, and `pnpm run build`. The separate `ui-playwright` job installs Chromium and runs `pnpm run test:e2e`; Phase 1 makes the aggregate `test` depend on it and fail closed on failure/skip. Bead `BI-5u3.1.3` tracks this aggregate gate. Branch API confirmed that protected `main` at `d4bc8e7` requires `test` and `codeql`; the required aggregate `test` depends on `ui-playwright`. Do not claim hosted E2E acceptance until the same-head job passes.
 - No standalone UI lint script is defined in `ui/package.json`. Do not report a separate UI lint pass unless a lint command is added and run.
 - This workspace already contains unrelated dirty native-shell, macOS, and readiness work. Keep it intact. Do not use that dirty branch as the UX implementation base.
 - The user reported that the native application did not come up cleanly during a macOS acceptance attempt. That incident is outside this frontend review. Track it through the existing [desktop parity record](desktop-parity-matrix.html) and [readiness tracker](bead-issue-tracker.html); do not claim native acceptance based on browser-preview work.
@@ -51,7 +51,7 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 2. **Do not implement new product functionality by assumption.** The repository documents React/Vite as a browser compatibility preview, which is the current scope. Run Full Audit, SEO, and Field/Lab controls without an implemented contract must be visibly preview-only or unavailable. Implement real audit or telemetry behavior only after its data source and owner decision are defined.
 3. **Keep input compatibility stable.** Validate preview payloads without changing existing public command or payload shapes. Reject malformed nested values before replacing active UI state.
 4. **Require same-head evidence.** A milestone is complete only when its focused local checks pass and all applicable hosted required checks terminate green on the PR head being merged.
-5. **Be explicit about E2E hosting.** Existing Playwright tests are available locally but are not currently part of `ui-quality`. Add the hosted lane through `BI-5u3.1.3` and verify whether branch protection requires it before claiming a hosted browser gate.
+5. **Be explicit about E2E hosting.** The hosted Playwright job is separate from `ui-quality`; require its result in the aggregate gate through `BI-5u3.1.3`; refresh branch-protection requirements during each execution because the base branch may change.
 
 ## Phases and PR journey
 
@@ -60,9 +60,10 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 **Bead:** `BI-5u3` (program epic)
 **Completed snapshot (local 2026-10-05):** planning was based on `main` SHA `eb83be9da64057dc71838b33edc01a9a2769b0fa`. The reported native app startup instability and platform acceptance remain separate from this browser-preview workstream; this roadmap records no native acceptance result.
 **Preview contract:** the repository documents React/Vite as a browser compatibility preview, separate from the production desktop transport. This documented boundary is the current scope. Controls without an implemented contract must be visibly preview-only or unavailable until a behavior contract exists.
-**Exit:** the baseline and preview boundary are recorded. Phase 1 is the next planned work. Product implementation and UX validation have not run; hosted check results are not evidence for frontend acceptance.
+**Exit:** the baseline and preview boundary are recorded. Phase 1 was the next planned work and has since run; see its implementation and validation snapshot below. Hosted check results are not evidence for frontend acceptance unless they apply to the exact PR head.
 
-### Phase 1
+<a id="phase-1"></a>
+### Phase 1 — implementation and hosted checks complete; protected merge pending
 
 **Protect payload state and recovery (PR 1)**
 
@@ -74,7 +75,11 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 - `test(ui): cover import state and last-good recovery`
 
 **Acceptance criteria:**
-- Explicit empty arrays display a deliberate empty state; missing, empty, sample, and imported modes are distinguishable.
+- Explicit empty arrays display a deliberate empty state; missing, empty, sample, and imported modes are distinguishable. Empty and partial imports do not show sample-derived recommendations or hard-coded action-route instructions; the score is unavailable unless imported telemetry produces at least one commit-risk and one bottleneck record; empty arrays mean no observations, not perfect quality. Empty-state visual and security copy does not refer to a sample window.
+- Empty and partial imports without bottleneck records show an unavailable top-bottleneck metric and explanation, rather than the sample-mode `review` fallback. Sample and populated imported modes retain their current labels. Bead `BI-5u3.1.4` tracks the PR review follow-up.
+- Empty and partial imports without commit-risk records show an unavailable Top Risk Commit trace with neutral status and no blank identifier. Sample mode and populated imported commit IDs retain their existing behavior. Bead `BI-5u3.1.5` tracks this PR review follow-up.
+- Empty and partial imports without commit-risk or bottleneck observations show unavailable neutral trend cards, not green zero/healthy results. Populated healthy observations and sample mode retain their current behavior. Bead `BI-5u3.1.6` tracks this PR review follow-up.
+- Populated imported routes are derived by audience from actual commit-risk records, bottlenecks, opportunities, and security signals. A route remains “Awaiting telemetry” only when its relevant record set is absent; healthy observations report the observed state without sample instructions. Sample routes remain unchanged. Bead `BI-5u3.1.8` tracks this PR review follow-up.
 - Blank Apply does not silently reset data. Reset to Sample is explicit and labels the resulting data as sample.
 - Nested shape and numeric validation runs before replacing active state. The object-valued `stages[].name` case is rejected with a visible, accessible error.
 - Invalid JSON or schema leaves the last valid view usable; valid existing payloads continue to work.
@@ -83,11 +88,23 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 **Test plan:**
 - Unit tests for missing, empty, valid, and malformed records and finite numeric boundaries.
 - Component tests for blank Apply, explicit reset, imported/sample/empty labels, accessible validation errors, and last-good state.
+- Unit/component tests for empty, partial, sample, and populated top-bottleneck labels and explanation copy; assert that imported no-data never says `review`.
+- Unit/component/browser tests for empty and partial Top Risk Commit traces; assert unavailable copy/status when no commit-risk record exists.
+- Unit/component/browser tests distinguish absent risk/stage observations from observed healthy zero counts while preserving sample-mode visuals.
+- Unit/component/browser tests verify populated imported routes use active records for all four audiences, report healthy stages/no security signals as observed data, and do not leak sample IDs or route instructions.
 - Extend `ui/e2e/app.spec.ts` with empty/import/reset and malformed-import recovery flows.
 - Run from `ui/` using pnpm `12.9.1`: `pnpm install --frozen-lockfile`, `pnpm exec tsc -b`, `pnpm exec vitest run`, `pnpm run build`, and `pnpm run test:e2e`.
-- Hosted `ui-quality` must pass at the same commit. Use the hosted Playwright result only after `BI-5u3.1.3` and its required-check status are verified.
+- Hosted `ui-quality`, `ui-playwright`, aggregate `test`, Security/CodeQL, and Dependency Review passed on code head `71bf9e5990428ac0603eeb370837bd954c4ef1f2`; see the validation note for run links. The branch protection API at base `d4bc8e7` confirmed required contexts `test` and `codeql`, with Playwright required through aggregate `test`.
 
 **PR gate:** keep this focused on React preview import/state. Merge through protected PR after same-head checks pass; then base Phase 2 on the merged main tip.
+
+**Local implementation snapshot (2026-10-06):** Payload validation preserves omitted collections separately from explicitly empty arrays. Demo seed data is only used by the no-payload sample/reset view; imported partial payloads leave omitted collections empty and show a partial state. Component and unit coverage covers missing/partial/empty semantics, last-good recovery, and suppressing sample recommendations on imports. Imported routes are derived from each audience's available commit-risk, bottleneck, opportunity, and security records, and they remain awaiting only when that audience's records are absent. Empty-state, top-risk, and bottleneck copy stays source-neutral when no records are present. A browser test applies valid data, enters malformed JSON, checks the announced error, and confirms the prior dashboard remains visible. The aggregate `test` job depends on `ui-playwright` and fails if that job fails or is skipped; a workflow contract prevents adding an unreviewed conditional skip. Local results and limitations are recorded in [the Phase 1 validation note](frontend-ux-phase-1-closeout-2026-10-06.md).
+
+The first hosted run after making Playwright an aggregate dependency exposed a stale Rust assertion for the aggregate dependency list. The assertion now includes `ui-playwright`, and the focused Rust contract test passes locally. Later PR reviews found that imported no-data could still appear as a blank Top Risk Commit with a good status and as green zero/healthy trend cards. The follow-ups report unavailable with neutral status and have regression coverage. A further review found that populated imports still looked like telemetry was pending; the route fix derives results from populated audience records and adds unit/component/browser assertions. These corrections and the aggregate workflow passed hosted validation on code head `71bf9e5`; CI run `37411802567`, Security run `37411802526`, and Dependency Review run `37411802611` are linked in the closeout note. The implementation child Beads are closed after those checks; `BI-5u3.1` remains open until PR merge.
+
+Compatibility note: public envelope and field names remain stable, including the legacy/null envelope form. Validation now rejects incomplete rows and malformed/non-finite limits that older imports may have passed through; callers must provide complete records. The last-good view is retained on rejection. See the closeout note for details.
+
+The pinned pnpm 12.9.1 executable was unavailable locally (host pnpm reported 12.8.1 and hung); existing `node_modules/.bin` tools were used for TypeScript, Vitest, and build. The repository actionlint command passes with its configured ignore for the known `vulnerability-alerts` scope diagnostic; unignored actionlint reports that diagnostic. Local Playwright is blocked because the sandbox rejects binding `127.0.0.1:4173` with `EPERM`. Hosted UI quality, Playwright, aggregate `test`, Security/CodeQL, and Dependency Review passed on code head `71bf9e5`; see the [validation note](frontend-ux-phase-1-closeout-2026-10-06.md). Branch protection was verified at base `d4bc8e7`: protected `main` requires `test` and `codeql`, with `ui-playwright` transitively required through `test`. The Phase 1 implementation child Beads are closed; keep milestone `BI-5u3.1` open until the protected PR merges.
 
 ### Phase 2
 
@@ -179,11 +196,11 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 | Manual accessibility/viewport evidence | — | — | keyboard + AT | viewport + task |
 | No public payload or native contract changes | ✓ | ✓ | ✓ | ✓ |
 
-The check marks above are **planned gates**, not completed results. No UI tests were run for this roadmap. The current `ui-quality` CI job does not include Playwright; track the gap in `BI-5u3.1.3`. Until the hosted Playwright job and branch-protection status are verified, report local E2E results separately from hosted CI.
+The check marks above are **planned gates**, not completed results. Phase 1 local typecheck, Vitest, and production-build results plus hosted run outcomes are recorded in the validation note. Local Playwright could not run because sandbox networking denied the web-server bind; hosted Playwright passed on code head `71bf9e5`. The protected `main` branch requires `test` and `codeql`; since required `test` depends on `ui-playwright`, the browser job is transitively required, though it is not a separate branch-protection context. Phase 1 implementation child Beads are closed after hosted acceptance; keep the milestone open until protected merge, and leave Phases 2–4 planned.
 
 ### Hosted Playwright validation gate
 
-`BI-5u3.1.3` owns the hosted browser-test enabler: a UI-triggered job must install the pinned pnpm/browser tooling, run `pnpm run test:e2e`, publish actionable failure output, and document whether branch protection requires the check. This heading is the stable `spec_id` target for that issue. The current `ui-quality` CI job remains install/typecheck/Vitest/build only; hosted Playwright is pending.
+`BI-5u3.1.3` owns the hosted browser-test enabler: the UI-triggered job installs pinned pnpm/browser tooling, runs `pnpm run test:e2e`, and makes its result a fail-closed aggregate dependency. This heading is the stable `spec_id` target for that issue. The job, aggregate dependency, and same-head hosted pass are verified on code head `71bf9e5`. The protected `main` branch requires `test` and `codeql`; since required `test` depends on `ui-playwright`, the browser job is transitively required, though it is not a separate branch-protection context.
 
 ## Progressive commit and PR policy
 
@@ -199,10 +216,10 @@ For each milestone:
 
 | Finding / enabler | Bead | Milestone | Planned status |
 |---|---|---|---|
-| UX-01 | `BI-5u3.1.1` | M1 (`BI-5u3.1`) | Open / planned |
+| UX-01 | `BI-5u3.1.1` | M1 (`BI-5u3.1`) | Implemented; local checks and hosted CI/Playwright passed on `71bf9e5`; child bead closed locally; remote Beads sync unverified |
 | UX-02 | `BI-5u3.3.1` | M2 (`BI-5u3.3`) | Open / planned |
 | UX-03 | `BI-5u3.4.1` | M3 (`BI-5u3.4`) | Open / planned; preview intent caveat |
-| UX-04 | `BI-5u3.1.2` | M1 (`BI-5u3.1`) | Open / planned; static path, not runtime reproduced |
+| UX-04 | `BI-5u3.1.2` | M1 (`BI-5u3.1`) | Implemented; local type/unit/build checks and hosted UI/aggregate gates passed on `71bf9e5`; child bead closed locally; original failure path was statically traced, not runtime reproduced; remote Beads sync unverified |
 | UX-05 | `BI-5u3.3.2` | M2 (`BI-5u3.3`) | Open / planned |
 | UX-06 | `BI-5u3.3.3` | M2 (`BI-5u3.3`) | Open / planned |
 | UX-07 | `BI-5u3.3.4` | M2 (`BI-5u3.3`) | Open / planned |
@@ -212,7 +229,11 @@ For each milestone:
 | UX-11 | `BI-5u3.4.5` | M3 (`BI-5u3.4`) | Open / planned |
 | UX-12 | `BI-5u3.5.1` | M4 (`BI-5u3.5`) | Open / validation only; disputed |
 | UX-13 | `BI-5u3.5.2` | M4 (`BI-5u3.5`) | Open / validation only; impact unverified |
-| Hosted E2E enabler | `BI-5u3.1.3` | M1 (`BI-5u3.1`) | Open / planned; hosted Playwright pending |
+| Hosted E2E enabler | `BI-5u3.1.3` | M1 (`BI-5u3.1`) | Hosted Playwright and aggregate CI passed on `71bf9e5`; child bead closed locally |
+| PR review: no sample bottleneck for imported no-data | `BI-5u3.1.4` | M1 (`BI-5u3.1`) | Fix, regression tests, hosted UI/aggregate checks passed on `71bf9e5`; child bead closed locally |
+| PR review: no blank or low-risk top-risk trace for imported no-data | `BI-5u3.1.5` | M1 (`BI-5u3.1`) | Fix, regression tests, hosted UI/aggregate checks passed on `71bf9e5`; child bead closed locally |
+| PR review: missing risk/stage observations appear healthy | `BI-5u3.1.6` | M1 (`BI-5u3.1`) | Fix, regression tests, hosted UI/aggregate checks passed on `71bf9e5`; child bead closed locally |
+| PR review: populated import routes still say Awaiting telemetry | `BI-5u3.1.8` | M1 (`BI-5u3.1`) | Routes use active records per audience; local typecheck, 79 UI tests, build, Playwright discovery and hosted UI/aggregate checks passed on `71bf9e5`; child bead closed locally |
 
 Beads are repository-local and currently unsynced. The database was initialized because no `.beads` workspace existed. The initialization could not resolve GitHub DNS while checking the configured Dolt remote, so remote issue history and sync status are not verified. The `BI-...` IDs above are created locally; verify remote sync and collision status before treating them as shared team issues. The tracked JSONL snapshot preserves issue content, acceptance criteria, spec links, labels, and dependencies while omitting owner, creator, and timestamp metadata; the local Beads database remains authoritative for those fields.
 
@@ -234,8 +255,8 @@ Beads are repository-local and currently unsynced. The database was initialized 
 
 | Priority | Owner | Action | Source finding |
 |---|---|---|---|
-| P2 | UI implementer | Deliver Phase 1 for explicit empty/import/reset state and schema validation; retain the last good view on invalid input. | UX-01, UX-04 |
-| P2 | CI/UI maintainer | Add the hosted Playwright job, verify its artifacts and path trigger, and check branch-protection requirements before claiming hosted E2E. | BI-5u3.1.3 |
+| P2 | UI implementer | Deliver Phase 1 for explicit empty/import/reset state, schema validation, and honest no-data risk/bottleneck semantics; retain the last good view on invalid input. | UX-01, UX-04, BI-5u3.1.4, BI-5u3.1.5, BI-5u3.1.6 |
+| P2 | CI/UI maintainer | Run hosted Playwright on the exact PR head and inspect its artifacts; preserve its fail-closed dependency in the required aggregate `test` gate before claiming hosted E2E. | BI-5u3.1.3 |
 | P2 | UI implementer | Deliver Phase 2 with input-derived recommendations, shared severity rules, and score explanations tied to computed contributors. | UX-02, UX-05, UX-06, UX-07 |
 | P2 | Product owner and UI implementer | Decide whether the controls are illustrative/unavailable or have a defined behavior before any new operation/data source is implemented; complete the Phase 3 accessibility fixes. | UX-03, UX-08, UX-09, UX-10, UX-11 |
 | P3 | Product owner | Record the browser-preview audience and bridge-copy contract before changing UX-12 wording. | UX-12 |
@@ -302,4 +323,4 @@ Each heading below provides the fragment target referenced by its finding Bead `
 
 **Validate responsive task fit before changing layout.** Record viewport/task evidence at the planned widths and zoom; make a layout change only if a concrete impairment is reproduced. Source layout facts alone do not establish harm. Evidence: `ui/src/App.tsx:248-267,365-390,454-547,551-686`. Phase 4 is validation-only.
 
-**Final Recommendation:** Human review required before changing UX-03 control behavior or UX-12 copy, and before any UX-13 layout change; the required owners and evidence gates are recorded above. Phase 1 and Phase 2 may proceed within the current preview contract. This is a planning disposition only: no implementation, browser, accessibility, or hosted test gate has passed.
+**Final Recommendation:** Applied with caveats. Human review remains required before changing UX-03 control behavior or UX-12 copy, and evidence is required before any UX-13 layout change. Phase 1 implementation and hosted checks passed on PR #114 code head `71bf9e5`; the pull request remains unmerged and its milestone remains open pending protected merge. Local browser execution is blocked by the sandbox, while hosted Playwright passed. Accessibility/viewport validation and Phases 2–4 remain incomplete.

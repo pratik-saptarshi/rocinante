@@ -56,7 +56,8 @@ desktop host.
   checking, full-workspace crate tests, current advisory exception review-date enforcement,
   Linux URI/notification acceptance plus Windows and macOS URL/restart acceptance jobs,
   required Linux/macOS/Windows native-shell package checks for the prebuilt DuckDB
-  runtime, required `rust-workspace-tests` and `ui-quality` gates, and informational
+  runtime, required `rust-workspace-tests`, `ui-quality`, and `ui-playwright`
+  aggregate gates, and informational
   backend Rust coverage via `rust-coverage`. Rust build lanes stage DuckDB
   releases before Cargo, and installed-app acceptance covers app-relative
   `.so`, bundled `.dylib`, and colocated `.dll` loading. The `ci-workflow-parse` job also
@@ -122,7 +123,7 @@ desktop host.
 | `src-tauri/crates/rocinante-analysis/` | Host-independent auth, repository discovery/analysis, telemetry persistence, and shared database-path configuration. | Owns shared modules used by native-shell and Rust service callers. |
 | `src-tauri/tests/` | Backend regression coverage for PR-risk, CI-gate, publish-doc, incident-feedback, storage, authorization, and command-compatibility contracts. | Tests protect shared-service and release-gate invariants; there is no registered Tauri handler suite. |
 | `ui/src/` | Frontend dashboard, bridge adapters, explainability panels, and quality-pulse rendering. | UI state should flow through the bridge adapters rather than direct runtime assumptions. |
-| `ui/e2e/` | Browser-level smoke coverage for the React/Vite preview and user-visible flows. | Keeps the Playwright surface separate from unit tests. |
+| `ui/e2e/` | Browser-level smoke coverage for the React/Vite preview and user-visible flows. | Covers telemetry import, empty/partial payloads, malformed JSON recovery, and last-good dashboard checks. Hosted Playwright validation is required; local execution may be blocked when the sandbox denies the configured web-server bind. |
 | `docs/` | Feature backlog, roadmap, test plan, publish-readiness checklist, and bead tracker artifacts. | This is the source of truth for phase sequencing and backlog accounting. |
 | `scripts/` | Repo automation, local operational helpers, and verified native-library provisioning. | Prefer existing scripts over ad hoc shell snippets; keep CI scope, dependency-floor, advisory, and DuckDB source-build guards contract-tested. |
 
@@ -134,7 +135,7 @@ desktop host.
 4. Native scan and admin operations require the configured `RUNICIPAL_TOKEN_SECRET` and enforce role checks at service boundaries.
 5. SQLite WAL handles ingestion, DuckDB handles analytics through checksum-verified official prebuilt libraries, and legacy Sled stores require the isolated audited migrator before upgrade.
 6. CI scope detection routes Rust manifest, lockfile, workflow, and configuration changes to Rust validation. The aggregate gate now requires the Linux/macOS/Windows native-shell package matrix.
-7. The React/Vite UI is a browser preview surface; it is not a production desktop transport. Its pinned pnpm, typecheck, unit, and production-build checks remain in the UI quality lane.
+7. The React/Vite UI is a browser preview surface; it is not a production desktop transport. Imported payloads do not seed omitted collections with demo records; samples are limited to the initial/reset sample view. Pinned pnpm, typecheck, unit, and production-build checks run in `ui-quality`; browser tests run in `ui-playwright`, which the aggregate gate requires to succeed.
 8. Roadmap, governance, package, and platform contracts are tested locally and in CI. Historical hosted Tauri results do not validate the current native-host retirement worktree.
 
 ## Governance and Execution Snapshot

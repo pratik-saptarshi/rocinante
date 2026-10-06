@@ -18,15 +18,17 @@ import {
   Typography
 } from '@mui/material';
 import { useState } from 'react';
-import { readLimits, readPayload } from './dashboard-contract';
+import { getPayloadState, readLimits, readPayload, validatePayload } from './dashboard-contract';
 import { buildAdminBridgePayload } from './admin-bridge-contract';
 import { AdminBridgePanel } from './admin-bridge-panel';
 import { dashboardAudienceHighlights, dashboardFindingGroups, type AuditStatus, type DashboardFinding } from './dashboard-content';
 import { buildDashboardVisuals } from './dashboard-visuals';
 import { buildExplainabilityTraces } from './dashboard-explainability';
-import { buildDashboardInsights, type InsightPayload } from './insight-engine';
+import { buildDashboardInsights } from './insight-engine';
 import { buildQualityPulse, type StakeholderAudience } from './domain/quality-pulse';
 import { invokeAdminCommand, type AdminBridgeCommand } from './tauri-admin';
+
+const COMMIT_RISK_CARD_DISPLAY_LIMIT = 3;
 
 function StatusBadge({ status, label }: { status: AuditStatus; label: string }) {
   const palette = {
@@ -154,6 +156,7 @@ function App() {
   const [fieldData, setFieldData] = useState(true);
   const [payloadText, setPayloadText] = useState('');
   const [payloadError, setPayloadError] = useState('');
+  const [payloadState, setPayloadState] = useState<'sample' | 'missing' | 'partial' | 'empty' | 'imported'>('sample');
   const [insights, setInsights] = useState(() => buildDashboardInsights());
   const [adminToken, setAdminToken] = useState('alice:admin');
   const [adminResult, setAdminResult] = useState('No admin command executed yet.');
@@ -162,16 +165,18 @@ function App() {
   const [baselineResult, setBaselineResult] = useState('No release baseline loaded yet.');
 
   const { commitRiskCards, bottlenecks, opportunities, stages } = insights;
-  const qualityPulse = buildQualityPulse(insights);
+  const qualityPulse = buildQualityPulse(insights, { allowSampleFallbacks: payloadState === 'sample' });
   const explainabilityTraces = buildExplainabilityTraces(qualityPulse);
   const dashboardVisuals = buildDashboardVisuals(insights);
   const audienceActions = qualityPulse.recommendations[audience];
   const audienceRoute = qualityPulse.actionRoutes[audience];
   const topOpps = opportunities.slice(0, 2);
 
-  const securitySignals = commitRiskCards.filter((risk) =>
+  const securitySignals = (insights.allCommitRiskCards ?? commitRiskCards).filter((risk) =>
     risk.reasons.some((item) => item === 'Dependency risk' || item === 'Automation failures')
   );
+  const displayedSecuritySignals = securitySignals.slice(0, COMMIT_RISK_CARD_DISPLAY_LIMIT);
+  const remainingSecuritySignalCount = securitySignals.length - displayedSecuritySignals.length;
 
   const criticalBottlenecks = qualityPulse.bottleneckBuckets.critical;
   const highBottlenecks = qualityPulse.bottleneckBuckets.high;
@@ -189,20 +194,25 @@ function App() {
 
   const applyPayload = () => {
     if (!payloadText.trim()) {
-      setInsights(buildDashboardInsights());
-      setPayloadError('');
+      setPayloadError('Enter a telemetry payload before applying. Use Reset to Sample to restore sample data.');
       return;
     }
 
     try {
       const parsed = JSON.parse(payloadText);
-      const parsedRecord = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error('The JSON root must be an object.');
+      }
+      const parsedRecord = parsed as Record<string, unknown>;
       const nextPayload = readPayload(parsedRecord);
       const nextLimits = readLimits(parsedRecord);
-      setInsights(buildDashboardInsights(nextPayload as InsightPayload, nextLimits));
+      const validatedPayload = validatePayload(nextPayload);
+      setInsights(buildDashboardInsights(validatedPayload, nextLimits));
+      setPayloadState(getPayloadState(validatedPayload));
       setPayloadError('');
-    } catch {
-      setPayloadError('Invalid JSON payload. Paste a valid telemetry payload to refresh the dashboard.');
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'Unknown payload error.';
+      setPayloadError(`Invalid telemetry payload: ${detail}`);
     }
   };
 
@@ -210,6 +220,7 @@ function App() {
     setPayloadText('');
     setPayloadError('');
     setInsights(buildDashboardInsights());
+    setPayloadState('sample');
   };
 
   const runAdminBridge = async (command: AdminBridgeCommand) => {
@@ -349,7 +360,7 @@ function App() {
           </Typography>
           <MetricItem
             label="Pulse score"
-            value={`${qualityPulse.overallScore}/100`}
+            value={qualityPulse.overallScore === null ? 'Unavailable' : `${qualityPulse.overallScore}/100`}
             valueTestId="pulse-score"
           />
           <MetricItem
@@ -359,7 +370,7 @@ function App() {
           />
           <MetricItem
             label="Top bottleneck"
-            value={qualityPulse.topBottleneckName}
+            value={qualityPulse.topBottleneckName ?? 'Unavailable'}
             valueTestId="pulse-top-bottleneck"
           />
           <FindingSection
@@ -460,6 +471,13 @@ function App() {
             }}>
             Live Insights Payload
           </Typography>
+          <Typography variant="body2" color="text.secondary" role="status" data-testid="telemetry-data-state" sx={{ mb: 1 }}>
+            {payloadState === 'sample' && 'Sample telemetry is displayed.'}
+            {payloadState === 'missing' && 'Telemetry fields are missing; no imported records are displayed.'}
+            {payloadState === 'partial' && 'Some telemetry collections are omitted; omitted collections are empty.'}
+            {payloadState === 'empty' && 'This imported payload contains no telemetry records.'}
+            {payloadState === 'imported' && 'Imported telemetry is displayed.'}
+          </Typography>
           <TextField
             fullWidth
             multiline
@@ -467,6 +485,13 @@ function App() {
             label="Telemetry payload JSON"
             placeholder='{ "commits": [...], "stages": [...], "signals": [...] }'
             value={payloadText}
+            error={Boolean(payloadError)}
+            aria-invalid={Boolean(payloadError)}
+            slotProps={{
+              htmlInput: {
+                'aria-describedby': payloadError ? 'telemetry-payload-error' : undefined
+              }
+            }}
             onChange={(event) => {
               setPayloadText(event.target.value);
               if (payloadError) {
@@ -485,7 +510,7 @@ function App() {
             </Button>
           </Stack>
           {payloadError && (
-            <Typography variant="caption" color="error" role="alert" sx={{ display: 'block', mt: 0.75 }}>
+            <Typography id="telemetry-payload-error" variant="caption" color="error" role="alert" sx={{ display: 'block', mt: 0.75 }}>
               {payloadError}
             </Typography>
           )}
@@ -568,7 +593,7 @@ function App() {
             </Typography>
             <FindingSection
               title=""
-              items={commitRiskCards.slice(0, 3).map((risk) => ({
+              items={commitRiskCards.slice(0, COMMIT_RISK_CARD_DISPLAY_LIMIT).map((risk) => ({
                 id: risk.id,
                 text: `${risk.id} score ${risk.score} (${risk.level})`,
                 status: risk.level === 'high' ? 'bad' : risk.level === 'medium' ? 'medium' : 'good'
@@ -647,7 +672,7 @@ function App() {
         )}
 
         {audience === 'security' && (
-          <Box>
+          <Box data-testid="security-detail-section">
             <Typography variant="subtitle2" sx={{
               fontWeight: 700
             }}>
@@ -668,7 +693,7 @@ function App() {
               title=""
               items={
                 securitySignals.length
-                  ? securitySignals.map((risk) => ({
+                  ? displayedSecuritySignals.map((risk) => ({
                       id: risk.id,
                       text: `${risk.id}: ${risk.reasons.join(', ')}`,
                       status: risk.level === 'high' ? 'bad' : risk.level === 'medium' ? 'medium' : 'good'
@@ -676,12 +701,17 @@ function App() {
                   : [
                       {
                         id: 'security-empty',
-                        text: 'No critical security signals in sample window',
+                        text: 'No critical security signals are available.',
                         status: 'good'
                       }
                     ]
               }
             />
+            {remainingSecuritySignalCount > 0 && (
+              <Typography variant="caption" data-testid="security-signals-overflow">
+                {remainingSecuritySignalCount} more security {remainingSecuritySignalCount === 1 ? 'signal' : 'signals'} not shown.
+              </Typography>
+            )}
           </Box>
         )}
 

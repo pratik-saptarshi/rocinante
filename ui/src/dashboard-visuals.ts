@@ -55,20 +55,22 @@ export function buildDashboardVisuals(insights: DashboardInsights): DashboardVis
       {
         id: 'risk-trajectory',
         label: 'PR Risk Trajectory',
-        value: topRisk ? `${criticalRisks} high-risk commits` : 'No high-risk commits',
-        tone: topRisk ? toneFromRiskScore(topRisk.score) : 'good',
+        value: topRisk ? `${criticalRisks} high-risk commits` : 'Unavailable',
+        tone: topRisk ? toneFromRiskScore(topRisk.score) : 'medium',
         rationale: topRisk
-          ? `Top risk ${topRisk.id} is driven by ${topRisk.reasons.slice(0, 2).join(', ') || 'sample data'}.`
-          : 'The current sample window has no elevated commit risks.'
+          ? topRisk.reasons.length
+            ? `Top risk ${topRisk.id} is driven by ${topRisk.reasons.slice(0, 2).join(', ')}.`
+            : `No risk factors were provided for commit ${topRisk.id}.`
+          : 'No commit-risk records are available.'
       },
       {
         id: 'bottleneck-pressure',
         label: 'Bottleneck Pressure',
-        value: `${pressureStages} pressured stages`,
-        tone: topStage ? (topStage.status === 'critical' ? 'bad' : topStage.status === 'high' ? 'medium' : 'good') : 'good',
+        value: topStage ? `${pressureStages} pressured stages` : 'Unavailable',
+        tone: topStage ? (topStage.status === 'critical' ? 'bad' : topStage.status === 'high' ? 'medium' : 'good') : 'medium',
         rationale: topStage
           ? `Highest-pressure stage ${topStage.name} needs ${topStage.status === 'critical' ? 'immediate' : 'near-term'} attention.`
-          : 'The current sample window has no pressured stages.'
+          : 'No bottleneck records are available.'
       },
       {
         id: 'opportunity-velocity',
@@ -85,7 +87,7 @@ export function buildDashboardVisuals(insights: DashboardInsights): DashboardVis
       title: `${risk.id} score ${risk.score}`,
       score: risk.score,
       tone: risk.level === 'high' ? 'bad' : risk.level === 'medium' ? 'medium' : 'good',
-      rationale: risk.reasons.length ? risk.reasons.join(', ') : 'No named risk factors'
+      rationale: risk.reasons.length ? risk.reasons.join(', ') : 'No risk factors were provided.'
     }))
   };
 }

@@ -17,6 +17,24 @@ describe('buildDashboardInsights', () => {
     expect(insights.opportunities).toHaveLength(3);
   });
 
+  it('preserves explicitly empty collections instead of substituting sample records', () => {
+    const insights = buildDashboardInsights({ commits: [], stages: [], signals: [] });
+
+    expect(insights.commitRiskCards).toEqual([]);
+    expect(insights.bottlenecks).toEqual([]);
+    expect(insights.opportunities).toEqual([]);
+    expect(insights.stages).toEqual([]);
+  });
+
+  it('does not seed demo records into omitted collections of an imported partial payload', () => {
+    const insights = buildDashboardInsights({ commits: [] });
+
+    expect(insights.commitRiskCards).toEqual([]);
+    expect(insights.bottlenecks).toEqual([]);
+    expect(insights.opportunities).toEqual([]);
+    expect(insights.stages).toEqual([]);
+  });
+
   it('derives custom payload insights from telemetry envelopes', () => {
     const insights = buildDashboardInsights(
       {
@@ -89,5 +107,34 @@ describe('buildDashboardInsights', () => {
     expect(insights.commitRiskCards[0]?.id).toBe('high-risk');
     expect(insights.opportunities).toHaveLength(1);
     expect(insights.opportunities[0]?.id).toBe('high-opportunity');
+  });
+
+  it('keeps security signals from validated commits when risk cards are display-limited', () => {
+    const insights = buildDashboardInsights(
+      {
+        commits: [
+          {
+            id: 'visible-non-security',
+            files: 24,
+            changedLines: 900,
+            dependencyChanges: 0,
+            testTouch: true,
+            failedAutomations: 0
+          },
+          {
+            id: 'hidden-security',
+            files: 1,
+            changedLines: 8,
+            dependencyChanges: 1,
+            testTouch: true,
+            failedAutomations: 0
+          }
+        ]
+      },
+      { risks: 1 }
+    );
+
+    expect(insights.commitRiskCards.map(({ id }) => id)).toEqual(['visible-non-security']);
+    expect(insights.allCommitRiskCards?.map(({ id }) => id)).toContain('hidden-security');
   });
 });

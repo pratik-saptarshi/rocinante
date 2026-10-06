@@ -30,5 +30,6 @@ desktop operations run in the Rust eframe/winit shell.
 - The Rust service workspace is authoritative for desktop scans, storage, and
   admin operations; this UI remains a preview and test surface.
 - `ui/package.json` pins pnpm `12.9.1`.
-- CI runs the pinned install, typecheck, unit tests, and production build.
+- CI runs pinned install, typecheck, unit tests, and production build in `ui-quality`; `UI Playwright` installs Chromium, runs `pnpm run test:e2e`, and uploads the HTML report and retry traces.
 - Browser suites live under `ui/src/`, `ui/src/test/`, and `ui/e2e/`.
+- Payload parsing validates JSON and nested telemetry before replacing the last-good view; explicit empty collections remain empty, and omitted collections stay empty in imported partial payloads. Sample telemetry is limited to the initial/reset sample view.
