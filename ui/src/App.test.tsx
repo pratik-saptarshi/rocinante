@@ -12,6 +12,7 @@ describe('Phase 3 accessibility and control behavior', () => {
 
     expect(screen.getAllByRole('main')).toHaveLength(1);
     expect(screen.getByRole('heading', { level: 1, name: 'The Web Companion: Optimization Hub' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Action Routing' })).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { level: 2 }).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Run Full Audit' })).toBeDisabled();
     expect(screen.getByText('Audit execution is unavailable in this preview.')).toBeVisible();
@@ -79,11 +80,26 @@ describe('Phase 3 accessibility and control behavior', () => {
     expect(result).toHaveAttribute('role', 'status');
     fireEvent.click(screen.getByRole('button', { name: 'Ingest Event' }));
     expect(result).toHaveTextContent('Running ingest_event');
-    expect(result).toHaveAttribute('aria-busy', 'true');
+    expect(result).not.toHaveAttribute('aria-busy');
 
     resolveCommand?.({ accepted: true });
     await waitFor(() => expect(result).toHaveTextContent('OK ingest_event'));
-    expect(result).toHaveAttribute('aria-busy', 'false');
+    expect(result).not.toHaveAttribute('aria-busy');
+  });
+
+  it('keeps pending release-baseline feedback in a live status region', async () => {
+    let resolveBaseline: ((value: unknown) => void) | undefined;
+    setAdminInvokeForTesting(() => new Promise((resolve) => { resolveBaseline = resolve; }));
+    render(<App />);
+
+    const result = screen.getByTestId('baseline-management-result');
+    expect(result).toHaveAttribute('role', 'status');
+    fireEvent.click(screen.getByRole('button', { name: /Load Baseline/i }));
+    expect(result).toHaveTextContent('Running query_release_baseline');
+    expect(result).not.toHaveAttribute('aria-busy');
+
+    resolveBaseline?.({ ok: true, message: 'baseline loaded' });
+    await waitFor(() => expect(result).toHaveTextContent('OK query_release_baseline: baseline loaded'));
   });
 
   it('announces bridge errors as final status text', async () => {
