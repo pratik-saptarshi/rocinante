@@ -56,6 +56,22 @@ function summarizeBottlenecks(bottlenecks: BottleneckCard[]): QualityPulse['bott
   );
 }
 
+function rankBottlenecks(bottlenecks: BottleneckCard[]): BottleneckCard[] {
+  const statusPriority: Record<BottleneckCard['status'], number> = {
+    critical: 0,
+    high: 1,
+    medium: 2,
+    good: 3
+  };
+
+  return [...bottlenecks].sort((left, right) =>
+    statusPriority[left.status] - statusPriority[right.status] ||
+    right.impact - left.impact ||
+    left.name.localeCompare(right.name) ||
+    left.rationale.localeCompare(right.rationale)
+  );
+}
+
 function rankRiskCards(commitRiskCards: CommitRiskCard[]): CommitRiskCard[] {
   return [...commitRiskCards].sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
 }
@@ -90,7 +106,9 @@ function buildRecommendations(
   const rankedOpportunities = rankOpportunities(insights.opportunities);
   const [topRisk] = rankedRiskCards;
   const [topOpportunity, secondOpportunity] = rankedOpportunities;
-  const criticalStages = insights.bottlenecks.filter((item) => item.status === 'critical' || item.status === 'high');
+  const criticalStages = rankBottlenecks(
+    insights.bottlenecks.filter((item) => item.status === 'critical' || item.status === 'high')
+  );
   const securitySignals = getSecuritySignals(insights);
 
   const lead = rankedRiskCards.slice(0, 2).map((risk, index) => ({
@@ -161,7 +179,7 @@ function buildRoutes(
 ): QualityPulse['actionRoutes'] {
   if (!allowSampleFallbacks) {
     const rankedRiskCards = rankRiskCards(insights.commitRiskCards);
-    const actionableBottlenecks = insights.bottlenecks.filter((item) => item.status !== 'good');
+    const actionableBottlenecks = rankBottlenecks(insights.bottlenecks.filter((item) => item.status !== 'good'));
     const rankedOpportunities = rankOpportunities(insights.opportunities);
     const securitySignals = getSecuritySignals(insights);
     const allCommitRiskCards = getAllCommitRiskCards(insights);

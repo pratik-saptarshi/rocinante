@@ -204,4 +204,43 @@ describe('buildQualityPulse', () => {
       'No dependency or automation-failure signals were found in the imported commits.'
     ]);
   });
+
+  it('prioritizes critical manager stages ahead of earlier high stages', () => {
+    const pulse = buildQualityPulse({
+      commitRiskCards: [{ id: 'imported-risk', score: 80, level: 'high', reasons: ['Large change'] }],
+      bottlenecks: [
+        { name: 'z-high-stage', status: 'high', impact: 12, rationale: 'High queue pressure.' },
+        { name: 'a-high-stage', status: 'high', impact: 12, rationale: 'Another high queue.' },
+        { name: 'critical-stage', status: 'critical', impact: 5, rationale: 'Critical queue pressure.' }
+      ],
+      opportunities: [{ id: 'imported-opportunity', title: 'Improve delivery', priorityScore: 60 }],
+      stages: []
+    } as DashboardInsights, { allowSampleFallbacks: false });
+
+    expect(pulse.recommendations.manager.map(({ message }) => message)).toEqual([
+      'Critical stage: critical-stage needs additional reviewer capacity.',
+      'Critical stage: a-high-stage needs additional reviewer capacity.'
+    ]);
+    expect(pulse.actionRoutes.manager.actions).toEqual([
+      'critical-stage: critical pressure — Critical queue pressure.',
+      'a-high-stage: high pressure — Another high queue.'
+    ]);
+    expect(pulse.actionRoutes.lead.actions[0]).toContain('imported-risk');
+    expect(pulse.actionRoutes.executive.actions[0]).toBe('Improve delivery (score 60).');
+  });
+
+  it('ranks equally severe manager stages by impact before limiting guidance', () => {
+    const pulse = buildQualityPulse({
+      commitRiskCards: [],
+      bottlenecks: [
+        { name: 'lower-impact-stage', status: 'high', impact: 8, rationale: 'Lower impact.' },
+        { name: 'higher-impact-stage', status: 'high', impact: 30, rationale: 'Higher impact.' }
+      ],
+      opportunities: [],
+      stages: []
+    } as DashboardInsights, { allowSampleFallbacks: false });
+
+    expect(pulse.recommendations.manager[0].message).toContain('higher-impact-stage');
+    expect(pulse.actionRoutes.manager.actions[0]).toContain('higher-impact-stage: high pressure');
+  });
 });
