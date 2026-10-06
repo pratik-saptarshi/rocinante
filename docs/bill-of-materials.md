@@ -6,29 +6,16 @@ _Captured: 2026-10-05_
 
 ### Current local execution snapshot (2026-10-05)
 
-The remediation worktree on PR #108 is based on pushed commit `3020d9e` and
-contains uncommitted host-retirement and zero-exception changes. Tauri/Wry and
-GTK/GLib have been removed from supported workspace manifests and lockfiles.
-The native-shell package contract passes locally and the installed macOS
-URL/restart acceptance passes; the cross-platform package matrix has not run
-hosted on this worktree.
-The 15 withdrawn/absent advisory entries and the two avoided package paths are
-closed with evidence; both the exception registry and audit ignore list are
-empty. Governance contracts and cached RustSec audits pass. A fresh database
-refresh could not connect to GitHub. Formatting, all-target/all-feature Clippy,
-and the full serial workspace suite pass locally; the storage suite also passes
-with two threads, while its default-parallel run stalls in the retention case.
-UI typecheck, 63 tests, and production build pass as diagnostics with global
-pnpm 12.8.1; pinned pnpm 12.9.1 could not be fetched due registry DNS failure.
-The installed macOS URL/restart acceptance passes, but its AppKit activation
-request returned false. Linux/Windows package/lifecycle and same-head hosted
-validation remain required. Do not treat earlier hosted Tauri package or CI
-runs as evidence for this local change.
+PR #108 is merged to `main` at `eb83be9`. PR #112 remains open on `fix/weighted-rollup-aggregation`. The shutdown source candidate is `b95a8c1`; it sets eframe `run_and_return=false` after hosted CI showed that Quit reached the app but left the process resident on `fe5b2eb`.
+
+Local formatting, 52 desktop-shell tests, the 270-test/64-suite serial workspace, and warning-denied Clippy pass. The installed macOS lifecycle is inconclusive locally because Launch Services refused the temporary bundle (`-10822`). A standalone executable attempt aborted before `main` because dyld could not load `@rpath/libduckdb.dylib` and found no `LC_RPATH`. A later direct execution of the signed bundle binary also aborted in AppKit during `NSApplication::sharedApplication` from `macos_url::register`, before a window appeared. That shell-launched attempt bypassed Launch Services inside this sandbox and does not validate a user-installed app. Same-head hosted CI, Security, and Dependency Review remain required; previous green results on `2fac448` do not validate the shutdown change. GitHub Status reported Actions degraded performance at 2026-10-05 19:33 UTC.
+
+The security exception registry and audit ignore list remain empty, prior RustSec/CodeQL/secret-scan results passed on `2fac448`, and DuckDB remains a checksum-verified prebuilt that is never compiled from source. pnpm `12.9.1` is pinned; prior hosted UI validation used that pin. Physical Show/Quit, frontmost activation, and current-candidate saved-state restart remain unverified.
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Current work is on PR #108's remediation branch, `fix/rocinante-readiness-remediation`.
+- Current work is on PR #112's follow-up branch, `fix/weighted-rollup-aggregation`.
 - Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
 
 ## Historical hosted branch snapshot (2026-10-04)
@@ -60,11 +47,12 @@ runs as evidence for this local change.
 ## Active Governance and Planned Slices
 
 - `BI-047` — F-047 Desktop parity evaluation and host decision (completed on PR run `28988956969`)
-- `BI-046` — F-046 GTK/glib dependency-floor governance (in progress; registry and ignores are now empty locally, with fresh audit and hosted proof pending)
+- `BI-046` — F-046 GTK/glib dependency-floor governance (registry and audit ignores are empty; fresh unfiltered audits and hosted governance/security passed on `2fac448`)
 - `BI-048` — F-048 Core extraction and host-agnostic contract (completed locally; nine contract tests pass)
-- `BI-049` — F-049 GTK-free native desktop MVP (in progress; eframe/winit shell with lossless paths, authenticated scans, saved-metric reload, and desktop notification requests)
-- `BI-051` — F-051 Tauri/GTK/GLib retirement (in progress; host removed locally, native platform package validation pending)
-- `BI-052` — F-052 Dependabot esbuild remediation (tracked esbuild alert confirmed closed by live query on 2026-09-30; other release blockers remain)
+- `BI-049` — F-049 GTK-free native desktop MVP (in progress; broader platform and user-visible parity gaps remain)
+- `BI-050` — F-050 Parity closure and fallback containment (planned; must-have gaps need implementation or an approved, documented deferral)
+- `BI-051` — F-051 Tauri/GTK/GLib retirement (dependency/removal gate, platform packages, and URL lifecycle checks passed in CI run `37346608465` on `2fac448`)
+- `BI-052` — F-052 Dependabot esbuild remediation (lock floor passes; live Dependabot query returned zero open alerts on 2026-10-05)
 - `BI-053` — F-053 CI bootstrap and workflow parseability (completed; validated on PR run `28983234703`)
 - `BI-054` — F-054 CI lane orchestration and gating (completed; validated on PR run `28983234703`)
 - `BI-055` — F-054 CI lane orchestration and gating (completed)
@@ -73,7 +61,7 @@ runs as evidence for this local change.
 - `RT-RC-001` — GTK/glib dependency-floor governance (active)
 - `RT-RC-002` — GTK-free host migration planning (active)
 
-## Validation Snapshot (2026-10-04)
+## Historical Validation Snapshot (2026-10-04)
 
 - The UI lockfile is frozen and installs with `pnpm@12.9.1`, the latest
   upstream stable release verified on 2026-10-04. TypeScript build checking,
@@ -134,6 +122,28 @@ runs as evidence for this local change.
   remaining `duckdb-download` Cargo-cache RPATH. The aggregate remains blocked
   by the separate advisory governance failure.
 
+## Earlier Validation Snapshot (2026-10-05; source head `ff367c4`)
+
+- CI run `37305039584` passed the full workspace tests, Rust formatting and
+  quality gates, UI quality with pnpm `12.9.1`, security governance, aggregate
+  gate, Linux/macOS/Windows packages, URI lifecycle, Windows registration, and
+  Linux visible notification delivery. It reported 24 passed checks, no
+  failures, and one informational coverage skip. Security run `37305039580`
+  passed RustSec audit, CodeQL, and secret scan; Dependency Review passed.
+- Both supported lockfiles passed fresh unfiltered audits with
+  `--deny warnings` against RustSec revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories; 517 app and 82
+  migration-tool dependencies). Governance reports zero exception entries and
+  zero audit ignores. The live Dependabot query returned no open alerts.
+- The DuckDB prebuilt-only and desktop dependency-floor guards pass locally.
+  Linux/macOS/Windows package checks verified runtime loading without a source
+  build. The desktop dependency guard excludes GTK, GLib, Tauri, and Wry across
+  all workspace targets and features; this closes BI-051 on the source head.
+- The earlier scripted installed-app lifecycle passed cold/warm URL delivery, close-to-tray, notification request, visible restore, and saved-state restart; it predates the current shutdown source and does not verify physical Show/Quit. Current acceptance is inconclusive: sandboxed Launch Services refused the temporary bundle (`-10822`), and a standalone executable attempt aborted before startup because dyld could not load `@rpath/libduckdb.dylib` (`no LC_RPATH`). Physical tray-menu clicks and foreground activation remain unverified. BI-049/BI-050 also retain the parity gaps listed in the desktop parity matrix.
+- This earlier snapshot is retained for per-check history. The latest recorded
+  hosted snapshot is PR head `27b9e21`; a fresh GitHub status refresh remains
+  pending network availability.
+
 ## Dependency Controls and Security Gate Stack
 
 - Rust toolchain: `1.99.0` in CI (`rust-toolchain.toml` remains the local floor)
@@ -172,19 +182,23 @@ runs as evidence for this local change.
 - The current pnpm pin is `12.9.1`, the latest stable upstream release on
   2026-10-05. Local UI typecheck, 63 unit tests, and production build pass with
   installed dependencies under global pnpm `12.8.1`; registry DNS prevented
-  fetching the exact pin. The hosted pinned-version UI lane remains required.
+  fetching the exact pin. Hosted `ui-quality` passed typecheck, unit tests, and
+  production build with the pinned version on source head `27b9e21`.
 - The PR workflow selects Rust lint and workspace tests for Cargo manifest,
   lockfile, workflow, and Rust source changes. The CI-scope contract passes.
 - DuckDB remains an official checksum-verified prebuilt and the source-build
-  feature guard passes. Local macOS packaging/lifecycle acceptance passes;
-  Linux/Windows package and lifecycle runs are still required on this worktree.
-- The advisory registry and Cargo audit ignores are empty. Governance contracts
-  and cached-database audits pass for both supported lockfiles. A fresh RustSec
-  database fetch could not reach GitHub, and hosted Security checks remain
-  pending; no owner acceptance or review-date renewal was recorded.
-- Formatting, all-target/all-feature Clippy, and the full serial workspace test
-  suite pass locally. Same-head hosted aggregate validation remains outstanding;
-  earlier green Tauri-head results do not validate the native-shell retirement.
+  feature guard passes. Linux/macOS/Windows package and URL lifecycle checks
+  passed on `27b9e21`; local macOS acceptance also passed URL and restart checks.
+- The advisory registry and Cargo audit ignores are empty. Fresh unfiltered
+  audits pass both supported lockfiles on RustSec revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; hosted audit and governance
+  passed on `27b9e21`. No owner acceptance or review-date renewal was inferred.
+- Formatting, warning-denied Clippy, and the full serial workspace test suite
+  pass locally. Hosted workspace tests and aggregate passed on `27b9e21`; a
+  fresh live PR check refresh remains required when GitHub is reachable.
+- BI-049/BI-050 remain open for native parity gaps. In particular, physical
+  tray-menu delivery and macOS foreground activation are not proven by the
+  scripted lifecycle checks.
 
 ## Release Artifacts
 

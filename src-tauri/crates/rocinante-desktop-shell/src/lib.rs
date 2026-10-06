@@ -363,7 +363,22 @@ mod native_ui {
                 }
                 false
             }
-            TrayMenuAction::Quit => true,
+            TrayMenuAction::Quit => {
+                #[cfg(feature = "acceptance-witness")]
+                if let Some(result_path) = option_env!("ROCINANTE_ACCEPTANCE_ACTIVATION_RESULT") {
+                    if let Ok(mut result_file) = std::fs::OpenOptions::new()
+                        .create(true)
+                        .append(true)
+                        .open(result_path)
+                    {
+                        let _ = std::io::Write::write_all(
+                            &mut result_file,
+                            b"quit_action_started=true\n",
+                        );
+                    }
+                }
+                true
+            }
         }
     }
 
@@ -634,10 +649,6 @@ mod native_ui {
                     WindowCloseBehavior::Exit => {
                         self.state.dispatch(NavigationAction::Close);
                         self.persist_shell_state(frame);
-                        #[cfg(target_os = "macos")]
-                        {
-                            super::macos_url::terminate_application();
-                        }
                     }
                 }
             }
@@ -645,10 +656,7 @@ mod native_ui {
                 quit_from_tray |= apply_tray_menu_action(action, &ctx);
             }
             if quit_from_tray {
-                self.state.dispatch(NavigationAction::Close);
-                self.explicit_quit = true;
-                self.persist_shell_state(frame);
-                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                self.quit_explicitly(&ctx, frame);
             }
             if self.tray_icon.is_some() || self.link_inbox.is_primary() {
                 ctx.request_repaint_after(std::time::Duration::from_millis(250));
@@ -684,8 +692,6 @@ mod native_ui {
                 if action == NavigationAction::ChooseRepository {
                     self.open_repository_folder();
                 } else if action == NavigationAction::Close {
-                    self.state.dispatch(action);
-                    self.explicit_quit = true;
                     close_requested = true;
                 } else {
                     self.state.dispatch(action);
@@ -734,16 +740,13 @@ mod native_ui {
                         self.open_repository_folder();
                     }
                     if ui.button(format!("Quit  {modifier}Q")).clicked() {
-                        self.state.dispatch(NavigationAction::Close);
-                        self.explicit_quit = true;
                         close_requested = true;
                     }
                 });
             });
 
             if close_requested {
-                self.persist_shell_state(frame);
-                ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+                self.quit_explicitly(ui.ctx(), frame);
             }
 
             egui::CentralPanel::default().show(ui, |ui| {
@@ -908,10 +911,31 @@ mod native_ui {
     }
 
     impl RocinanteApp {
+        fn quit_explicitly(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+            self.state.dispatch(NavigationAction::Close);
+            self.explicit_quit = true;
+            self.persist_shell_state(frame);
+            drop(self.tray_icon.take());
+
+            #[cfg(target_os = "macos")]
+            {
+                let _ = ctx;
+                // eframe closes the viewport but leaves the bundled app resident on macOS.
+                // State is synchronously flushed above before terminating the process.
+                std::process::exit(0);
+            }
+            #[cfg(not(target_os = "macos"))]
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
+
         fn persist_shell_state(&mut self, frame: &mut eframe::Frame) {
             if let Some(storage) = frame.storage_mut() {
                 eframe::App::save(self, storage);
                 storage.flush();
+            } else if let Ok(saved) = serde_json::to_string(&self.state) {
+                if let Err(error) = std::fs::write(&self.persistence_path, saved) {
+                    eprintln!("failed to persist shell state: {error}");
+                }
             }
         }
 
@@ -1888,6 +1912,10 @@ mod native_ui {
             eframe::icon_data::from_png_bytes(include_bytes!("../packaging/icons/rocinante.png"))
                 .expect("bundled application icon must be a valid PNG");
         let options = eframe::NativeOptions {
+            // Keep the native shell in one event loop for its lifetime. Closing
+            // the last viewport must exit the app instead of returning to an
+            // outer run loop that keeps the process alive.
+            run_and_return: false,
             viewport: egui::ViewportBuilder::default()
                 .with_title(profile.title)
                 .with_inner_size([profile.width as f32, profile.height as f32])

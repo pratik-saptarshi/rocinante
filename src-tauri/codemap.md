@@ -37,12 +37,10 @@ authenticated repository analysis, and persistence/admin services.
 
 ## Validation
 
-- Workspace formatting, all-target checks, and test-target compilation pass
-  locally; full workspace tests are being rerun after contract updates.
-- The dependency guard requires GTK, GLib, Wry, Tauri runtime, and tracked
-  advisory packages to be absent from supported workspace graphs.
-- CI defines required Linux, macOS, and Windows native-shell package and
-  lifecycle checks. Hosted evidence on this Tauri-retirement worktree is
-  pending.
-- DuckDB source-build features remain prohibited; CI stages official
-  checksum-verified binaries before building or packaging.
+- Local Rust formatting passes with `rtk cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check`; the isolated Sled migrator formatting check also passes.
+- The desktop-shell suite passes 52 tests across 9 suites. The full serial workspace passes 270 tests across 64 suites, and warning-denied workspace Clippy passes locally.
+- Hosted CI on source head `fe5b2eb` failed macOS URL dispatch. Its log records `quit_control_received=true`, `quit_action_started=true`, and a resident process after the tray icon was dropped and the viewport was closed.
+- The current candidate routes tray Quit, Command-Q, and in-app Quit through one helper. It synchronously saves and flushes state, drops the tray icon, then uses `std::process::exit(0)` on macOS; Linux and Windows retain eframe viewport close. Ordinary close-to-tray still hides the window. This deliberately skips macOS destructors and shutdown hooks. CI run `37404464369` completed with aggregate `test` failure on PR head `d598d59`: `rust-workspace-tests` and `rust-tests (core)` failed because a security-doc contract still pinned historical Security-run wording, and `rust-lint (fmt)` failed on rustfmt wrapping in the publish-doc contract. `ci-workflow-parse`, UI typecheck/unit/build, Linux/macOS/Windows URL and native-shell package jobs, `rust-tests (storage)`, Clippy, and advisory governance passed. Security run `37404464610` passed Rust audit, secret scan, and CodeQL; Dependency Review run `37404464411` passed. These results describe `d598d59`; the current follow-up contract and readiness commits require fresh same-head checks. Security run `37404464610` passed Rust audit, secret scan, and CodeQL; Dependency Review `37404464411` passed. Prior green results do not validate this candidate.
+- The latest local installed lifecycle attempt was inconclusive: Launch Services refused the temporary bundle (`-10822`). A separate standalone executable attempt aborted before startup because dyld could not load `@rpath/libduckdb.dylib` (`no LC_RPATH`); it did not exercise the app UI. A later direct execution of the signed bundle binary also aborted in AppKit during `NSApplication::sharedApplication` from `macos_url::register`, before a window appeared. That shell-launched attempt bypassed Launch Services inside this sandbox and does not validate a user-installed app. Do not mark packaged macOS acceptance complete.
+- The manual Show attempt after `2fac448` timed out at the Show prompt without observing its callback. Physical Show/Quit and foreground acceptance remain open.
+- DuckDB source-build features remain prohibited; CI stages official checksum-verified binaries before building or packaging.

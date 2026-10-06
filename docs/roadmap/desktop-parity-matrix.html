@@ -1,12 +1,10 @@
 # Desktop Parity Matrix and Host-Decision Record
 
-## Current implementation status — 2026-10-05
+## Current implementation status — 2026-10-06
 
-The current remediation worktree uses the eframe/winit native shell and has
-removed Tauri from supported manifests and lockfiles. The old Tauri surface is
-the historical parity baseline. Linux/macOS/Windows packaging and lifecycle
-checks are configured but pending on this worktree; BI-049/BI-050 remain open
-until hosted and interactive acceptance evidence is recorded.
+The current implementation routes tray Quit, Command-Q, and in-app Quit through the shared `quit_explicitly` helper. It saves shell state and flushes storage before removing the tray icon and calling `std::process::exit(0)` on macOS. Linux and Windows retain eframe viewport close, and ordinary close-to-tray still hides the window. Hosted CI on `fe5b2eb` consumed the earlier Quit callback but left the process resident. CI run `37404464369` completed with aggregate `test` failure on PR head `d598d59`: `rust-workspace-tests` and `rust-tests (core)` failed because a security-doc contract still pinned historical Security-run wording, and `rust-lint (fmt)` failed on rustfmt wrapping in the publish-doc contract. `ci-workflow-parse`, UI typecheck/unit/build, Linux/macOS/Windows URL and native-shell package jobs, `rust-tests (storage)`, Clippy, and advisory governance passed. Security run `37404464610` passed Rust audit, secret scan, and CodeQL; Dependency Review run `37404464411` passed. These results describe `d598d59`; the current follow-up contract and readiness commits require fresh same-head checks. Physical Show/Quit remains unverified; the manual Show attempt timed out without observing its callback. Earlier Linux/macOS/Windows package and URL checks passed on `2fac448`, before this shutdown implementation. Local installed acceptance remains inconclusive because sandboxed Launch Services refused the temporary bundle (`-10822`).
+
+Physical tray-menu delivery, macOS foreground activation, Linux/Windows tray runtime, visible macOS/Windows notifications, visual icon launch validation, and broader product-scope items remain open. The most recent manual Show attempt after `2fac448` timed out without observing its callback; no physical Show/Quit acceptance is claimed.
 
 ## Scope and Timestamp
 
@@ -61,7 +59,7 @@ notification helper through Dunst under Xvfb and verifies the daemon receives
 the notification; hosted run 37198628846 passed on 2026-10-04, including visible Linux delivery. Visible notification delivery
 on macOS and Windows remains unverified.
 
-macOS cold/warm URL dispatch, visible-window restoration after minimizing, saved-state process restart, tray icon initialization, close-to-tray, Show restoration, and Quit pass the installed local acceptance. The native shell requests visible, unminimized window state on its first UI frame; two consecutive runs passed after adding this startup request. Show/Quit are exercised through the same action handler used by tray callbacks; physical menu-click delivery remains untested. A read-only `AXIsProcessTrusted` probe returned false for the current automation process, so no UI click was attempted and no Accessibility permission was changed. An interactive Accessibility-authorized run is still needed to validate native menu delivery. The Show and URL paths request macOS app activation. AppKit accepted the Show activation request in the latest local run, and the acceptance helper now measures frontmost status; strict mode reported visible=true/frontmost=false in this automation session, so foreground activation remains unverified. The native macOS notification request returned success locally, but visible delivery remains unverified; hosted run 37198628846 confirms Linux visible notification delivery; visible macOS/Windows notification delivery remains unverified.
+Earlier installed acceptance on the pre-helper candidate passed cold/warm URL dispatch, visible-window restoration after minimizing, saved-state restart, tray initialization, close-to-tray, and automation-managed Show/Quit action routing. It did not prove physical tray-menu selection and does not validate the current helper. The hosted diagnostic on `fe5b2eb` recorded the Quit callback but left the process resident. The current helper synchronously saves shell state and flushes storage before tray removal and direct process exit on macOS. On predecessor head `d598d59`, the macOS URL and all native-shell package jobs passed; physical Show/Quit, foreground activation, and saved-state restart remain unverified. The manual attempt after `2fac448` installed and registered the app, passed cold URL, notification, and close-to-tray setup, then timed out at the Show prompt without observing `show_action_started=true`. Physical Show/Quit, frontmost activation, and current-candidate restart remain unverified; AppKit activation previously returned `accepted=false`.
 
 The shared Rocinante icon is now included in the native window, the macOS app
 bundle, the Linux launcher installation, and the Windows Start Menu shortcut

@@ -1,10 +1,21 @@
 # RustSec Zero-Exception Remediation Plan
 
-**Current status (2026-10-05; local remediation in progress):** the worktree is
-on `fix/rocinante-readiness-remediation`, based on pushed commit `3020d9e` and
-`main` at `cdd29b9f9a1f20269d1c50595a4b4d53d5fbc3e4`. The branch tip matches
-`origin`; the current Phase 4/5 changes are uncommitted and have not run in
-hosted CI. A live PR/check refresh failed to connect to GitHub.
+**Current status (2026-10-05; interactive parity evidence remains open):** PR #108
+was merged into `origin/main` at `eb83be9da64057dc71838b33edc01a9a2769b0fa`.
+PR #112 on `fix/weighted-rollup-aggregation` is OPEN/MERGEABLE at documentation
+head `2fac448`, based on the current main tip. CI run `37346608465`, Security
+run `37346608399`, and Dependency Review run `37346608411` passed on that head.
+All four review threads are resolved: retention promotion preserves prior
+sums/counts, all four baseline compatibility entry points require the
+configured token secret, manual macOS acceptance requires a Quit-action
+witness, and the scoped codemap records validated results. Focused tests, the
+full workspace (270 tests/64 suites), formatting, and warning-denied Clippy
+pass locally. The scripted installed macOS lifecycle acceptance passes, but
+the most recent manual run after code head `2fac448` timed out at the Show
+prompt without observing the physical Show callback. Tray-menu delivery and
+foreground activation remain open; the latest AppKit request returned
+`accepted=false`. See the phase-by-phase status in
+[`readiness-closeout-phases-2026-10-05.md`](readiness-closeout-phases-2026-10-05.md).
 
 The root Tauri binary, build script, runtime/build dependencies, command
 bootstrap, and installer configs have been removed from the supported Rust
@@ -14,27 +25,38 @@ whole-workspace dependency guard also excludes GTK, GLib, Wry, and the Tauri
 runtime. Both the advisory registry and `.cargo/audit.toml` ignore list are now
 empty, and the fail-closed governance contract passes.
 
-`cargo check --offline --workspace --all-targets`, complete test-target
-compilation, formatting, all-target/all-feature Clippy with warnings denied,
-and the full Rust workspace suite in serial mode pass locally. The storage
-suite passes with two test threads (20/20); its default-parallel run stalls on
-this machine in `async_ingestion_engine_applies_retention_before_promotion`,
-so same-head hosted CI must validate the normal parallel lane. Roadmap,
-governance, dependency, DuckDB prebuilt/feature, native-package (6/6), CI-scope,
-and workflow `actionlint` contracts pass. UI typecheck, 63 tests, and the
-production build pass as diagnostics using installed dependencies under global
-pnpm `12.8.1`; the exact pin `12.9.1` is the latest stable release listed by
-[pnpm](https://github.com/pnpm/pnpm/releases/tag/v12.9.1), but retrieval failed
-because `registry.npmjs.org` did not resolve. The pinned UI lane remains
-required. The installed macOS acceptance passes cold/warm URL delivery,
-saved-state restart, tray/window flow, and notification request; the AppKit
-activation request returned false, so foreground activation is not claimed.
-Linux and Windows package/lifecycle checks remain pending. Unfiltered
-`cargo audit --no-fetch --deny warnings` exits successfully for both lockfiles
-against the cached RustSec database (1,290 advisories, revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee`). A fresh database fetch failed to
-connect to GitHub, so current-upstream audit freshness and hosted
-security/platform checks remain unverified.
+Local validation after the latest changes passes: the serial analytics
+workspace suite (270 tests across 64 suites), the storage suite, all-target/
+all-feature Clippy with warnings denied, formatting, roadmap/publish
+contracts (10/10), governance, DuckDB source-build guard, and desktop
+dependency guard. The retention test now drops its ingestion sender after its
+first promotion; the full local suite no longer stalls. Direct admin storage
+services and compatibility baseline calls now require a configured signing secret. Admin-secret guard (1/1),
+admin-service (8/8), admin-ingestion guard (2/2), command compatibility (5/5),
+and scoring-audit (1/1) pass with explicit test-only secrets.
+
+A fresh RustSec database refresh via `rtk cargo audit` succeeded in the
+authorized network route. Both supported lockfiles pass unfiltered
+`--deny warnings`: 517 application and 82 migration-tool dependencies, zero
+findings, database revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290
+advisories; commit time 2026-10-03T10:14:03+02:00). The governance registry and
+Cargo audit ignore list both remain empty. A later unprivileged parallel retry
+could not reach GitHub; it does not supersede the successful sequential
+refresh-and-audit result.
+
+The pinned UI version is pnpm `12.9.1`; local typecheck/tests/build could not
+verify it because its registry signature lookup failed, but hosted `ui-quality`
+passed on source head `ce5a1e1`. Hosted Linux/macOS/Windows package and URL
+lifecycle checks also passed on that head. The scripted local macOS lifecycle
+passed cold/warm URL delivery, close-to-tray, notification request, visible
+restore, and saved-state restart. The most recent manual run after code head
+`2fac448` reached the Show prompt but did not observe its callback within
+60 seconds. AppKit activation
+returned `accepted=false`; do not claim foreground activation or physical
+tray-menu click acceptance from the scripted checks. The current documentation
+sync records the same-head hosted results and its roadmap/publish contracts
+pass locally. Hosted checks must rerun after this documentation update is
+pushed.
 
 The 2026-10-04 closure evidence is recorded in
 [`rustsec-exception-closure-evidence-2026-10-04.md`](rustsec-exception-closure-evidence-2026-10-04.md).
@@ -77,17 +99,17 @@ removal.
 **Latest decision record:** [`decision-2026-10-05.md`](../decisions/decision-2026-10-05.md)
 **Scope:** PR #108 readiness branch and supported Rust/native application dependency graphs.
 
-### Execution ledger (2026-10-05)
+### Original remediation phase ledger (snapshot from 2026-10-05)
 
 | Phase | Status | Evidence and remaining gate |
 |---|---|---|
-| 0 — Baseline and review blockers | Local current-worktree gates pass; hosted validation pending | Commit `e3a069d` passed the Tauri packaging review matrix and its P1 thread was resolved. That host has since been retired. Current local Rust, UI diagnostic, macOS lifecycle, governance, package, workflow, and documentation checks pass as recorded above; hosted checks on the updated branch are not yet available. |
-| 1 — Prebuilt DuckDB | Complete | The official checksum-verified runtime is staged without source compilation; Linux `.deb`, macOS `.app`, Windows NSIS packaging and lifecycle jobs passed in run `37249203857`. |
-| 2 — SQLite ingestion | Implemented; validation current | Hosted workspace/storage tests, Clippy, and formatting passed in run `37249203857`; preserve the existing public command and payload contracts. |
-| 3 — Isolated Sled migration | Complete | Eight migrator tests pass locally; the 82-package migrator lockfile has no findings or warnings in the refreshed 1,290-advisory database. Both supported lockfiles were audited outside the repository ignore configuration. |
-| 4 — Native parity and Tauri/GTK retirement | In progress | The 11-command contract inventory and shared service routes are in place. Tauri manifests, bootstrap, macros, configs, and package job are removed locally; native-shell packaging replaces the old matrix. Workspace tests pass serially, Clippy and local package/dependency contracts pass. Installed macOS cold/warm URL and restart acceptance passes locally; AppKit activation returned false. Linux/Windows package/lifecycle evidence and same-head hosted checks remain required. |
-| 5 — Zero-exception governance | Locally cleared; final verification pending | All 17 records are accounted for: 15 previously closed with withdrawal/absence evidence, and the two live packages are now absent from both supported lockfiles. The registry and audit ignores are empty; governance contract passes. Cached-database unfiltered audits pass. Retry a fresh RustSec fetch and require hosted Security/audit success before phase closure. |
-| 6 — Release readiness and docs | Local documentation reconciled; final verification pending | README, repository maps, BOM, test plan, and publish checklist describe the native-only host, empty registry, transport compatibility boundary, and local results. Roadmap/publish-doc contracts pass. Global pnpm 12.8.1 UI diagnostics pass; exact pinned 12.9.1 retrieval failed on registry DNS. Require fresh-audit and same-head green aggregate, Security, pinned UI, Dependabot, and platform checks on PR #108. |
+| 0 — Baseline and review blockers | Hosted source validation passed on `ff367c4`; latest-head checks govern follow-up | PR #112 is OPEN/CLEAN at verified source head `ff367c4`. CI run `37305039584` passed 24 checks with no failures and one informational coverage skip; Security, Dependency Review, and all PR #108 review threads are terminal green/resolved. Readiness must use terminal-green required checks on the latest PR head. |
+| 1 — Prebuilt DuckDB | Complete | The SHA-verified official runtime was staged without source compilation; Linux/macOS/Windows package and runtime/loader checks passed in CI run `37305039584`. |
+| 2 — SQLite ingestion | Complete | The serial full-workspace suite, storage suite (21/21), formatting, warning-denied Clippy, and hosted workspace/storage lanes pass; the public command and payload contracts remain covered. |
+| 3 — Isolated Sled migration | Complete | Eight migrator tests pass locally; the 82-package migration lockfile passes unfiltered audit with no findings or warnings in the refreshed 1,290-advisory database. Both supported lockfiles are audited outside ignore configuration. |
+| 4 — Native parity and Tauri/GTK retirement | Hosted lifecycle complete; interactive parity open | The 11-command contract inventory and shared service routes are in place. Tauri manifests, bootstrap, macros, configs, and package job are removed; native-shell packaging replaces the old matrix. Hosted Linux/macOS/Windows package and URL lifecycle checks pass. Local macOS lifecycle passes, but a physical tray-menu click and successful foreground activation remain unverified; AppKit returned `accepted=false`. |
+| 5 — Zero-exception governance | Complete on verified source head | All 17 records are accounted for: 15 closed with withdrawal/absence evidence and the two affected package paths absent from both supported lockfiles. The registry and audit ignores are empty; fresh unfiltered audits pass, and hosted governance/RustSec/CodeQL checks passed on `ff367c4`. The live Dependabot query returned zero open alerts. |
+| 6 — Release readiness and docs | Evidence synchronized; manual parity gate open | README, repository maps, BOM, test plan, and publish checklist describe the native-only host, empty registry, transport compatibility boundary, and validation. Roadmap/publish contracts pass; hosted UI uses pinned pnpm `12.9.1`. Use terminal-green required checks from the latest PR head before closing readiness; physical tray-menu/foreground evidence remains open. |
 
 ### Historical Phase 0 Tauri frontend packaging finding (resolved before host retirement)
 
@@ -134,7 +156,10 @@ hashes together.
 
 ## Phased execution and validation gates
 
-Execute these phases in order on PR #108's existing branch. A phase closes
+The original plan executed on PR #108's remediation branch, which has since
+merged. Use the active closeout phases in
+[`readiness-closeout-phases-2026-10-05.md`](readiness-closeout-phases-2026-10-05.md)
+for PR #112. A phase closes
 only when its implementation is committed and every validation listed for
 that phase has terminal evidence. Keep the security gate fail-closed throughout
 the work; do not renew or invent advisory acceptance.
@@ -521,11 +546,13 @@ warnings/findings. Confirm the hosting security-audit job also uses no
 exceptions.
 
 **Current validation:** the governance checker and empty-registry contract
-pass. Unfiltered audits with `--deny warnings` pass for both supported
-lockfiles against the cached 1,290-advisory database at revision
-`ef6173cbc5c50ec8166f9a5b28f07834144373ee`. A fresh database fetch failed to
-connect to GitHub; hosted Security/audit checks on this dependency graph are
-also pending.
+pass. A fresh `rtk cargo audit` database refresh and sequential unfiltered
+audits with `--deny warnings` pass for both supported lockfiles against
+revision `ef6173cbc5c50ec8166f9a5b28f07834144373ee` (1,290 advisories): 517
+application dependencies and 82 migration-tool dependencies, with no findings.
+On PR #112 source head `ff367c4`, hosted `rust-audit`, governance, and CodeQL
+passed in Security run `37305039580` and CI run `37305039584`. Readiness uses
+terminal-green audit and governance checks on the latest PR head.
 
 **Exit gate:** all 17 dispositions cite evidence; both governance stores are
 empty; refreshed, unfiltered audits pass for all supported lockfiles; the
@@ -859,3 +886,32 @@ audit record.
 the full serial workspace test suite, the native-shell tests in default and
 no-default feature modes, and the roadmap/publish contracts pass. Same-head
 hosted validation for these review follow-ups is pending.
+
+Review thread [`discussion_r4182447911`](https://github.com/pratik-saptarshi/rocinante/pull/108#discussion_r4182447911)
+found that analytics averaged each retained rollup as one sample when it was
+combined with newer raw samples. Follow-up commit `3417e22` carries `metric_sum` and
+`sample_count` through both aggregate queries and committer scoring, then
+computes the combined weighted average. The integration test creates two
+rolled-up values plus a live value and checks both query paths. The storage
+suite passes 21/21, the full serial workspace suite passes, formatting and
+all-target/all-feature Clippy pass. The thread still needs a response and
+same-head hosted confirmation in the focused follow-up branch.
+
+## Adversarial review of current `origin/main` — 2026-10-05
+
+The refreshed local `origin/main` tip is `eb83be9` (PR #108 merge). Its
+48-hour history contains the DuckDB, Serde, base64, and Rustls lockfile
+updates, the 0.2.1 release commit, and the PR #108 merge. The lockfile-only
+updates do not change application code; no additional defect was identified
+in those diffs. The pre-merge main manifest had enabled DuckDB's `bundled`
+feature, which upstream documents as compiling DuckDB source. PR #108 removed
+that feature; current main pins `duckdb 1.10506.0` with default features off,
+and includes the prebuilt provisioning and source-build guard. That explicit
+binary-only requirement is now satisfied in current main.
+
+The remaining adversarial finding is the weighted-rollup defect above: current
+main still averages each historical rollup as one row when combined with raw
+samples. The focused follow-up branch fixes both aggregate metrics and
+committer scoring, with regression coverage for rollup plus live samples. The
+live GitHub PR/check API could not be refreshed, so hosted check state is not
+claimed.

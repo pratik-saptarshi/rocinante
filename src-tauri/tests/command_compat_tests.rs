@@ -1,9 +1,21 @@
 #![cfg(feature = "analytics")]
 
-use repo_analyzer_core::auth::issue_test_token;
+use repo_analyzer_core::auth::issue_test_token as issue_token_with_test_secret;
 use repo_analyzer_core::storage::{BaselineStore, DualLayerStore};
 use repo_analyzer_core::types::PrCandidate;
+use std::sync::OnceLock;
 use tempfile::tempdir;
+
+fn issue_test_token(user: &str, roles: &[&str], ttl_seconds: i64) -> String {
+    static CONFIGURED_SECRET: OnceLock<()> = OnceLock::new();
+    CONFIGURED_SECRET.get_or_init(|| {
+        std::env::set_var(
+            "RUNICIPAL_TOKEN_SECRET",
+            "rocinante-command-compat-tests-secret-32-bytes",
+        );
+    });
+    issue_token_with_test_secret(user, roles, ttl_seconds)
+}
 
 #[test]
 fn command_compat_evaluate_pr_risk_uses_the_default_schema() {
