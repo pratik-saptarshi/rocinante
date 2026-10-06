@@ -572,4 +572,25 @@ describe('Optimization sidebar layout', () => {
       screen.getByText(/Security-sensitive signals from dry-1 should be reviewed before release\./i)
     ).toBeInTheDocument();
   });
+
+  it('keeps static audit sections labeled as examples after telemetry import', () => {
+    render(<App />);
+    const provenanceLabels = ['accessibility', 'seo', 'security', 'performance'].map((section) =>
+      screen.getByTestId(`provenance-${section}`)
+    );
+    for (const label of provenanceLabels) {
+      expect(label).toHaveTextContent(/static example content; not derived from imported telemetry/i);
+    }
+
+    const input = screen.getByLabelText(/Telemetry payload JSON/i);
+    fireEvent.change(input, {
+      target: { value: JSON.stringify({ commits: [], stages: [], signals: [] }) }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    for (const label of provenanceLabels) {
+      expect(label).toBeVisible();
+      expect(label).toHaveTextContent(/static example content; not derived from imported telemetry/i);
+    }
+  });
 });
