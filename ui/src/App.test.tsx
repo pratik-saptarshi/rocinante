@@ -19,6 +19,22 @@ describe('Phase 3 accessibility and control behavior', () => {
     expect(screen.getByText(/Page-specific and site-wide selection is unavailable/i)).toBeVisible();
   });
 
+  it('nests audience detail headings under their selected view heading', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manager' }));
+    expect(screen.getByRole('heading', { level: 2, name: 'Manager Focus' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Bottleneck Radar' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Executive' }));
+    expect(screen.getByRole('heading', { level: 2, name: 'Executive Focus' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Top Improvement Opportunities' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Security' }));
+    expect(screen.getByRole('heading', { level: 2, name: 'Security Focus' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Security-Weighted Commit Signals' })).toBeInTheDocument();
+  });
+
   it('associates the unavailable field and lab selector with its visible label', () => {
     render(<App />);
 
