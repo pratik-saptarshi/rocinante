@@ -29,21 +29,30 @@ applicability contract.
 | `git diff --check` | Passed after implementation and documentation updates. |
 | Playwright (`ui/node_modules/.bin/playwright test`) | Blocked by the sandbox: the configured web server cannot bind `127.0.0.1:4173` (`listen EPERM`). No browser tests ran locally. |
 | Playwright discovery (`ui/node_modules/.bin/playwright test --list`, from `ui/`) | Passed: all 8 browser tests were discovered, including malformed JSON recovery. |
+| Hosted UI quality, Playwright, aggregate CI, Rust workspace/lints, and three-platform package/URL lanes | Passed on PR #114 code head `71bf9e5990428ac0603eeb370837bd954c4ef1f2` in CI run [37411802567](https://github.com/pratik-saptarshi/rocinante/actions/runs/37411802567). |
+| Hosted RustSec audit, CodeQL, and secret scan | Passed on the same code head in Security run [37411802526](https://github.com/pratik-saptarshi/rocinante/actions/runs/37411802526). |
+| Dependency Review | Passed on the same code head in run [37411802611](https://github.com/pratik-saptarshi/rocinante/actions/runs/37411802611). |
 
 The worktree pins pnpm 12.9.1. The available host executable reports pnpm
 12.8.1 and hangs when invoked, so the UI checks above ran through the existing
 `node_modules/.bin` executables. They do not establish that the pinned pnpm
 installation path works in this environment.
 
-## Remaining exit criteria
+## Hosted acceptance and remaining exit criteria
 
-- Hosted `ui-playwright` and aggregate `test` checks must pass on the exact PR
-  head before this phase can be marked complete.
-- The pinned pnpm 12.9.1 UI lane must pass in hosted CI; no hosted result is
-  available in this record.
+- Hosted `ui-quality`, `ui-playwright`, aggregate `test`, Rust workspace,
+  formatting, Clippy, package and URL lifecycle matrices, security governance,
+  RustSec audit, CodeQL, secret scan, and Dependency Review passed on code head
+  `71bf9e5990428ac0603eeb370837bd954c4ef1f2`.
+- Hosted `ui-quality` passed with the pinned pnpm 12.9.1. The local pinned
+  executable remained unavailable; local checks used existing `node_modules/.bin`
+  tools.
 - The protected `main` branch at base `d4bc8e7` requires `test` and `codeql`. The aggregate `test` job depends on `ui-playwright`, making the browser gate transitively required; `ui-playwright` is not a separate branch-protection context.
+- The Phase 1 child Beads are closed against these results. Keep milestone
+  `BI-5u3.1` open until PR #114 merges through the protected flow; this record
+  does not claim a merge.
 - Local Playwright remains blocked by sandbox networking; this is not a test
-  pass and does not replace hosted browser validation.
+  pass; hosted Playwright passed on the recorded code head.
 
 ## Payload compatibility note
 
