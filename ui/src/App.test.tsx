@@ -17,7 +17,7 @@ describe('dashboard explainability panel', () => {
     expect(within(explainabilitySection).getByText(/Score Decomposition/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Risk Commit/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Bottleneck/i)).toBeInTheDocument();
-    expect(within(explainabilitySection).getByText(/Opportunity Lift/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Opportunity Signals/i)).toBeInTheDocument();
   });
 
   it('updates explainability traces when payload changes', () => {
@@ -224,7 +224,7 @@ describe('Optimization sidebar layout', () => {
     expect(within(explainabilitySection).getByText(/Score Decomposition/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Risk Commit/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Bottleneck/i)).toBeInTheDocument();
-    expect(within(explainabilitySection).getByText(/Opportunity Lift/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Opportunity Signals/i)).toBeInTheDocument();
   });
 
   it('renders job observability metrics from the shared stage telemetry', () => {
@@ -571,5 +571,49 @@ describe('Optimization sidebar layout', () => {
     expect(
       screen.getByText(/Security-sensitive signals from dry-1 should be reviewed before release\./i)
     ).toBeInTheDocument();
+  });
+
+  it('keeps static audit sections labeled as examples after telemetry import', () => {
+    render(<App />);
+    const provenanceLabels = ['accessibility', 'seo', 'security', 'performance'].map((section) =>
+      screen.getByTestId(`provenance-${section}`)
+    );
+    for (const label of provenanceLabels) {
+      expect(label).toHaveTextContent(/static example content; not derived from imported telemetry/i);
+    }
+
+    const input = screen.getByLabelText(/Telemetry payload JSON/i);
+    fireEvent.change(input, {
+      target: { value: JSON.stringify({ commits: [], stages: [], signals: [] }) }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    for (const label of provenanceLabels) {
+      expect(label).toBeVisible();
+      expect(label).toHaveTextContent(/static example content; not derived from imported telemetry/i);
+    }
+  });
+
+  it('uses configured latency severity in Job Observability', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: {
+        value: JSON.stringify({
+          payload: {
+            commits: [{ id: 'safe-commit', files: 1, changedLines: 8, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+            stages: [{ name: 'slow-stage', queueDepth: 0, throughput: 10, avgLatencyMs: 750 }],
+            signals: []
+          },
+          limits: { latencyP95Ms: 200 }
+        })
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    const observability = screen.getByTestId('job-observability-section');
+    expect(within(observability).getByText('bad')).toBeVisible();
+    expect(within(observability).getByText(/slow-stage: queue 0, throughput 10, lag 750ms/i)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Manager' }));
+    expect(screen.getByText(/slow-stage \(critical\) impact 5/i)).toBeVisible();
   });
 });
