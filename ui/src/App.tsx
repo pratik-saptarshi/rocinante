@@ -410,7 +410,7 @@ function App() {
           />
           <Paper variant="outlined" sx={{ p: 1.25, mt: 1, borderRadius: 2 }}>
             <Typography
-              component="h2"
+              component="h3"
               variant="subtitle2"
               sx={{
                 fontWeight: 700,
@@ -595,7 +595,7 @@ function App() {
               Reseed Baseline
             </Button>
           </Stack>
-          <Typography variant="caption" role="status" aria-live="polite" aria-atomic="true" aria-busy={baselineBusy} data-testid="baseline-management-result">
+          <Typography variant="caption" role="status" aria-live="polite" aria-atomic="true" data-testid="baseline-management-result">
             {baselineResult}
           </Typography>
         </Box>
