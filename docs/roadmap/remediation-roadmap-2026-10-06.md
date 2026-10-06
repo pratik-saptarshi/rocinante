@@ -1,6 +1,6 @@
 # Frontend UX Remediation Roadmap — 2026-10-06
 
-**Status (2026-10-06):** Phase 1 and Phase 2 are complete. PR #112's nine review threads are resolved; physical macOS tray/foreground acceptance remains unverified. PR #118 merged Phase 2 at `ce1e05d8459ee12392c474365bb8e120780ecb37`; exact-head CI (`37430967217`), Security (`37430967218`), and Dependency Review (`37430967207`) passed. Phase 3 is in progress on PR #119, branch `fix/ux-phase3-controls-accessibility-2026-10-06`, based on that main head. Local exact-source TypeScript, 13 Vitest files/94 tests, and production build passed earlier; Vite emitted a >500 kB chunk advisory. Playwright discovers 10 tests; local browser startup is blocked by sandbox EPERM on 127.0.0.1:4173. Two new P2 PR #119 findings were fixed: pending admin/baseline announcements are no longer marked `aria-busy`, and Action Routing is H3 under Quality Pulse. Regression tests and roadmap/integration-log updates are committed on the branch. The first exact-head CI passed TypeScript but found a baseline-test fixture using the wrong bridge result shape; the stub was corrected to the numeric shape used by existing contract tests. Fresh hosted CI/Security/Dependency Review and manual keyboard-only/screen-reader acceptance are pending; auto-merge is enabled but must wait on exact-head required checks.
+**Status (2026-10-06):** Phase 1 and Phase 2 are complete. PR #112's nine review threads are resolved; physical macOS tray/foreground acceptance remains unverified. Phase 3 implementation merged via PR #119 at `94d0bfc60325d8a80dcbedbe4e1ec33790d3a7f1` from head `15148ad6c671ed4e0403dcc297f210eb016ff713`; exact-head CI `37438201414`, Security `37438201595`, and Dependency Review `37438201425` passed. UI quality passed with pinned pnpm 12.9.1, TypeScript, 95 unit tests, and production build; UI Playwright passed 10 tests. Rust quality/workspace tests, security governance, Linux/macOS/Windows package/URL acceptance also passed. PR #119's three inline review threads are resolved. Manual keyboard-only and screen-reader spot checks remain open, so Phase 3 Beads are not closed. Phase 4 is underway on `fix/ux-phase4-preview-fit-2026-10-06`: the preview audience is recorded as React/Vite browser preview/headless validation harness, fallback wording is clarified, and Playwright now exercises import/admin tasks and horizontal overflow at 320, 360, 768, 1024, and 1280 CSS px. Fresh PR #120 hosted checks are pending. The test reports will determine whether a responsive layout fix is needed; 200% zoom and manual keyboard/task review remain pending.
 
 **Inputs:** [2026-10-05 UX adversarial panel report](../reviews/2026-10-05-frontend-user-experience/review_panel_report.md), [panel process and evidence](../reviews/2026-10-05-frontend-user-experience/review_panel_process.md), and the current local Beads hierarchy.
 
@@ -124,30 +124,31 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 - Playwright checks landmarks, disabled actions, accessible switch naming, and computed contrast. Record keyboard-only operation and a screen-reader spot check for status/heading navigation before closing the phase; those human checks are pending.
 - Run frozen install, typecheck, complete Vitest suite, production build, Playwright, and exact-head hosted required checks.
 
-**Delivery:** focused PR #119 from the refreshed Phase 2 main head, with reviewable code/test/doc commits. Enable auto-merge only after same-head required workflows pass and review blockers are resolved. Keep the native shell and command payload contracts out of scope.
+**Delivery:** PR #119 merged through auto-merge at `94d0bfc` after exact-head CI `37438201414`, Security `37438201595`, and Dependency Review `37438201425` passed on code head `15148ad`. The review fixes for live-region `aria-busy`, heading nesting, and duplicate-stage severity are included. The implementation delivery is complete, but keep `BI-5u3.4` and its human-check children open until keyboard-only and screen-reader checks are recorded. Native shell and command payload contracts stayed out of scope.
 
 ## Phase 4 — Decide preview wording and validate responsive task fit
 
-**Milestone:** `BI-5u3.5`. **Findings:** UX-12, UX-13. **Dependency:** Phase 3 merged. This is a validation gate, not pre-approval for redesign.
+**Milestone:** `BI-5u3.5`. **Findings:** UX-12, UX-13. **Dependency:** Phase 3 implementation merged; manual accessibility checks remain a separate Phase 3 closeout gate.
 
-**Commit/PR rule:** this phase has no implementation commit by default. If validation proves a defect, create a separate scoped PR with a specific Conventional Commit and regression test named in that reproduced defect’s follow-up issue.
+**Delivery:** PR #120, branch `fix/ux-phase4-preview-fit-2026-10-06`, starts from merge `94d0bfc`. It records the preview audience and updates the fallback copy to match the browser-preview/native-host boundary. It adds a Playwright task/overflow check at 320, 360, 768, 1024, and 1280 CSS-pixel widths. Do not infer a viewport defect or make a responsive layout change until the test reproduces one.
 
 **Acceptance criteria**
 
-- A decision note records intended preview audience and whether Tauri-specific bridge errors are compatibility-harness guidance or user-facing recovery copy.
-- Change wording only if it contradicts that documented audience/contract; otherwise record the rationale and close without code.
-- Gather browser evidence at 320, 360, 768, 1024, and 1280 CSS pixels and at 200% zoom for sample load, import, recommendation reading, and admin/baseline status tasks.
-- Record horizontal overflow, clipping, control reachability, keyboard focus, and task/section-order friction. Change layout only if a concrete task impairment is reproduced.
+- The decision note records React/Vite as the browser preview and headless validation harness, and Rust eframe/winit as the supported desktop host.
+- Browser fallback copy identifies the unavailable desktop command runtime and says admin commands are not available in the browser preview; the Tauri compatibility adapter does not imply a production Tauri runtime.
+- At 320, 360, 768, 1024, and 1280 CSS px, the main surface has no horizontal overflow; payload import and admin fallback tasks remain reachable and produce truthful status.
+- Record clipping, control reachability, keyboard focus, and task/section-order friction. Apply the smallest layout adjustment only if browser evidence shows impairment.
+- Manually validate representative tasks at 200% zoom and keyboard-only operation; record screen-reader announcement/heading observations with Phase 3 checks.
 
-**Test plan:** Playwright viewport runs with screenshots/traces and a concise task record. Run the complete UI checks if test code or application code changes. If no defect is reproduced, close the validation issues with evidence and no code PR. If a defect is reproduced, write a narrow acceptance scope and open a separate Phase 4 PR.
+**Test plan:** Playwright runs import and admin fallback tasks at all five CSS widths and asserts document width does not exceed the viewport. Hosted UI-quality and Playwright runs are required on the exact PR head. Record browser artifacts/task notes. Manual 200% zoom, keyboard, and screen-reader checks remain human evidence. If no responsive defect is reproduced, close UX-13 without layout changes; otherwise implement a narrow responsive fix with a regression test in a reviewable PR.
 
 ## Progressive commit and PR gates
 
 1. **Phase 1 complete:** PR #114 code and PR #116 documentation/Beads closeout merged; exact-head hosted gates passed and all UX PR #114 review threads are resolved.
 2. **PR #117 closeout complete:** current GitHub reports all 9 PR #112 review threads resolved. The physical macOS interaction gate remains distinct.
 3. **Phase 2 complete:** PR #118 merged as `ce1e05d`; CI `37430967217`, Security `37430967218`, and Dependency Review `37430967207` passed on its exact head.
-4. **PR 3 / Phase 3 in progress:** branch `fix/ux-phase3-controls-accessibility-2026-10-06` was based on `ce1e05d`. Implement controls, contrast, input naming, live statuses, landmarks/headings, and duplicate-stage severity regression in small Conventional Commit slices. PR #119 fixes two further P2 review findings: live status regions no longer carry `aria-busy`, and Action Routing is H3. Auto-merge is enabled; exact-head checks must pass and review blockers must be resolved before merge.
-5. **Phase 4:** after Phase 3 merges, complete decision and viewport evidence. Open another PR only if validation proves a code defect.
+4. **Phase 3 implementation merged:** PR #119 merged at `94d0bfc` after exact-head CI `37438201414`, Security `37438201595`, and Dependency Review `37438201425` passed. All three PR #119 review threads are resolved. Keep the Phase 3 milestone open until manual keyboard and screen-reader evidence is recorded.
+5. **Phase 4 in progress:** PR #120 branch `fix/ux-phase4-preview-fit-2026-10-06` carries the audience decision, accurate browser fallback copy, and a five-width task/overflow regression. Auto-merge is enabled only after same-head required checks pass; if the viewport test reproduces a layout impairment, add a focused responsive correction before merge.
 6. At each phase start, refresh open PR heads, ownership/write access, and checks. Reuse an existing writable branch only when its exact scope matches; otherwise use a clean branch from verified latest `main`. Merge only when local validation, required hosted checks, and review are satisfactory on the same commit. Record outcomes; never mark a planned check as passed.
 
 ## Beads worklist and finding traceability
