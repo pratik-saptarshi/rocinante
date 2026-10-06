@@ -75,7 +75,7 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 - `test(ui): cover import state and last-good recovery`
 
 **Acceptance criteria:**
-- Explicit empty arrays display a deliberate empty state; missing, empty, sample, and imported modes are distinguishable. Empty and partial imports do not show sample-derived recommendations or hard-coded action-route instructions.
+- Explicit empty arrays display a deliberate empty state; missing, empty, sample, and imported modes are distinguishable. Empty and partial imports do not show sample-derived recommendations or hard-coded action-route instructions; the score is unavailable unless imported telemetry produces at least one commit-risk and one bottleneck record; empty arrays mean no observations, not perfect quality.
 - Blank Apply does not silently reset data. Reset to Sample is explicit and labels the resulting data as sample.
 - Nested shape and numeric validation runs before replacing active state. The object-valued `stages[].name` case is rejected with a visible, accessible error.
 - Invalid JSON or schema leaves the last valid view usable; valid existing payloads continue to work.
