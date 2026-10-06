@@ -40,7 +40,7 @@ installation path works in this environment.
   head before this phase can be marked complete.
 - The pinned pnpm 12.9.1 UI lane must pass in hosted CI; no hosted result is
   available in this record.
-- Branch protection and required-check configuration have not been validated.
+- The protected `main` branch at base `d4bc8e7` requires `test` and `codeql`. The aggregate `test` job depends on `ui-playwright`, making the browser gate transitively required; `ui-playwright` is not a separate branch-protection context.
 - Local Playwright remains blocked by sandbox networking; this is not a test
   pass and does not replace hosted browser validation.
 

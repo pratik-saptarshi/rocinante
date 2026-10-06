@@ -1,6 +1,6 @@
 # Frontend UX Remediation Roadmap — 2026-10-05
 
-**Status (updated 2026-10-06):** Phase 0 planning is complete. Phase 1 implementation has run in the open `fix/frontend-ux-phase-1` worktree, and local validation results and environment limitations are recorded in the [Phase 1 validation note](frontend-ux-phase-1-closeout-2026-10-06.md). Phase 1 remains open: hosted same-head UI Playwright and aggregate results, plus branch-protection required-check configuration, are unverified. Related Beads remain open. Phases 2–4 remain planned.
+**Status (updated 2026-10-06):** Phase 0 planning is complete. Phase 1 implementation has run in the open `fix/frontend-ux-phase-1` worktree, and local validation results and environment limitations are recorded in the [Phase 1 validation note](frontend-ux-phase-1-closeout-2026-10-06.md). Phase 1 remains open: hosted same-head UI Playwright and aggregate results are unverified. Branch protection is verified at main `d4bc8e7`: the protected branch requires `test` and `codeql`, and aggregate `test` includes `ui-playwright`. Related Beads remain open. Phases 2–4 remain planned.
 **Source review:** [Frontend UX adversarial panel](../reviews/2026-10-05-frontend-user-experience/review_panel_report.md) · [process transcript](../reviews/2026-10-05-frontend-user-experience/review_panel_process.md)
 **Panel result:** 3.7/10 mean; 10 P2, 3 P3; no P0/P1. Six targeted source checks confirmed UX-04 through UX-09. The independent Opus judge phase was unavailable and is disclosed in the source report. The per-finding plan integration is in the [frontend UX traceability ledger](frontend-ux-plan-traceability-2026-10-05.md).
 
@@ -186,11 +186,11 @@ The pinned pnpm 12.9.1 executable was unavailable locally (host pnpm reported 12
 | Manual accessibility/viewport evidence | — | — | keyboard + AT | viewport + task |
 | No public payload or native contract changes | ✓ | ✓ | ✓ | ✓ |
 
-The check marks above are **planned gates**, not completed results. Phase 1 local typecheck, Vitest, and production build results are recorded in the validation note; local Playwright could not run because sandbox networking denied the web-server bind. The hosted `ui-playwright` job and aggregate dependency have been added under `BI-5u3.1.3`, but same-head hosted results and branch-protection required-check configuration remain unverified. Report local results separately from hosted CI, keep Phase 1 Beads open, and leave Phases 2–4 planned.
+The check marks above are **planned gates**, not completed results. Phase 1 local typecheck, Vitest, and production build results are recorded in the validation note; local Playwright could not run because sandbox networking denied the web-server bind. The hosted `ui-playwright` job and aggregate dependency have been added under `BI-5u3.1.3`, but same-head hosted results remain unverified. The protected `main` branch requires `test` and `codeql`; since required `test` depends on `ui-playwright`, the browser job is transitively required, though it is not a separate branch-protection context. Report local results separately from hosted CI, keep Phase 1 Beads open, and leave Phases 2–4 planned.
 
 ### Hosted Playwright validation gate
 
-`BI-5u3.1.3` owns the hosted browser-test enabler: a UI-triggered job must install the pinned pnpm/browser tooling, run `pnpm run test:e2e`, publish actionable failure output, and document whether branch protection requires the check. This heading is the stable `spec_id` target for that issue. The `ui-playwright` job and aggregate dependency have been added; same-head hosted results and branch-protection required-check configuration remain unverified.
+`BI-5u3.1.3` owns the hosted browser-test enabler: a UI-triggered job must install the pinned pnpm/browser tooling, run `pnpm run test:e2e`, publish actionable failure output, and document whether branch protection requires the check. This heading is the stable `spec_id` target for that issue. The `ui-playwright` job and aggregate dependency have been added; same-head hosted results remain unverified. The protected `main` branch requires `test` and `codeql`; since required `test` depends on `ui-playwright`, the browser job is transitively required, though it is not a separate branch-protection context.
 
 ## Progressive commit and PR policy
 
@@ -242,7 +242,7 @@ Beads are repository-local and currently unsynced. The database was initialized 
 | Priority | Owner | Action | Source finding |
 |---|---|---|---|
 | P2 | UI implementer | Deliver Phase 1 for explicit empty/import/reset state and schema validation; retain the last good view on invalid input. | UX-01, UX-04 |
-| P2 | CI/UI maintainer | Run hosted Playwright on the exact PR head, inspect its artifacts and path trigger, and verify branch-protection requirements before claiming hosted E2E. | BI-5u3.1.3 |
+| P2 | CI/UI maintainer | Run hosted Playwright on the exact PR head and inspect its artifacts; preserve its fail-closed dependency in the required aggregate `test` gate before claiming hosted E2E. | BI-5u3.1.3 |
 | P2 | UI implementer | Deliver Phase 2 with input-derived recommendations, shared severity rules, and score explanations tied to computed contributors. | UX-02, UX-05, UX-06, UX-07 |
 | P2 | Product owner and UI implementer | Decide whether the controls are illustrative/unavailable or have a defined behavior before any new operation/data source is implemented; complete the Phase 3 accessibility fixes. | UX-03, UX-08, UX-09, UX-10, UX-11 |
 | P3 | Product owner | Record the browser-preview audience and bridge-copy contract before changing UX-12 wording. | UX-12 |
