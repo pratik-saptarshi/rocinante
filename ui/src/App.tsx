@@ -377,7 +377,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="quality-pulse-section">
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -431,7 +431,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="explainability-section">
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -450,7 +450,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="trend-risk-section">
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -478,7 +478,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="job-observability-section">
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -491,7 +491,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }}>
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -545,7 +545,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }}>
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -563,7 +563,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="baseline-management-section">
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -633,7 +633,7 @@ function App() {
 
         {audience === 'manager' && (
           <Box>
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Manager Focus
@@ -646,7 +646,7 @@ function App() {
               }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
-            <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
+            <Typography component="h2" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Bottleneck Radar
             </Typography>
             <List dense disablePadding>
@@ -668,7 +668,7 @@ function App() {
 
         {audience === 'executive' && (
           <Box>
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Executive Focus
@@ -681,7 +681,7 @@ function App() {
               }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
-            <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
+            <Typography component="h2" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Top Improvement Opportunities
             </Typography>
             <List dense disablePadding>
@@ -702,7 +702,7 @@ function App() {
 
         {audience === 'security' && (
           <Box data-testid="security-detail-section">
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Security Focus
@@ -715,7 +715,7 @@ function App() {
               }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
-            <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
+            <Typography component="h2" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Security-Weighted Commit Signals
             </Typography>
             <FindingSection
@@ -754,7 +754,7 @@ function App() {
               mb: 1
             }}>
             <Accessibility fontSize="small" color="action" />
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               WCAG 2.1/2.2 AA Accessibility Audit
@@ -789,7 +789,7 @@ function App() {
               mb: 1
             }}>
             <Search fontSize="small" color="action" />
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               SEO, GEO &amp; AEO Performance
@@ -821,7 +821,7 @@ function App() {
               mb: 1
             }}>
             <Security fontSize="small" color="action" />
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Security &amp; Drupal Review
@@ -848,7 +848,7 @@ function App() {
               mb: 1
             }}>
             <Speed fontSize="small" color="action" />
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Page Performance Metrics
