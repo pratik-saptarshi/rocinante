@@ -76,7 +76,10 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
         .find("std::process::exit(0);")
         .expect("quit exits the macOS process");
 
-    assert!(save_call < flush, "state must be saved before storage flush");
+    assert!(
+        save_call < flush,
+        "state must be saved before storage flush"
+    );
     assert!(
         persist_call < tray_drop && tray_drop < macos_guard && macos_guard < process_exit,
         "quit must persist and flush before tray removal and macOS process exit"
