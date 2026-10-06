@@ -48,6 +48,9 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 | PR #119 review: pending status hidden while live region is busy | VERIFIED | 0.95 | Full | Remove `aria-busy` from the admin and baseline status live regions; test that pending text remains exposed | `BI-5u3.4.4` / M3 |
 | PR #119 review: Action Routing incorrectly exposed as H2 peer | VERIFIED | 0.95 | Full | Make Action Routing an H3 nested under Quality Pulse and assert heading level | `BI-5u3.4.5` / M3 |
 | PR #119 hosted CI: baseline pending test used a response shape the bridge does not return | VERIFIED | 0.98 | Full | Change the fake bridge result to a numeric baseline and require a fresh exact-head UI run | `BI-5u3.4.4` / M3 verification |
+| PR #121 review: attribute the correct Playwright count to each head | VERIFIED | 0.99 | Full | Record 10 Playwright tests for PR #119; attribute the 11th viewport test to PR #121 and append an explicit correction | M3/M4 evidence |
+| PR #121 review: repeat viewport overflow check after telemetry import and admin fallback | VERIFIED | 0.99 | Full | Assert document width after each state transition at all five viewport widths | `BI-5u3.5.2` / M4 |
+| PR #121 review: reconcile stale completion and dependency wording throughout roadmap | VERIFIED | 0.98 | Full | Update worklist table, coherence/actions/final recommendation to reflect merged PRs and open human evidence | `BI-5u3.4`/`.5` |
 
 **Disposition totals:** panel findings: 0 must-fix, 11 bundled, 2 deferred, 0 informational. PR review supplement: 2 P2 bundled follow-ups; both fixes are implemented and independently reviewed, with exact-head hosted gates and one review thread still blocking Phase 1 close. No governance veto was triggered by the panel’s P0/P1 rules. Scope remains the browser preview.
 
@@ -148,7 +151,7 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 2. **PR #117 closeout complete:** current GitHub reports all 9 PR #112 review threads resolved. The physical macOS interaction gate remains distinct.
 3. **Phase 2 complete:** PR #118 merged as `ce1e05d`; CI `37430967217`, Security `37430967218`, and Dependency Review `37430967207` passed on its exact head.
 4. **Phase 3 implementation merged:** PR #119 merged at `94d0bfc` after exact-head CI `37438201414`, Security `37438201595`, and Dependency Review `37438201425` passed. All three PR #119 review threads are resolved. Keep the Phase 3 milestone open until manual keyboard and screen-reader evidence is recorded.
-5. **Phase 4 in progress:** PR #121 branch `fix/ux-phase4-preview-fit-2026-10-06` carries the audience decision, accurate browser fallback copy, and a five-width task/overflow regression. Auto-merge is enabled only after same-head required checks pass; if the viewport test reproduces a layout impairment, add a focused responsive correction before merge.
+5. **Phase 4 follow-up in progress:** PR #121 merged at `17e19cb` after exact-head gates passed. PR #122 branch `fix/ux-phase4-review-followups-2026-10-06` reconciles review evidence and rechecks overflow after import/admin transitions at each tested width. Auto-merge is enabled; do not close UX-13 until exact-head checks and remaining manual zoom/task evidence are recorded.
 6. At each phase start, refresh open PR heads, ownership/write access, and checks. Reuse an existing writable branch only when its exact scope matches; otherwise use a clean branch from verified latest `main`. Merge only when local validation, required hosted checks, and review are satisfactory on the same commit. Record outcomes; never mark a planned check as passed.
 
 ## Beads worklist and finding traceability
