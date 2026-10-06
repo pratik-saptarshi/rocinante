@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/pratik-saptarshi/rocinante/compare/v0.2.1...v0.2.2) (2026-10-06)
+
+
+### Bug Fixes
+
+* **storage:** preserve rollups and secure baseline calls ([#112](https://github.com/pratik-saptarshi/rocinante/issues/112)) ([035c290](https://github.com/pratik-saptarshi/rocinante/commit/035c290662e2a4c79e247de6036886ea90e7bf60))
+* **ui:** preserve telemetry import state and validate payloads ([#114](https://github.com/pratik-saptarshi/rocinante/issues/114)) ([b204f83](https://github.com/pratik-saptarshi/rocinante/commit/b204f83b2d69655002018038ff59e1b14f87f37a))
+
 ## [0.2.1](https://github.com/pratik-saptarshi/rocinante/compare/v0.2.0...v0.2.1) (2026-10-03)
 
 
