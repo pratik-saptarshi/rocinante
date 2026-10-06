@@ -85,6 +85,9 @@ test.describe('frontend behavior', () => {
     await page.getByRole('button', { name: 'Apply Payload' }).click();
     await expect(page.getByTestId('telemetry-data-state')).toHaveText('This imported payload contains no telemetry records.');
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('0');
+    const qualityPulse = page.getByTestId('quality-pulse-section');
+    await expect(qualityPulse.getByText(/trim flaky tests|sample window|high-risk commit A-124/i)).toHaveCount(0);
+    await expect(qualityPulse.getByText('Awaiting telemetry')).toHaveCount(1);
   });
 
   test('announces malformed JSON and keeps the last-good dashboard visible', async ({ page }) => {

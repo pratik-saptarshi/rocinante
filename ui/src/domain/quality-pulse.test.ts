@@ -56,4 +56,30 @@ describe('buildQualityPulse', () => {
     expect(pulse.recommendations.executive[0].message).toContain('trim flaky tests');
     expect(pulse.recommendations.security[0].severity).toBe('good');
   });
+
+  it('does not invent sample recommendations or routes for imported empty or partial data', () => {
+    const emptyPulse = buildQualityPulse({
+      commitRiskCards: [],
+      bottlenecks: [],
+      opportunities: [],
+      stages: []
+    } as DashboardInsights, { allowSampleFallbacks: false });
+
+    expect(Object.values(emptyPulse.recommendations).flat()).toEqual([]);
+    expect(Object.values(emptyPulse.actionRoutes).flatMap((route) => route.actions)).toEqual([]);
+    expect(Object.values(emptyPulse.actionRoutes).every((route) => route.window === 'Awaiting telemetry')).toBe(true);
+
+    const partialPulse = buildQualityPulse({
+      commitRiskCards: [{ id: 'actual-commit', score: 75, level: 'medium', reasons: [] }],
+      bottlenecks: [],
+      opportunities: [],
+      stages: []
+    } as DashboardInsights, { allowSampleFallbacks: false });
+
+    expect(partialPulse.recommendations.lead).toHaveLength(1);
+    expect(partialPulse.recommendations.lead[0].message).toContain('actual-commit');
+    expect(partialPulse.recommendations.manager).toEqual([]);
+    expect(partialPulse.recommendations.executive).toEqual([]);
+    expect(partialPulse.recommendations.security).toEqual([]);
+  });
 });

@@ -98,6 +98,20 @@ describe('Optimization sidebar layout', () => {
     expect(screen.getByTestId('pulse-top-bottleneck')).toBeInTheDocument();
   });
 
+  it('does not show sample recommendations or action routes for an empty import', () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: { value: JSON.stringify({ commits: [], stages: [], signals: [] }) }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    const qualityPulseSection = screen.getByTestId('quality-pulse-section');
+    expect(within(qualityPulseSection).queryByText(/A-124|trim flaky tests|sample window/i)).not.toBeInTheDocument();
+    expect(within(qualityPulseSection).getByText('Awaiting telemetry')).toBeInTheDocument();
+    expect(within(qualityPulseSection).queryByText(/high-risk commit/i)).not.toBeInTheDocument();
+  });
+
   it('renders trend and risk visuals from the shared insight helper', () => {
     render(<App />);
 

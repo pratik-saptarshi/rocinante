@@ -163,7 +163,7 @@ function App() {
   const [baselineResult, setBaselineResult] = useState('No release baseline loaded yet.');
 
   const { commitRiskCards, bottlenecks, opportunities, stages } = insights;
-  const qualityPulse = buildQualityPulse(insights);
+  const qualityPulse = buildQualityPulse(insights, { allowSampleFallbacks: payloadState === 'sample' });
   const explainabilityTraces = buildExplainabilityTraces(qualityPulse);
   const dashboardVisuals = buildDashboardVisuals(insights);
   const audienceActions = qualityPulse.recommendations[audience];
