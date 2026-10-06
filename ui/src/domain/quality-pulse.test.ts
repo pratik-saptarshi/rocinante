@@ -66,6 +66,7 @@ describe('buildQualityPulse', () => {
     } as DashboardInsights, { allowSampleFallbacks: false });
 
     expect(emptyPulse.overallScore).toBeNull();
+    expect(emptyPulse.topRiskCommitId).toBeNull();
     expect(emptyPulse.topBottleneckName).toBeNull();
     expect(Object.values(emptyPulse.recommendations).flat()).toEqual([]);
     expect(Object.values(emptyPulse.actionRoutes).flatMap((route) => route.actions)).toEqual([]);
@@ -79,6 +80,7 @@ describe('buildQualityPulse', () => {
     } as DashboardInsights, { allowSampleFallbacks: false });
 
     expect(partialPulse.overallScore).toBeNull();
+    expect(partialPulse.topRiskCommitId).toBe('actual-commit');
     expect(partialPulse.topBottleneckName).toBeNull();
     expect(partialPulse.recommendations.lead).toHaveLength(1);
     expect(partialPulse.recommendations.lead[0].message).toContain('actual-commit');

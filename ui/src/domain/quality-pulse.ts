@@ -18,7 +18,7 @@ export interface QualityPulse {
   overallScore: number | null;
   securitySignalCount: number;
   topBottleneckName: string | null;
-  topRiskCommitId: string;
+  topRiskCommitId: string | null;
   topOpportunityTitle: string;
   opportunityCount: number;
   riskBuckets: {
@@ -204,7 +204,7 @@ export function buildQualityPulse(
     securitySignalCount,
     topBottleneckName: topBottleneck?.name ?? (allowSampleFallbacks ? 'review' : null),
     opportunityCount,
-    topRiskCommitId: topRisk?.id ?? '',
+    topRiskCommitId: topRisk?.id ?? (allowSampleFallbacks ? '' : null),
     topOpportunityTitle: topOpportunity?.title ?? 'trim flaky tests',
     riskBuckets,
     bottleneckBuckets,

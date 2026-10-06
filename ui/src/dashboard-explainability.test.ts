@@ -106,6 +106,13 @@ describe('dashboard explainability', () => {
       detail: 'No bottleneck records are available for this import.',
       status: 'medium'
     });
+    expect(buildExplainabilityTraces(pulse)[1]).toEqual({
+      id: 'explain-risk',
+      title: 'Top Risk Commit',
+      summary: 'Unavailable',
+      detail: 'No commit-risk records are available for this import.',
+      status: 'medium'
+    });
   });
 
   it('explains which score inputs are required when an import is partial', () => {

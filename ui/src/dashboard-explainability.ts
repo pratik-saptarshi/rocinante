@@ -24,9 +24,14 @@ export function buildExplainabilityTraces(pulse: QualityPulse): ExplainabilityTr
     {
       id: 'explain-risk',
       title: 'Top Risk Commit',
-      summary: pulse.topRiskCommitId,
-      detail: pulse.riskBuckets.high > 0 ? 'High-risk commit drives merge caution.' : 'No high-risk commit currently dominates the pulse.',
-      status: pulse.riskBuckets.high > 0 ? 'bad' : 'good'
+      summary: pulse.topRiskCommitId ?? 'Unavailable',
+      detail:
+        pulse.topRiskCommitId === null
+          ? 'No commit-risk records are available for this import.'
+          : pulse.riskBuckets.high > 0
+            ? 'High-risk commit drives merge caution.'
+            : 'No high-risk commit currently dominates the pulse.',
+      status: pulse.topRiskCommitId === null ? 'medium' : pulse.riskBuckets.high > 0 ? 'bad' : 'good'
     },
     {
       id: 'explain-bottleneck',
