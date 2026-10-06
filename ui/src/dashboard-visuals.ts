@@ -55,22 +55,22 @@ export function buildDashboardVisuals(insights: DashboardInsights): DashboardVis
       {
         id: 'risk-trajectory',
         label: 'PR Risk Trajectory',
-        value: topRisk ? `${criticalRisks} high-risk commits` : 'No high-risk commits',
-        tone: topRisk ? toneFromRiskScore(topRisk.score) : 'good',
+        value: topRisk ? `${criticalRisks} high-risk commits` : 'Unavailable',
+        tone: topRisk ? toneFromRiskScore(topRisk.score) : 'medium',
         rationale: topRisk
           ? topRisk.reasons.length
             ? `Top risk ${topRisk.id} is driven by ${topRisk.reasons.slice(0, 2).join(', ')}.`
             : `No risk factors were provided for commit ${topRisk.id}.`
-          : 'No elevated commit-risk records are available.'
+          : 'No commit-risk records are available.'
       },
       {
         id: 'bottleneck-pressure',
         label: 'Bottleneck Pressure',
-        value: `${pressureStages} pressured stages`,
-        tone: topStage ? (topStage.status === 'critical' ? 'bad' : topStage.status === 'high' ? 'medium' : 'good') : 'good',
+        value: topStage ? `${pressureStages} pressured stages` : 'Unavailable',
+        tone: topStage ? (topStage.status === 'critical' ? 'bad' : topStage.status === 'high' ? 'medium' : 'good') : 'medium',
         rationale: topStage
           ? `Highest-pressure stage ${topStage.name} needs ${topStage.status === 'critical' ? 'immediate' : 'near-term'} attention.`
-          : 'No pressured stages are available.'
+          : 'No bottleneck records are available.'
       },
       {
         id: 'opportunity-velocity',

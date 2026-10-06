@@ -114,6 +114,9 @@ describe('Optimization sidebar layout', () => {
     expect(within(qualityPulseSection).queryByText(/high-risk commit/i)).not.toBeInTheDocument();
     expect(within(screen.getByTestId('explainability-section')).getByText(/Top Bottleneck: Unavailable — No bottleneck records are available for this import\./)).toBeInTheDocument();
     expect(within(screen.getByTestId('explainability-section')).getByText(/Top Risk Commit: Unavailable — No commit-risk records are available for this import\./)).toBeInTheDocument();
+    const trendRiskSection = screen.getByTestId('trend-risk-section');
+    expect(within(trendRiskSection).getByText(/PR Risk Trajectory: Unavailable — No commit-risk records are available\./)).toBeInTheDocument();
+    expect(within(trendRiskSection).getByText(/Bottleneck Pressure: Unavailable — No bottleneck records are available\./)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Security' }));
     expect(screen.getByText('No critical security signals are available.')).toBeInTheDocument();

@@ -52,19 +52,19 @@ describe('buildDashboardVisuals', () => {
 
     expect(visuals.summary).toBe('No risk signals available');
     expect(visuals.trendLines[0]).toMatchObject({
-      value: 'No high-risk commits',
-      tone: 'good'
+      value: 'Unavailable',
+      tone: 'medium'
     });
     expect(visuals.trendLines[1]).toMatchObject({
-      value: '0 pressured stages',
-      tone: 'good'
+      value: 'Unavailable',
+      tone: 'medium'
     });
     expect(visuals.trendLines[2]).toMatchObject({
       value: '0 actionable opportunities',
       tone: 'good'
     });
-    expect(visuals.trendLines[0].rationale).toBe('No elevated commit-risk records are available.');
-    expect(visuals.trendLines[1].rationale).toBe('No pressured stages are available.');
+    expect(visuals.trendLines[0].rationale).toBe('No commit-risk records are available.');
+    expect(visuals.trendLines[1].rationale).toBe('No bottleneck records are available.');
   });
 
   it('explains a risk record without factors without implying sample data', () => {
