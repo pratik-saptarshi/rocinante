@@ -86,7 +86,7 @@ describe('Phase 3 accessibility and control behavior', () => {
       return `rgb(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255})`;
     };
     const parseRgb = (value: string) => {
-      const channels = value.match(/[\\d.]+/g)?.slice(0, 3).map(Number);
+      const channels = value.match(/[0-9.]+/g)?.slice(0, 3).map(Number);
       if (!channels || channels.length !== 3) throw new Error(`Unexpected theme color: ${value}`);
       return channels.map((channel) => {
         const normalized = channel / 255;
