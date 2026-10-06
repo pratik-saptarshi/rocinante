@@ -52,9 +52,39 @@ test.describe('frontend behavior', () => {
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
     await expect(page.getByTestId('snapshot-opportunity-count')).toHaveText('1');
     await expect(page.getByText('browser-001 score 12 (good)')).toBeVisible();
+    await expect(page.getByTestId('telemetry-data-state')).toHaveText('Imported telemetry is displayed.');
 
     await page.getByRole('button', { name: 'Reset to Sample' }).click();
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('3');
+    await expect(page.getByTestId('telemetry-data-state')).toHaveText('Sample telemetry is displayed.');
+  });
+
+  test('keeps last-good data after an invalid import and represents an empty import explicitly', async ({ page }) => {
+    await page.goto('/');
+    const jsonInput = page.getByLabel('Telemetry payload JSON');
+
+    await jsonInput.fill(JSON.stringify({
+      commits: [{ id: 'browser-good', files: 1, changedLines: 8, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+      stages: [{ name: 'review', queueDepth: 1, throughput: 8, avgLatencyMs: 200 }],
+      signals: []
+    }));
+    await page.getByRole('button', { name: 'Apply Payload' }).click();
+    await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
+
+    await jsonInput.fill(JSON.stringify({
+      commits: [{ id: 'bad', files: 1, changedLines: 8, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+      stages: [{ name: { label: 'review' }, queueDepth: 1, throughput: 8, avgLatencyMs: 200 }],
+      signals: []
+    }));
+    await page.getByRole('button', { name: 'Apply Payload' }).click();
+    await expect(page.getByRole('alert')).toContainText('stages[0].name');
+    await expect(page.getByText('browser-good score 3 (good)')).toBeVisible();
+    await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
+
+    await jsonInput.fill(JSON.stringify({ commits: [], stages: [], signals: [] }));
+    await page.getByRole('button', { name: 'Apply Payload' }).click();
+    await expect(page.getByTestId('telemetry-data-state')).toHaveText('This imported payload contains no telemetry records.');
+    await expect(page.getByTestId('snapshot-risk-count')).toHaveText('0');
   });
 
   test('surfaces the admin bridge fallback in desktop-absent browsers', async ({ page }) => {

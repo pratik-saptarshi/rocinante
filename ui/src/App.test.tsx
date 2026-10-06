@@ -301,7 +301,7 @@ describe('Optimization sidebar layout', () => {
     fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), { target: { value: 'oops: bad json' } });
     fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/Invalid JSON payload/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/Invalid telemetry payload/i);
   });
 
   it('resets to sample data when payload input is cleared', () => {
@@ -323,27 +323,64 @@ describe('Optimization sidebar layout', () => {
     ).toBeInTheDocument();
   });
 
-  it(
-    'falls back to sample data when payload field is intentionally emptied',
-    () => {
-      render(<App />);
+  it('does not reset to sample data when Apply is blank and keeps the last good view on invalid schema', () => {
+    render(<App />);
+    const input = screen.getByLabelText(/Telemetry payload JSON/i);
+    const lastGoodPayload = {
+      commits: [{ id: 'last-good', files: 2, changedLines: 10, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+      stages: [{ name: 'review', queueDepth: 1, throughput: 12, avgLatencyMs: 200 }],
+      signals: []
+    };
 
-      fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
-        target: {
-          value: JSON.stringify({
-            commits: [{ id: 'temp', files: 2, changedLines: 10, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }]
-          })
-        }
-      });
-      fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
-      expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
+    fireEvent.change(input, { target: { value: JSON.stringify(lastGoodPayload) } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/Imported telemetry/i);
 
-      fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), { target: { value: '   ' } });
-      fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
-      expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('3');
-    },
-    10000
-  );
+    fireEvent.change(input, { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
+    expect(screen.getByRole('alert')).toHaveTextContent(/Enter a telemetry payload/i);
+
+    fireEvent.change(input, {
+      target: {
+        value: JSON.stringify({
+          commits: lastGoodPayload.commits,
+          stages: [{ name: { label: 'review' }, queueDepth: 1, throughput: 12, avgLatencyMs: 200 }],
+          signals: []
+        })
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
+    expect(screen.getAllByText(/last-good score/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('alert')).toHaveTextContent(/stages\[0\]\.name/);
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(input).toHaveAttribute('aria-describedby', 'telemetry-payload-error');
+  });
+
+  it('shows an explicit empty imported state without substituting sample telemetry', () => {
+    render(<App />);
+    const input = screen.getByLabelText(/Telemetry payload JSON/i);
+    fireEvent.change(input, { target: { value: JSON.stringify({ commits: [], stages: [], signals: [] }) } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/no telemetry records/i);
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('snapshot-bottleneck-count')).toHaveTextContent('0 critical, 0 high');
+    expect(screen.getByTestId('snapshot-opportunity-count')).toHaveTextContent('0');
+  });
+
+  it('distinguishes missing fields and reset sample data from imported data', () => {
+    render(<App />);
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/Sample telemetry/i);
+    const input = screen.getByLabelText(/Telemetry payload JSON/i);
+    fireEvent.change(input, { target: { value: '{}' } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/fields are missing/i);
+    fireEvent.click(screen.getByRole('button', { name: /Reset to Sample/i }));
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/Sample telemetry/i);
+  });
 
   it(
     'applies payload envelope with nested limits and removes security matches',
