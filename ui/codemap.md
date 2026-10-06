@@ -32,4 +32,4 @@ desktop operations run in the Rust eframe/winit shell.
 - `ui/package.json` pins pnpm `12.9.1`.
 - CI runs pinned install, typecheck, unit tests, and production build in `ui-quality`; `UI Playwright` installs Chromium, runs `pnpm run test:e2e`, and uploads the HTML report and retry traces.
 - Browser suites live under `ui/src/`, `ui/src/test/`, and `ui/e2e/`.
-- Payload parsing validates JSON and nested telemetry before replacing the last-good view; explicit empty collections remain empty, while omitted collections keep the existing sample fallback.
+- Payload parsing validates JSON and nested telemetry before replacing the last-good view; explicit empty collections remain empty, and omitted collections stay empty in imported partial payloads. Sample telemetry is limited to the initial/reset sample view.
