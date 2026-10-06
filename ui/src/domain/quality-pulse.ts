@@ -15,7 +15,7 @@ export interface PulseRoute {
 }
 
 export interface QualityPulse {
-  overallScore: number;
+  overallScore: number | null;
   securitySignalCount: number;
   topBottleneckName: string;
   topRiskCommitId: string;
@@ -194,7 +194,10 @@ export function buildQualityPulse(
     risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')
   ).length;
   const opportunityCount = insights.opportunities.length;
-  const overallScore = Math.max(45, 100 - riskBuckets.high * 10 - bottleneckBuckets.critical * 15 - bottleneckBuckets.high * 5);
+  const calculatedScore = Math.max(45, 100 - riskBuckets.high * 10 - bottleneckBuckets.critical * 15 - bottleneckBuckets.high * 5);
+  // Imported empty collections contain no observations; a score needs both inputs.
+  const hasCompleteScoreInputs = insights.commitRiskCards.length > 0 && insights.bottlenecks.length > 0;
+  const overallScore = !allowSampleFallbacks && !hasCompleteScoreInputs ? null : calculatedScore;
 
   return {
     overallScore,

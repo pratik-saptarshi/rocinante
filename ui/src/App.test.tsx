@@ -109,6 +109,7 @@ describe('Optimization sidebar layout', () => {
     const qualityPulseSection = screen.getByTestId('quality-pulse-section');
     expect(within(qualityPulseSection).queryByText(/A-124|trim flaky tests|sample window/i)).not.toBeInTheDocument();
     expect(within(qualityPulseSection).getByText('Awaiting telemetry')).toBeInTheDocument();
+    expect(within(qualityPulseSection).getByTestId('pulse-score')).toHaveTextContent('Unavailable');
     expect(within(qualityPulseSection).queryByText(/high-risk commit/i)).not.toBeInTheDocument();
   });
 

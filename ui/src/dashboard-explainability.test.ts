@@ -85,4 +85,29 @@ describe('dashboard explainability', () => {
       }
     ]);
   });
+
+  it('marks the score unavailable when imported data has no score inputs', () => {
+    const pulse = buildQualityPulse(
+      { commitRiskCards: [], bottlenecks: [], opportunities: [], stages: [] },
+      { allowSampleFallbacks: false }
+    );
+
+    expect(buildExplainabilityTraces(pulse)[0]).toEqual({
+      id: 'explain-score',
+      title: 'Score Decomposition',
+      summary: 'Overall score unavailable',
+      detail: 'A pulse score requires at least one commit-risk record and one bottleneck record; one or both input sets are empty.',
+      status: 'medium'
+    });
+  });
+
+  it('explains which score inputs are required when an import is partial', () => {
+    const pulse = buildQualityPulse(
+      { commitRiskCards: [{ id: 'actual-commit', score: 75, level: 'medium', reasons: [] }], bottlenecks: [], opportunities: [], stages: [] },
+      { allowSampleFallbacks: false }
+    );
+
+    expect(pulse.overallScore).toBeNull();
+    expect(buildExplainabilityTraces(pulse)[0].detail).toContain('at least one commit-risk record and one bottleneck record');
+  });
 });

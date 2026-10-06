@@ -14,9 +14,12 @@ export function buildExplainabilityTraces(pulse: QualityPulse): ExplainabilityTr
     {
       id: 'explain-score',
       title: 'Score Decomposition',
-      summary: `Overall score ${pulse.overallScore}/100`,
-      detail: `Risk ${pulse.riskBuckets.high} high / ${pulse.riskBuckets.medium} medium, bottlenecks ${pulse.bottleneckBuckets.critical} critical / ${pulse.bottleneckBuckets.high} high`,
-      status: pulse.overallScore >= 75 ? 'good' : pulse.overallScore >= 45 ? 'medium' : 'bad'
+      summary: pulse.overallScore === null ? 'Overall score unavailable' : `Overall score ${pulse.overallScore}/100`,
+      detail:
+        pulse.overallScore === null
+          ? 'A pulse score requires at least one commit-risk record and one bottleneck record; one or both input sets are empty.'
+          : `Risk ${pulse.riskBuckets.high} high / ${pulse.riskBuckets.medium} medium, bottlenecks ${pulse.bottleneckBuckets.critical} critical / ${pulse.bottleneckBuckets.high} high`,
+      status: pulse.overallScore === null ? 'medium' : pulse.overallScore >= 75 ? 'good' : pulse.overallScore >= 45 ? 'medium' : 'bad'
     },
     {
       id: 'explain-risk',

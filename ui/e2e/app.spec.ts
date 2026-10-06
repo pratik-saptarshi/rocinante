@@ -88,6 +88,7 @@ test.describe('frontend behavior', () => {
     const qualityPulse = page.getByTestId('quality-pulse-section');
     await expect(qualityPulse.getByText(/trim flaky tests|sample window|high-risk commit A-124/i)).toHaveCount(0);
     await expect(qualityPulse.getByText('Awaiting telemetry')).toHaveCount(1);
+    await expect(qualityPulse.getByTestId('pulse-score')).toHaveText('Unavailable');
   });
 
   test('announces malformed JSON and keeps the last-good dashboard visible', async ({ page }) => {

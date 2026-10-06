@@ -65,6 +65,7 @@ describe('buildQualityPulse', () => {
       stages: []
     } as DashboardInsights, { allowSampleFallbacks: false });
 
+    expect(emptyPulse.overallScore).toBeNull();
     expect(Object.values(emptyPulse.recommendations).flat()).toEqual([]);
     expect(Object.values(emptyPulse.actionRoutes).flatMap((route) => route.actions)).toEqual([]);
     expect(Object.values(emptyPulse.actionRoutes).every((route) => route.window === 'Awaiting telemetry')).toBe(true);
@@ -76,10 +77,19 @@ describe('buildQualityPulse', () => {
       stages: []
     } as DashboardInsights, { allowSampleFallbacks: false });
 
+    expect(partialPulse.overallScore).toBeNull();
     expect(partialPulse.recommendations.lead).toHaveLength(1);
     expect(partialPulse.recommendations.lead[0].message).toContain('actual-commit');
     expect(partialPulse.recommendations.manager).toEqual([]);
     expect(partialPulse.recommendations.executive).toEqual([]);
     expect(partialPulse.recommendations.security).toEqual([]);
+
+    const opportunityOnlyPulse = buildQualityPulse({
+      commitRiskCards: [],
+      bottlenecks: [],
+      opportunities: [{ id: 'actual-opportunity', title: 'Reduce build time', priorityScore: 70 }],
+      stages: []
+    } as DashboardInsights, { allowSampleFallbacks: false });
+    expect(opportunityOnlyPulse.overallScore).toBeNull();
   });
 });

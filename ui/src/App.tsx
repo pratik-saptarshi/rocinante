@@ -356,7 +356,7 @@ function App() {
           </Typography>
           <MetricItem
             label="Pulse score"
-            value={`${qualityPulse.overallScore}/100`}
+            value={qualityPulse.overallScore === null ? 'Unavailable' : `${qualityPulse.overallScore}/100`}
             valueTestId="pulse-score"
           />
           <MetricItem
