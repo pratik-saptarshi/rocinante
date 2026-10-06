@@ -31,7 +31,7 @@ footer{margin:2rem 0;color:var(--muted);border-top:1px solid var(--line);padding
 <main class="wrap">
 <div class="banner" role="alert"><strong>⚠️ COMPRESSED RUN — Independent Phase 14 Opus judge unavailable; Phase 14.5 omitted.</strong><p class="mb-0">Three independent reviewer perspectives, claim verification, tier refinement, and six targeted verifications completed. The primary reviewer wrote a disclosed synthesis in place of the independent judge. Treat the ruling as medium confidence; the Overseer judge gate is incomplete.</p></div>
 <header class="card">
-<p class="small">Rocinante · Frontend user experience · 2026-10-05 · HEAD e9d6d3a</p>
+<p class="small">Rocinante · Frontend user experience · 2026-10-05 · Panel local dirty-tree HEAD e9d6d3ab6d398d6c9c786e7b7108d9d926d0b1bb; reviewed <code>ui/</code> matches reachable <code>main</code> commit <code>eb83be9da64057dc71838b33edc01a9a2769b0fa</code> byte-for-byte. Panel did not run on <code>main</code>; this does not claim whole-tree equivalence.</p>
 <h1 class="text-3xl font-bold">Frontend UX Adversarial Review</h1>
 <p class="text-lg"><strong>Verdict:</strong> Revise before relying on the browser preview for user decisions.</p>
 <p>Blind scores: 4/10, 4/10, 3/10 · mean <strong>3.7/10</strong> · 13 action items · no P0/P1.</p>
@@ -134,12 +134,15 @@ document.getElementById("expandAll").addEventListener("click",()=>document.query
 document.getElementById("collapseAll").addEventListener("click",()=>document.querySelectorAll("#issueList details").forEach(d=>d.open=false));
 document.getElementById("clear").addEventListener("click",()=>{["search","severity","tier","verdict","epistemic"].forEach(id=>document.getElementById(id).value="");reviewerFilter.value="";document.querySelectorAll("[data-agent]").forEach(x=>x.setAttribute("aria-pressed","false"));applyFilters()});
 document.addEventListener("keydown",e=>{
- if(e.key==="/"&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){e.preventDefault();document.getElementById("search").focus();return}
+ const active=document.activeElement;
+ const editable=active.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
+ if(e.key==="/"&&!editable){e.preventDefault();document.getElementById("search").focus();return}
  if(!["ArrowDown","ArrowUp","Home","End","Enter"].includes(e.key))return;
+ if(!active.matches(".issue-card>summary"))return;
+ if(e.key==="Enter"){e.preventDefault();active.parentElement.open=!active.parentElement.open;return}
  const cards=[...list.querySelectorAll(".issue-card:not([hidden])")];
  if(!cards.length)return;
- const index=cards.findIndex(c=>c===document.activeElement||c.contains(document.activeElement));
- if(e.key==="Enter"&&document.activeElement.matches(".issue-card>summary")){e.preventDefault();document.activeElement.parentElement.open=!document.activeElement.parentElement.open;return}
+ const index=cards.findIndex(c=>c.querySelector("summary")===active);
  let next=index;
  if(e.key==="ArrowDown")next=Math.min(cards.length-1,index<0?0:index+1);
  if(e.key==="ArrowUp")next=Math.max(0,index<0?0:index-1);

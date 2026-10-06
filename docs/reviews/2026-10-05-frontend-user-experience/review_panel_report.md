@@ -10,7 +10,7 @@
 **Auto-detected signals:** React, TypeScript, accessibility, dashboard UX
 **Review mode:** Precise (source-level frontend review)
 **Data flow trace:** Standard | import, score/guidance, controls, and admin bridge paths traced
-**Codebase state:** `fix/weighted-rollup-aggregation` at `e9d6d3a` | remote/main freshness not checked | dirty worktree; `ui/` had no local modifications
+**Panel execution context:** Local dirty-tree HEAD `e9d6d3ab6d398d6c9c786e7b7108d9d926d0b1bb` on `fix/weighted-rollup-aggregation`; the worktree had unrelated dirty files and `ui/` had no local modifications. **Reproducible UI source:** `ui/` matches reachable `main` commit `eb83be9da64057dc71838b33edc01a9a2769b0fa` byte-for-byte. The panel did not run on `main`, and this does not claim whole-tree equivalence.
 
 ## Executive Summary
 

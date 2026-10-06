@@ -1,7 +1,7 @@
 # Review Panel Process — Frontend UX
 
 **Date:** 2026-10-05
-**Reviewed commit:** `e9d6d3a` on `fix/weighted-rollup-aggregation`
+**Panel local dirty-tree HEAD:** `e9d6d3ab6d398d6c9c786e7b7108d9d926d0b1bb` on `fix/weighted-rollup-aggregation`
 **Protocol:** Overseer v3.2.0, one source-only panel run
 **Model availability:** Opus unavailable. Reviewers and support reviewers used gpt-6-astra substitutes. The independent Phase 14 judge could not be run; the primary reviewer’s disclosed synthesis is recorded in place of that gate. This is marked as a compressed run.
 
@@ -59,7 +59,9 @@ This is the chronological process record. The agent and verification outputs bel
 
 **Persona selection:** Three independent perspectives covered task flow, accessibility, and trust/provenance. A completeness auditor scanned for additional cross-module issues. No P0/P1 finding emerged.
 
-**Codebase boundary:** Local HEAD `e9d6d3a`, branch `fix/weighted-rollup-aggregation`. Worktree contained unrelated dirty files; `ui/` had no local modifications. Remote `main` freshness was not checked.
+**Panel execution context:** The panel ran against local dirty-tree HEAD `e9d6d3ab6d398d6c9c786e7b7108d9d926d0b1bb` on branch `fix/weighted-rollup-aggregation`. The worktree contained unrelated dirty files; `ui/` had no local modifications.
+
+**Reproducible UI source revision:** The reviewed `ui/` subtree matches reachable `main` commit `eb83be9da64057dc71838b33edc01a9a2769b0fa` byte-for-byte, verified with `git diff --exit-code eb83be9da64057dc71838b33edc01a9a2769b0fa e9d6d3ab6d398d6c9c786e7b7108d9d926d0b1bb -- ui`. The panel itself ran in the local dirty-tree context, not on `main`; this subtree comparison does not establish whole-repository tree equivalence.
 
 ## Phase 2 — Data-flow trace
 
