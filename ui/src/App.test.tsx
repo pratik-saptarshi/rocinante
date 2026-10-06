@@ -98,8 +98,8 @@ describe('Phase 3 accessibility and control behavior', () => {
     expect(result).toHaveTextContent('Running query_release_baseline');
     expect(result).not.toHaveAttribute('aria-busy');
 
-    resolveBaseline?.({ ok: true, message: 'baseline loaded' });
-    await waitFor(() => expect(result).toHaveTextContent('OK query_release_baseline: baseline loaded'));
+    resolveBaseline?.(12.5);
+    await waitFor(() => expect(result).toHaveTextContent('OK query_release_baseline: 12.5'));
   });
 
   it('announces bridge errors as final status text', async () => {
