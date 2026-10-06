@@ -125,19 +125,25 @@ export function readPayload(payload: Record<string, unknown>): Record<string, un
 }
 
 export function validatePayload(payload: Record<string, unknown>): InsightPayload {
+  const commits = validateRows(payload.commits, 'commits', validateCommit);
+  const stages = validateRows(payload.stages, 'stages', validateStage);
+  const signals = validateRows(payload.signals, 'signals', validateSignal);
   return {
-    commits: validateRows(payload.commits, 'commits', validateCommit),
-    stages: validateRows(payload.stages, 'stages', validateStage),
-    signals: validateRows(payload.signals, 'signals', validateSignal)
+    ...(commits === undefined ? {} : { commits }),
+    ...(stages === undefined ? {} : { stages }),
+    ...(signals === undefined ? {} : { signals })
   };
 }
 
-export function getPayloadState(payload: InsightPayload): 'missing' | 'empty' | 'imported' {
+export function getPayloadState(payload: InsightPayload): 'missing' | 'partial' | 'empty' | 'imported' {
   const collections = [payload.commits, payload.stages, payload.signals];
   if (collections.every((collection) => collection === undefined)) {
     return 'missing';
   }
-  if (collections.every((collection) => collection === undefined || collection.length === 0)) {
+  if (collections.some((collection) => collection === undefined)) {
+    return 'partial';
+  }
+  if (collections.every((collection) => collection !== undefined && collection.length === 0)) {
     return 'empty';
   }
   return 'imported';

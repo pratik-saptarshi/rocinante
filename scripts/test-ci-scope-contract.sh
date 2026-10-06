@@ -60,6 +60,24 @@ if [[ "$test_job_contents" != *'needs.native-shell-package.result'* || "$test_jo
   echo "The aggregate test job must fail unless all native-shell package matrix legs succeed." >&2
   exit 1
 fi
+if [[ "$test_job_contents" != *"- ui-playwright"* ]]; then
+  echo "The aggregate test job must depend on UI Playwright." >&2
+  exit 1
+fi
+if [[ "$test_job_contents" != *'needs.ui-playwright.result'* || "$test_job_contents" != *'!= "success"'* ]]; then
+  echo "The aggregate test job must fail when applicable UI Playwright coverage fails or is skipped." >&2
+  exit 1
+fi
+
+ui_playwright_job_contents="$(awk '
+  $0 == "  ui-playwright:" { in_job = 1; next }
+  in_job && /^  [[:alnum:]_-]+:$/ { exit }
+  in_job { print }
+' "$workflow")"
+if [[ "$ui_playwright_job_contents" == *$'\n    if:'* ]]; then
+  echo "UI Playwright currently applies to every CI event; conditional skips need an explicit applicability contract." >&2
+  exit 1
+fi
 
 assert_cargo_test_runtime_staging() {
   local job_name="$1"

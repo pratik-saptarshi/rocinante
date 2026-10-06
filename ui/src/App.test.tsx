@@ -371,6 +371,19 @@ describe('Optimization sidebar layout', () => {
     expect(screen.getByTestId('snapshot-opportunity-count')).toHaveTextContent('0');
   });
 
+  it('does not call a partial explicitly empty payload a complete no-records import', () => {
+    render(<App />);
+    const input = screen.getByLabelText(/Telemetry payload JSON/i);
+    fireEvent.change(input, { target: { value: JSON.stringify({ commits: [] }) } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/some telemetry collections are omitted/i);
+    expect(screen.getByTestId('telemetry-data-state')).not.toHaveTextContent(/contains no telemetry records/i);
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('snapshot-bottleneck-count')).toHaveTextContent('0 critical, 0 high');
+    expect(screen.getByTestId('snapshot-opportunity-count')).toHaveTextContent('0');
+  });
+
   it('distinguishes missing fields and reset sample data from imported data', () => {
     render(<App />);
     expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/Sample telemetry/i);
@@ -378,6 +391,9 @@ describe('Optimization sidebar layout', () => {
     fireEvent.change(input, { target: { value: '{}' } });
     fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
     expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/fields are missing/i);
+    expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('snapshot-bottleneck-count')).toHaveTextContent('0 critical, 0 high');
+    expect(screen.getByTestId('snapshot-opportunity-count')).toHaveTextContent('0');
     fireEvent.click(screen.getByRole('button', { name: /Reset to Sample/i }));
     expect(screen.getByTestId('telemetry-data-state')).toHaveTextContent(/Sample telemetry/i);
   });

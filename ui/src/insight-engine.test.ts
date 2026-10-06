@@ -26,6 +26,15 @@ describe('buildDashboardInsights', () => {
     expect(insights.stages).toEqual([]);
   });
 
+  it('does not seed demo records into omitted collections of an imported partial payload', () => {
+    const insights = buildDashboardInsights({ commits: [] });
+
+    expect(insights.commitRiskCards).toEqual([]);
+    expect(insights.bottlenecks).toEqual([]);
+    expect(insights.opportunities).toEqual([]);
+    expect(insights.stages).toEqual([]);
+  });
+
   it('derives custom payload insights from telemetry envelopes', () => {
     const insights = buildDashboardInsights(
       {

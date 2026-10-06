@@ -87,6 +87,28 @@ test.describe('frontend behavior', () => {
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('0');
   });
 
+  test('announces malformed JSON and keeps the last-good dashboard visible', async ({ page }) => {
+    await page.goto('/');
+    const jsonInput = page.getByLabel('Telemetry payload JSON');
+
+    await jsonInput.fill(JSON.stringify({
+      commits: [{ id: 'last-good-json', files: 2, changedLines: 15, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+      stages: [],
+      signals: []
+    }));
+    await page.getByRole('button', { name: 'Apply Payload' }).click();
+    await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
+    await expect(page.getByText('last-good-json score 6 (good)')).toBeVisible();
+
+    await jsonInput.fill('{ commits: [');
+    await page.getByRole('button', { name: 'Apply Payload' }).click();
+
+    await expect(page.getByRole('alert')).toContainText('Invalid telemetry payload');
+    await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
+    await expect(page.getByText('last-good-json score 6 (good)')).toBeVisible();
+    await expect(jsonInput).toHaveAttribute('aria-invalid', 'true');
+  });
+
   test('surfaces the admin bridge fallback in desktop-absent browsers', async ({ page }) => {
     await page.goto('/');
 

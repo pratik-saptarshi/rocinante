@@ -72,8 +72,18 @@ describe('dashboard contract helpers', () => {
 
   it('distinguishes missing, explicit empty, and imported records', () => {
     expect(getPayloadState({})).toBe('missing');
+    expect(getPayloadState({ commits: [] })).toBe('partial');
+    expect(getPayloadState({ commits: [], stages: [] })).toBe('partial');
     expect(getPayloadState({ commits: [], stages: [], signals: [] })).toBe('empty');
     expect(getPayloadState({ commits: [{ id: 'x', files: 0, changedLines: 0, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }] }))
+      .toBe('partial');
+    expect(getPayloadState({ commits: [], stages: [{ name: 'review', queueDepth: 1, throughput: 1, avgLatencyMs: 1 }], signals: [] }))
       .toBe('imported');
+  });
+
+  it('preserves omitted collections separately from explicitly empty collections', () => {
+    expect(validatePayload({ commits: [] })).toEqual({ commits: [] });
+    expect(validatePayload({ commits: [], signals: [] })).toEqual({ commits: [], signals: [] });
+    expect(validatePayload({})).toEqual({});
   });
 });

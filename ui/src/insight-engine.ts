@@ -143,12 +143,15 @@ function limitList<T>(items: T[], limit?: number): T[] {
   return typeof limit === 'number' && Number.isFinite(limit) ? items.slice(0, Math.max(0, Math.floor(limit))) : items;
 }
 
-export function buildDashboardInsights(payload: InsightPayload = {}, limits: InsightLimits = {}): DashboardInsights {
-  const commits = (payload.commits ?? defaultCommitSeed)
+export function buildDashboardInsights(payload?: InsightPayload, limits: InsightLimits = {}): DashboardInsights {
+  // Demo samples are shown only when the caller explicitly requests the
+  // default dashboard by omitting the payload. Imported partial payloads must
+  // not inherit sample records for collections they omitted.
+  const commits = (payload === undefined ? defaultCommitSeed : (payload.commits ?? []))
     .map(scoreCommit)
     .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
-  const stages = payload.stages ?? defaultStageSeed;
-  const signals = (payload.signals ?? defaultSignalSeed)
+  const stages = payload === undefined ? defaultStageSeed : (payload.stages ?? []);
+  const signals = (payload === undefined ? defaultSignalSeed : (payload.signals ?? []))
     .map(signalToOpportunity)
     .sort((left, right) => right.priorityScore - left.priorityScore || left.id.localeCompare(right.id));
   const latencyCeiling = limits.latencyP95Ms ?? 1_000;

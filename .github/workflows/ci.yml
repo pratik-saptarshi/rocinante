@@ -835,6 +835,7 @@ jobs:
       - security-exception-governance
       - ci-scope
       - ui-quality
+      - ui-playwright
       - rust-workspace-tests
       - windows-registration
       - macos-url-dispatch
@@ -874,6 +875,13 @@ jobs:
 
           if [[ "${{ needs.ui-quality.result }}" != "success" ]]; then
             echo "UI typecheck, unit tests, or production build failed or was skipped unexpectedly"
+            exit 1
+          fi
+
+          # UI Playwright is currently applicable to every CI event. Keep it
+          # required here so a skipped browser job cannot bypass UI PR coverage.
+          if [[ "${{ needs.ui-playwright.result }}" != "success" ]]; then
+            echo "UI Playwright browser tests failed or were skipped unexpectedly"
             exit 1
           fi
 

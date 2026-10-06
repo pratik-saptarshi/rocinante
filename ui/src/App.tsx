@@ -154,7 +154,7 @@ function App() {
   const [fieldData, setFieldData] = useState(true);
   const [payloadText, setPayloadText] = useState('');
   const [payloadError, setPayloadError] = useState('');
-  const [payloadState, setPayloadState] = useState<'sample' | 'missing' | 'empty' | 'imported'>('sample');
+  const [payloadState, setPayloadState] = useState<'sample' | 'missing' | 'partial' | 'empty' | 'imported'>('sample');
   const [insights, setInsights] = useState(() => buildDashboardInsights());
   const [adminToken, setAdminToken] = useState('alice:admin');
   const [adminResult, setAdminResult] = useState('No admin command executed yet.');
@@ -469,7 +469,8 @@ function App() {
           </Typography>
           <Typography variant="body2" color="text.secondary" role="status" data-testid="telemetry-data-state" sx={{ mb: 1 }}>
             {payloadState === 'sample' && 'Sample telemetry is displayed.'}
-            {payloadState === 'missing' && 'Telemetry fields are missing; sample values are used where fields were omitted.'}
+            {payloadState === 'missing' && 'Telemetry fields are missing; no imported records are displayed.'}
+            {payloadState === 'partial' && 'Some telemetry collections are omitted; omitted collections are empty.'}
             {payloadState === 'empty' && 'This imported payload contains no telemetry records.'}
             {payloadState === 'imported' && 'Imported telemetry is displayed.'}
           </Typography>
