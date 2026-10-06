@@ -170,3 +170,32 @@ The supported macOS launch artifact is the signed app bundle. Before any URI or 
 ## Follow-up AppKit abort — 2026-10-05 15:11 CDT
 
 The signed temporary `.app` passed strict signature verification and contained `Contents/Frameworks/libduckdb.dylib`, the `@rpath/libduckdb.dylib` load command, and the `@executable_path/../Frameworks` run path. Directly invoking its executable from the shell still aborted before showing a window. The crash stack is in AppKit application registration (`_RegisterApplication` / `GetCurrentProcess` / `NSApplication::sharedApplication`) called by `macos_url::register`. This was not a Launch Services or Finder launch; the sandbox also refuses Launch Services registration of the temporary bundle (`-10822`). Do not infer a product launch or shutdown regression from this attempt. The actual installed-app lifecycle remains unverified until Launch Services can start the signed bundle in an interactive session.
+
+## Explicit quit termination follow-up — 2026-10-06
+
+Hosted macOS acceptance proved that the tray Quit callback ran and its process
+remained resident after the tray icon was dropped and the root viewport was
+closed. The shell now routes tray Quit, Command-Q, and the in-app Quit button
+through one explicit-quit helper. It saves the closed shell state to eframe
+storage and flushes it synchronously (or writes the state file synchronously if
+frame storage is unavailable), then drops the tray icon. On macOS it calls
+`std::process::exit(0)` because the hosted event-loop exit settings did not
+terminate this bundled process. Linux and Windows continue through eframe's
+viewport-close flow. Ordinary close-to-tray still cancels the close request and
+hides the window.
+
+This macOS path intentionally skips Rust destructors and eframe/AppKit shutdown
+hooks. Explicit Quit persists state before exiting; in-flight background work
+may be interrupted. This is the smallest behavior that matches the explicit
+Quit action after the reproducible hosted failure. Do not use this path for
+ordinary window close or close-to-tray.
+
+The acceptance script already verifies that the Quit action was consumed and
+the same bundled process exits before saved-state restart. It also retains cold
+and warm URL dispatch, close-to-tray, notification request, and restart checks.
+The physical tray mode separately requires a real Quit click. The source/docs
+change is on the existing PR #112 branch at a new candidate head. No local
+compile or installed-app acceptance is claimed from the connector edit; fresh
+same-head CI, Security, Dependency Review, and packaged macOS lifecycle results
+are required. DuckDB remains the checksum-verified prebuilt binary and is never
+compiled from source.
