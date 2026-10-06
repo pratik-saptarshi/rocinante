@@ -33,7 +33,7 @@ export function AdminBridgePanel({
           </Button>
         ))}
       </Stack>
-      <Typography variant="caption" role="status" aria-live="polite" aria-atomic="true" aria-busy={adminBusy} data-testid="admin-bridge-result">
+      <Typography variant="caption" role="status" aria-live="polite" aria-atomic="true" data-testid="admin-bridge-result">
         {adminResult}
       </Typography>
     </Stack>
