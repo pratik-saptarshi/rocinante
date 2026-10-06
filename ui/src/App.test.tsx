@@ -187,6 +187,11 @@ describe('Optimization sidebar layout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Security' }));
 
     const qualityPulseSection = screen.getByTestId('quality-pulse-section');
+    expect(
+      within(qualityPulseSection).getByText(
+        'Security-sensitive signals from hidden-security-1 should be reviewed before release.'
+      )
+    ).toBeInTheDocument();
     expect(within(qualityPulseSection).getByText('hidden-security-1: review dependency risk.')).toBeInTheDocument();
     expect(within(qualityPulseSection).getByText('hidden-security-2: review dependency risk.')).toBeInTheDocument();
 
