@@ -4,19 +4,18 @@ _Captured: 2026-10-05_
 
 ## Repository and Source Control
 
-### Current local execution snapshot (2026-10-05)
+### Current execution snapshot (2026-10-06)
 
-PR #108 is merged to `main` at `eb83be9`. PR #112 remains open on `fix/weighted-rollup-aggregation`. The shutdown source candidate is `b95a8c1`; it sets eframe `run_and_return=false` after hosted CI showed that Quit reached the app but left the process resident on `fe5b2eb`.
+PR #112 merged at `035c290`; final head `bb2d170` passed aggregate CI `37417428474`, Security `37417428663`, and Dependency Review `37417428598`. The source candidate under review uses `quit_explicitly` to synchronously save and flush state, drop the tray icon, and call `std::process::exit(0)` on macOS. The previous `b95a8c1` / `run_and_return=false` implementation is superseded.
 
-Local formatting, 52 desktop-shell tests, the 270-test/64-suite serial workspace, and warning-denied Clippy pass. The installed macOS lifecycle is inconclusive locally because Launch Services refused the temporary bundle (`-10822`). A standalone executable attempt aborted before `main` because dyld could not load `@rpath/libduckdb.dylib` and found no `LC_RPATH`. A later direct execution of the signed bundle binary also aborted in AppKit during `NSApplication::sharedApplication` from `macos_url::register`, before a window appeared. That shell-launched attempt bypassed Launch Services inside this sandbox and does not validate a user-installed app. Same-head hosted CI, Security, and Dependency Review remain required; previous green results on `2fac448` do not validate the shutdown change. GitHub Status reported Actions degraded performance at 2026-10-05 19:33 UTC.
+The latest documented physical Show attempt after `2fac448` timed out without observing the callback and predates the current source. Physical Show/Quit, foreground restoration, current installed-app startup stability, and saved-state restart are unverified. The documented sandbox Launch Services, dyld, and AppKit launch failures are inconclusive for normal installed-app behavior. Record fresh logs and crash evidence if a current installed build fails to start.
 
-The security exception registry and audit ignore list remain empty, prior RustSec/CodeQL/secret-scan results passed on `2fac448`, and DuckDB remains a checksum-verified prebuilt that is never compiled from source. pnpm `12.9.1` is pinned; prior hosted UI validation used that pin. Physical Show/Quit, frontmost activation, and current-candidate saved-state restart remain unverified.
+The RustSec exception registry and audit ignore list are empty. pnpm `12.9.1` is pinned. DuckDB remains an official checksum-verified prebuilt; the build guard prohibits compiling it from source. Review threads PRRT_kwDOSr9EN86pJmZK, PRRT_kwDOSr9EN86pLAJi, PRRT_kwDOSr9EN86pSwNa, PRRT_kwDOSr9EN86pS49n, and PRRT_kwDOSr9EN86pS_Ru require a focused documentation closeout.
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
 - Remote: `origin`
-- Current work is on PR #112's follow-up branch, `fix/weighted-rollup-aggregation`.
-- Roadmap source-of-truth for execution: `docs/roadmap/bead-issue-tracker.html`
+- Roadmap source-of-truth for execution: `docs/roadmap/remediation-roadmap-2026-10-06.md`
 
 ## Historical hosted branch snapshot (2026-10-04)
 
