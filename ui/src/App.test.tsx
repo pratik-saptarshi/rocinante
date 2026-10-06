@@ -435,7 +435,7 @@ describe('Optimization sidebar layout', () => {
     expect(screen.getByText(/Admin Command Bridge/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Ingest Event/i }));
     await waitFor(() =>
-      expect(screen.getByTestId('admin-bridge-result')).toHaveTextContent(/Tauri runtime not detected/i)
+      expect(screen.getByTestId('admin-bridge-result')).toHaveTextContent(/Desktop command runtime not detected/i)
 );
 });
 
