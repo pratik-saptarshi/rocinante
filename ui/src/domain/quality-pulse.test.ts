@@ -87,6 +87,9 @@ describe('buildQualityPulse', () => {
     expect(partialPulse.recommendations.manager).toEqual([]);
     expect(partialPulse.recommendations.executive).toEqual([]);
     expect(partialPulse.recommendations.security).toEqual([]);
+    expect(partialPulse.actionRoutes.lead.window).toBe('Current import');
+    expect(partialPulse.actionRoutes.lead.actions[0]).toContain('actual-commit: medium risk (score 75)');
+    expect(partialPulse.actionRoutes.manager.window).toBe('Awaiting telemetry');
 
     const opportunityOnlyPulse = buildQualityPulse({
       commitRiskCards: [],
@@ -95,5 +98,47 @@ describe('buildQualityPulse', () => {
       stages: []
     } as DashboardInsights, { allowSampleFallbacks: false });
     expect(opportunityOnlyPulse.overallScore).toBeNull();
+  });
+
+  it('derives populated imported routes from the active risk, stage, and opportunity records', () => {
+    const pulse = buildQualityPulse({
+      commitRiskCards: [
+        { id: 'imported-commit', score: 81, level: 'high', reasons: ['Automation failures'] },
+        { id: 'other-commit', score: 54, level: 'medium', reasons: ['Dependency risk'] }
+      ],
+      bottlenecks: [
+        { name: 'imported-review', status: 'critical', impact: 15, rationale: 'Imported review queue is above threshold.' },
+        { name: 'imported-build', status: 'good', impact: 2, rationale: 'Imported build stage is within threshold.' }
+      ],
+      opportunities: [
+        { id: 'imported-signal', title: 'Shorten imported build', priorityScore: 76 }
+      ],
+      stages: []
+    } as DashboardInsights, { allowSampleFallbacks: false });
+
+    expect(pulse.actionRoutes.lead.window).toBe('Current import');
+    expect(pulse.actionRoutes.lead.actions[0]).toContain('imported-commit: high risk (score 81)');
+    expect(pulse.actionRoutes.lead.actions.join(' ')).not.toContain('A-124');
+    expect(pulse.actionRoutes.manager.window).toBe('Current import');
+    expect(pulse.actionRoutes.manager.actions[0]).toContain('imported-review: critical pressure');
+    expect(pulse.actionRoutes.executive.window).toBe('Current import');
+    expect(pulse.actionRoutes.executive.actions[0]).toBe('Shorten imported build (score 76).');
+    expect(pulse.actionRoutes.security.window).toBe('Current import');
+    expect(pulse.actionRoutes.security.actions).toEqual(['imported-commit: review automation failures.', 'other-commit: review dependency risk.']);
+  });
+
+  it('reports healthy imported stages and absent security signals as observed data', () => {
+    const pulse = buildQualityPulse({
+      commitRiskCards: [{ id: 'healthy-import', score: 18, level: 'good', reasons: [] }],
+      bottlenecks: [{ name: 'healthy-stage', status: 'good', impact: 1, rationale: 'Stage is within thresholds.' }],
+      opportunities: [],
+      stages: []
+    } as DashboardInsights, { allowSampleFallbacks: false });
+
+    expect(pulse.actionRoutes.manager.window).toBe('Current import');
+    expect(pulse.actionRoutes.manager.actions).toEqual(['No pressured stages were identified in the imported telemetry.']);
+    expect(pulse.actionRoutes.security.window).toBe('Current import');
+    expect(pulse.actionRoutes.security.actions).toEqual(['No dependency or automation-failure signals were found in the imported commits.']);
+    expect(pulse.actionRoutes.executive.window).toBe('Awaiting telemetry');
   });
 });

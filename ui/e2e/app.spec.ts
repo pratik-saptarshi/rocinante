@@ -53,6 +53,14 @@ test.describe('frontend behavior', () => {
     await expect(page.getByTestId('snapshot-opportunity-count')).toHaveText('1');
     await expect(page.getByText('browser-001 score 12 (good)')).toBeVisible();
     await expect(page.getByTestId('telemetry-data-state')).toHaveText('Imported telemetry is displayed.');
+    const qualityPulse = page.getByTestId('quality-pulse-section');
+    await expect(qualityPulse.getByText('Current import')).toBeVisible();
+    await expect(qualityPulse.getByText(/browser-001: good risk \(score 12\)/)).toBeVisible();
+    await expect(qualityPulse.getByText(/A-124|Sprint now|sample window/i)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Executive' }).click();
+    await expect(qualityPulse.getByText(/Cache invalidation \(score/)).toBeVisible();
+    await page.getByRole('button', { name: 'Security' }).click();
+    await expect(qualityPulse.getByText(/No dependency or automation-failure signals were found/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Reset to Sample' }).click();
     await expect(page.getByTestId('snapshot-risk-count')).toHaveText('3');

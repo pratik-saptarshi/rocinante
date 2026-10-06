@@ -130,6 +130,32 @@ describe('Optimization sidebar layout', () => {
     expect(within(screen.getByTestId('explainability-section')).getByText(/Top Bottleneck: Unavailable — No bottleneck records are available for this import\./)).toBeInTheDocument();
   });
 
+  it('derives visible action routing from populated imported telemetry', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
+      target: {
+        value: JSON.stringify({
+          commits: [{ id: 'route-commit', files: 4, changedLines: 520, dependencyChanges: 1, testTouch: false, failedAutomations: 1 }],
+          stages: [{ name: 'route-review', queueDepth: 12, throughput: 4, avgLatencyMs: 2400 }],
+          signals: [{ id: 'route-signal', area: 'build', title: 'Shorten route build', impact: 5, effort: 2, confidence: 0.9 }]
+        })
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
+
+    const qualityPulseSection = screen.getByTestId('quality-pulse-section');
+    expect(within(qualityPulseSection).getByText('Current import')).toBeInTheDocument();
+    expect(within(qualityPulseSection).getByText(/route-commit: high risk \(score .*Dependency risk/)).toBeInTheDocument();
+    expect(within(qualityPulseSection).queryByText(/A-124|This week|Sprint now|sample window/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manager' }));
+    expect(within(qualityPulseSection).getByText(/route-review: critical pressure/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Executive' }));
+    expect(within(qualityPulseSection).getByText(/Shorten route build \(score/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Security' }));
+    expect(within(qualityPulseSection).getByText(/route-commit: review dependency risk and automation failures/)).toBeInTheDocument();
+  });
+
   it('renders trend and risk visuals from the shared insight helper', () => {
     render(<App />);
 

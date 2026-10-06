@@ -147,13 +147,54 @@ function buildRecommendations(
   return { lead, manager, executive, security };
 }
 
-function buildRoutes(allowSampleFallbacks: boolean): QualityPulse['actionRoutes'] {
+function buildRoutes(
+  insights: DashboardInsights,
+  allowSampleFallbacks: boolean
+): QualityPulse['actionRoutes'] {
   if (!allowSampleFallbacks) {
+    const rankedRiskCards = rankRiskCards(insights.commitRiskCards);
+    const actionableBottlenecks = insights.bottlenecks.filter((item) => item.status !== 'good');
+    const rankedOpportunities = rankOpportunities(insights.opportunities);
+    const securitySignals = rankedRiskCards.filter((risk) =>
+      risk.reasons.some((reason) => reason === 'Dependency risk' || reason === 'Automation failures')
+    );
+
     return {
-      lead: { owner: 'Lead Reviewer', window: 'Awaiting telemetry', actions: [] },
-      manager: { owner: 'Engineering Manager', window: 'Awaiting telemetry', actions: [] },
-      executive: { owner: 'Delivery Leadership', window: 'Awaiting telemetry', actions: [] },
-      security: { owner: 'Security Operations', window: 'Awaiting telemetry', actions: [] }
+      lead: insights.commitRiskCards.length === 0
+        ? { owner: 'Lead Reviewer', window: 'Awaiting telemetry', actions: [] }
+        : {
+            owner: 'Lead Reviewer',
+            window: 'Current import',
+            actions: rankedRiskCards.slice(0, 2).map((risk) => {
+              const reasons = risk.reasons.length > 0 ? risk.reasons.join(', ') : 'no risk factors were provided';
+              return `${risk.id}: ${risk.level} risk (score ${risk.score}); ${reasons}.`;
+            })
+          },
+      manager: insights.bottlenecks.length === 0
+        ? { owner: 'Engineering Manager', window: 'Awaiting telemetry', actions: [] }
+        : {
+            owner: 'Engineering Manager',
+            window: 'Current import',
+            actions: actionableBottlenecks.length > 0
+              ? actionableBottlenecks.slice(0, 2).map((stage) => `${stage.name}: ${stage.status} pressure — ${stage.rationale}`)
+              : ['No pressured stages were identified in the imported telemetry.']
+          },
+      executive: insights.opportunities.length === 0
+        ? { owner: 'Delivery Leadership', window: 'Awaiting telemetry', actions: [] }
+        : {
+            owner: 'Delivery Leadership',
+            window: 'Current import',
+            actions: rankedOpportunities.slice(0, 2).map((opportunity) => `${opportunity.title} (score ${opportunity.priorityScore}).`)
+          },
+      security: insights.commitRiskCards.length === 0
+        ? { owner: 'Security Operations', window: 'Awaiting telemetry', actions: [] }
+        : {
+            owner: 'Security Operations',
+            window: 'Current import',
+            actions: securitySignals.length > 0
+              ? securitySignals.slice(0, 2).map((signal) => `${signal.id}: review ${signal.reasons.filter((reason) => reason === 'Dependency risk' || reason === 'Automation failures').join(' and ').toLowerCase()}.`)
+              : ['No dependency or automation-failure signals were found in the imported commits.']
+          }
     };
   }
 
@@ -209,6 +250,6 @@ export function buildQualityPulse(
     riskBuckets,
     bottleneckBuckets,
     recommendations: buildRecommendations(insights, allowSampleFallbacks),
-    actionRoutes: buildRoutes(allowSampleFallbacks)
+    actionRoutes: buildRoutes(insights, allowSampleFallbacks)
   };
 }
