@@ -2,11 +2,11 @@
 
 ## Current branch snapshot — 2026-10-06
 
-PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains open on `fix/weighted-rollup-aggregation`, head `8f4080b`. Current shutdown source uses `quit_explicitly` to save shell state and flush storage before removing the tray icon, then directly exits with `std::process::exit(0)` on macOS; `b95a8c1` was the earlier `run_and_return=false` candidate.
+PR #112 merged at `035c290`; its final source head `bb2d170` passed CI `37417428474`, Security `37417428663`, and Dependency Review `37417428598`. The current macOS quit path persists state and flushes storage, removes the tray icon, then calls `std::process::exit(0)`. The older `b95a8c1` / `run_and_return=false` candidate is superseded.
 
-CI run `37404464369` completed with aggregate `test` failure on PR head `d598d59`: `rust-workspace-tests` and `rust-tests (core)` failed because a security-doc contract still pinned historical Security-run wording, and `rust-lint (fmt)` failed on rustfmt wrapping in the publish-doc contract. `ci-workflow-parse`, UI typecheck/unit/build, Linux/macOS/Windows URL and native-shell package jobs, `rust-tests (storage)`, Clippy, and advisory governance passed. Security run `37404464610` passed Rust audit, secret scan, and CodeQL; Dependency Review run `37404464411` passed. These results describe `d598d59`; the current follow-up contract and readiness commits require fresh same-head checks. Readiness requires terminal-green checks on the latest PR head.
+Those hosted checks do not establish physical tray acceptance or current installed-app startup stability. The latest recorded manual Show attempt after `2fac448` timed out without a callback and predates the current hard-exit source. Keep physical Show/Quit, frontmost restoration, and current installed saved-state restart unchecked until directly witnessed on the current app build. Earlier failures through sandboxed Launch Services or direct bundle execution are inconclusive and must not be represented as an installed-user repro.
 
-Local formatting, 52 desktop-shell tests, the full 270-test/64-suite workspace, and warning-denied Clippy were run on the earlier `b95a8c1` candidate only. Installed macOS acceptance remains inconclusive: Launch Services refused the temporary bundle (`-10822`), standalone dyld loading failed before startup, and direct signed-bundle execution aborted in AppKit before a window appeared. None exercised the current helper. DuckDB remains a SHA-verified prebuilt and is never compiled from source. The manual Show attempt timed out; physical Show/Quit, foreground activation, and current-candidate saved-state restart remain unverified.
+DuckDB remains the checksum-verified prebuilt binary and is never compiled from source. Keep readiness fail-closed until each outstanding platform acceptance item has current evidence.
 
 This checklist is the required gating artifact for remote publication to `origin/main`.
 
