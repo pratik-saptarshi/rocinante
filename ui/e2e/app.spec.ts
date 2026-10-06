@@ -188,7 +188,7 @@ test.describe('frontend behavior', () => {
 
     await page.getByRole('button', { name: 'Ingest Event' }).click();
 
-    await expect(page.getByTestId('admin-bridge-result')).toContainText('Tauri runtime not detected');
+    await expect(page.getByTestId('admin-bridge-result')).toContainText('Desktop command runtime not detected');
   });
 
   test('surfaces the admin bridge payload when the browser shim is available', async ({ page }) => {
@@ -243,4 +243,30 @@ test.describe('frontend behavior', () => {
       'OK reseed_release_baseline: 12.25'
     );
   });
+  test('keeps dashboard tasks within common viewport widths', async ({ page }) => {
+    for (const width of [320, 360, 768, 1024, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+
+      await expect(page.getByRole('main')).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1, name: 'The Web Companion: Optimization Hub' })).toBeVisible();
+
+      const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(documentWidth, `page width at ${width}px viewport`).toBeLessThanOrEqual(width);
+
+      await page.getByLabel('Telemetry payload JSON').fill(JSON.stringify({
+        commits: [{ id: `viewport-${width}`, files: 1, changedLines: 8, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
+        stages: [{ name: 'review', queueDepth: 1, throughput: 8, avgLatencyMs: 200 }],
+        signals: []
+      }));
+      await page.getByRole('button', { name: 'Apply Payload' }).click();
+      await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
+
+      const adminAction = page.getByRole('button', { name: 'Ingest Event' });
+      await adminAction.scrollIntoViewIfNeeded();
+      await adminAction.click();
+      await expect(page.getByTestId('admin-bridge-result')).toContainText('Desktop command runtime not detected');
+    }
+  });
+
 });
