@@ -32,17 +32,20 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
     let bom = normalize_whitespace(&read_repo_file("../docs/bill-of-materials.html"));
     let codemap = normalize_whitespace(&read_repo_file("../codemap.md"));
 
-    assert!(bom.contains("Current shutdown source `b95a8c1`"));
+    assert!(bom.contains("Current shutdown source uses the shared `quit_explicitly` helper"));
+    assert!(bom.contains("flushes storage before removing the tray icon"));
+    assert!(bom.contains("`std::process::exit(0)` on macOS"));
     assert!(bom.contains("BI-047"));
-    assert!(checklist.contains("Current branch snapshot — 2026-10-05"));
+    assert!(checklist.contains("Current branch snapshot — 2026-10-06"));
     assert!(checklist.contains("fix/weighted-rollup-aggregation"));
     assert!(checklist.contains("PR #112"));
-    assert!(checklist.contains("current shutdown source `b95a8c1`"));
-    assert!(checklist
-        .contains("Same-head CI, Security, and Dependency Review must finish successfully"));
-    assert!(checklist.contains("Prior Security run `37346608399` passed on `2fac448`"));
-    assert!(codemap.contains("current shutdown source is `b95a8c1`"));
-    assert!(codemap.contains("Same-head CI, Security, and Dependency Review are pending"));
+    assert!(checklist.contains("Same-head CI run `37403699282` failed"));
+    assert!(checklist.contains("Native-shell packaging and all downstream validation jobs were skipped"));
+    assert!(checklist.contains("Security run `37403699221`"));
+    assert!(checklist.contains("Dependency Review run `37403699223` passed"));
+    assert!(codemap.contains("Current shutdown implementation uses the shared `quit_explicitly` helper"));
+    assert!(codemap.contains("Same-head CI run `37403699282` failed"));
+    assert!(codemap.contains("native-shell packaging and all downstream validation jobs were skipped"));
 
     assert!(codemap.contains("Current Architecture Status (2026-10-05)"));
 }
