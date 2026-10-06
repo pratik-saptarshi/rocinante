@@ -20,6 +20,7 @@ applicability contract.
 | Check | Result |
 |---|---|
 | `bash scripts/test-ci-scope-contract.sh` | Passed. The aggregate dependency and fail-closed UI Playwright contract are asserted. |
+| `cargo test --locked -p rocinante-repo-analyzer --test ci_gate_tests ci_workflow_has_aggregate_test_gate -- --exact` | Passed: 1 targeted Rust contract test. It now expects `ui-playwright` in the aggregate dependencies. DuckDB was staged from the SHA-256-pinned official prebuilt; no DuckDB source build was used. |
 | `bash scripts/test-roadmap-doc-contracts.sh` | Passed: 10 tests across parity, command inventory, publish gate, and roadmap coherence. |
 | `actionlint -oneline -ignore 'unknown permission scope "vulnerability-alerts"' .github/workflows/ci.yml .github/workflows/security.yml` | Passed using the repository-configured ignore. Unignored actionlint reports this unsupported-permission-scope diagnostic at `.github/workflows/ci.yml:429`. |
 | TypeScript project build (`ui/node_modules/.bin/tsc -b`) | Passed. |
