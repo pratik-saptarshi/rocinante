@@ -28,7 +28,7 @@ test.describe('frontend behavior', () => {
   test('uses sufficient computed contrast for enabled primary and outlined actions', async ({ page }) => {
     await page.goto('/');
     const parseCssColor = (color: string) => {
-      const channels = color.match(/[\\d.]+/g)?.map(Number);
+      const channels = color.match(/[0-9.]+/g)?.map(Number);
       if (!channels || channels.length < 3) throw new Error(`Unexpected CSS color: ${color}`);
       const alpha = channels.length > 3 ? channels[3] : 1;
       return channels.slice(0, 3).map((channel) => channel * alpha + 255 * (1 - alpha));
