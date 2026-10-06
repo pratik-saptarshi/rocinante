@@ -17,7 +17,7 @@ describe('dashboard explainability panel', () => {
     expect(within(explainabilitySection).getByText(/Score Decomposition/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Risk Commit/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Bottleneck/i)).toBeInTheDocument();
-    expect(within(explainabilitySection).getByText(/Opportunity Lift/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Opportunity Signals/i)).toBeInTheDocument();
   });
 
   it('updates explainability traces when payload changes', () => {
@@ -224,7 +224,7 @@ describe('Optimization sidebar layout', () => {
     expect(within(explainabilitySection).getByText(/Score Decomposition/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Risk Commit/i)).toBeInTheDocument();
     expect(within(explainabilitySection).getByText(/Top Bottleneck/i)).toBeInTheDocument();
-    expect(within(explainabilitySection).getByText(/Opportunity Lift/i)).toBeInTheDocument();
+    expect(within(explainabilitySection).getByText(/Opportunity Signals/i)).toBeInTheDocument();
   });
 
   it('renders job observability metrics from the shared stage telemetry', () => {
@@ -611,7 +611,9 @@ describe('Optimization sidebar layout', () => {
     fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
 
     const observability = screen.getByTestId('job-observability-section');
-    expect(within(observability).getByText('medium')).toBeVisible();
+    expect(within(observability).getByText('bad')).toBeVisible();
     expect(within(observability).getByText(/slow-stage: queue 0, throughput 10, lag 750ms/i)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Manager' }));
+    expect(screen.getByText(/slow-stage \(critical\) impact 5/i)).toBeVisible();
   });
 });
