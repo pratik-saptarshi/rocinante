@@ -2,7 +2,7 @@
 
 ## Current branch snapshot — 2026-10-06
 
-PR #112 merged at `035c290`; its final source head `bb2d170` passed CI `37417428474`, Security `37417428663`, and Dependency Review `37417428598`. The current macOS quit path persists state and flushes storage, removes the tray icon, then calls `std::process::exit(0)`. The older `b95a8c1` / `run_and_return=false` candidate is superseded.
+PR #112 merged at `035c290`; its final source head `bb2d170` passed CI `37417428474`, Security `37417428663`, and Dependency Review `37417428598`. Its merged source branch was `fix/weighted-rollup-aggregation`. The current macOS quit path persists state and flushes storage, removes the tray icon, then calls `std::process::exit(0)`. The older `b95a8c1` / `run_and_return=false` candidate is superseded.
 
 Those hosted checks do not establish physical tray acceptance or current installed-app startup stability. The latest recorded manual Show attempt after `2fac448` timed out without a callback and predates the current hard-exit source. Keep physical Show/Quit, frontmost restoration, and current installed saved-state restart unchecked until directly witnessed on the current app build. Earlier failures through sandboxed Launch Services or direct bundle execution are inconclusive and must not be represented as an installed-user repro.
 
