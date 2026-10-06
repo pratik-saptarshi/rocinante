@@ -38,7 +38,8 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
     assert!(checklist.contains("fix/weighted-rollup-aggregation"));
     assert!(checklist.contains("PR #112"));
     assert!(checklist.contains("current shutdown source `b95a8c1`"));
-    assert!(checklist.contains("Same-head CI, Security, and Dependency Review must finish successfully"));
+    assert!(checklist
+        .contains("Same-head CI, Security, and Dependency Review must finish successfully"));
     assert!(checklist.contains("Prior Security run `37346608399` passed on `2fac448`"));
     assert!(codemap.contains("current shutdown source is `b95a8c1`"));
     assert!(codemap.contains("Same-head CI, Security, and Dependency Review are pending"));
