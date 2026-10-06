@@ -1,14 +1,12 @@
 # Publishing Readiness Checklist - `origin/main`
 
-## Current branch snapshot — 2026-10-05
+## Current branch snapshot — 2026-10-06
 
-PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains open on `fix/weighted-rollup-aggregation`; current shutdown source `b95a8c1` sets eframe `run_and_return=false` after the previous hosted macOS run proved Quit was received but the process stayed resident.
+PR #108 is merged at `origin/main` `eb83be9`. PR #112 remains open on `fix/weighted-rollup-aggregation`, head `8f4080b`. Current shutdown source uses `quit_explicitly` to save shell state and flush storage before removing the tray icon, then directly exits with `std::process::exit(0)` on macOS; `b95a8c1` was the earlier `run_and_return=false` candidate.
 
-Local formatting, 52 desktop-shell tests, the full 270-test/64-suite workspace, and warning-denied Clippy pass. The current installed macOS acceptance is inconclusive locally: Launch Services refused the temporary bundle (`-10822`), and a standalone executable attempt aborted before startup because dyld could not load `@rpath/libduckdb.dylib` (`no LC_RPATH`). This did not exercise the installed app. A later direct execution of the signed bundle binary also aborted in AppKit during `NSApplication::sharedApplication` from `macos_url::register`, before a window appeared. That shell-launched attempt bypassed Launch Services inside this sandbox and does not validate a user-installed app. The earlier green checks on `2fac448` and local lifecycle passes predate this shutdown setting. Prior Security run `37346608399` passed on `2fac448`, but does not validate the current shutdown change.
+Same-head CI run `37403699282` failed in `ci-workflow-parse` at `publish_gate_documents_reflect_current_follow_up_pr_snapshot` because its assertion still expected obsolete `b95a8c1` wording. Aggregate `test` failed as a consequence. Native-shell packaging and all downstream validation jobs were skipped, so no current package or lifecycle result exists. Security run `37403699221` has Rust audit and secret scan passed while CodeQL is in progress. Dependency Review run `37403699223` passed. Rerun the required gates after correcting the assertion and refreshing this snapshot.
 
-Same-head CI, Security, and Dependency Review must finish successfully before readiness can advance. Readiness requires terminal-green checks on the latest PR head. GitHub Status reported degraded Actions performance at 2026-10-05 19:33 UTC. Previous queued runs on the parent head were cancelled by the subsequent documentation update; fresh runs for the final docs/source head are required. The review comments about the failed manual Show attempt and current quit validation remain open until documented and revalidated.
-
-The dated shutdown roadmap and decision record contain the investigation and acceptance gates. DuckDB remains prebuilt-only, and no physical Show/Quit, frontmost activation, or current-candidate saved-state restart is claimed.
+Local formatting, 52 desktop-shell tests, the full 270-test/64-suite workspace, and warning-denied Clippy were run on the earlier `b95a8c1` candidate only. Installed macOS acceptance remains inconclusive: Launch Services refused the temporary bundle (`-10822`), standalone dyld loading failed before startup, and direct signed-bundle execution aborted in AppKit before a window appeared. None exercised the current helper. DuckDB remains a SHA-verified prebuilt and is never compiled from source. The manual Show attempt timed out; physical Show/Quit, foreground activation, and current-candidate saved-state restart remain unverified.
 
 This checklist is the required gating artifact for remote publication to `origin/main`.
 
@@ -173,7 +171,7 @@ Rust coverage artifact is retained for review | [ ] | `rust-coverage` was skippe
 
 ## 7) Publish decision
 
-- The latest fully green aggregate remains historical: CI `37346608465`, Security `37346608399`, and Dependency Review `37346608411` passed on `2fac448`. Current source `b95a8c1` changes shutdown behavior; same-head workflows and two shutdown review comments remain open.
+- Historical CI `37346608465`, Security `37346608399`, and Dependency Review `37346608411` passed on `2fac448`; these results predate the current `quit_explicitly` source and do not validate it. On head `8f4080b`, CI `37403699282` failed at the docs snapshot contract and skipped native packaging/downstream jobs. Security `37403699221` has audit and secret scan passed with CodeQL in progress; Dependency Review `37403699223` passed.
 - For each evidence update, require terminal-green hosted checks on the resulting PR head. Keep DuckDB prebuilt-only and never compile it from source.
 - The scripted installed macOS lifecycle passed, but the most recent manual run after code head `2fac448` timed out without a Show callback. Tray-menu delivery and foreground activation remain open acceptance gates; AppKit returned `accepted=false`.
 - BI-049/BI-050 interactive parity evidence remains required before RT-RC-002 can close.
