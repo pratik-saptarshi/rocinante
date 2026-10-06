@@ -28,6 +28,8 @@ import { buildDashboardInsights } from './insight-engine';
 import { buildQualityPulse, type StakeholderAudience } from './domain/quality-pulse';
 import { invokeAdminCommand, type AdminBridgeCommand } from './tauri-admin';
 
+const COMMIT_RISK_CARD_DISPLAY_LIMIT = 3;
+
 function StatusBadge({ status, label }: { status: AuditStatus; label: string }) {
   const palette = {
     good: 'success',
@@ -173,6 +175,8 @@ function App() {
   const securitySignals = (insights.allCommitRiskCards ?? commitRiskCards).filter((risk) =>
     risk.reasons.some((item) => item === 'Dependency risk' || item === 'Automation failures')
   );
+  const displayedSecuritySignals = securitySignals.slice(0, COMMIT_RISK_CARD_DISPLAY_LIMIT);
+  const remainingSecuritySignalCount = securitySignals.length - displayedSecuritySignals.length;
 
   const criticalBottlenecks = qualityPulse.bottleneckBuckets.critical;
   const highBottlenecks = qualityPulse.bottleneckBuckets.high;
@@ -589,7 +593,7 @@ function App() {
             </Typography>
             <FindingSection
               title=""
-              items={commitRiskCards.slice(0, 3).map((risk) => ({
+              items={commitRiskCards.slice(0, COMMIT_RISK_CARD_DISPLAY_LIMIT).map((risk) => ({
                 id: risk.id,
                 text: `${risk.id} score ${risk.score} (${risk.level})`,
                 status: risk.level === 'high' ? 'bad' : risk.level === 'medium' ? 'medium' : 'good'
@@ -668,7 +672,7 @@ function App() {
         )}
 
         {audience === 'security' && (
-          <Box>
+          <Box data-testid="security-detail-section">
             <Typography variant="subtitle2" sx={{
               fontWeight: 700
             }}>
@@ -689,7 +693,7 @@ function App() {
               title=""
               items={
                 securitySignals.length
-                  ? securitySignals.map((risk) => ({
+                  ? displayedSecuritySignals.map((risk) => ({
                       id: risk.id,
                       text: `${risk.id}: ${risk.reasons.join(', ')}`,
                       status: risk.level === 'high' ? 'bad' : risk.level === 'medium' ? 'medium' : 'good'
@@ -703,6 +707,11 @@ function App() {
                     ]
               }
             />
+            {remainingSecuritySignalCount > 0 && (
+              <Typography variant="caption" data-testid="security-signals-overflow">
+                {remainingSecuritySignalCount} more security {remainingSecuritySignalCount === 1 ? 'signal' : 'signals'} not shown.
+              </Typography>
+            )}
           </Box>
         )}
 

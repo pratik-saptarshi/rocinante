@@ -156,7 +156,7 @@ describe('Optimization sidebar layout', () => {
     expect(within(qualityPulseSection).getByText(/route-commit: review dependency risk and automation failures/)).toBeInTheDocument();
   });
 
-  it('keeps a display-limited security signal visible in the imported count and route', () => {
+  it('keeps full security counts and routes when detail cards are display-limited', () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText(/Telemetry payload JSON/i), {
       target: {
@@ -164,7 +164,14 @@ describe('Optimization sidebar layout', () => {
           limits: { risks: 1 },
           commits: [
             { id: 'visible-non-security', files: 24, changedLines: 900, dependencyChanges: 0, testTouch: true, failedAutomations: 0 },
-            { id: 'hidden-security', files: 1, changedLines: 8, dependencyChanges: 1, testTouch: true, failedAutomations: 0 }
+            ...Array.from({ length: 5 }, (_, index) => ({
+              id: `hidden-security-${index + 1}`,
+              files: 1,
+              changedLines: 8,
+              dependencyChanges: 1,
+              testTouch: true,
+              failedAutomations: 0
+            }))
           ],
           stages: [],
           signals: []
@@ -174,14 +181,24 @@ describe('Optimization sidebar layout', () => {
     fireEvent.click(screen.getByRole('button', { name: /Apply Payload/i }));
 
     expect(screen.getByTestId('snapshot-risk-count')).toHaveTextContent('1');
-    expect(screen.getByTestId('pulse-security-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('pulse-security-count')).toHaveTextContent('5');
     expect(screen.getAllByText(/visible-non-security/i).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'Security' }));
 
     const qualityPulseSection = screen.getByTestId('quality-pulse-section');
-    expect(within(qualityPulseSection).getByText('hidden-security: review dependency risk.')).toBeInTheDocument();
-    expect(screen.getAllByText(/hidden-security/).length).toBeGreaterThan(1);
+    expect(within(qualityPulseSection).getByText('hidden-security-1: review dependency risk.')).toBeInTheDocument();
+    expect(within(qualityPulseSection).getByText('hidden-security-2: review dependency risk.')).toBeInTheDocument();
+
+    const securityDetailSection = screen.getByTestId('security-detail-section');
+    const securityDetailList = within(securityDetailSection).getByRole('list');
+    expect(within(securityDetailList).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(securityDetailSection).getByText('hidden-security-1: Dependency risk')).toBeInTheDocument();
+    expect(within(securityDetailSection).getByText('hidden-security-3: Dependency risk')).toBeInTheDocument();
+    expect(within(securityDetailSection).queryByText(/hidden-security-[45]/)).not.toBeInTheDocument();
+    expect(within(securityDetailSection).getByTestId('security-signals-overflow')).toHaveTextContent(
+      '2 more security signals not shown.'
+    );
   });
 
   it('renders trend and risk visuals from the shared insight helper', () => {
