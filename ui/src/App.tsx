@@ -731,6 +731,9 @@ function App() {
               WCAG 2.1/2.2 AA Accessibility Audit
             </Typography>
           </Stack>
+          <Typography variant="caption" color="text.secondary" data-testid="provenance-accessibility">
+            Static example content; not derived from imported telemetry.
+          </Typography>
           <ScoreGauge value={85} subtitle="Overall Score" status="good" />
           <Button
             fullWidth
@@ -760,6 +763,9 @@ function App() {
               SEO, GEO &amp; AEO Performance
             </Typography>
           </Stack>
+          <Typography variant="caption" color="text.secondary" data-testid="provenance-seo">
+            Static example content; not derived from imported telemetry.
+          </Typography>
           <Tabs value={seoTab} onChange={(_, value) => setSeoTab(value)} sx={{ mb: 1.5 }} variant="fullWidth">
             <Tab value="current" label="Current Page" sx={{ minHeight: 36 }} />
             <Tab value="site" label="Site-Wide" sx={{ minHeight: 36 }} />
@@ -790,6 +796,9 @@ function App() {
               Security &amp; Drupal Review
             </Typography>
           </Stack>
+          <Typography variant="caption" color="text.secondary" data-testid="provenance-security">
+            Static example content; not derived from imported telemetry.
+          </Typography>
           <StatusBadge status="good" label="General Site Security: High" />
           <Divider sx={{ mt: 1.5 }} />
           <FindingSection title="Drupal-Specific Checks" items={dashboardFindingGroups.security} />
@@ -814,6 +823,9 @@ function App() {
               Page Performance Metrics
             </Typography>
           </Stack>
+          <Typography variant="caption" color="text.secondary" data-testid="provenance-performance">
+            Static example content; not derived from imported telemetry.
+          </Typography>
           <ScoreGauge value={65} subtitle="Overall Score" status="medium" />
           <FindingSection title="Top Recommendations" items={dashboardFindingGroups.performance} />
 
