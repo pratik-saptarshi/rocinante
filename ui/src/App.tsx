@@ -93,14 +93,17 @@ function ScoreGauge({ value, subtitle, status }: { value: number; subtitle: stri
 function FindingSection({ title, items }: { title: string; items: DashboardFinding[] }) {
   return (
     <Box sx={{ mt: 1.5 }}>
-      <Typography
-        variant="subtitle2"
-        sx={{
-          fontWeight: 700,
-          mb: 1
-        }}>
-        {title}
-      </Typography>
+      {title && (
+        <Typography
+          component="h3"
+          variant="subtitle2"
+          sx={{
+            fontWeight: 700,
+            mb: 1
+          }}>
+          {title}
+        </Typography>
+      )}
       <List dense disablePadding>
         {items.map((item) => (
           <ListItem key={item.id} disablePadding>
@@ -585,10 +588,10 @@ function App() {
             sx={{ mb: 1 }}
           />
           <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
-            <Button size="small" variant="outlined" onClick={() => void loadReleaseBaseline()}>
+            <Button size="small" variant="outlined" disabled={baselineBusy} onClick={() => void loadReleaseBaseline()}>
               Load Baseline
             </Button>
-            <Button size="small" variant="outlined" onClick={() => void reseedReleaseBaseline()}>
+            <Button size="small" variant="outlined" disabled={baselineBusy} onClick={() => void reseedReleaseBaseline()}>
               Reseed Baseline
             </Button>
           </Stack>
