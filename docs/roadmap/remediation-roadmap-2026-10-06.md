@@ -1,6 +1,6 @@
 # Frontend UX Remediation Roadmap — 2026-10-06
 
-**Status (2026-10-06):** Phase 1 and Phase 2 are complete. PR #114/#116 closed Phase 1; PR #117 reconciled PR #112 documentation follow-up, and the current GitHub review-thread query reports all 9/9 PR #112 threads resolved. PR #118 merged Phase 2 at `ce1e05d8459ee12392c474365bb8e120780ecb37`; exact-head CI (`37430967217`), Security (`37430967218`), and Dependency Review (`37430967207`) passed. Phase 3 changes are in progress on `fix/ux-phase3-controls-accessibility-2026-10-06`, branched from that main head. Phase 3 hosted checks, keyboard-only acceptance, and screen-reader spot check are pending.
+**Status (2026-10-06):** Phase 1 and Phase 2 are complete. PR #114/#116 closed Phase 1; PR #117 reconciled PR #112 documentation follow-up, and the current GitHub review-thread query reports all 9/9 PR #112 threads resolved. PR #118 merged Phase 2 at `ce1e05d8459ee12392c474365bb8e120780ecb37`; exact-head CI (`37430967217`), Security (`37430967218`), and Dependency Review (`37430967207`) passed. Phase 3 changes are in progress on `fix/ux-phase3-controls-accessibility-2026-10-06`, branched from that main head. Local Phase 3 validation in an isolated copy of the exact source passed TypeScript, 13 Vitest files/93 tests, and production build (Vite emitted a >500 kB chunk advisory); Playwright discovers 10 tests. Local Playwright server startup is blocked by sandbox EPERM on 127.0.0.1:4173. Hosted pnpm-pinned UI/aggregate/security checks, keyboard-only acceptance, and screen-reader spot check are pending.
 
 **Inputs:** [2026-10-05 UX adversarial panel report](../reviews/2026-10-05-frontend-user-experience/review_panel_report.md), [panel process and evidence](../reviews/2026-10-05-frontend-user-experience/review_panel_process.md), and the current local Beads hierarchy.
 
@@ -102,7 +102,7 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 
 ## Phase 3 — Make controls and accessibility semantics honest (PR 3)
 
-**Milestone:** `BI-5u3.4`. **Findings:** UX-03, UX-08–UX-11. **Dependency:** Phase 2 merged.
+**Milestone:** `BI-5u3.4` plus review follow-up `BI-5u3.4.6`. **Findings:** UX-03, UX-08–UX-11 and duplicate-stage severity. **Dependency:** Phase 2 merged.
 
 **Commit slices:** `fix(ui): clarify preview-only controls`; `fix(a11y): meet primary text contrast`; `fix(a11y): name switches and announce results`; `fix(a11y): add landmarks and tab relationships`; `test(a11y): cover dashboard interactions`.
 
