@@ -27,36 +27,42 @@ test.describe('frontend behavior', () => {
 
   test('uses sufficient computed contrast for enabled primary and outlined actions', async ({ page }) => {
     await page.goto('/');
-    const getContrast = (foreground: string, background: string) => {
-      const luminance = (color: string) => {
-        const channels = color.match(/[\\d.]+/g)?.slice(0, 3).map(Number);
-        if (!channels || channels.length !== 3) throw new Error(`Unexpected CSS color: ${color}`);
-        const linear = channels.map((channel) => {
-          const value = channel / 255;
-          return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-        });
-        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
-      };
-      const values = [luminance(foreground), luminance(background)].sort((left, right) => right - left);
+    const parseCssColor = (color: string) => {
+      const channels = color.match(/[\\d.]+/g)?.map(Number);
+      if (!channels || channels.length < 3) throw new Error(`Unexpected CSS color: ${color}`);
+      const alpha = channels.length > 3 ? channels[3] : 1;
+      return channels.slice(0, 3).map((channel) => channel * alpha + 255 * (1 - alpha));
+    };
+    const luminance = (color: number[]) => {
+      const linear = color.map((channel) => {
+        const value = channel / 255;
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    };
+    const contrast = (foreground: string, background: string) => {
+      const values = [luminance(parseCssColor(foreground)), luminance(parseCssColor(background))]
+        .sort((left, right) => right - left);
       return (values[0] + 0.05) / (values[1] + 0.05);
     };
-    const readColors = async (name: string) => page.getByRole('button', { name }).evaluate((element) => {
+    const colors = async (name: string) => page.getByRole('button', { name }).evaluate((element) => {
       const style = getComputedStyle(element);
-      return { color: style.color, background: style.backgroundColor };
+      return { foreground: style.color, background: style.backgroundColor };
     });
 
-    const contained = page.getByRole('button', { name: 'Apply Payload' });
-    const outlined = page.getByRole('button', { name: 'Reset to Sample' });
-    for (const button of [contained, outlined]) {
+    for (const name of ['Apply Payload', 'Reset to Sample']) {
+      const button = page.getByRole('button', { name });
+      const states = [await colors(name)];
       await button.focus();
       expect(await button.evaluate((element) => element.matches(':focus-visible'))).toBeTruthy();
+      states.push(await colors(name));
       await button.hover();
+      states.push(await colors(name));
+      for (const state of states) {
+        expect(contrast(state.foreground, state.background === 'rgba(0, 0, 0, 0)' ? 'rgb(255, 255, 255)' : state.background))
+          .toBeGreaterThanOrEqual(4.5);
+      }
     }
-
-    const containedColors = await readColors('Apply Payload');
-    const outlinedColors = await readColors('Reset to Sample');
-    expect(getContrast(containedColors.color, containedColors.background)).toBeGreaterThanOrEqual(4.5);
-    expect(getContrast(outlinedColors.color, 'rgb(255, 255, 255)')).toBeGreaterThanOrEqual(4.5);
   });
 
   test('switches stakeholder views and updates the quality pulse copy', async ({ page }) => {
