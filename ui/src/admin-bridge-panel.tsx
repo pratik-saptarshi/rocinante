@@ -5,6 +5,7 @@ import type { AdminBridgeCommand } from './tauri-admin';
 export interface AdminBridgePanelProps {
   adminToken: string;
   adminResult: string;
+  adminBusy?: boolean;
   onAdminTokenChange: (token: string) => void;
   onRunAdminCommand: (command: AdminBridgeCommand) => void;
 }
@@ -12,6 +13,7 @@ export interface AdminBridgePanelProps {
 export function AdminBridgePanel({
   adminToken,
   adminResult,
+  adminBusy = false,
   onAdminTokenChange,
   onRunAdminCommand
 }: AdminBridgePanelProps) {
@@ -26,12 +28,12 @@ export function AdminBridgePanel({
       />
       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
         {ADMIN_BRIDGE_ACTIONS.map(({ command, label }) => (
-          <Button key={command} size="small" variant="outlined" onClick={() => onRunAdminCommand(command)}>
+          <Button key={command} size="small" variant="outlined" disabled={adminBusy} onClick={() => onRunAdminCommand(command)}>
             {label}
           </Button>
         ))}
       </Stack>
-      <Typography variant="caption" data-testid="admin-bridge-result">
+      <Typography variant="caption" role="status" aria-live="polite" aria-atomic="true" data-testid="admin-bridge-result">
         {adminResult}
       </Typography>
     </Stack>

@@ -1,9 +1,10 @@
-import { Accessibility, PlayArrow, Public, Search, Security, Settings, Speed } from '@mui/icons-material';
+import { Accessibility, Public, Search, Security, Settings, Speed } from '@mui/icons-material';
 import {
   Box,
   Button,
   Chip,
   Divider,
+  FormControlLabel,
   List,
   ListItem,
   ListItemText,
@@ -11,8 +12,6 @@ import {
   TextField,
   Stack,
   Switch,
-  Tab,
-  Tabs,
   ToggleButton,
   ToggleButtonGroup,
   Typography
@@ -94,14 +93,17 @@ function ScoreGauge({ value, subtitle, status }: { value: number; subtitle: stri
 function FindingSection({ title, items }: { title: string; items: DashboardFinding[] }) {
   return (
     <Box sx={{ mt: 1.5 }}>
-      <Typography
-        variant="subtitle2"
-        sx={{
-          fontWeight: 700,
-          mb: 1
-        }}>
-        {title}
-      </Typography>
+      {title && (
+        <Typography
+          component="h3"
+          variant="subtitle2"
+          sx={{
+            fontWeight: 700,
+            mb: 1
+          }}>
+          {title}
+        </Typography>
+      )}
       <List dense disablePadding>
         {items.map((item) => (
           <ListItem key={item.id} disablePadding>
@@ -152,17 +154,17 @@ function MetricItem({
 
 function App() {
   const [audience, setAudience] = useState<StakeholderAudience>('lead');
-  const [seoTab, setSeoTab] = useState<'current' | 'site'>('current');
-  const [fieldData, setFieldData] = useState(true);
   const [payloadText, setPayloadText] = useState('');
   const [payloadError, setPayloadError] = useState('');
   const [payloadState, setPayloadState] = useState<'sample' | 'missing' | 'partial' | 'empty' | 'imported'>('sample');
   const [insights, setInsights] = useState(() => buildDashboardInsights());
   const [adminToken, setAdminToken] = useState('alice:admin');
   const [adminResult, setAdminResult] = useState('No admin command executed yet.');
+  const [adminBusy, setAdminBusy] = useState(false);
   const [baselineRepoName, setBaselineRepoName] = useState('repo-a');
   const [baselineComplexity, setBaselineComplexity] = useState('18.5');
   const [baselineResult, setBaselineResult] = useState('No release baseline loaded yet.');
+  const [baselineBusy, setBaselineBusy] = useState(false);
 
   const { commitRiskCards, bottlenecks, opportunities, stages } = insights;
   const qualityPulse = buildQualityPulse(insights, { allowSampleFallbacks: payloadState === 'sample' });
@@ -180,9 +182,8 @@ function App() {
 
   const criticalBottlenecks = qualityPulse.bottleneckBuckets.critical;
   const highBottlenecks = qualityPulse.bottleneckBuckets.high;
-  const stageStatusByName = new Map(bottlenecks.map((bottleneck) => [bottleneck.name, bottleneck.status]));
-  const jobObservabilityItems: DashboardFinding[] = stages.map((stage) => {
-    const severity = stageStatusByName.get(stage.name) ?? 'good';
+  const jobObservabilityItems: DashboardFinding[] = stages.map((stage, index) => {
+    const severity = bottlenecks[index]?.status ?? 'good';
     return {
       id: stage.name,
       text: `${stage.name}: queue ${stage.queueDepth}, throughput ${stage.throughput}, lag ${stage.avgLatencyMs}ms`,
@@ -222,21 +223,38 @@ function App() {
   };
 
   const runAdminBridge = async (command: AdminBridgeCommand) => {
-    const result = await invokeAdminCommand(command, buildAdminBridgePayload(command, adminToken));
-
-    setAdminResult(`${result.ok ? 'OK' : 'ERR'} ${result.command}: ${result.message}`);
+    setAdminBusy(true);
+    setAdminResult(`Running ${command}…`);
+    try {
+      const result = await invokeAdminCommand(command, buildAdminBridgePayload(command, adminToken));
+      setAdminResult(`${result.ok ? 'OK' : 'ERR'} ${result.command}: ${result.message}`);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'Unknown bridge error.';
+      setAdminResult(`ERR ${command}: ${detail}`);
+    } finally {
+      setAdminBusy(false);
+    }
   };
 
   const loadReleaseBaseline = async () => {
-    const result = await invokeAdminCommand('query_release_baseline', {
-      token: adminToken,
-      repoName: baselineRepoName
-    });
-    setBaselineResult(
-      `${result.ok ? 'OK' : 'ERR'} query_release_baseline: ${
-        result.ok && result.message === 'null' ? 'no baseline recorded' : result.message
-      }`
-    );
+    setBaselineBusy(true);
+    setBaselineResult('Running query_release_baseline…');
+    try {
+      const result = await invokeAdminCommand('query_release_baseline', {
+        token: adminToken,
+        repoName: baselineRepoName
+      });
+      setBaselineResult(
+        `${result.ok ? 'OK' : 'ERR'} query_release_baseline: ${
+          result.ok && result.message === 'null' ? 'no baseline recorded' : result.message
+        }`
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'Unknown baseline error.';
+      setBaselineResult(`ERR query_release_baseline: ${detail}`);
+    } finally {
+      setBaselineBusy(false);
+    }
   };
 
   const reseedReleaseBaseline = async () => {
@@ -246,12 +264,21 @@ function App() {
       return;
     }
 
-    const result = await invokeAdminCommand('reseed_release_baseline', {
-      token: adminToken,
-      repoName: baselineRepoName,
-      baselineComplexity: parsedBaseline
-    });
-    setBaselineResult(`${result.ok ? 'OK' : 'ERR'} reseed_release_baseline: ${result.message}`);
+    setBaselineBusy(true);
+    setBaselineResult('Running reseed_release_baseline…');
+    try {
+      const result = await invokeAdminCommand('reseed_release_baseline', {
+        token: adminToken,
+        repoName: baselineRepoName,
+        baselineComplexity: parsedBaseline
+      });
+      setBaselineResult(`${result.ok ? 'OK' : 'ERR'} reseed_release_baseline: ${result.message}`);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'Unknown baseline error.';
+      setBaselineResult(`ERR reseed_release_baseline: ${detail}`);
+    } finally {
+      setBaselineBusy(false);
+    }
   };
 
   return (
@@ -265,6 +292,7 @@ function App() {
       }}
     >
       <Paper
+        component="main"
         square
         elevation={4}
         sx={{
@@ -286,7 +314,7 @@ function App() {
             alignItems: "center"
           }}>
             <Public fontSize="small" color="action" />
-            <Typography variant="subtitle1" sx={{
+            <Typography component="h1" variant="h6" sx={{
               fontWeight: 700
             }}>
               The Web Companion: Optimization Hub
@@ -322,6 +350,7 @@ function App() {
         <Divider sx={{ my: 1 }} />
         <Box sx={{ mb: 1.5 }}>
           <Typography
+            component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -348,7 +377,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="quality-pulse-section">
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -381,6 +410,7 @@ function App() {
           />
           <Paper variant="outlined" sx={{ p: 1.25, mt: 1, borderRadius: 2 }}>
             <Typography
+              component="h3"
               variant="subtitle2"
               sx={{
                 fontWeight: 700,
@@ -401,7 +431,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="explainability-section">
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -420,7 +450,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="trend-risk-section">
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -448,7 +478,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="job-observability-section">
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -461,7 +491,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }}>
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -515,7 +545,7 @@ function App() {
         </Box>
 
         <Box sx={{ mb: 1.5 }}>
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -527,12 +557,13 @@ function App() {
             adminToken={adminToken}
             adminResult={adminResult}
             onAdminTokenChange={setAdminToken}
+            adminBusy={adminBusy}
             onRunAdminCommand={(command) => void runAdminBridge(command)}
           />
         </Box>
 
         <Box sx={{ mb: 1.5 }} data-testid="baseline-management-section">
-          <Typography
+          <Typography component="h2"
             variant="subtitle2"
             sx={{
               fontWeight: 700,
@@ -557,14 +588,14 @@ function App() {
             sx={{ mb: 1 }}
           />
           <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
-            <Button size="small" variant="outlined" onClick={() => void loadReleaseBaseline()}>
+            <Button size="small" variant="outlined" disabled={baselineBusy} onClick={() => void loadReleaseBaseline()}>
               Load Baseline
             </Button>
-            <Button size="small" variant="outlined" onClick={() => void reseedReleaseBaseline()}>
+            <Button size="small" variant="outlined" disabled={baselineBusy} onClick={() => void reseedReleaseBaseline()}>
               Reseed Baseline
             </Button>
           </Stack>
-          <Typography variant="caption" data-testid="baseline-management-result">
+          <Typography variant="caption" role="status" aria-live="polite" aria-atomic="true" data-testid="baseline-management-result">
             {baselineResult}
           </Typography>
         </Box>
@@ -573,7 +604,7 @@ function App() {
 
         {audience === 'lead' && (
           <Box>
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Team Lead Focus
@@ -586,7 +617,7 @@ function App() {
               }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
-            <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
+            <Typography component="h3" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Top Commit Risks
             </Typography>
             <FindingSection
@@ -602,7 +633,7 @@ function App() {
 
         {audience === 'manager' && (
           <Box>
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Manager Focus
@@ -615,7 +646,7 @@ function App() {
               }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
-            <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
+            <Typography component="h3" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Bottleneck Radar
             </Typography>
             <List dense disablePadding>
@@ -637,7 +668,7 @@ function App() {
 
         {audience === 'executive' && (
           <Box>
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Executive Focus
@@ -650,7 +681,7 @@ function App() {
               }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
-            <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
+            <Typography component="h3" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Top Improvement Opportunities
             </Typography>
             <List dense disablePadding>
@@ -671,7 +702,7 @@ function App() {
 
         {audience === 'security' && (
           <Box data-testid="security-detail-section">
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Security Focus
@@ -684,7 +715,7 @@ function App() {
               }}>
               {dashboardAudienceHighlights[audience].guidance}
             </Typography>
-            <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
+            <Typography component="h3" variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>
               Security-Weighted Commit Signals
             </Typography>
             <FindingSection
@@ -723,7 +754,7 @@ function App() {
               mb: 1
             }}>
             <Accessibility fontSize="small" color="action" />
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               WCAG 2.1/2.2 AA Accessibility Audit
@@ -736,12 +767,15 @@ function App() {
           <Button
             fullWidth
             variant="contained"
-            startIcon={<PlayArrow />}
-            aria-label="Run Full Audit"
+            disabled
+            aria-describedby="audit-preview-unavailable"
             sx={{ textTransform: 'none', mt: 1 }}
           >
             Run Full Audit
           </Button>
+          <Typography id="audit-preview-unavailable" variant="caption" color="text.secondary" role="note">
+            Audit execution is unavailable in this preview.
+          </Typography>
           <FindingSection title="Findings" items={dashboardFindingGroups.accessibility} />
         </Box>
 
@@ -755,7 +789,7 @@ function App() {
               mb: 1
             }}>
             <Search fontSize="small" color="action" />
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               SEO, GEO &amp; AEO Performance
@@ -764,10 +798,9 @@ function App() {
           <Typography variant="caption" color="text.secondary" data-testid="provenance-seo">
             Static example content; not derived from imported telemetry.
           </Typography>
-          <Tabs value={seoTab} onChange={(_, value) => setSeoTab(value)} sx={{ mb: 1.5 }} variant="fullWidth">
-            <Tab value="current" label="Current Page" sx={{ minHeight: 36 }} />
-            <Tab value="site" label="Site-Wide" sx={{ minHeight: 36 }} />
-          </Tabs>
+          <Typography variant="caption" color="text.secondary" role="note" sx={{ display: 'block', mb: 1.5 }}>
+            Page-specific and site-wide selection is unavailable; the metrics below are static examples.
+          </Typography>
           <MetricItem label="On-Page SEO" value="92/100" />
           <MetricItem label="Schema Markup" value="Found (7 entities)" />
           <MetricItem
@@ -775,7 +808,7 @@ function App() {
             value="65/100 (Improve structural clarity for citations)"
           />
           <MetricItem label="Geographic SEO" value="N/A (Set service areas)" />
-          <FindingSection title={`Example guidance (${seoTab})`} items={dashboardFindingGroups.seo} />
+          <FindingSection title="Example guidance" items={dashboardFindingGroups.seo} />
         </Box>
 
         <Divider sx={{ my: 2 }} />
@@ -788,7 +821,7 @@ function App() {
               mb: 1
             }}>
             <Security fontSize="small" color="action" />
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Security &amp; Drupal Review
@@ -815,7 +848,7 @@ function App() {
               mb: 1
             }}>
             <Speed fontSize="small" color="action" />
-            <Typography variant="subtitle2" sx={{
+            <Typography component="h2" variant="subtitle2" sx={{
               fontWeight: 700
             }}>
               Page Performance Metrics
@@ -829,12 +862,10 @@ function App() {
 
           <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5, gap: 1 }}>
             <Typography variant="body2">Field Data</Typography>
-            <Switch checked={fieldData} onChange={() => setFieldData((prev) => !prev)} aria-label="Field or lab data toggle" />
-            <Typography variant="body2" sx={{
-              fontWeight: 700
-            }}>
-              Lab Data
-            </Typography>
+            <FormControlLabel
+              control={<Switch checked={false} disabled />}
+              label="Field and lab data selection unavailable in this preview"
+            />
           </Box>
         </Box>
       </Paper>

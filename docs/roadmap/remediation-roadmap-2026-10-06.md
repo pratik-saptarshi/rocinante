@@ -1,6 +1,6 @@
 # Frontend UX Remediation Roadmap — 2026-10-06
 
-**Status (2026-10-06):** Phase 1 is complete. PR #114 merged into `main` as `b204f83b2d69655002018038ff59e1b14f87f37a`; code head `a334cf900b61f5273d4005a05cdf71b79e7cc6b7` passed local TypeScript, 13 Vitest files / 84 tests, production build, and diff checks, plus hosted aggregate CI (`37419778717`), Security (`37419778678`), and Dependency Review (`37419778673`). The later merge head passed CI (`37423517717`), Security (`37423517696`), and Dependency Review (`37423517727`). Documentation/Beads closeout PR #116 merged as `6fcc8d75b491898a7a07dc4875fb4b4555578107`; exact head `5172c28f9c86feb3eb246c279a955fed594fe0ee` passed CI (`37424524116`), Security (`37424524195`), and Dependency Review (`37424524140`). All Phase 1 review threads are resolved. PR #112 merged as `035c290662e2a4c79e247de6036886ea90e7bf60`; five P2 inline review threads remain unresolved after merge. Their evidence/documentation closeout is the next gate before Phase 2.
+**Status (2026-10-06):** Phase 1 and Phase 2 are complete. PR #112's nine review threads are resolved; physical macOS tray/foreground acceptance remains unverified. PR #118 merged Phase 2 at `ce1e05d8459ee12392c474365bb8e120780ecb37`; exact-head CI (`37430967217`), Security (`37430967218`), and Dependency Review (`37430967207`) passed. Phase 3 is in progress on PR #119, branch `fix/ux-phase3-controls-accessibility-2026-10-06`, based on that main head. Local exact-source TypeScript, 13 Vitest files/94 tests, and production build passed earlier; Vite emitted a >500 kB chunk advisory. Playwright discovers 10 tests; local browser startup is blocked by sandbox EPERM on 127.0.0.1:4173. Two new P2 PR #119 findings were fixed: pending admin/baseline announcements are no longer marked `aria-busy`, and Action Routing is H3 under Quality Pulse. Regression tests and roadmap/integration-log updates are committed on the branch. The first exact-head CI passed TypeScript but found a baseline-test fixture using the wrong bridge result shape; the stub was corrected to the numeric shape used by existing contract tests. Fresh hosted CI/Security/Dependency Review and manual keyboard-only/screen-reader acceptance are pending; auto-merge is enabled but must wait on exact-head required checks.
 
 **Inputs:** [2026-10-05 UX adversarial panel report](../reviews/2026-10-05-frontend-user-experience/review_panel_report.md), [panel process and evidence](../reviews/2026-10-05-frontend-user-experience/review_panel_process.md), and the current local Beads hierarchy.
 
@@ -16,10 +16,10 @@ The panel scored the preview 3.7/10 and raised 10 P2 and 3 P3 findings, with no 
 - The panel reviewed local source at `e9d6d3a`. PR #114 delivered Phase 1 code and merged on 2026-10-06. Because two documentation review threads remained open at merge, PR #116 is the Phase 1 documentation closeout vehicle.
 - Local Beads records `BI-5u3.1.1`–`.1.8` as closed against PR #114 code head `71bf9e5`; their close notes record local typecheck, 13 Vitest files / 79 tests, production build, Playwright discovery, and hosted CI/security/dependency-review passes on that earlier code head. These records do not close the parent milestone.
 - Live GitHub was refreshed on 2026-10-06. PR #114 merged as `b204f83b2d69655002018038ff59e1b14f87f37a` after branch head `b15118411dea0d2104eecffca74d17c6f66200ab` passed CI (`37423517717`), Security (`37423517696`), and Dependency Review (`37423517727`). Docs closeout PR #116 merged as `6fcc8d75b491898a7a07dc4875fb4b4555578107`; its three exact-head workflows passed and all PR #114 threads are resolved. Auto-merge completed the protected flow.
-- PR #112 is merged as `035c290`. GitHub still reports five unresolved P2 review threads (`PRRT_kwDOSr9EN86pJmZK`, `PRRT_kwDOSr9EN86pLAJi`, `PRRT_kwDOSr9EN86pSwNa`, `PRRT_kwDOSr9EN86pS49n`, and `PRRT_kwDOSr9EN86pS_Ru`). They require accurate timed-out manual tray evidence; current macOS quit source/validation in root and scoped codemaps; readiness checklist/test-plan status; and the Markdown bill of materials. The final reviewed PR #112 head was `bb2d170`; CI `37417428474`, Security `37417428663`, and Dependency Review `37417428598` passed on that head. Those automated checks do not prove physical Show/Quit or foreground behavior. Resolve each thread only after its document is reconciled with merged source and that limitation remains explicit.
+- PR #112 is merged as `035c290`; all nine review threads are currently resolved according to the live GitHub thread query. Physical macOS tray Show/Quit, foreground restoration, warm URL delivery, and saved-state restart remain separate human/installed-app gates; documentation follow-up does not claim those interactions were physically witnessed.
 - The user-reported unstable startup has not been tied to a specific binary or cause. The [dated macOS shutdown remediation plan](macos-native-shutdown-remediation-2026-10-06.md) defines a current-build reproduction and evidence sequence; the [decision record](../decisions/decision-2026-10-06.md) keeps the hard-exit candidate gated on installed-app acceptance. DuckDB remains prebuilt-only.
 - The isolated checkout `/private/tmp/rocinante-ux-phase-plan` preserves the review history; its three documentation files were published as PR #116. Code validation on code head `a334cf9` passed: TypeScript, Vitest (13 files / 84 tests), production build, and `git diff --check`. Playwright discovery finds all 8 tests; local browser execution remains blocked by sandbox `EPERM` binding `127.0.0.1:4173`.
-- The 2026-10-06 Beads snapshot contains 26 unique issues: 16 open and 10 closed. `bd lint` passed with 16 open issues checked. Children `.1.9` and `.1.10` have local closure evidence tied to `a334cf9`; `.1.3` hosted Playwright evidence is recorded against the same code head in the merged PR docs. The Phase 1 parent is closed. Remote Beads synchronization remains unverified.
+- The 2026-10-06 Beads snapshot contains 27 unique issues: 17 open and 10 closed. `bd lint` passed with 16 open issues checked. Children `.1.9` and `.1.10` have local closure evidence tied to `a334cf9`; `.1.3` hosted Playwright evidence is recorded against the same code head in the merged PR docs. The Phase 1 parent is closed. Remote Beads synchronization remains unverified.
 - `BI-5u3.1.3` and all Phase 1 child records are closed; hosted Playwright passed on the exact code head as part of CI `37419778717` and was reconfirmed by the later PR merge head.
 - UI package pin is pnpm `12.9.1`. No standalone UI lint script is defined; do not report a separate UI lint result unless one is added and run.
 
@@ -44,6 +44,10 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 | UX-13 responsive layout/task fit | UNVERIFIED | 0.45 | Partial | Defer; test viewports/tasks and change layout only if impairment reproduces | `BI-5u3.5.2` / M4 |
 | PR #114 review: security signal outside display limit | VERIFIED | 0.90 | Full | Fix is on PR #114; classify the full dataset, retain bounded details, disclose omitted count, and test recommendations/routes beyond the card cap | `BI-5u3.1.9` / M1 |
 | PR #114 review: critical manager stage hidden by truncation | VERIFIED | 0.95 | Full | Rank critical stages ahead of high stages by status and impact before selecting two manager actions | `BI-5u3.1.10` / M1 |
+| PR #118 review follow-up: duplicate stage names overwrite severity lookup | VERIFIED | 0.90 | Full | Bundle in Phase 3; associate severity by row identity/order and add a mixed healthy/critical duplicate-name regression | `BI-5u3.4.6` / M3 follow-up |
+| PR #119 review: pending status hidden while live region is busy | VERIFIED | 0.95 | Full | Remove `aria-busy` from the admin and baseline status live regions; test that pending text remains exposed | `BI-5u3.4.4` / M3 |
+| PR #119 review: Action Routing incorrectly exposed as H2 peer | VERIFIED | 0.95 | Full | Make Action Routing an H3 nested under Quality Pulse and assert heading level | `BI-5u3.4.5` / M3 |
+| PR #119 hosted CI: baseline pending test used a response shape the bridge does not return | VERIFIED | 0.98 | Full | Change the fake bridge result to a numeric baseline and require a fresh exact-head UI run | `BI-5u3.4.4` / M3 verification |
 
 **Disposition totals:** panel findings: 0 must-fix, 11 bundled, 2 deferred, 0 informational. PR review supplement: 2 P2 bundled follow-ups; both fixes are implemented and independently reviewed, with exact-head hosted gates and one review thread still blocking Phase 1 close. No governance veto was triggered by the panel’s P0/P1 rules. Scope remains the browser preview.
 
@@ -74,7 +78,7 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 - Playwright: sample/import/empty/reset, malformed import recovery, and hidden-beyond-limit security signal.
 - Run frozen pnpm install with `12.9.1`, `pnpm exec tsc -b`, `pnpm exec vitest run`, `pnpm run build`, and `pnpm run test:e2e`. Require same-head hosted UI/Playwright and aggregate checks; inspect review threads and merge only via protected PR after all required checks are green.
 
-**Exit gate:** close `BI-5u3.1` only after `BI-5u3.1.9` and `.10` are implemented and reviewed, all known review threads are resolved, and exact-head required CI is terminal green. Local TypeScript, 84 Vitest tests, production build, and independent spec/quality reviews pass; checks for current head `a334cf9` are pending. Enable auto-merge only after required checks are green and review blockers remain resolved. Until then Phase 2 must not start.
+**Exit gate (complete):** `BI-5u3.1` is closed after implementation follow-ups `.1.9` and `.1.10`, Phase 1 documentation closeout, review resolution, and terminal-green exact-head hosted checks. The Phase 1 test/check evidence above is historical and does not replace validation of later heads.
 
 ## Phase 2 — Ground metrics, provenance, and recommendations (PR 2)
 
@@ -87,12 +91,12 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 - Each fixed/example section identifies its source; imported-derived sections identify the active imported data.
 - Complete healthy data never shows unconditional critical warnings or unrelated sample routes. Empty data has a truthful empty/unavailable state.
 - No route or recommendation is presented as derived from current data unless its source record supports it; any retained example is clearly labeled illustrative.
-- Views use the same stage-severity classifier and configured latency threshold.
+- Views use the same stage-severity classifier and configured latency threshold. Duplicate stage names will be covered by `BI-5u3.4.6` in Phase 3 so every row retains its own computed severity.
 - Score explanations name only formula inputs. Opportunity-only changes cannot be described as raising the score unless the score formula actually includes them.
 
 **Test plan**
 
-- Unit-test severity boundaries and each score component, including opportunity-only input changes.
+- Unit-test severity boundaries and each score component, including opportunity-only input changes. Phase 3 adds a duplicate-name component regression and verifies row-specific status.
 - Component-test provenance and routes for empty, healthy, and critical payloads.
 - Playwright verifies healthy and critical payload guidance, no false critical route, and clear sample labeling.
 - Run frozen install, typecheck, complete Vitest suite, production build, Playwright, and exact-head hosted required checks.
@@ -101,26 +105,26 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 
 ## Phase 3 — Make controls and accessibility semantics honest (PR 3)
 
-**Milestone:** `BI-5u3.4`. **Findings:** UX-03, UX-08–UX-11. **Dependency:** Phase 2 merged.
+**Milestone:** `BI-5u3.4` plus review follow-up `BI-5u3.4.6`. **Findings:** UX-03, UX-08–UX-11 and duplicate-stage severity. **Dependency:** Phase 2 merged.
 
 **Commit slices:** `fix(ui): clarify preview-only controls`; `fix(a11y): meet primary text contrast`; `fix(a11y): name switches and announce results`; `fix(a11y): add landmarks and tab relationships`; `test(a11y): cover dashboard interactions`.
 
 **Acceptance criteria**
 
-- Every enabled control either performs the represented operation or clearly identifies preview-only/unavailable behavior. A real audit engine or new data source requires a separately defined contract.
+- Every enabled control performs the represented operation. Unavailable audit and Field/Lab source controls are disabled and carry clear preview limitations; the SEO page/site selector is removed while neither scope has distinct source data. No inert control reports a completed action. A real audit engine or new data source requires a separately defined contract.
 - Default normal-size primary text meets WCAG 2.2 SC 1.4.3 4.5:1 contrast for contained and outlined controls; hover, focus, disabled, and theme variants are separately measured.
-- Field/Lab switch’s interactive input exposes a meaningful accessible name and accurate checked state.
-- Import/reset/admin/baseline outcomes expose suitable status or alert semantics. Errors are associated with the relevant control without stale or duplicate announcements.
-- Main landmark, heading hierarchy, and keyboard-operable tab/panel name and ID relationships are present and unique.
+- The disabled Field/Lab switch input is associated with its visible label and reports its unavailable state; no data-mode change is implied.
+- Import/reset state and admin/baseline pending and final outcomes expose suitable status or alert semantics. Pending text remains announced while commands run: do not set `aria-busy` on the live status region. Payload errors stay associated with the textarea; busy commands disable repeat submissions and one live region updates without focus movement.
+- Exactly one main landmark and a descriptive H1 precede nested H2/H3 section headings. Because the inert SEO selector is removed, no tab/panel relationship is needed; if real page/site data is added later, its tabs must have unique IDs and matching panel relationships.
 
 **Test plan**
 
-- Testing Library asserts control outcomes, role/name/state, status and alert behavior, input error associations, main landmark, headings, and tab relationships.
-- Contrast tests check theme tokens and rendered button-state colors; scope the claim to the states checked.
-- Playwright exercises pointer and keyboard flows. Record a keyboard-only pass and a screen-reader spot check for announcements/navigation.
+- Testing Library asserts disabled preview controls, visible labels and switch name/state, admin and baseline pending/final/error status without `aria-busy`, textarea error associations, main landmark and heading levels (including Action Routing H3), plus duplicate-name row severity. SEO selector removal is asserted explicitly.
+- Contrast tests calculate from computed button foreground/background in Testing Library and Playwright, including enabled contained/outlined actions after hover/focus. Current claims cover exercised colors only; a full color-system audit remains out of scope.
+- Playwright checks landmarks, disabled actions, accessible switch naming, and computed contrast. Record keyboard-only operation and a screen-reader spot check for status/heading navigation before closing the phase; those human checks are pending.
 - Run frozen install, typecheck, complete Vitest suite, production build, Playwright, and exact-head hosted required checks.
 
-**Delivery:** one focused PR after Phase 2 merges. Do not add product behavior beyond the browser preview contract established in Phase 0.
+**Delivery:** focused PR #119 from the refreshed Phase 2 main head, with reviewable code/test/doc commits. Enable auto-merge only after same-head required workflows pass and review blockers are resolved. Keep the native shell and command payload contracts out of scope.
 
 ## Phase 4 — Decide preview wording and validate responsive task fit
 
@@ -140,10 +144,10 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 ## Progressive commit and PR gates
 
 1. **Phase 1 complete:** PR #114 code and PR #116 documentation/Beads closeout merged; exact-head hosted gates passed and all UX PR #114 review threads are resolved.
-2. **Milestone 0 / PR #117:** from verified current `main` (`6fcc8d7` was latest at review), reconcile the five outstanding PR #112 threads in a focused documentation follow-up. Record the manual Show timeout and current hard-exit source; quote exact hosted checks but keep physical macOS Show/Quit acceptance open. Run documentation contracts, relevant Rust format/contract checks, and required hosted PR checks before resolving threads.
-3. **PR 2 / Phase 2:** only after PR #117's checks pass and five review threads are resolved, branch from the updated `main`; commit provenance, recommendation, severity, and score work in small Conventional Commit slices; open one focused PR.
-4. **PR 3 / Phase 3:** after PR 2 merges, branch from updated `main`; commit control and accessibility work in reviewable slices; open one focused PR.
-5. **Phase 4:** after PR 3 merges, complete decision and viewport evidence. Open a fourth PR only if validation proves a code defect.
+2. **PR #117 closeout complete:** current GitHub reports all 9 PR #112 review threads resolved. The physical macOS interaction gate remains distinct.
+3. **Phase 2 complete:** PR #118 merged as `ce1e05d`; CI `37430967217`, Security `37430967218`, and Dependency Review `37430967207` passed on its exact head.
+4. **PR 3 / Phase 3 in progress:** branch `fix/ux-phase3-controls-accessibility-2026-10-06` was based on `ce1e05d`. Implement controls, contrast, input naming, live statuses, landmarks/headings, and duplicate-stage severity regression in small Conventional Commit slices. PR #119 fixes two further P2 review findings: live status regions no longer carry `aria-busy`, and Action Routing is H3. Auto-merge is enabled; exact-head checks must pass and review blockers must be resolved before merge.
+5. **Phase 4:** after Phase 3 merges, complete decision and viewport evidence. Open another PR only if validation proves a code defect.
 6. At each phase start, refresh open PR heads, ownership/write access, and checks. Reuse an existing writable branch only when its exact scope matches; otherwise use a clean branch from verified latest `main`. Merge only when local validation, required hosted checks, and review are satisfactory on the same commit. Record outcomes; never mark a planned check as passed.
 
 ## Beads worklist and finding traceability
@@ -152,34 +156,35 @@ The panel’s stated P2/P3 severities map to effective P2/P3 under the integrato
 |---|---|---|---|
 | `BI-5u3` | Epic: all panel findings and follow-up review blockers map to issues, milestones, and evidence; preserve preview/native boundary | `bd lint`; verify graph and finding-to-test mapping | Open; Beads database is local and remote sync is unverified |
 | `BI-5u3.1` | M1: explicit import states, schema safety, security signals survive display truncation | Unit, component, Playwright, same-head hosted checks | Closed after PR #114 and docs closeout PR #116 merged; same-head hosted checks passed and review threads resolved |
-| `BI-5u3.6` | M0 prerequisite: reconcile the five unresolved PR #112 threads with merged shutdown source and evidence; leave physical tray acceptance pending | Roadmap/docs contracts, relevant Rust/doc checks, same-head CI/Security/Dependency Review; verify all five GitHub thread states | Open; blocks `BI-5u3.3` |
+| `BI-5u3.6` | M0 prerequisite: reconcile PR #112 documentation threads with merged shutdown source/evidence; leave physical tray acceptance pending | Roadmap/docs contracts, relevant Rust/doc checks, same-head CI/Security/Dependency Review; verify thread states | Closed after PR #117; all 9/9 PR #112 threads now resolved; physical tray acceptance remains open |
 | `.1.1` / `.1.2` | UX-01 distinct missing/empty/sample/import states; UX-04 validate malformed schema before render/state update | Import-state and malformed-payload tests | Closed; exact code head `a334cf9` passed hosted CI and local UI checks |
 | `.1.3` | Hosted Playwright gate with distinct result and failure evidence | UI-triggered CI success/failure behavior | Closed; hosted Playwright and aggregate CI passed on exact code head `a334cf9` |
 | `.1.4`–`.1.8` | M1 follow-ups: do not claim imported bottleneck/trend/top-risk data when absent; derive routes from full active telemetry | Empty/healthy/security-rich component and E2E cases | Closed; exact code head `a334cf9` passed hosted CI and local UI checks |
 | `.1.9` | New PR review follow-up: full-dataset security classification independent of card display limit | Security record after limit still counted/routed; non-security control case | Closed locally against `a334cf9`; tracker and closeout evidence merged in PR #116; exact-head hosted checks passed |
 | `.1.10` | PR review follow-up: rank critical manager stages before the two-action limit | Later critical stage wins over earlier highs in recommendation and route; impact ordering and deterministic ties | Closed locally against `a334cf9`; tracker and closeout evidence merged in PR #116; exact-head hosted checks passed |
-| `BI-5u3.3` + `.3.1`–`.3.4` | M2 UX-02/05/06/07: provenance, data-derived warnings/routes, consistent severity, truthful formula explanation | Score/severity unit tests; healthy/empty/critical component + E2E tests | Open; blocked by `BI-5u3.6` and completion of Phase 1 |
-| `BI-5u3.4` + `.4.1`–`.4.5` | M3 UX-03/08/09/10/11: honest controls, contrast, switch naming, status semantics, landmarks/tabs | DOM/accessibility assertions, contrast, keyboard, screen-reader spot check, E2E | Open |
-| `BI-5u3.5` + `.5.1`–`.5.2` | M4 UX-12/13: document audience/copy contract; validate responsive task fit before code | Decision note; viewport/zoom screenshots and task results | Open |
+| `BI-5u3.3` + `.3.1`–`.3.4` | M2 UX-02/05/06/07: provenance, data-derived warnings/routes, consistent severity, truthful formula explanation | Score/severity unit tests; healthy/empty/critical component + E2E tests | Closed by PR #118 `ce1e05d`; exact-head hosted checks green |
+| `BI-5u3.4` + `.4.1`–`.4.5` | M3 UX-03/08/09/10/11 plus `BI-5u3.4.6`: honest unavailable controls, AA contrast, meaningful switch name, async status announcements, main/heading semantics; remove nonfunctional SEO tabs pending real scope data; preserve per-row severity for duplicate stage names | DOM/accessibility assertions, computed contrast, keyboard and browser checks, duplicate-name mixed-severity regression; manual screen-reader spot check | Open; Phase 3 implementation branch active, hosted and human checks pending |
+| `BI-5u3.4.6` | PR #118 follow-up: keep severity attached to each duplicate-named telemetry stage row | Mixed healthy/critical duplicate-name Testing Library regression; full UI and same-head hosted checks | Open; included in Phase 3 branch |
+| `BI-5u3.5` + `.5.1`–`.5.2` | M4 UX-12/13: document audience/copy contract; validate responsive task fit before code | Decision note; viewport/zoom screenshots and task results | Open; blocked on Phase 3 |
 
 Detailed per-issue acceptance criteria and test plans are stored in the Beads descriptions and the current [UX Beads snapshot](frontend-ux-remediation-beads-2026-10-06.jsonl). The local Beads IDs and history are not confirmed synchronized to a remote tracker.
 
 ## Coherence check, caveats, and action items
 
-- **No contradictory completion claim:** Phase 1 code and docs are merged with exact-head hosted evidence on `a334cf9`, `b151184`, and `5172c28`; all UX PR #114 threads are resolved. PR #112 is merged but has five unresolved P2 threads; its CI/security/dependency checks passed on exact head `bb2d170`.
+- **No contradictory completion claim:** Phase 1 and Phase 2 are merged with exact-head hosted checks; all UX PR #114 threads and all 9 current PR #112 threads are resolved. Phase 3 code is in progress and must not be marked complete until same-head CI and review pass.
 - **No speculative UX change:** disputed UX-12 and unverified UX-13 remain validation-only.
 - **Boundary preserved:** implementation targets `ui/`; native runtime and public payload contracts stay out of scope.
-- **Context warning:** Physical macOS Show/Quit and foreground restoration remain unverified. The PR #112 automated checks passed on `bb2d170`, but do not establish a successful physical tray interaction. Keep this acceptance gate open independently of the documentation-thread closeout.
+- **Context warning:** Physical macOS Show/Quit and foreground restoration remain unverified independently of the resolved documentation threads. Keyboard-only and screen-reader Phase 3 checks also remain pending.
 - **Dissent ledger:** UX-12 usability vs trust reviewers disagree about browser-visible Tauri wording; decision owner is product owner. UX-13 impact was not demonstrated; decision owner is UX/product reviewer. Independent judge stage was unavailable.
 
 | Priority | Owner | Action | Source |
 |---|---|---|---|
-| P2 | Implementer/reviewer | Reconcile root/scoped codemaps, publish checklist, test plan, BOM, and parity matrix with current macOS quit implementation and actual manual evidence; validate on focused follow-up PR #117 | PR #112 threads |
-| P2 | Reviewer/maintainer | Resolve all five PR #112 threads only after evidence matches merged source and documentation checks pass; start Phase 2 only then | User sequencing instruction |
-| P2 | Product owner | Record browser preview audience/control promises before UX-03 behavior or UX-12 copy decisions | UX-03/12 |
-| P2 | Implementer | Begin Phase 2 only from updated `main` after Phase 1 merge | UX-02/05/06/07 |
+| P2 | Implementer | Finish Phase 3 code and regression tests, then open focused PR and enable auto-merge after same-head required checks/review pass | UX-03/08–11, duplicate-stage regression |
+| P2 | Reviewer/maintainer | Perform keyboard-only review and screen-reader spot check before closing Phase 3 | BI-5u3.4 |
+| P2 | Product owner | Record preview audience/control promises before UX-12 wording decisions | UX-12 |
+| P3 | UX/product reviewer | Run responsive viewport/task validation and change layout only if impairment reproduces | UX-13 |
 | P3 | UX/product reviewer | Run responsive task validation; authorize layout work only with reproduced impairment | UX-13 |
 
-**Final Recommendation:** Applied with caveats. The panel’s actionable findings are mapped into ordered phases and refined Beads with acceptance and test criteria. Phase 1 is complete. Phase 0 is the immediate gated closeout for five unresolved comments on merged PR #112. Phase 2 must wait until that focused follow-up passes same-head checks and the threads are resolved. Physical macOS Show/Quit acceptance remains a separate open gate; remote Beads synchronization is unverified; UX-03/UX-12 product intent is unresolved; UX-13 impact is unverified; and the independent panel judge stage was unavailable.
+**Final Recommendation:** Applied with caveats. Phases 1 and 2 are complete; Phase 3 code is in progress on a branch from verified main. Its automated and hosted validation is pending, as are keyboard-only and screen-reader checks. Physical macOS Show/Quit acceptance remains a separate open gate. UX-12 still needs a product audience/wording decision, UX-13 remains unverified, remote Beads synchronization is unverified, and the panel's independent judge stage was unavailable.
 
-**Integration history:** The 13 panel findings were appended on 2026-10-05. PR #114 follow-up `PR114-R08` was recorded separately. This revision adds `PR112-R09`, correcting the live merged state and tracking its five unresolved comments in prerequisite bead `BI-5u3.6`.
+**Integration history:** The 13 panel findings were recorded on 2026-10-05; PR #114 follow-up `PR114-R08` was added separately. PR #112 closeout `PR112-R09` is complete: the current GitHub query reports 9/9 threads resolved, with physical macOS acceptance still pending. This revision records PR #118 Phase 2 evidence, the active Phase 3 decisions, and follow-up bead `BI-5u3.4.6` for duplicate-stage severity.
