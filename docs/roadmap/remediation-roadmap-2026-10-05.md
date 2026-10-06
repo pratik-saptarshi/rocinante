@@ -240,7 +240,7 @@ Beads are repository-local and currently unsynced. The database was initialized 
 | Priority | Owner | Action | Source finding |
 |---|---|---|---|
 | P2 | UI implementer | Deliver Phase 1 for explicit empty/import/reset state and schema validation; retain the last good view on invalid input. | UX-01, UX-04 |
-| P2 | CI/UI maintainer | Add the hosted Playwright job, verify its artifacts and path trigger, and check branch-protection requirements before claiming hosted E2E. | BI-5u3.1.3 |
+| P2 | CI/UI maintainer | Run hosted Playwright on the exact PR head, inspect its artifacts and path trigger, and verify branch-protection requirements before claiming hosted E2E. | BI-5u3.1.3 |
 | P2 | UI implementer | Deliver Phase 2 with input-derived recommendations, shared severity rules, and score explanations tied to computed contributors. | UX-02, UX-05, UX-06, UX-07 |
 | P2 | Product owner and UI implementer | Decide whether the controls are illustrative/unavailable or have a defined behavior before any new operation/data source is implemented; complete the Phase 3 accessibility fixes. | UX-03, UX-08, UX-09, UX-10, UX-11 |
 | P3 | Product owner | Record the browser-preview audience and bridge-copy contract before changing UX-12 wording. | UX-12 |
