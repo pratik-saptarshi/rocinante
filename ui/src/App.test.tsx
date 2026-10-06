@@ -111,6 +111,10 @@ describe('Optimization sidebar layout', () => {
     expect(within(qualityPulseSection).getByText('Awaiting telemetry')).toBeInTheDocument();
     expect(within(qualityPulseSection).getByTestId('pulse-score')).toHaveTextContent('Unavailable');
     expect(within(qualityPulseSection).queryByText(/high-risk commit/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Security' }));
+    expect(screen.getByText('No critical security signals are available.')).toBeInTheDocument();
+    expect(screen.queryByText(/sample window/i)).not.toBeInTheDocument();
   });
 
   it('renders trend and risk visuals from the shared insight helper', () => {
@@ -443,7 +447,7 @@ describe('Optimization sidebar layout', () => {
       expect(screen.getByTestId('snapshot-opportunity-count')).toHaveTextContent('1');
 
       fireEvent.click(screen.getByRole('button', { name: 'Security' }));
-      expect(screen.getAllByText(/No critical security signals in sample window/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/No critical security signals are available/i).length).toBeGreaterThanOrEqual(1);
     },
     10000
   );

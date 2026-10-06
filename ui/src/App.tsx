@@ -697,7 +697,7 @@ function App() {
                   : [
                       {
                         id: 'security-empty',
-                        text: 'No critical security signals in sample window',
+                        text: 'No critical security signals are available.',
                         status: 'good'
                       }
                     ]

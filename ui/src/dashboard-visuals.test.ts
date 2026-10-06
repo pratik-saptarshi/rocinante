@@ -63,5 +63,17 @@ describe('buildDashboardVisuals', () => {
       value: '0 actionable opportunities',
       tone: 'good'
     });
+    expect(visuals.trendLines[0].rationale).toBe('No elevated commit-risk records are available.');
+    expect(visuals.trendLines[1].rationale).toBe('No pressured stages are available.');
+  });
+
+  it('explains a risk record without factors without implying sample data', () => {
+    const insights = buildDashboardInsights();
+    insights.commitRiskCards[0].reasons = [];
+
+    const visuals = buildDashboardVisuals(insights);
+
+    expect(visuals.trendLines[0].rationale).toBe('No risk factors were provided for commit A-124.');
+    expect(visuals.prRiskRankings[0].rationale).toBe('No risk factors were provided.');
   });
 });
