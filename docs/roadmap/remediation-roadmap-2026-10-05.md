@@ -15,7 +15,7 @@ The scope is the browser preview in `ui/`. This roadmap does not establish that 
 - Review findings and evidence: [review report](../reviews/2026-10-05-frontend-user-experience/review_panel_report.md), [process transcript](../reviews/2026-10-05-frontend-user-experience/review_panel_process.md), [HTML report](../reviews/2026-10-05-frontend-user-experience/review_panel_report.html), and its `state/` records.
 - UI source of truth: `ui/src/`; UI entry and test contracts are summarized in `ui/codemap.md`.
 - Current package manager pin: pnpm `12.9.1`.
-- Hosted `ui-quality` runs frozen install, `pnpm exec tsc -b`, `pnpm exec vitest run`, and `pnpm run build`. The separate `ui-playwright` job installs Chromium and runs `pnpm run test:e2e`; Phase 1 makes the aggregate `test` depend on it and fail closed on failure/skip. Bead `BI-5u3.1.3` tracks this aggregate gate and branch-protection verification. Do not claim hosted E2E acceptance until the same-head job passes; do not claim the check is required by branch protection without verifying settings.
+- Hosted `ui-quality` runs frozen install, `pnpm exec tsc -b`, `pnpm exec vitest run`, and `pnpm run build`. The separate `ui-playwright` job installs Chromium and runs `pnpm run test:e2e`; Phase 1 makes the aggregate `test` depend on it and fail closed on failure/skip. Bead `BI-5u3.1.3` tracks this aggregate gate. Branch API confirmed that protected `main` at `d4bc8e7` requires `test` and `codeql`; the required aggregate `test` depends on `ui-playwright`. Do not claim hosted E2E acceptance until the same-head job passes.
 - No standalone UI lint script is defined in `ui/package.json`. Do not report a separate UI lint pass unless a lint command is added and run.
 - This workspace already contains unrelated dirty native-shell, macOS, and readiness work. Keep it intact. Do not use that dirty branch as the UX implementation base.
 - The user reported that the native application did not come up cleanly during a macOS acceptance attempt. That incident is outside this frontend review. Track it through the existing [desktop parity record](desktop-parity-matrix.html) and [readiness tracker](bead-issue-tracker.html); do not claim native acceptance based on browser-preview work.
@@ -51,7 +51,7 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 2. **Do not implement new product functionality by assumption.** The repository documents React/Vite as a browser compatibility preview, which is the current scope. Run Full Audit, SEO, and Field/Lab controls without an implemented contract must be visibly preview-only or unavailable. Implement real audit or telemetry behavior only after its data source and owner decision are defined.
 3. **Keep input compatibility stable.** Validate preview payloads without changing existing public command or payload shapes. Reject malformed nested values before replacing active UI state.
 4. **Require same-head evidence.** A milestone is complete only when its focused local checks pass and all applicable hosted required checks terminate green on the PR head being merged.
-5. **Be explicit about E2E hosting.** The hosted Playwright job is separate from `ui-quality`; require its result in the aggregate gate through `BI-5u3.1.3` and verify branch-protection settings before claiming it is a required check.
+5. **Be explicit about E2E hosting.** The hosted Playwright job is separate from `ui-quality`; require its result in the aggregate gate through `BI-5u3.1.3`; refresh branch-protection requirements during each execution because the base branch may change.
 
 ## Phases and PR journey
 
@@ -75,7 +75,7 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 - `test(ui): cover import state and last-good recovery`
 
 **Acceptance criteria:**
-- Explicit empty arrays display a deliberate empty state; missing, empty, sample, and imported modes are distinguishable.
+- Explicit empty arrays display a deliberate empty state; missing, empty, sample, and imported modes are distinguishable. Empty and partial imports do not show sample-derived recommendations or hard-coded action-route instructions.
 - Blank Apply does not silently reset data. Reset to Sample is explicit and labels the resulting data as sample.
 - Nested shape and numeric validation runs before replacing active state. The object-valued `stages[].name` case is rejected with a visible, accessible error.
 - Invalid JSON or schema leaves the last valid view usable; valid existing payloads continue to work.
@@ -90,7 +90,7 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 
 **PR gate:** keep this focused on React preview import/state. Merge through protected PR after same-head checks pass; then base Phase 2 on the merged main tip.
 
-**Local implementation snapshot (2026-10-06):** Payload validation preserves omitted collections separately from explicitly empty arrays. Demo seed data is only used by the no-payload sample/reset view; imported partial payloads leave omitted collections empty and show a partial state. Component and unit coverage covers missing/partial/empty semantics and last-good recovery. A browser test now applies valid data, enters malformed JSON, checks the announced error, and confirms the prior dashboard remains visible. The aggregate `test` job depends on `ui-playwright` and fails if that job fails or is skipped; a workflow contract prevents adding an unreviewed conditional skip. Local results and limitations are recorded in [the Phase 1 validation note](frontend-ux-phase-1-closeout-2026-10-06.md).
+**Local implementation snapshot (2026-10-06):** Payload validation preserves omitted collections separately from explicitly empty arrays. Demo seed data is only used by the no-payload sample/reset view; imported partial payloads leave omitted collections empty and show a partial state. Component and unit coverage covers missing/partial/empty semantics, last-good recovery, and suppressing sample recommendations/action routes for imports. A browser test now applies valid data, enters malformed JSON, checks the announced error, and confirms the prior dashboard remains visible. The aggregate `test` job depends on `ui-playwright` and fails if that job fails or is skipped; a workflow contract prevents adding an unreviewed conditional skip. Local results and limitations are recorded in [the Phase 1 validation note](frontend-ux-phase-1-closeout-2026-10-06.md).
 
 Compatibility note: public envelope and field names remain stable, including the legacy/null envelope form. Validation now rejects incomplete rows and malformed/non-finite limits that older imports may have passed through; callers must provide complete records. The last-good view is retained on rejection. See the closeout note for details.
 
@@ -190,7 +190,7 @@ The check marks above are **planned gates**, not completed results. Phase 1 loca
 
 ### Hosted Playwright validation gate
 
-`BI-5u3.1.3` owns the hosted browser-test enabler: a UI-triggered job must install the pinned pnpm/browser tooling, run `pnpm run test:e2e`, publish actionable failure output, and document whether branch protection requires the check. This heading is the stable `spec_id` target for that issue. The `ui-playwright` job and aggregate dependency have been added; same-head hosted results remain unverified. The protected `main` branch requires `test` and `codeql`; since required `test` depends on `ui-playwright`, the browser job is transitively required, though it is not a separate branch-protection context.
+`BI-5u3.1.3` owns the hosted browser-test enabler: a UI-triggered job must install the pinned pnpm/browser tooling, run `pnpm run test:e2e`, publish actionable failure output, and record which required workflow context contains the Playwright job. This heading is the stable `spec_id` target for that issue. The `ui-playwright` job and aggregate dependency have been added; same-head hosted results remain unverified. The protected `main` branch requires `test` and `codeql`; since required `test` depends on `ui-playwright`, the browser job is transitively required, though it is not a separate branch-protection context.
 
 ## Progressive commit and PR policy
 
