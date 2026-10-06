@@ -59,7 +59,8 @@ describe('Phase 3 accessibility and control behavior', () => {
     setAdminInvokeForTesting(() => new Promise((resolve) => { resolveCommand = resolve; }));
     render(<App />);
 
-    const result = screen.getByRole('status', { name: '' });
+    const result = screen.getByTestId('admin-bridge-result');
+    expect(result).toHaveAttribute('role', 'status');
     fireEvent.click(screen.getByRole('button', { name: 'Ingest Event' }));
     expect(result).toHaveTextContent('Running ingest_event');
     expect(result).toHaveAttribute('aria-busy', 'true');
