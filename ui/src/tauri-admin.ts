@@ -184,7 +184,7 @@ export async function invokeAdminCommand(
       ok: false,
       command,
       payload: JSON.stringify(args),
-      message: 'Tauri runtime not detected. Command bridge is available in desktop runtime only.'
+      message: 'Desktop command runtime not detected. Admin commands are unavailable in the browser preview.'
     };
   }
 
