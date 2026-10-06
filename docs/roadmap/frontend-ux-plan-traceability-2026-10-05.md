@@ -1,6 +1,6 @@
 # Frontend UX Plan Review Traceability — 2026-10-05
 
-**Status (updated 2026-10-06):** Phase 0 planning is integrated. Phase 1 implementation is present locally and its typecheck, Vitest, production build, CI workflow contract, and actionlint-with-repository-ignore checks pass. The Phase 1 finding beads remain open pending hosted Playwright and same-head aggregate checks; no merge, hosted pass, or branch-protection verification is claimed. See the [Phase 1 validation note](frontend-ux-phase-1-closeout-2026-10-06.md).
+**Status (updated 2026-10-06):** Phase 0 planning is integrated. Phase 1 implementation is present locally and its typecheck, Vitest (13 files / 76 tests), production build, CI workflow contract, and actionlint-with-repository-ignore checks pass. Protected `main` branch requirements were verified at base `d4bc8e7`: `test` and `codeql`; the aggregate `test` requires `ui-playwright` transitively. The Phase 1 finding beads remain open pending hosted Playwright and same-head aggregate checks; no merge or hosted pass is claimed. See the [Phase 1 validation note](frontend-ux-phase-1-closeout-2026-10-06.md).
 **Source:** [dated adversarial panel report](../reviews/2026-10-05-frontend-user-experience/review_panel_report.md), [process transcript](../reviews/2026-10-05-frontend-user-experience/review_panel_process.md), and companion state files.
 **Plan:** [Frontend UX remediation roadmap](remediation-roadmap-2026-10-05.md).
 
@@ -23,7 +23,8 @@ The review scored 3.7/10, classified UX-01–UX-10 as P2 and UX-11–UX-13 as P3
 | UX-11 | Gap | Source markup lacks main/heading/tab relationships; rendered navigation untested | 0.80 / 0.85 | Pass / bundle | BI-5u3.4.5 | BI-5u3.4 | Add navigable landmarks, headings, and tab-panel relations; open |
 | UX-12 | New concern | Disputed whether Tauri bridge wording misleads; audience/contract unknown | 0.55 / 0.70 | Pass with caveat / defer | BI-5u3.5.1 | BI-5u3.5 | Record audience/copy decision before any wording change; open, validation only |
 | UX-13 | New concern | Layout facts are source-visible, but no viewport/task impairment was demonstrated | 0.45 / 0.45 | Flag / defer | BI-5u3.5.2 | BI-5u3.5 | Run viewport/task validation; change layout only if harm is reproduced; open |
-| Hosted E2E enabler | Validation gap | Separate `ui-playwright` job exists; aggregate `test` previously did not depend on it | — | Planned enabler | BI-5u3.1.3 | BI-5u3.1 | Aggregate now requires successful Playwright result; hosted run and branch-protection verification pending; open |
+| Hosted E2E enabler | Validation gap | Separate `ui-playwright` job exists; aggregate `test` previously did not depend on it | — | Planned enabler | BI-5u3.1.3 | BI-5u3.1 | Aggregate now requires successful Playwright result; branch protection verified at base `d4bc8e7`; hosted run pending; open |
+| PR #114 follow-up: imported empty data labels a missing bottleneck as `review` | Correction | Current PR comment confirmed sample fallback leaks into the imported Quality Pulse metric and explainability trace; local fix now returns an unavailable state when sample fallbacks are disabled | 0.90 / 0.95 | Pass / must-fix for Phase 1 | BI-5u3.1.4 | BI-5u3.1 | Preserve `review` only in sample mode; unit, component, and browser assertions added; hosted same-head checks pending |
 
 **Classification:** 13 findings; 0 must-fix, 11 bundle, 2 defer, 0 informational. Actionability filter: 12 pass, 1 flag, 0 dropped. UX-03, UX-12, and UX-13 have partial context and keep explicit decision or evidence gates.
 
@@ -51,4 +52,6 @@ The complete acceptance criteria, test plans, cross-PR gates, and Beads dependen
 
 ## Implementation review follow-up
 
-The Phase 1 quality review found no blocker in the empty-state copy fix. Its optional note identified an awkward fallback when a populated risk record has no reason factors. The UI now states that no risk factors were provided for that commit, and the unit test covers both the trend rationale and ranking rationale. This is an informational polish follow-up, not an additional panel finding or Beads issue.
+The Phase 1 quality review found no blocker in the empty-state copy fix. Its optional note identified an awkward fallback when a populated risk record has no reason factors. The UI now states that no risk factors were provided for that commit, and the unit test covers both the trend rationale and ranking rationale. This was an informational polish follow-up, not an additional panel finding or Beads issue.
+
+The live PR review then found a P2 correction: imported empty/partial telemetry inherited the sample `review` bottleneck label in both the metric and explainability trace. The Phase 1 implementation now represents the absent value as unavailable, keeps the sample fallback for sample mode, and tests both empty and partial data. Bead `BI-5u3.1.4` carries the acceptance criteria and test plan; same-head hosted checks remain the exit gate.

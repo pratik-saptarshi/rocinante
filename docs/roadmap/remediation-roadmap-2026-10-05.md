@@ -76,6 +76,7 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 
 **Acceptance criteria:**
 - Explicit empty arrays display a deliberate empty state; missing, empty, sample, and imported modes are distinguishable. Empty and partial imports do not show sample-derived recommendations or hard-coded action-route instructions; the score is unavailable unless imported telemetry produces at least one commit-risk and one bottleneck record; empty arrays mean no observations, not perfect quality. Empty-state visual and security copy does not refer to a sample window.
+- Empty and partial imports without bottleneck records show an unavailable top-bottleneck metric and explanation, rather than the sample-mode `review` fallback. Sample and populated imported modes retain their current labels. Bead `BI-5u3.1.4` tracks the PR review follow-up.
 - Blank Apply does not silently reset data. Reset to Sample is explicit and labels the resulting data as sample.
 - Nested shape and numeric validation runs before replacing active state. The object-valued `stages[].name` case is rejected with a visible, accessible error.
 - Invalid JSON or schema leaves the last valid view usable; valid existing payloads continue to work.
@@ -84,6 +85,7 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 **Test plan:**
 - Unit tests for missing, empty, valid, and malformed records and finite numeric boundaries.
 - Component tests for blank Apply, explicit reset, imported/sample/empty labels, accessible validation errors, and last-good state.
+- Unit/component tests for empty, partial, sample, and populated top-bottleneck labels and explanation copy; assert that imported no-data never says `review`.
 - Extend `ui/e2e/app.spec.ts` with empty/import/reset and malformed-import recovery flows.
 - Run from `ui/` using pnpm `12.9.1`: `pnpm install --frozen-lockfile`, `pnpm exec tsc -b`, `pnpm exec vitest run`, `pnpm run build`, and `pnpm run test:e2e`.
 - Hosted `ui-quality`, `ui-playwright`, and aggregate `test` must pass at the same commit. The `ui-playwright` job and aggregate dependency have been added; their same-head hosted results and branch-protection required-check status remain unverified.
@@ -94,7 +96,7 @@ The panel marks UX-01–UX-11 as source/dependency-supported defects or concrete
 
 Compatibility note: public envelope and field names remain stable, including the legacy/null envelope form. Validation now rejects incomplete rows and malformed/non-finite limits that older imports may have passed through; callers must provide complete records. The last-good view is retained on rejection. See the closeout note for details.
 
-The pinned pnpm 12.9.1 executable was unavailable locally (host pnpm reported 12.8.1 and hung); existing `node_modules/.bin` tools were used for TypeScript, Vitest, and build. The repository actionlint command passes with its configured ignore for the known `vulnerability-alerts` scope diagnostic; unignored actionlint reports that diagnostic. Local Playwright is blocked because the sandbox rejects binding `127.0.0.1:4173` with `EPERM`. Hosted `ui-playwright` and aggregate `test` are pending. Branch-protection required-check configuration has not been verified. Keep `BI-5u3.1`, `BI-5u3.1.1`, `BI-5u3.1.2`, and `BI-5u3.1.3` open until the hosted criteria are met.
+The pinned pnpm 12.9.1 executable was unavailable locally (host pnpm reported 12.8.1 and hung); existing `node_modules/.bin` tools were used for TypeScript, Vitest, and build. The repository actionlint command passes with its configured ignore for the known `vulnerability-alerts` scope diagnostic; unignored actionlint reports that diagnostic. Local Playwright is blocked because the sandbox rejects binding `127.0.0.1:4173` with `EPERM`. Hosted `ui-playwright` and aggregate `test` are pending. Branch protection was verified at base `d4bc8e7`: protected `main` requires `test` and `codeql`, with `ui-playwright` transitively required through `test`. Keep `BI-5u3.1`, `BI-5u3.1.1`, `BI-5u3.1.2`, `BI-5u3.1.3`, and `BI-5u3.1.4` open until their hosted criteria are met.
 
 ### Phase 2
 
@@ -220,6 +222,7 @@ For each milestone:
 | UX-12 | `BI-5u3.5.1` | M4 (`BI-5u3.5`) | Open / validation only; disputed |
 | UX-13 | `BI-5u3.5.2` | M4 (`BI-5u3.5`) | Open / validation only; impact unverified |
 | Hosted E2E enabler | `BI-5u3.1.3` | M1 (`BI-5u3.1`) | Open / planned; hosted Playwright pending |
+| PR review: no sample bottleneck for imported no-data | `BI-5u3.1.4` | M1 (`BI-5u3.1`) | Fix and regression coverage present locally; hosted same-head checks pending |
 
 Beads are repository-local and currently unsynced. The database was initialized because no `.beads` workspace existed. The initialization could not resolve GitHub DNS while checking the configured Dolt remote, so remote issue history and sync status are not verified. The `BI-...` IDs above are created locally; verify remote sync and collision status before treating them as shared team issues. The tracked JSONL snapshot preserves issue content, acceptance criteria, spec links, labels, and dependencies while omitting owner, creator, and timestamp metadata; the local Beads database remains authoritative for those fields.
 
@@ -241,7 +244,7 @@ Beads are repository-local and currently unsynced. The database was initialized 
 
 | Priority | Owner | Action | Source finding |
 |---|---|---|---|
-| P2 | UI implementer | Deliver Phase 1 for explicit empty/import/reset state and schema validation; retain the last good view on invalid input. | UX-01, UX-04 |
+| P2 | UI implementer | Deliver Phase 1 for explicit empty/import/reset state, schema validation, and no-data bottleneck semantics; retain the last good view on invalid input. | UX-01, UX-04, BI-5u3.1.4 |
 | P2 | CI/UI maintainer | Run hosted Playwright on the exact PR head and inspect its artifacts; preserve its fail-closed dependency in the required aggregate `test` gate before claiming hosted E2E. | BI-5u3.1.3 |
 | P2 | UI implementer | Deliver Phase 2 with input-derived recommendations, shared severity rules, and score explanations tied to computed contributors. | UX-02, UX-05, UX-06, UX-07 |
 | P2 | Product owner and UI implementer | Decide whether the controls are illustrative/unavailable or have a defined behavior before any new operation/data source is implemented; complete the Phase 3 accessibility fixes. | UX-03, UX-08, UX-09, UX-10, UX-11 |
@@ -309,4 +312,4 @@ Each heading below provides the fragment target referenced by its finding Bead `
 
 **Validate responsive task fit before changing layout.** Record viewport/task evidence at the planned widths and zoom; make a layout change only if a concrete impairment is reproduced. Source layout facts alone do not establish harm. Evidence: `ui/src/App.tsx:248-267,365-390,454-547,551-686`. Phase 4 is validation-only.
 
-**Final Recommendation:** Human review remains required before changing UX-03 control behavior or UX-12 copy, and before any UX-13 layout change; the required owners and evidence gates are recorded above. Phase 1 implementation is in progress with local unit/type/build evidence recorded above. Its hosted Playwright/aggregate gate remains pending; browser execution, accessibility validation, and later phases are not complete.
+**Final Recommendation:** Applied with caveats. Human review remains required before changing UX-03 control behavior or UX-12 copy, and evidence is required before any UX-13 layout change. Phase 1 implementation is in progress on PR #114 with local unit/type/build evidence; the new bottleneck fallback fix is covered by tests. Its hosted Playwright/aggregate gate remains pending; browser execution, accessibility validation, and later phases are not complete.
