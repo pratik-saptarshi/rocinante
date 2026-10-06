@@ -47,12 +47,12 @@ export function buildExplainabilityTraces(pulse: QualityPulse): ExplainabilityTr
     },
     {
       id: 'explain-opportunity',
-      title: 'Opportunity Lift',
+      title: 'Opportunity Signals',
       summary: pulse.opportunityCount > 0 ? pulse.topOpportunityTitle : 'No opportunity signal',
       detail:
         pulse.opportunityCount > 0
-          ? `${pulse.opportunityCount} opportunity signal(s) are boosting the score.`
-          : 'No opportunity signals are contributing to the current score.',
+          ? `${pulse.opportunityCount} opportunity signal(s) are available to review; opportunities do not affect the pulse score.`
+          : 'No opportunity signals are available; opportunities do not affect the pulse score.',
       status: pulse.opportunityCount > 0 ? 'good' : 'medium'
     }
   ];
