@@ -31,7 +31,7 @@ fn publish_gate_documents_reflect_current_follow_up_pr_snapshot() {
         normalize_whitespace(&read_repo_file("../docs/publish-readiness-checklist.html"));
     let bom = normalize_whitespace(&read_repo_file("../docs/bill-of-materials.html"));
     let codemap = normalize_whitespace(&read_repo_file("../codemap.md"));
-    let shell = read_repo_file("../crates/rocinante-desktop-shell/src/lib.rs");
+    let shell = read_repo_file("../src-tauri/crates/rocinante-desktop-shell/src/lib.rs");
 
     assert!(bom.contains("Current shutdown source uses the shared `quit_explicitly` helper"));
     assert!(bom.contains("flush storage before removing the tray icon"));
