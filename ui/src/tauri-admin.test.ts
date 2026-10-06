@@ -21,7 +21,7 @@ describe('tauri admin bridge', () => {
 
     expect(result.ok).toBe(false);
     expect(result.command).toBe('ingest_event');
-    expect(result.message).toMatch(/Tauri runtime not detected/i);
+    expect(result.message).toMatch(/Desktop command runtime not detected/i);
   });
 
   it('does not apply a timeout by default', async () => {
