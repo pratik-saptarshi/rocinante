@@ -90,7 +90,7 @@ function toPositiveOptional(value: unknown): number | undefined {
 
 export function readLimits(payload: Record<string, unknown>): InsightLimits {
   const limitsSource = payload.limits;
-  const candidate = limitsSource === undefined ? payload : requireRecord(limitsSource, 'limits');
+  const candidate = limitsSource === undefined || limitsSource === null ? payload : requireRecord(limitsSource, 'limits');
 
   for (const key of ['risks', 'opportunities', 'severityThreshold', 'latencyP95Ms']) {
     const value = candidate[key];
@@ -118,7 +118,7 @@ export function readLimits(payload: Record<string, unknown>): InsightLimits {
 
 export function readPayload(payload: Record<string, unknown>): Record<string, unknown> {
   const nestedPayload = payload.payload;
-  if (nestedPayload !== undefined) {
+  if (nestedPayload !== undefined && nestedPayload !== null) {
     return requireRecord(nestedPayload, 'payload.payload');
   }
   return payload;

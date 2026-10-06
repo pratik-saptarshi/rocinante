@@ -10,7 +10,10 @@ describe('dashboard contract helpers', () => {
     };
 
     expect(readPayload(envelope)).toEqual(envelope.payload);
-    expect(() => readPayload({ payload: null, commits: [{ id: 'root-1' }] })).toThrow(/payload\.payload must be an object/);
+    expect(readPayload({ payload: null, commits: [{ id: 'root-1' }] })).toEqual({
+      payload: null,
+      commits: [{ id: 'root-1' }]
+    });
     expect(() => readPayload({ payload: [] })).toThrow(/payload\.payload must be an object/);
   });
 
@@ -36,6 +39,12 @@ describe('dashboard contract helpers', () => {
       opportunities: 1,
       severityThreshold: 8,
       latencyP95Ms: 900
+    });
+    expect(readLimits({ limits: null, risks: 1, opportunities: 3 })).toEqual({
+      risks: 1,
+      opportunities: 3,
+      severityThreshold: undefined,
+      latencyP95Ms: undefined
     });
   });
 
