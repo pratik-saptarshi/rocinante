@@ -251,8 +251,11 @@ test.describe('frontend behavior', () => {
       await expect(page.getByRole('main')).toBeVisible();
       await expect(page.getByRole('heading', { level: 1, name: 'The Web Companion: Optimization Hub' })).toBeVisible();
 
-      const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth);
-      expect(documentWidth, `page width at ${width}px viewport`).toBeLessThanOrEqual(width);
+      const expectViewportFit = async (state: string) => {
+        const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+        expect(documentWidth, `page width at ${width}px viewport ${state}`).toBeLessThanOrEqual(width);
+      };
+      await expectViewportFit('on initial render');
 
       await page.getByLabel('Telemetry payload JSON').fill(JSON.stringify({
         commits: [{ id: `viewport-${width}`, files: 1, changedLines: 8, dependencyChanges: 0, testTouch: true, failedAutomations: 0 }],
@@ -261,11 +264,13 @@ test.describe('frontend behavior', () => {
       }));
       await page.getByRole('button', { name: 'Apply Payload' }).click();
       await expect(page.getByTestId('snapshot-risk-count')).toHaveText('1');
+      await expectViewportFit('after telemetry import');
 
       const adminAction = page.getByRole('button', { name: 'Ingest Event' });
       await adminAction.scrollIntoViewIfNeeded();
       await adminAction.click();
       await expect(page.getByTestId('admin-bridge-result')).toContainText('Desktop command runtime not detected');
+      await expectViewportFit('after admin fallback');
     }
   });
 
