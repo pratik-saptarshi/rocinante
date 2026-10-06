@@ -180,17 +180,15 @@ function App() {
 
   const criticalBottlenecks = qualityPulse.bottleneckBuckets.critical;
   const highBottlenecks = qualityPulse.bottleneckBuckets.high;
-  const jobObservabilityItems: DashboardFinding[] = stages.map((stage) => ({
-    id: stage.name,
-    text: `${stage.name}: queue ${stage.queueDepth}, throughput ${stage.throughput}, lag ${stage.avgLatencyMs}ms`,
-    status: toneToStatus(
-      stage.queueDepth >= 10 || stage.avgLatencyMs >= 2000
-        ? 'bad'
-        : stage.queueDepth >= 4 || stage.avgLatencyMs >= 1000
-          ? 'medium'
-          : 'good'
-    )
-  }));
+  const stageStatusByName = new Map(bottlenecks.map((bottleneck) => [bottleneck.name, bottleneck.status]));
+  const jobObservabilityItems: DashboardFinding[] = stages.map((stage) => {
+    const severity = stageStatusByName.get(stage.name) ?? 'good';
+    return {
+      id: stage.name,
+      text: `${stage.name}: queue ${stage.queueDepth}, throughput ${stage.throughput}, lag ${stage.avgLatencyMs}ms`,
+      status: severity === 'critical' ? 'bad' : severity === 'high' || severity === 'medium' ? 'medium' : 'good'
+    };
+  });
 
   const applyPayload = () => {
     if (!payloadText.trim()) {
