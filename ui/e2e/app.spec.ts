@@ -5,11 +5,58 @@ test.describe('frontend behavior', () => {
     await page.goto('/');
 
     await expect(page.getByText('The Web Companion: Optimization Hub')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Run Full Audit' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Run Full Audit' })).toBeDisabled();
+    await expect(page.getByText('Audit execution is unavailable in this preview.')).toBeVisible();
     await expect(page.getByText('WCAG 2.1/2.2 AA Accessibility Audit')).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'Current Page' })).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'Site-Wide' })).toBeVisible();
+    await expect(page.getByText(/Page-specific and site-wide selection is unavailable/i)).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'Field and lab data selection unavailable in this preview' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Team Lead' })).toBeVisible();
+  });
+
+
+  test('exposes semantic landmarks and keeps preview-only actions unavailable', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.getByRole('main')).toHaveCount(1);
+    await expect(page.getByRole('heading', { level: 1, name: 'The Web Companion: Optimization Hub' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Run Full Audit' })).toBeDisabled();
+    await expect(page.getByRole('switch', { name: 'Field and lab data selection unavailable in this preview' })).toBeDisabled();
+    await expect(page.getByRole('tab')).toHaveCount(0);
+  });
+
+  test('uses sufficient computed contrast for enabled primary and outlined actions', async ({ page }) => {
+    await page.goto('/');
+    const getContrast = (foreground: string, background: string) => {
+      const luminance = (color: string) => {
+        const channels = color.match(/[\\d.]+/g)?.slice(0, 3).map(Number);
+        if (!channels || channels.length !== 3) throw new Error(`Unexpected CSS color: ${color}`);
+        const linear = channels.map((channel) => {
+          const value = channel / 255;
+          return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+      };
+      const values = [luminance(foreground), luminance(background)].sort((left, right) => right - left);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    };
+    const readColors = async (name: string) => page.getByRole('button', { name }).evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { color: style.color, background: style.backgroundColor };
+    });
+
+    const contained = page.getByRole('button', { name: 'Apply Payload' });
+    const outlined = page.getByRole('button', { name: 'Reset to Sample' });
+    for (const button of [contained, outlined]) {
+      await button.focus();
+      expect(await button.evaluate((element) => element.matches(':focus-visible'))).toBeTruthy();
+      await button.hover();
+    }
+
+    const containedColors = await readColors('Apply Payload');
+    const outlinedColors = await readColors('Reset to Sample');
+    expect(getContrast(containedColors.color, containedColors.background)).toBeGreaterThanOrEqual(4.5);
+    expect(getContrast(outlinedColors.color, 'rgb(255, 255, 255)')).toBeGreaterThanOrEqual(4.5);
   });
 
   test('switches stakeholder views and updates the quality pulse copy', async ({ page }) => {
