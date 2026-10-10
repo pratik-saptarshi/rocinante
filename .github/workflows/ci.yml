@@ -62,7 +62,7 @@ jobs:
       - name: Test Rust CI scope contract
         run: bash scripts/test-ci-scope-contract.sh
       - name: Set up Node for dependency-floor check
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
       - name: Verify UI esbuild floor
@@ -96,7 +96,7 @@ jobs:
         with:
           version: 12.9.1
           run_install: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
@@ -127,7 +127,7 @@ jobs:
         with:
           version: 12.9.1
           run_install: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
