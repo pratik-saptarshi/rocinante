@@ -6,7 +6,7 @@ rust-version = "1.96.1"
 
 [dependencies]
 rocinante-core = { path = "../rocinante-core" }
-base64 = "0.22"
+base64 = "0.23"
 fs2 = "0.4"
 hmac = "0.13"
 rusqlite = { version = "0.40", features = ["backup", "bundled"] }
