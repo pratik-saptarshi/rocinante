@@ -46,7 +46,7 @@ The RustSec exception registry and audit ignore list are empty. pnpm `12.9.1` is
 ## Active Governance and Planned Slices
 
 - `BI-047` — F-047 Desktop parity evaluation and host decision (completed on PR run `28988956969`)
-- `BI-046` — F-046 GTK/glib dependency-floor governance (registry and audit ignores are empty; fresh unfiltered audits and hosted governance/security passed on `2fac448`)
+- `BI-046` — F-046 GTK/glib dependency-floor governance (the registry and audit ignores now carry only the three governed zbus exceptions, each with owner, reason, and review_by; fresh unfiltered audits and hosted governance/security passed on `2fac448`)
 - `BI-048` — F-048 Core extraction and host-agnostic contract (completed locally; nine contract tests pass)
 - `BI-049` — F-049 GTK-free native desktop MVP (in progress; broader platform and user-visible parity gaps remain)
 - `BI-050` — F-050 Parity closure and fallback containment (planned; must-have gaps need implementation or an approved, documented deferral)
