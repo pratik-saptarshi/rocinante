@@ -221,6 +221,7 @@ Earlier sandbox Launch Services, dyld, and direct AppKit failures did not exerci
   - `src-tauri/tests/security_advisory_exception_tests.rs`
   - `scripts/check-security-advisory-exceptions.py` and its shell contract validate registry shape and review-date expiry; required CI job `security-exception-governance` remains fail-closed and is required by aggregate `test`.
   - Audit ignores stay mapped one-to-one to the exception registry. Fifteen withdrawn/absent records were closed with evidence, and the two remaining affected package paths were removed by retiring Tauri/GTK dependencies. The registry and ignore list are empty; Security run `37341472140` on `ce5a1e1` passed RustSec, CodeQL, and secret scan. Its logs do not expose the fetched SHA; cached no-fetch scans also pass. See `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
+  - Superseded (2026-11-08): the registry and ignore list are no longer empty; they now carry only the three governed zbus exceptions, each with owner, reason, and review_by. The run-anchored evidence above is retained verbatim as a record of its time.
 
 - `T-049` Parity matrix and host-decision tests:
   - `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`
