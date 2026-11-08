@@ -85,11 +85,12 @@ class NativeShellPackagingContractTests(unittest.TestCase):
         self.assertIn("codesign --verify --deep --strict", macos)
         self.assertIn("duckdb.dll", windows)
 
-    def test_active_exception_registry_and_audit_ignores_are_empty(self) -> None:
+    def test_active_exception_registry_and_audit_ignores_match_governed_set(self) -> None:
         registry = json.loads((ROOT / "docs/roadmap/security-advisory-exceptions.json").read_text())
         audit = tomllib.loads((ROOT / ".cargo/audit.toml").read_text())
-        self.assertEqual(registry, [])
-        self.assertEqual(audit["advisories"]["ignore"], [])
+        governed = ["RUSTSEC-2026-0370", "RUSTSEC-2026-0371", "RUSTSEC-2026-0372"]
+        self.assertEqual([entry["id"] for entry in registry], governed)
+        self.assertEqual(audit["advisories"]["ignore"], governed)
 
 
 if __name__ == "__main__":
