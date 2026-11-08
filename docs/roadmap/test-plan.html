@@ -19,7 +19,9 @@ Earlier sandbox Launch Services, dyld, and direct AppKit failures did not exerci
 - `RT-RC-001` GTK/glib dependency-floor governance:
   - Release remains blocked until every applicable RustSec warning is removed,
     every obsolete registry record has evidence-backed disposition, and both
-    ignore and exception registries are empty. No exception dates are renewed.
+    ignore and exception registries carry only governed exceptions, each with
+    owner, reason, and review_by. No ungoverned ignores are permitted; close
+    RustSec findings with no *ungoverned* ignores.
 - `RT-RC-002` GTK-free host migration planning:
   - Phase 0 through Phase 4 stay test-driven, with parity, core extraction, native shell, fallback containment, and dependency-floor removal each starting from a failing test or contract.
   - `F-049` / `T-051` includes shell close policy coverage: window close hides when a tray is available, while explicit Quit and tray-unavailable close exit. `native_shell_contract.rs` currently passes twelve tests. Darwin acceptance now covers close-to-tray, Show restoration, and Quit through the shared action handler used by tray callbacks; physical menu-click delivery and Linux/Windows tray behavior still need runtime validation.
@@ -330,7 +332,7 @@ Earlier sandbox Launch Services, dyld, and direct AppKit failures did not exerci
   - `scripts/check-desktop-shell-dependencies.sh`
   - `.cargo/audit.toml`
   - `docs/roadmap/repository-security-baseline.html`
-  - Local dependency-floor and workspace-graph checks pass. They fail if GTK, GLib, Wry, Tauri, or the affected proc-macro-error package reappears in a supported desktop workspace target; the advisory registry and Cargo audit ignore list are empty.
+  - Local dependency-floor and workspace-graph checks pass. They fail if GTK, GLib, Wry, Tauri, or the affected proc-macro-error package reappears in a supported desktop workspace target; the advisory registry and Cargo audit ignore list carry only governed exceptions, each with owner, reason, and review_by.
 
 - `T-054` Dependabot esbuild remediation tests:
   - `ui/pnpm-lock.yaml`
