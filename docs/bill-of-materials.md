@@ -10,7 +10,7 @@ PR #112 merged at `035c290`; final head `bb2d170` passed aggregate CI `374174284
 
 The latest documented physical Show attempt after `2fac448` timed out without observing the callback and predates the current source. Physical Show/Quit, foreground restoration, current installed-app startup stability, and saved-state restart are unverified. The documented sandbox Launch Services, dyld, and AppKit launch failures are inconclusive for normal installed-app behavior. Record fresh logs and crash evidence if a current installed build fails to start.
 
-The RustSec exception registry and audit ignore list are empty. pnpm `12.9.1` is pinned. DuckDB remains an official checksum-verified prebuilt; the build guard prohibits compiling it from source. Review threads PRRT_kwDOSr9EN86pJmZK, PRRT_kwDOSr9EN86pLAJi, PRRT_kwDOSr9EN86pSwNa, PRRT_kwDOSr9EN86pS49n, and PRRT_kwDOSr9EN86pS_Ru require a focused documentation closeout.
+The RustSec exception registry and audit ignore list carry only the three governed zbus exceptions, each with owner, reason, and review_by in the registry. pnpm `12.9.1` is pinned. DuckDB remains an official checksum-verified prebuilt; the build guard prohibits compiling it from source. Review threads PRRT_kwDOSr9EN86pJmZK, PRRT_kwDOSr9EN86pLAJi, PRRT_kwDOSr9EN86pSwNa, PRRT_kwDOSr9EN86pS49n, and PRRT_kwDOSr9EN86pS_Ru require a focused documentation closeout.
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
@@ -188,7 +188,7 @@ The RustSec exception registry and audit ignore list are empty. pnpm `12.9.1` is
 - DuckDB remains an official checksum-verified prebuilt and the source-build
   feature guard passes. Linux/macOS/Windows package and URL lifecycle checks
   passed on `27b9e21`; local macOS acceptance also passed URL and restart checks.
-- The advisory registry and Cargo audit ignores are empty. Fresh unfiltered
+- The advisory registry and Cargo audit ignores carry only the three governed zbus exceptions, each with owner, reason, and review_by in the registry. Fresh unfiltered
   audits pass both supported lockfiles on RustSec revision
   `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; hosted audit and governance
   passed on `27b9e21`. No owner acceptance or review-date renewal was inferred.
