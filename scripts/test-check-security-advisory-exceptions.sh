@@ -7,9 +7,9 @@ registry="$repo_root/docs/roadmap/security-advisory-exceptions.json"
 audit_config="$repo_root/.cargo/audit.toml"
 
 current="$(python3 "$checker" --as-of 2026-10-05)"
-if [[ "$current" != *"Validated 0 advisory exception entries against 0 Cargo audit ignores"* || \
+if [[ "$current" != *"Validated 3 advisory exception entries against 3 Cargo audit ignores"* || \
   "$current" != *"No review dates are overdue."* ]]; then
-  echo "the empty registry and empty audit ignore list must pass" >&2
+  echo "the governed registry and audit ignore list must pass" >&2
   printf '%s\n' "$current" >&2
   exit 1
 fi
