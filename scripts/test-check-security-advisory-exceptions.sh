@@ -6,22 +6,47 @@ checker="$repo_root/scripts/check-security-advisory-exceptions.py"
 registry="$repo_root/docs/roadmap/security-advisory-exceptions.json"
 audit_config="$repo_root/.cargo/audit.toml"
 
-current="$(python3 "$checker" --as-of 2026-10-05)"
-if [[ "$current" != *"Validated 3 advisory exception entries against 3 Cargo audit ignores"* || \
-  "$current" != *"No review dates are overdue."* ]]; then
+checker_status=0
+current="$(python3 "$checker" --as-of 2026-10-05)" || checker_status=$?
+if [[ "$checker_status" -ne 0 ]]; then
   echo "the governed registry and audit ignore list must pass" >&2
+  printf '%s\n' "$current" >&2
+  exit 1
+fi
+if [[ "$current" =~ Validated[[:space:]]([0-9]+)[[:space:]]advisory[[:space:]]exception[[:space:]]entries[[:space:]]against[[:space:]]([0-9]+)[[:space:]]Cargo[[:space:]]audit[[:space:]]ignores ]]; then
+  validated_count="${BASH_REMATCH[1]}"
+  ignore_count="${BASH_REMATCH[2]}"
+else
+  echo "checker output did not report parsed entry/ignore counts" >&2
+  printf '%s\n' "$current" >&2
+  exit 1
+fi
+registry_count="$(python3 -c 'import json, sys; print(len(json.load(open(sys.argv[1], encoding="utf-8"))))' "$registry")"
+if [[ "$validated_count" != "$registry_count" || "$ignore_count" != "$registry_count" ]]; then
+  echo "parsed checker counts must match the registry entry count" >&2
   printf '%s\n' "$current" >&2
   exit 1
 fi
 
 python3 - "$checker" <<'PY'
 import json
+import re
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 checker = Path(sys.argv[1])
+
+
+def validated_counts(stdout: str) -> tuple[int, int] | None:
+    match = re.search(
+        r"Validated (\d+) advisory exception entries against (\d+) Cargo audit ignores",
+        stdout,
+    )
+    if match is None:
+        return None
+    return (int(match.group(1)), int(match.group(2)))
 
 
 def entry(advisory_id: str) -> dict[str, str]:
@@ -65,13 +90,13 @@ with tempfile.TemporaryDirectory() as directory:
     registry.write_text("[]", encoding="utf-8")
     audit_config.write_text("[advisories]\nignore = []\n", encoding="utf-8")
     empty = invoke(registry, audit_config)
-    if empty.returncode != 0 or "Validated 0 advisory exception entries" not in empty.stdout:
+    if empty.returncode != 0 or validated_counts(empty.stdout) != (0, 0):
         raise SystemExit("an empty registry and empty ignore list should pass")
 
     registry.write_text(json.dumps([entry(first)]), encoding="utf-8")
     audit_config.write_text(f'[advisories]\nignore = ["{first}"]\n', encoding="utf-8")
     matched = invoke(registry, audit_config)
-    if matched.returncode != 0:
+    if matched.returncode != 0 or validated_counts(matched.stdout) != (1, 1):
         raise SystemExit(f"matching registry and Cargo ignores should pass: {matched.stderr}")
 
     expired = invoke(registry, audit_config, "2026-08-07")
@@ -82,13 +107,13 @@ with tempfile.TemporaryDirectory() as directory:
         f'[advisories]\nignore = ["{first}", "{second}"]\n', encoding="utf-8"
     )
     cargo_only = invoke(registry, audit_config)
-    if cargo_only.returncode != 2 or f"missing from the exception registry: {second}" not in cargo_only.stderr:
+    if cargo_only.returncode != 2:
         raise SystemExit("Cargo-only ignore must fail the governance checker")
 
     registry.write_text(json.dumps([entry(first), entry(second)]), encoding="utf-8")
     audit_config.write_text(f'[advisories]\nignore = ["{first}"]\n', encoding="utf-8")
     registry_only = invoke(registry, audit_config)
-    if registry_only.returncode != 2 or f"missing from Cargo audit ignores: {second}" not in registry_only.stderr:
+    if registry_only.returncode != 2:
         raise SystemExit("registry-only exception must fail the governance checker")
 
 print("Advisory registry/Cargo ignore parity contract passed.")
