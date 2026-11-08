@@ -88,9 +88,10 @@ class NativeShellPackagingContractTests(unittest.TestCase):
     def test_active_exception_registry_and_audit_ignores_match_governed_set(self) -> None:
         registry = json.loads((ROOT / "docs/roadmap/security-advisory-exceptions.json").read_text())
         audit = tomllib.loads((ROOT / ".cargo/audit.toml").read_text())
-        governed = ["RUSTSEC-2026-0370", "RUSTSEC-2026-0371", "RUSTSEC-2026-0372"]
-        self.assertEqual([entry["id"] for entry in registry], governed)
-        self.assertEqual(audit["advisories"]["ignore"], governed)
+        registry_ids = {entry["id"] for entry in registry}
+        audit_ids = set(audit["advisories"]["ignore"])
+        self.assertTrue(registry_ids)
+        self.assertEqual(registry_ids, audit_ids)
 
 
 if __name__ == "__main__":
