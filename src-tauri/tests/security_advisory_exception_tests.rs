@@ -84,7 +84,7 @@ fn security_advisory_exceptions_have_owner_review_date_and_exit_condition() {
 }
 
 #[test]
-fn zero_exception_security_gate_is_tracked_as_release_blocking() {
+fn exception_security_gate_is_tracked_as_release_blocking() {
     let normalize = |text: String| text.split_whitespace().collect::<Vec<_>>().join(" ");
     let baseline = normalize(read_repo_file(
         "../docs/roadmap/repository-security-baseline.html",
@@ -97,11 +97,25 @@ fn zero_exception_security_gate_is_tracked_as_release_blocking() {
     assert!(baseline.contains("both supported lockfiles pass unfiltered audits"));
     assert!(baseline.contains("Dependabot query found no open alerts"));
     assert!(baseline.contains("docs/roadmap/security-advisory-exceptions.json"));
-    assert!(checklist.contains("Dependency registry and audit ignore list are empty"));
-    assert!(checklist.contains("Fresh unfiltered audits passed both lockfiles"));
+    assert!(checklist.contains(
+        "Dependency registry and audit ignore list contain only the three governed zbus exceptions"
+    ));
+    assert!(checklist.contains("Audits are evaluated with those three governed ignores applied"));
     assert!(checklist.contains("Readiness requires terminal-green checks on the latest PR head"));
     assert!(proof_script.contains("scripts/check-desktop-shell-dependencies.sh"));
-    assert!(audit.contains("ignore = []"));
+    assert!(audit.contains("RUSTSEC-2026-0370"));
+    assert!(audit.contains("RUSTSEC-2026-0371"));
+    assert!(audit.contains("RUSTSEC-2026-0372"));
+    let audit_ids = audit_ignore_ids(&audit);
+    assert_eq!(audit_ids.len(), 3);
+    assert_eq!(
+        audit_ids,
+        BTreeSet::from([
+            "RUSTSEC-2026-0370".to_string(),
+            "RUSTSEC-2026-0371".to_string(),
+            "RUSTSEC-2026-0372".to_string(),
+        ])
+    );
 }
 
 #[test]

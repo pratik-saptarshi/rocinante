@@ -730,8 +730,10 @@ fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
             "--deny warnings",
         ],
     );
-    assert!(audit_config.contains("ignore = []"));
-    assert!(!audit_config.contains("RUSTSEC-"));
+    assert!(audit_config.contains("RUSTSEC-2026-0370"));
+    assert!(audit_config.contains("RUSTSEC-2026-0371"));
+    assert!(audit_config.contains("RUSTSEC-2026-0372"));
+    assert_eq!(audit_config.matches("RUSTSEC-").count(), 3);
     assert!(!audit_config.contains("RUSTSEC-2024-0411"));
     assert!(!audit_config.contains("RUSTSEC-2025-0100"));
 }
