@@ -136,7 +136,7 @@ fn roadmap_does_not_claim_complete_backlog_with_active_security_exception() {
     assert!(feature_list.contains("F-046 GTK/glib dependency-floor governance"));
     assert!(product_roadmap.contains("Stage 4 | Release/security governance"));
     assert!(
-        product_roadmap.contains("RT-RC-001 remains active until the empty registry is confirmed")
+        product_roadmap.contains("RT-RC-001 remains active while the registry carries the governed zbus exceptions")
     );
     assert!(bead_tracker.contains("`RT-RC-001` GTK/glib dependency-floor governance is active"));
     assert!(bead_tracker.contains("BI-046"));
