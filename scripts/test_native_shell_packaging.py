@@ -16,6 +16,10 @@ ROOT = Path(__file__).resolve().parents[1]
 class NativeShellPackagingContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.manifest = tomllib.loads((ROOT / "src-tauri/Cargo.toml").read_text())
+        self.storage_manifest = tomllib.loads((ROOT / "src-tauri/crates/rocinante-storage/Cargo.toml").read_text())
+        self.artifacts = json.loads((ROOT / "scripts/duckdb-prebuilt-artifacts.json").read_text())
+        self.bom_md = (ROOT / "docs/bill-of-materials.md").read_text()
+        self.bom_html = (ROOT / "docs/bill-of-materials.html").read_text()
         self.workflow = (ROOT / ".github/workflows/ci.yml").read_text()
 
     def test_supported_rust_package_has_no_tauri_host_or_build_script(self) -> None:
@@ -46,6 +50,22 @@ class NativeShellPackagingContractTests(unittest.TestCase):
         self.assertNotRegex(cargo + storage, r'(?i)duckdb[^\n]*(bundled|bundled-cmake)')
         self.assertIn("--stage-runtime-for-binary", provisioner)
         self.assertNotIn("stage-runtime-for-tauri-bundle", provisioner)
+
+    def test_duckdb_rs_version_matches_cargo_pins_and_bom_surfaces(self) -> None:
+        root_dependency = self.manifest["dependencies"]["duckdb"]
+        root_pin = root_dependency["version"].lstrip("=") if isinstance(root_dependency, dict) else root_dependency.lstrip("=")
+        storage_dependency = self.storage_manifest["dependencies"]["duckdb"]
+        storage_pin = storage_dependency["version"].lstrip("=") if isinstance(storage_dependency, dict) else storage_dependency.lstrip("=")
+        self.assertEqual(root_pin, storage_pin)
+        self.assertEqual(self.artifacts["duckdb_rs_version"], root_pin)
+        bom_md_controls = self.bom_md.split("## Dependency Controls and Security Gate Stack", 1)[1].split("\n## ", 1)[0]
+        bom_md_match = re.search(r"`duckdb` `([^`]+)`", bom_md_controls)
+        self.assertIsNotNone(bom_md_match)
+        self.assertEqual(bom_md_match.group(1), root_pin)
+        bom_html_crates = self.bom_html.split("### Rust / backend crates", 1)[1].split("\n### ", 1)[0]
+        bom_html_match = re.search(r"`duckdb` `([^`]+)`", bom_html_crates)
+        self.assertIsNotNone(bom_html_match)
+        self.assertEqual(bom_html_match.group(1), root_pin)
 
     def test_all_supported_platforms_build_and_package_the_native_shell(self) -> None:
         job = re.split(
