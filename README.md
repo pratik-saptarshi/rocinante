@@ -377,7 +377,7 @@ pnpm exec playwright test
 The Rust workspace test command includes `rocinante-core`,
 `rocinante-analysis`, `rocinante-storage`, and `rocinante-desktop-shell` plus
 the shared service library. Use the `pnpm@12.9.1` version declared in
-`ui/package.json` for UI checks.
+`ui/package.json` for UI checks. The `cargo audit` command above is not unfiltered: it applies the governed ignores configured in `.cargo/audit.toml`, each recorded in the exception registry `docs/roadmap/security-advisory-exceptions.json`, so a passing audit is a pass with those governed exceptions applied, not an audit with no exceptions.
 
 ### 5) Governance artifacts
 
