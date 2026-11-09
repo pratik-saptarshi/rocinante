@@ -726,8 +726,23 @@ fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
         &[
             "cargo audit",
             "--file src-tauri/Cargo.lock",
+            "--file tools/sled-migration/Cargo.lock",
             "--deny warnings",
         ],
+    );
+    // Weld the Phase 4 scheduled checker invocation in the security
+    // workflow as well (issue #147, F-14): both audit lines above and
+    // this invocation must turn this test red if deleted from
+    // security.yml, not just from ci.yml.
+    assert_step_run_contains_all(
+        &workflow,
+        "Check advisory exception review dates",
+        &["python3 scripts/check-security-advisory-exceptions.py"],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Check advisory exception review dates",
+        &["if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'"],
     );
 }
 
