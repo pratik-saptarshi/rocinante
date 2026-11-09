@@ -101,7 +101,7 @@ class CouldNotDetermine(Exception):
 def load_registry(registry_path: Path) -> list[dict[str, object]]:
     try:
         payload = json.loads(registry_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise CouldNotDetermine(
             f"could not read exception registry {registry_path}: {error}"
         ) from error
@@ -161,7 +161,7 @@ def fetch_json(url_path: str, fixture_dir: Path | None, fixture_stem: str) -> ob
         body_path = fixture_dir / f"{fixture_stem}.json"
         try:
             raw = body_path.read_text(encoding="utf-8")
-        except OSError as error:
+        except (OSError, UnicodeDecodeError) as error:
             raise CouldNotDetermine(
                 f"missing fixture response file {body_path}: {error}"
             ) from error
@@ -273,14 +273,21 @@ def crate_declares_watched_major(
         raise CouldNotDetermine(
             f"malformed dependencies payload for {crate} {version}"
         )
+    first_req = ""
     for item in deps_payload["dependencies"]:
         if not isinstance(item, dict):
             continue
         if item.get("crate_id") != dep or item.get("kind") != "normal":
             continue
         req = item.get("req")
-        return requirement_is_watched_major(req), version, str(req)
-    return False, version, ""
+        # crates.io can return several normal entries for the watched
+        # crate (e.g. per-target); the declaration is any-match, so keep
+        # scanning instead of returning on the first entry.
+        if not first_req:
+            first_req = str(req)
+        if requirement_is_watched_major(req):
+            return True, version, str(req)
+    return False, version, first_req
 
 
 # --------------------------------------------------------------------------
@@ -305,6 +312,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    # Catch-all: any unexpected exception must degrade to outcome 2
+    # (could-not-determine). A traceback exiting 1 would be read by the
+    # workflow wrapper as "limb met" — a false red with an overclaiming
+    # summary. The intentional exit-1 path below is a plain return, not
+    # an exception, and is unaffected.
     try:
         entries = load_registry(args.registry)
         check_registry_mapping(entries)
@@ -314,25 +326,31 @@ def main() -> int:
                 crate, dep, args.fixture_dir
             )
             results.append((crate, dep, declares, version, req))
+
+        for crate, dep, declares, version, req in results:
+            state = f"declares {dep} {req!r}" if req else f"does not declare {dep}"
+            print(f"{crate} {version}: {state} (normal dependencies only)")
+
+        if all(declares for _c, _d, declares, _v, _r in results):
+            print(LIMB_MET_MESSAGE)
+            return 1
+
+        unmet = [crate for crate, _d, declares, _v, _r in results if not declares]
+        print(
+            "entry-point limb not met: not every watched crate declares the "
+            f"watched dependency at ^{WATCHED_MAJOR} in its newest stable "
+            f"release (unmet: {', '.join(unmet)})."
+        )
+        return 0
     except CouldNotDetermine as error:
         print(f"could-not-determine: {error}", file=sys.stderr)
         return 2
-
-    for crate, dep, declares, version, req in results:
-        state = f"declares {dep} {req!r}" if req else f"does not declare {dep}"
-        print(f"{crate} {version}: {state} (normal dependencies only)")
-
-    if all(declares for _c, _d, declares, _v, _r in results):
-        print(LIMB_MET_MESSAGE)
-        return 1
-
-    unmet = [crate for crate, _d, declares, _v, _r in results if not declares]
-    print(
-        "entry-point limb not met: not every watched crate declares the "
-        f"watched dependency at ^{WATCHED_MAJOR} in its newest stable "
-        f"release (unmet: {', '.join(unmet)})."
-    )
-    return 0
+    except Exception as error:  # noqa: BLE001 — catch-all is the point
+        print(
+            f"could-not-determine: unexpected error: {error!r}",
+            file=sys.stderr,
+        )
+        return 2
 
 
 if __name__ == "__main__":

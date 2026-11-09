@@ -79,7 +79,9 @@ class ZbusExitConditionFixtureTests(unittest.TestCase):
             else:
                 path.write_text(json.dumps(content), encoding="utf-8")
 
-    def run_monitor(self, *extra_args: str) -> subprocess.CompletedProcess[str]:
+    def run_monitor(
+        self, *extra_args: str, separate_stderr: bool = False
+    ) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [
                 sys.executable,
@@ -90,7 +92,7 @@ class ZbusExitConditionFixtureTests(unittest.TestCase):
             ],
             stdout=subprocess.PIPE,
             text=True,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE if separate_stderr else subprocess.STDOUT,
             timeout=30,
             check=False,
         )
@@ -175,6 +177,46 @@ class ZbusExitConditionFixtureTests(unittest.TestCase):
         result = self.run_monitor("--registry", str(registry_path))
         self.assertEqual(result.returncode, 2, result.stdout)
         self.assertIn("unmapped registry entry", result.stdout)
+
+    # Case 8 (F2): crates.io can return several normal entries for the
+    # watched crate (e.g. per-target). The dependency check is any-match:
+    # ksni lists zbus ^5 normal first and ^6 normal second, so the limb
+    # must still fire when notify-rust is also on ^6.
+    def test_ksni_duplicate_normal_entries_any_match_returns_1(self) -> None:
+        self.both(
+            ZB6,
+            [("zbus", "^5", "normal"), ("zbus", "^6", "normal")],
+            notify=("4.19.0", [("4.19.0", False)], "4.19.0"),
+            ksni=("0.4.0", [("0.4.0", False)], "0.4.0"),
+        )
+        result = self.run_monitor()
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn(LIMB_MET_WORDING, result.stdout)
+
+    # Case 9 (F1): a non-UTF-8 fixture body must degrade to
+    # could-not-determine (exit 2), never a traceback exiting 1.
+    def test_non_utf8_fixture_body_returns_2_without_traceback(self) -> None:
+        self.both(ZB5, ZB5)
+        (self.fixture_dir / "notify-rust.json").write_bytes(b"\xff\xfe\x00not utf-8")
+        result = self.run_monitor(separate_stderr=True)
+        self.assertEqual(result.returncode, 2, result.stdout + (result.stderr or ""))
+        self.assertNotIn("Traceback", result.stderr or "")
+        self.assertNotIn("Traceback", result.stdout)
+        self.assertIn("could-not-determine", result.stderr or "")
+
+    # Case 10 (F1): a non-UTF-8 registry file must likewise degrade to
+    # could-not-determine (exit 2), never a traceback exiting 1.
+    def test_non_utf8_registry_returns_2_without_traceback(self) -> None:
+        self.both(ZB5, ZB5)
+        registry_path = self.fixture_dir / "non-utf8-registry.json"
+        registry_path.write_bytes(b"\xff\xfe\x00not utf-8")
+        result = self.run_monitor(
+            "--registry", str(registry_path), separate_stderr=True
+        )
+        self.assertEqual(result.returncode, 2, result.stdout + (result.stderr or ""))
+        self.assertNotIn("Traceback", result.stderr or "")
+        self.assertNotIn("Traceback", result.stdout)
+        self.assertIn("could-not-determine", result.stderr or "")
 
     # Guard: the real repo registry must stay mappable by WATCH, so the
     # production (schedule) run does not degrade to a permanent warning.
