@@ -54,7 +54,8 @@ def entry(advisory_id: str) -> dict[str, str]:
         "id": advisory_id,
         "kind": "audit_ignore",
         "owner": "test-owner",
-        "reason": "test-only registry fixture",
+        "crate": "test-crate",
+        "reason": "test-only registry fixture for test-crate",
         "affected_path": "Cargo.lock",
         "review_by": "2026-08-06",
         "exit_condition": "remove the test fixture",
@@ -115,6 +116,28 @@ with tempfile.TemporaryDirectory() as directory:
     registry_only = invoke(registry, audit_config)
     if registry_only.returncode != 2:
         raise SystemExit("registry-only exception must fail the governance checker")
+
+    audit_config.write_text(f'[advisories]\nignore = ["{first}"]\n', encoding="utf-8")
+    bot_owned = entry(first)
+    bot_owned["owner"] = "Musebot-Astro"
+    registry.write_text(json.dumps([bot_owned]), encoding="utf-8")
+    bot_owner = invoke(registry, audit_config)
+    if bot_owner.returncode != 2:
+        raise SystemExit("a bot-owned exception must fail the governance checker")
+
+    reason_omits_crate = entry(first)
+    reason_omits_crate["reason"] = "test-only registry fixture naming no crate"
+    registry.write_text(json.dumps([reason_omits_crate]), encoding="utf-8")
+    omitted_crate = invoke(registry, audit_config)
+    if omitted_crate.returncode != 2:
+        raise SystemExit("a reason that omits its crate must fail the governance checker")
+
+    missing_crate = entry(first)
+    del missing_crate["crate"]
+    registry.write_text(json.dumps([missing_crate]), encoding="utf-8")
+    no_crate_field = invoke(registry, audit_config)
+    if no_crate_field.returncode != 2:
+        raise SystemExit("an entry without a crate field must fail the governance checker")
 
 print("Advisory registry/Cargo ignore parity contract passed.")
 PY
