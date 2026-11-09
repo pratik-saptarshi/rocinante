@@ -87,7 +87,7 @@ jobs:
       # exit-condition limb is a dated event, not a trap discovered by
       # accident on an unrelated change.
       - name: Check advisory exception review dates
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: |
           set +e
           python3 scripts/check-security-advisory-exceptions.py
