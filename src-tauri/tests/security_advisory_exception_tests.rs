@@ -106,16 +106,24 @@ fn exception_security_gate_is_tracked_as_release_blocking() {
     assert!(audit.contains("RUSTSEC-2026-0370"));
     assert!(audit.contains("RUSTSEC-2026-0371"));
     assert!(audit.contains("RUSTSEC-2026-0372"));
+    assert_eq!(audit.matches("RUSTSEC-").count(), 3);
+    assert!(!audit.contains("RUSTSEC-2024-0411"));
+    assert!(!audit.contains("RUSTSEC-2025-0100"));
     let audit_ids = audit_ignore_ids(&audit);
+    let registry = registry_entries();
+    let registry_ids = registry
+        .iter()
+        .map(|entry| entry["id"].as_str().expect("registry id").to_string())
+        .collect::<BTreeSet<_>>();
+    let expected_ids = BTreeSet::from([
+        "RUSTSEC-2026-0370".to_string(),
+        "RUSTSEC-2026-0371".to_string(),
+        "RUSTSEC-2026-0372".to_string(),
+    ]);
     assert_eq!(audit_ids.len(), 3);
-    assert_eq!(
-        audit_ids,
-        BTreeSet::from([
-            "RUSTSEC-2026-0370".to_string(),
-            "RUSTSEC-2026-0371".to_string(),
-            "RUSTSEC-2026-0372".to_string(),
-        ])
-    );
+    assert_eq!(registry_ids.len(), 3);
+    assert_eq!(audit_ids, expected_ids);
+    assert_eq!(registry_ids, expected_ids);
 }
 
 #[test]

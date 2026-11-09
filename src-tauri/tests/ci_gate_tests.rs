@@ -715,7 +715,6 @@ fn ci_workflow_marks_release_build_floor_and_delta_scope() {
 #[test]
 fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
     let workflow = read_repo_file("../.github/workflows/security.yml");
-    let audit_config = read_repo_file("../.cargo/audit.toml");
 
     assert!(workflow.contains("dtolnay/rust-toolchain@1.99.0"));
     assert!(workflow.contains("components: clippy, rustfmt"));
@@ -730,12 +729,6 @@ fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
             "--deny warnings",
         ],
     );
-    assert!(audit_config.contains("RUSTSEC-2026-0370"));
-    assert!(audit_config.contains("RUSTSEC-2026-0371"));
-    assert!(audit_config.contains("RUSTSEC-2026-0372"));
-    assert_eq!(audit_config.matches("RUSTSEC-").count(), 3);
-    assert!(!audit_config.contains("RUSTSEC-2024-0411"));
-    assert!(!audit_config.contains("RUSTSEC-2025-0100"));
 }
 
 #[test]
