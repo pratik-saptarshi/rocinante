@@ -16,12 +16,19 @@ REQUIRED_FIELDS = (
     "id",
     "kind",
     "owner",
+    "crate",
     "reason",
     "affected_path",
     "review_by",
     "exit_condition",
     "tracking_id",
 )
+# The registry must be human-accountable (issue #147, F-08 / decision
+# D4): the bot identity that authored the original entries is not an
+# accountable owner, so an entry owned by it is invalid. Any other
+# non-empty owner (in the governed registry, the repo owner's GitHub
+# handle) satisfies this check.
+BOT_OWNER = "Musebot-Astro"
 DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 ADVISORY_ID_PATTERN = re.compile(r"RUSTSEC-\d{4}-\d{4}")
 
@@ -41,6 +48,15 @@ def read_entries(registry_path: Path) -> list[dict[str, object]]:
                 raise ValueError(f"entry {index} has missing or empty {field}")
         if entry["kind"] != "audit_ignore":
             raise ValueError(f"entry {index} kind must be audit_ignore")
+        if entry["owner"] == BOT_OWNER:
+            raise ValueError(
+                f"entry {index} owner must be a human-accountable identity, "
+                f"not the bot identity {BOT_OWNER}"
+            )
+        if entry["crate"] not in entry["reason"]:
+            raise ValueError(
+                f"entry {index} reason must name its crate ({entry['crate']})"
+            )
         if not DATE_PATTERN.fullmatch(entry["review_by"]):
             raise ValueError(f"entry {index} review_by must use YYYY-MM-DD")
         try:
