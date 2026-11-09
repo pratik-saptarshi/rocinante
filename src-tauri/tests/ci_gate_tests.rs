@@ -744,6 +744,27 @@ fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
         "Check advisory exception review dates",
         &["if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'"],
     );
+    // Weld the Phase 4 zbus exit-condition monitor step as well
+    // (overseer F3): deleting the step, dropping the always() half of
+    // its gate, or removing the wrapper's monitor invocation, exit
+    // capture, or limb-met summary wording must turn this test red,
+    // not just the checker step above.
+    assert_step_run_contains_all(
+        &workflow,
+        "Monitor zbus exit condition",
+        &[
+            "python3 scripts/check-zbus-exit-condition.py",
+            "zbus_exit=$?",
+            "entry-point limb met",
+        ],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Monitor zbus exit condition",
+        &[
+            "if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')",
+        ],
+    );
 }
 
 #[test]
