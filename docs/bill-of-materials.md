@@ -149,7 +149,7 @@ The RustSec exception registry and audit ignore list carry only the three govern
 - CI release floor: `src-tauri/Cargo.toml`, `.cargo/audit.toml`
 - UI floor check: `scripts/check-esbuild-lock.mjs`
 - Dependabot alert gate: `scripts/check-dependabot-esbuild-alert.sh` on `main` lane
-- DuckDB binding/engine: `duckdb` `1.10506.0` / DuckDB `1.5.6`, the official
+- DuckDB binding/engine: `duckdb` `1.10506.1` / DuckDB `1.5.6`, the official
   current stable engine on 2026-10-04 ([release](https://github.com/duckdb/duckdb/releases/tag/v1.5.6)), MIT; official
   native artifacts and archive/library/header SHA-256 values are pinned in
   `scripts/duckdb-prebuilt-artifacts.json`. DuckDB must never be compiled from
