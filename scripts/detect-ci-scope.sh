@@ -19,7 +19,7 @@ enable_rust_lanes() {
 while IFS= read -r path; do
   [[ -z "$path" ]] && continue
   case "$path" in
-    .github/workflows/ci.yml|src-tauri/*|tools/sled-migration/*|rust-toolchain.toml|.cargo/config.toml|.cargo/config)
+    .github/workflows/ci.yml|src-tauri/*|tools/sled-migration/*|rust-toolchain.toml|.cargo/config.toml|.cargo/config|.cargo/audit.toml)
       enable_rust_lanes
       break
       ;;
