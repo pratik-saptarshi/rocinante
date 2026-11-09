@@ -188,10 +188,12 @@ The RustSec exception registry and audit ignore list carry only the three govern
 - DuckDB remains an official checksum-verified prebuilt and the source-build
   feature guard passes. Linux/macOS/Windows package and URL lifecycle checks
   passed on `27b9e21`; local macOS acceptance also passed URL and restart checks.
-- The advisory registry and Cargo audit ignores carry only the three governed zbus exceptions, each with owner, reason, and review_by in the registry. Fresh unfiltered
-  audits pass both supported lockfiles on RustSec revision
-  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; hosted audit and governance
-  passed on `27b9e21`. No owner acceptance or review-date renewal was inferred.
+- The advisory registry and Cargo audit ignores carry only the three governed zbus exceptions, each with owner, reason, and review_by in the registry. As dated
+  evidence recorded before the governed exceptions existed, unfiltered audits
+  passed both supported lockfiles on RustSec revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` at head `27b9e21`; hosted audit
+  and governance also passed on `27b9e21`. No owner acceptance or
+  review-date renewal was inferred.
 - Formatting, warning-denied Clippy, and the full serial workspace test suite
   pass locally. Hosted workspace tests and aggregate passed on `27b9e21`; a
   fresh live PR check refresh remains required when GitHub is reachable.
