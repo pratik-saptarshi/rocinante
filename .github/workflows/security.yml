@@ -107,7 +107,7 @@ jobs:
             echo "No governed exception review date is overdue."
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Monitor zbus exit condition
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: |
           set +e
           python3 scripts/check-zbus-exit-condition.py
