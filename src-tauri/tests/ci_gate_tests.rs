@@ -742,7 +742,7 @@ fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
     assert_step_block_contains_all(
         &workflow,
         "Check advisory exception review dates",
-        &["if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'"],
+        &["if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')"],
     );
     // Weld the Phase 4 zbus exit-condition monitor step as well
     // (overseer F3): deleting the step, dropping the always() half of
