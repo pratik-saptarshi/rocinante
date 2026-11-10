@@ -68,7 +68,7 @@ Secret scan is enabled in GitHub Actions | [x] | `.github/workflows/security.yml
 Dependency review is enabled for pull requests | [x] | `.github/workflows/dependency-review.yml`
 CodeQL is enabled for Rust | [x] | `.github/workflows/security.yml` runs CodeQL analysis
 Rust dependency audit is enabled | [x] | `.github/workflows/security.yml` installs `cargo-audit` through `taiki-e/install-action@v2`
-Dependency registry and audit ignore list contain only the three governed zbus exceptions | [x] | Local registry/ignore state and governance contract pass: `docs/roadmap/security-advisory-exceptions.json` and `.cargo/audit.toml` each carry exactly RUSTSEC-2026-0370, RUSTSEC-2026-0371, and RUSTSEC-2026-0372 (zbus 5.x unmaintained-crate warnings, review_by 2027-02-05), matched 1:1 by `scripts/check-security-advisory-exceptions.py`; any other registry entry or audit ignore fails governance. Audits are evaluated with those three governed ignores applied. The 15 earlier withdrawn/absent entries have evidence in `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
+Dependency registry and audit ignore list contain only the three governed zbus exceptions | [x] | Local registry/ignore state and governance contract pass: the governed set is recorded in `docs/roadmap/security-advisory-exceptions.json` (the registry is the single source for the exception IDs and their review_by date) and `.cargo/audit.toml` carries the matching audit ignores for the zbus 5.x unmaintained-crate warnings, matched 1:1 by `scripts/check-security-advisory-exceptions.py`; any other registry entry or audit ignore fails governance. Audits are evaluated with those three governed ignores applied. The 15 earlier withdrawn/absent entries have evidence in `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
 Open Dependabot alerts are closed or formally accepted | [x] | Live GitHub API query on 2026-10-05 returned zero open alerts.
 Previously recorded evidence (2026-09-30):
 
@@ -94,6 +94,7 @@ checks do not establish readiness for the current PR head.
 Historical status (2026-10-03): all 17 security-owner reviews were overdue at
 that point. No dates or acceptance were inferred. The current zero-entry
 registry and audit-ignore state is recorded above.
+Superseded (2026-11-08): the registry and audit-ignore state is no longer zero-entry; the registry now carries only the three governed zbus exceptions, each with owner, reason, and review_by, as recorded above. The historical status block above is retained verbatim.
 
 Published-head verification (2026-10-04; source head `1be093a`): pnpm `12.9.1` frozen install,
 TypeScript check, all 62 Vitest tests, and production build passed on hosted run

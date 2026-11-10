@@ -19,7 +19,9 @@ Earlier sandbox Launch Services, dyld, and direct AppKit failures did not exerci
 - `RT-RC-001` GTK/glib dependency-floor governance:
   - Release remains blocked until every applicable RustSec warning is removed,
     every obsolete registry record has evidence-backed disposition, and both
-    ignore and exception registries are empty. No exception dates are renewed.
+    ignore and exception registries carry only governed exceptions, each with
+    owner, reason, and review_by. No ungoverned ignores are permitted; close
+    RustSec findings with no *ungoverned* ignores.
 - `RT-RC-002` GTK-free host migration planning:
   - Phase 0 through Phase 4 stay test-driven, with parity, core extraction, native shell, fallback containment, and dependency-floor removal each starting from a failing test or contract.
   - `F-049` / `T-051` includes shell close policy coverage: window close hides when a tray is available, while explicit Quit and tray-unavailable close exit. `native_shell_contract.rs` currently passes twelve tests. Darwin acceptance now covers close-to-tray, Show restoration, and Quit through the shared action handler used by tray callbacks; physical menu-click delivery and Linux/Windows tray behavior still need runtime validation.
@@ -219,6 +221,7 @@ Earlier sandbox Launch Services, dyld, and direct AppKit failures did not exerci
   - `src-tauri/tests/security_advisory_exception_tests.rs`
   - `scripts/check-security-advisory-exceptions.py` and its shell contract validate registry shape and review-date expiry; required CI job `security-exception-governance` remains fail-closed and is required by aggregate `test`.
   - Audit ignores stay mapped one-to-one to the exception registry. Fifteen withdrawn/absent records were closed with evidence, and the two remaining affected package paths were removed by retiring Tauri/GTK dependencies. The registry and ignore list are empty; Security run `37341472140` on `ce5a1e1` passed RustSec, CodeQL, and secret scan. Its logs do not expose the fetched SHA; cached no-fetch scans also pass. See `docs/roadmap/rustsec-exception-closure-evidence-2026-10-04.md`.
+  - Superseded (2026-11-08): the registry and ignore list are no longer empty; they now carry only the three governed zbus exceptions, each with owner, reason, and review_by. The run-anchored evidence above is retained verbatim as a record of its time.
 
 - `T-049` Parity matrix and host-decision tests:
   - `src-tauri/tests/gtk_free_host_migration_plan_tests.rs`
@@ -330,7 +333,7 @@ Earlier sandbox Launch Services, dyld, and direct AppKit failures did not exerci
   - `scripts/check-desktop-shell-dependencies.sh`
   - `.cargo/audit.toml`
   - `docs/roadmap/repository-security-baseline.html`
-  - Local dependency-floor and workspace-graph checks pass. They fail if GTK, GLib, Wry, Tauri, or the affected proc-macro-error package reappears in a supported desktop workspace target; the advisory registry and Cargo audit ignore list are empty.
+  - Local dependency-floor and workspace-graph checks pass. They fail if GTK, GLib, Wry, Tauri, or the affected proc-macro-error package reappears in a supported desktop workspace target; the advisory registry and Cargo audit ignore list carry only governed exceptions, each with owner, reason, and review_by.
 
 - `T-054` Dependabot esbuild remediation tests:
   - `ui/pnpm-lock.yaml`
