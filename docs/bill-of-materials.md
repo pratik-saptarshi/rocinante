@@ -10,7 +10,7 @@ PR #112 merged at `035c290`; final head `bb2d170` passed aggregate CI `374174284
 
 The latest documented physical Show attempt after `2fac448` timed out without observing the callback and predates the current source. Physical Show/Quit, foreground restoration, current installed-app startup stability, and saved-state restart are unverified. The documented sandbox Launch Services, dyld, and AppKit launch failures are inconclusive for normal installed-app behavior. Record fresh logs and crash evidence if a current installed build fails to start.
 
-The RustSec exception registry and audit ignore list are empty. pnpm `12.9.1` is pinned. DuckDB remains an official checksum-verified prebuilt; the build guard prohibits compiling it from source. Review threads PRRT_kwDOSr9EN86pJmZK, PRRT_kwDOSr9EN86pLAJi, PRRT_kwDOSr9EN86pSwNa, PRRT_kwDOSr9EN86pS49n, and PRRT_kwDOSr9EN86pS_Ru require a focused documentation closeout.
+The RustSec exception registry and audit ignore list carry only the three governed zbus exceptions, each with owner, reason, and review_by in the registry. pnpm `12.9.1` is pinned. DuckDB remains an official checksum-verified prebuilt; the build guard prohibits compiling it from source. Review threads PRRT_kwDOSr9EN86pJmZK, PRRT_kwDOSr9EN86pLAJi, PRRT_kwDOSr9EN86pSwNa, PRRT_kwDOSr9EN86pS49n, and PRRT_kwDOSr9EN86pS_Ru require a focused documentation closeout.
 
 - Repository: `https://github.com/pratik-saptarshi/rocinante`
 - Primary branch: `main`
@@ -46,7 +46,7 @@ The RustSec exception registry and audit ignore list are empty. pnpm `12.9.1` is
 ## Active Governance and Planned Slices
 
 - `BI-047` — F-047 Desktop parity evaluation and host decision (completed on PR run `28988956969`)
-- `BI-046` — F-046 GTK/glib dependency-floor governance (registry and audit ignores are empty; fresh unfiltered audits and hosted governance/security passed on `2fac448`)
+- `BI-046` — F-046 GTK/glib dependency-floor governance (the registry and audit ignores now carry only the three governed zbus exceptions, each with owner, reason, and review_by; fresh unfiltered audits and hosted governance/security passed on `2fac448`)
 - `BI-048` — F-048 Core extraction and host-agnostic contract (completed locally; nine contract tests pass)
 - `BI-049` — F-049 GTK-free native desktop MVP (in progress; broader platform and user-visible parity gaps remain)
 - `BI-050` — F-050 Parity closure and fallback containment (planned; must-have gaps need implementation or an approved, documented deferral)
@@ -149,7 +149,7 @@ The RustSec exception registry and audit ignore list are empty. pnpm `12.9.1` is
 - CI release floor: `src-tauri/Cargo.toml`, `.cargo/audit.toml`
 - UI floor check: `scripts/check-esbuild-lock.mjs`
 - Dependabot alert gate: `scripts/check-dependabot-esbuild-alert.sh` on `main` lane
-- DuckDB binding/engine: `duckdb` `1.10506.0` / DuckDB `1.5.6`, the official
+- DuckDB binding/engine: `duckdb` `1.10506.1` / DuckDB `1.5.6`, the official
   current stable engine on 2026-10-04 ([release](https://github.com/duckdb/duckdb/releases/tag/v1.5.6)), MIT; official
   native artifacts and archive/library/header SHA-256 values are pinned in
   `scripts/duckdb-prebuilt-artifacts.json`. DuckDB must never be compiled from
@@ -188,10 +188,12 @@ The RustSec exception registry and audit ignore list are empty. pnpm `12.9.1` is
 - DuckDB remains an official checksum-verified prebuilt and the source-build
   feature guard passes. Linux/macOS/Windows package and URL lifecycle checks
   passed on `27b9e21`; local macOS acceptance also passed URL and restart checks.
-- The advisory registry and Cargo audit ignores are empty. Fresh unfiltered
-  audits pass both supported lockfiles on RustSec revision
-  `ef6173cbc5c50ec8166f9a5b28f07834144373ee`; hosted audit and governance
-  passed on `27b9e21`. No owner acceptance or review-date renewal was inferred.
+- The advisory registry and Cargo audit ignores carry only the three governed zbus exceptions, each with owner, reason, and review_by in the registry. As dated
+  evidence recorded before the governed exceptions existed, unfiltered audits
+  passed both supported lockfiles on RustSec revision
+  `ef6173cbc5c50ec8166f9a5b28f07834144373ee` at head `27b9e21`; hosted audit
+  and governance also passed on `27b9e21`. No owner acceptance or
+  review-date renewal was inferred.
 - Formatting, warning-denied Clippy, and the full serial workspace test suite
   pass locally. Hosted workspace tests and aggregate passed on `27b9e21`; a
   fresh live PR check refresh remains required when GitHub is reachable.
