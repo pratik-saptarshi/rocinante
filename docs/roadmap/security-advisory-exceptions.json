@@ -2,9 +2,10 @@
   {
     "id": "RUSTSEC-2026-0370",
     "kind": "audit_ignore",
-    "owner": "Musebot-Astro",
-    "reason": "Unmaintained-crate warning (not a vulnerability) for zvariant 5.15.0, a zbus 5.x companion crate reached through the desktop shell's native-ui entry points. Accepted under Default B of the Rocinante security remediation plan v2, Phase 3, after Task 3.1 returned NOT-CHEAP: notify-rust's latest release 4.18.2 and ksni 0.3.7 both still declare zbus ^5, and no rfd release consumes ashpd ^0.14, so no maintained release path currently removes this warning.",
-    "affected_path": "src-tauri/Cargo.lock",
+    "owner": "pratik-saptarshi",
+    "crate": "zvariant",
+    "reason": "Unmaintained-crate warning (not a vulnerability) for zvariant 5.15.0, a zbus 5.x companion crate reached through the desktop shell's native-ui entry points. Accepted under Default B of the Rocinante security remediation plan v2, Phase 3, after Task 3.1 returned NOT-CHEAP: notify-rust's latest release 4.18.2 and ksni upstream latest 0.3.7 (the governed lockfile carries ksni 0.3.6) both still declare zbus ^5, and no rfd release consumes ashpd ^0.14, so no maintained release path currently removes this warning.",
+    "affected_path": "src-tauri/Cargo.lock and tools/sled-migration/Cargo.lock (both governed by the root .cargo/audit.toml)",
     "review_by": "2027-02-05",
     "exit_condition": "a notify-rust release declaring zbus ^6, and a ksni release declaring zbus ^6 that a tray-icon release can consume, or the native-ui features are reworked — whichever first",
     "tracking_id": "RT-RC-001-RUSTSEC-2026-0370"
@@ -12,9 +13,10 @@
   {
     "id": "RUSTSEC-2026-0371",
     "kind": "audit_ignore",
-    "owner": "Musebot-Astro",
-    "reason": "Unmaintained-crate warning (not a vulnerability) for zbus_names 4.3.4, a zbus 5.x companion crate reached through the desktop shell's native-ui entry points. Accepted under Default B of the Rocinante security remediation plan v2, Phase 3, after Task 3.1 returned NOT-CHEAP: notify-rust's latest release 4.18.2 and ksni 0.3.7 both still declare zbus ^5, and no rfd release consumes ashpd ^0.14, so no maintained release path currently removes this warning.",
-    "affected_path": "src-tauri/Cargo.lock",
+    "owner": "pratik-saptarshi",
+    "crate": "zbus_names",
+    "reason": "Unmaintained-crate warning (not a vulnerability) for zbus_names 4.3.4, a zbus 5.x companion crate reached through the desktop shell's native-ui entry points. Accepted under Default B of the Rocinante security remediation plan v2, Phase 3, after Task 3.1 returned NOT-CHEAP: notify-rust's latest release 4.18.2 and ksni upstream latest 0.3.7 (the governed lockfile carries ksni 0.3.6) both still declare zbus ^5, and no rfd release consumes ashpd ^0.14, so no maintained release path currently removes this warning.",
+    "affected_path": "src-tauri/Cargo.lock and tools/sled-migration/Cargo.lock (both governed by the root .cargo/audit.toml)",
     "review_by": "2027-02-05",
     "exit_condition": "a notify-rust release declaring zbus ^6, and a ksni release declaring zbus ^6 that a tray-icon release can consume, or the native-ui features are reworked — whichever first",
     "tracking_id": "RT-RC-001-RUSTSEC-2026-0371"
@@ -22,9 +24,10 @@
   {
     "id": "RUSTSEC-2026-0372",
     "kind": "audit_ignore",
-    "owner": "Musebot-Astro",
-    "reason": "Unmaintained-crate warning (not a vulnerability) for zvariant_derive 5.15.0, a zbus 5.x companion crate reached through the desktop shell's native-ui entry points. Accepted under Default B of the Rocinante security remediation plan v2, Phase 3, after Task 3.1 returned NOT-CHEAP: notify-rust's latest release 4.18.2 and ksni 0.3.7 both still declare zbus ^5, and no rfd release consumes ashpd ^0.14, so no maintained release path currently removes this warning.",
-    "affected_path": "src-tauri/Cargo.lock",
+    "owner": "pratik-saptarshi",
+    "crate": "zvariant_derive",
+    "reason": "Unmaintained-crate warning (not a vulnerability) for zvariant_derive 5.15.0, a zbus 5.x companion crate reached through the desktop shell's native-ui entry points. Accepted under Default B of the Rocinante security remediation plan v2, Phase 3, after Task 3.1 returned NOT-CHEAP: notify-rust's latest release 4.18.2 and ksni upstream latest 0.3.7 (the governed lockfile carries ksni 0.3.6) both still declare zbus ^5, and no rfd release consumes ashpd ^0.14, so no maintained release path currently removes this warning.",
+    "affected_path": "src-tauri/Cargo.lock and tools/sled-migration/Cargo.lock (both governed by the root .cargo/audit.toml)",
     "review_by": "2027-02-05",
     "exit_condition": "a notify-rust release declaring zbus ^6, and a ksni release declaring zbus ^6 that a tray-icon release can consume, or the native-ui features are reworked — whichever first",
     "tracking_id": "RT-RC-001-RUSTSEC-2026-0372"
