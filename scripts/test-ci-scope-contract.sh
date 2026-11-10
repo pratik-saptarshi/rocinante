@@ -36,6 +36,7 @@ assert_scope "tools/sled-migration/src/lib.rs" false true code-surface-touched
 assert_scope "rust-toolchain.toml" false true code-surface-touched
 assert_scope ".cargo/config.toml" false true code-surface-touched
 assert_scope ".cargo/config" false true code-surface-touched
+assert_scope ".cargo/audit.toml" false true code-surface-touched
 assert_scope "docs/roadmap/readiness.md" false false docs-only-tweak
 assert_scope "README.md" false false docs-only-tweak
 assert_scope "docs/roadmap/readiness.md" true true release-docs-tweak
