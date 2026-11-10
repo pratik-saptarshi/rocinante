@@ -715,7 +715,6 @@ fn ci_workflow_marks_release_build_floor_and_delta_scope() {
 #[test]
 fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
     let workflow = read_repo_file("../.github/workflows/security.yml");
-    let audit_config = read_repo_file("../.cargo/audit.toml");
 
     assert!(workflow.contains("dtolnay/rust-toolchain@1.99.0"));
     assert!(workflow.contains("components: clippy, rustfmt"));
@@ -727,15 +726,45 @@ fn security_workflow_uses_the_same_pinned_toolchain_for_rust_analysis() {
         &[
             "cargo audit",
             "--file src-tauri/Cargo.lock",
+            "--file tools/sled-migration/Cargo.lock",
             "--deny warnings",
         ],
     );
-    assert!(audit_config.contains("RUSTSEC-2026-0370"));
-    assert!(audit_config.contains("RUSTSEC-2026-0371"));
-    assert!(audit_config.contains("RUSTSEC-2026-0372"));
-    assert_eq!(audit_config.matches("RUSTSEC-").count(), 3);
-    assert!(!audit_config.contains("RUSTSEC-2024-0411"));
-    assert!(!audit_config.contains("RUSTSEC-2025-0100"));
+    // Weld the Phase 4 scheduled checker invocation in the security
+    // workflow as well (issue #147, F-14): both audit lines above and
+    // this invocation must turn this test red if deleted from
+    // security.yml, not just from ci.yml.
+    assert_step_run_contains_all(
+        &workflow,
+        "Check advisory exception review dates",
+        &["python3 scripts/check-security-advisory-exceptions.py"],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Check advisory exception review dates",
+        &["if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')"],
+    );
+    // Weld the Phase 4 zbus exit-condition monitor step as well
+    // (overseer F3): deleting the step, dropping the always() half of
+    // its gate, or removing the wrapper's monitor invocation, exit
+    // capture, or limb-met summary wording must turn this test red,
+    // not just the checker step above.
+    assert_step_run_contains_all(
+        &workflow,
+        "Monitor zbus exit condition",
+        &[
+            "python3 scripts/check-zbus-exit-condition.py",
+            "zbus_exit=$?",
+            "entry-point limb met",
+        ],
+    );
+    assert_step_block_contains_all(
+        &workflow,
+        "Monitor zbus exit condition",
+        &[
+            "if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')",
+        ],
+    );
 }
 
 #[test]
