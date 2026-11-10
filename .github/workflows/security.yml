@@ -80,3 +80,69 @@ jobs:
         run: |
           cargo audit --file src-tauri/Cargo.lock --deny warnings
           cargo audit --file tools/sled-migration/Cargo.lock --deny warnings
+      # Scheduled enforcement of the governed advisory exceptions (issue
+      # #145): the required `test` check already blocks PRs on an overdue
+      # registry in an active repo; these schedule/dispatch-only steps
+      # cover the quiet-repo case, so an overdue review date or a met
+      # exit-condition limb is a dated event, not a trap discovered by
+      # accident on an unrelated change.
+      - name: Check advisory exception review dates
+        if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        run: |
+          set +e
+          python3 scripts/check-security-advisory-exceptions.py
+          checker_exit=$?
+          set -e
+          if [ "$checker_exit" -ne 0 ]; then
+            {
+              echo "## Advisory exception review dates — overdue"
+              echo ""
+              echo "This run is red because a governed exception's review date has passed. The remedy is the review, not silencing this check."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit "$checker_exit"
+          fi
+          {
+            echo "## Advisory exception review dates — current"
+            echo ""
+            echo "No governed exception review date is overdue."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Monitor zbus exit condition
+        if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        run: |
+          set +e
+          python3 scripts/check-zbus-exit-condition.py
+          zbus_exit=$?
+          set -e
+          case $zbus_exit in
+            0)
+              {
+                echo "## zbus exit-condition monitor — entry-point limb not met"
+                echo ""
+                echo "At least one watched entry point (notify-rust, ksni) does not yet declare zbus ^6 in its newest stable release, counting normal dependencies only. The governed exceptions stay in place."
+              } >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            1)
+              {
+                echo "## zbus exit-condition monitor — entry-point limb met"
+                echo ""
+                echo "entry-point limb met — human tray-icon consumability check required before retiring the exceptions"
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+              ;;
+            2)
+              echo "::warning::zbus exit-condition monitor could not determine the entry-point limb (exit 2); this run is not turned red on an indeterminate result."
+              {
+                echo "## zbus exit-condition monitor — could not determine"
+                echo ""
+                echo "The monitor could not determine whether the entry-point limb is met (HTTP error, malformed crates.io payload, or an unmapped registry entry). This outcome is a warning only: network failure is never reported as met or not met."
+              } >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            *)
+              echo "::warning::zbus exit-condition monitor returned unexpected exit code $zbus_exit; treating it as could-not-determine."
+              {
+                echo "## zbus exit-condition monitor — could not determine"
+                echo ""
+                echo "The monitor returned an unexpected exit code ($zbus_exit), treated as could-not-determine. This outcome is a warning only and does not turn the run red."
+              } >> "$GITHUB_STEP_SUMMARY"
+              ;;
+          esac

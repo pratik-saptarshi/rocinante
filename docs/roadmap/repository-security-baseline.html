@@ -44,6 +44,7 @@ AppKit request returned `accepted=false`.
 - Dependency audit exceptions are tracked in `docs/roadmap/security-advisory-exceptions.json`.
 - `scripts/dependency-floor-proof.sh` and `scripts/check-desktop-shell-dependencies.sh` reject GTK/GLib, Tauri/Wry, and tracked advisory packages from supported workspace graphs.
 - `scripts/check-security-advisory-exceptions.py` remains fail-closed; its registry is empty and its local contract passes. Hosted governance and RustSec audit passed in CI/Security runs `37341472090`/`37341472140` on PR #112 head `ce5a1e1`.
+- Superseded (2026-11-08): the registry is no longer empty; it now carries only the three governed zbus exceptions, each with owner, reason, and review_by, and audits are evaluated with those governed ignores applied. The dated PR #112 evidence above is retained verbatim as a record of its time.
 
 ## Release Blockers
 
