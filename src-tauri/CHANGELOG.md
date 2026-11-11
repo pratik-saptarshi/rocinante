@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.2](https://github.com/pratik-saptarshi/rocinante/compare/v0.2.1...v0.2.2) (2026-11-11)
+
+
+### Bug Fixes
+
+* **deps:** bump duckdb binding to 1.10506.1 to clear zip advisories ([#140](https://github.com/pratik-saptarshi/rocinante/issues/140)) ([0f43140](https://github.com/pratik-saptarshi/rocinante/commit/0f431406fa852247ff7d17779912552f2ab8891a))
+* **deps:** bump RustSec-affected crates in both lockfiles ([#136](https://github.com/pratik-saptarshi/rocinante/issues/136)) ([3c4ae23](https://github.com/pratik-saptarshi/rocinante/commit/3c4ae236cc1a29c4d708dc88dfd9186734f7ae90))
+* **deps:** refresh yanked crates async-executor and clipboard-win ([#142](https://github.com/pratik-saptarshi/rocinante/issues/142)) ([ed54b66](https://github.com/pratik-saptarshi/rocinante/commit/ed54b6691f1f8607bc7bff97d579c4915244f6b1))
+* **storage:** preserve rollups and secure baseline calls ([#112](https://github.com/pratik-saptarshi/rocinante/issues/112)) ([035c290](https://github.com/pratik-saptarshi/rocinante/commit/035c290662e2a4c79e247de6036886ea90e7bf60))
+* **ui:** preserve telemetry import state and validate payloads ([#114](https://github.com/pratik-saptarshi/rocinante/issues/114)) ([b204f83](https://github.com/pratik-saptarshi/rocinante/commit/b204f83b2d69655002018038ff59e1b14f87f37a))
+
 ## [0.2.1](https://github.com/pratik-saptarshi/rocinante/compare/v0.2.0...v0.2.1) (2026-10-03)
 
 
