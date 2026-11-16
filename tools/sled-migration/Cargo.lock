@@ -356,7 +356,7 @@ dependencies = [
 
 [[package]]
 name = "rocinante-analysis"
-version = "0.1.0"
+version = "0.2.2"
 dependencies = [
  "base64",
  "fs2",
@@ -372,7 +372,7 @@ dependencies = [
 
 [[package]]
 name = "rocinante-core"
-version = "0.1.0"
+version = "0.2.2"
 dependencies = [
  "serde",
 ]
@@ -391,7 +391,7 @@ dependencies = [
 
 [[package]]
 name = "rocinante-storage"
-version = "0.1.0"
+version = "0.2.2"
 dependencies = [
  "fs2",
  "rocinante-analysis",
