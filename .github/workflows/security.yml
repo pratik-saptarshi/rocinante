@@ -34,13 +34,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.99.0
         with:
           components: clippy, rustfmt
-      - uses: github/codeql-action/init@v4.38.2
+      - uses: github/codeql-action/init@v4.39.3
         with:
           languages: rust
       - name: Verify and stage the DuckDB prebuilt for CodeQL
         run: python3 scripts/provision_duckdb.py --target x86_64-unknown-linux-gnu --target-dir "$CARGO_TARGET_DIR"
-      - uses: github/codeql-action/autobuild@v4.38.2
-      - uses: github/codeql-action/analyze@v4.38.2
+      - uses: github/codeql-action/autobuild@v4.39.3
+      - uses: github/codeql-action/analyze@v4.39.3
 
   secret-scan:
     runs-on: ubuntu-latest
