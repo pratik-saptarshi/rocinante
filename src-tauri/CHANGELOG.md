@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/pratik-saptarshi/rocinante/compare/v0.2.2...v0.2.3) (2026-11-23)
+
+
+### Bug Fixes
+
+* **deps:** bump url to 2.5.9 for RUSTSEC-2026-0592 ([#165](https://github.com/pratik-saptarshi/rocinante/issues/165)) ([3187be1](https://github.com/pratik-saptarshi/rocinante/commit/3187be110130963797c146224ba8451df093042a))
+
 ## [0.2.2](https://github.com/pratik-saptarshi/rocinante/compare/v0.2.1...v0.2.2) (2026-11-11)
 
 
