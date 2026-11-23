@@ -3274,7 +3274,7 @@ dependencies = [
 
 [[package]]
 name = "rocinante-analysis"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "base64 0.23.1",
  "fs2",
@@ -3291,14 +3291,14 @@ dependencies = [
 
 [[package]]
 name = "rocinante-core"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "rocinante-desktop-shell"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "eframe",
  "fs2",
@@ -3318,7 +3318,7 @@ dependencies = [
 
 [[package]]
 name = "rocinante-repo-analyzer"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "base64 0.23.1",
  "duckdb",
@@ -3338,7 +3338,7 @@ dependencies = [
 
 [[package]]
 name = "rocinante-storage"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "duckdb",
  "fs2",
